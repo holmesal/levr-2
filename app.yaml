@@ -52,6 +52,23 @@ handlers:
 - url: /foursquare.*
   script: foursquare.app
   secure: always
+  
+  
+#begin API scripts
+- url: /api/deal.*
+  script: api_deal.app
+- url: /api/upload.*
+  script: api_upload.app
+- url: /api/search.*
+  script: api_search.app
+- url: /api/user.*
+  script: api_user.app
+- url: /api/signup.*
+  script: api_signup.app
+- url: /api/login.*
+  script: api_login.app
+- url: /api/connect.*
+  script: api_connect.app
 
 
 
