@@ -73,6 +73,8 @@ def package_deal(deal,privacyLevel='public'):
 			}
 	return response
 def package_user(user,privacyLevel='public'):
+	'''alias is added by us, first_name and last_name should be added by all other services (foursquare for sure right now)'''
+	
 	return {'user':'This is a placeholder for the user, which will be packaged later'}
 	
 def send_response(self,response,user=None):

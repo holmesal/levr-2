@@ -410,11 +410,11 @@ class DealInfoHandler(webapp2.RequestHandler):
 		except:
 			levr.log_error(self.request.body)
 			api_utils.send_error(self,'Server Error')
-		
-app = webapp2.WSGIApplication([(r'/api/deal/(.*)/redeem/.*', RedeemHandler),
-								('/api/deal/(.*)/addFavorite/.*', AddFavoriteHandler),
-								('/api/deal/(.*)/deleteFavorite/.*', DeleteFavoriteHandler),
-								('/api/deal/(.*)/report/.*', ReportHandler),
-								('/api/deal/(.*)/img/.*', DealImgHandler),
+
+app = webapp2.WSGIApplication([('/api/deal/(.*)/redeem.*', RedeemHandler),
+								('/api/deal/(.*)/addfavorite.*', AddFavoriteHandler),
+								('/api/deal/(.*)/deletefavorite.*', DeleteFavoriteHandler),
+								('/api/deal/(.*)/report.*', ReportHandler),
+								('/api/deal/(.*)/img.*', DealImgHandler),
 								('/api/deal/(.*)', DealInfoHandler)
 								],debug=True)

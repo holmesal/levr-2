@@ -5,6 +5,8 @@ import levr_classes as levr
 import levr_encrypt as enc
 from random import randint
 from google.appengine.ext import db
+from google.appengine.api import urlfetch
+import json
 
 
 class SignupFacebookHandler(webapp2.RequestHandler):
@@ -54,13 +56,25 @@ class SignupFoursquareHandler(webapp2.RequestHandler):
 			response = api_utils.package_user(existing_user,'private')
 			api_utils.send_response(self,response,existing_user)
 		else:
-			#user does not exist, create new and populate via facebook API
+			#user does not exist, create new and populate via foursquare API
 			user = levr.Customer()
-			user.facebook_token = token
+			user.foursquare_token = token
+			logging.info(token)
+			
+			#goto foursquare
+			url = 'https://api.foursquare.com/v2/users/self?v=20120920&oauth_token='+token
+			result = urlfetch.fetch(url=url)
+			foursquare_user = json.loads(result.content)['response']['user']
+			user.first_name = foursquare_user['firstName']
+			user.last_name = foursquare_user['lastName']
+			user.email = foursquare_user['contact']['email']
+			logging.info(user.__dict__)
+			
+			
 #			#
 #			#populate with foursquare stuff here
 #			#
-			user.put()
+			#user.put()
 			response = api_utils.package_user(user,'private')
 			api_utils.send_response(self,response,user)
 		
@@ -82,9 +96,9 @@ class SignupTwitterHandler(webapp2.RequestHandler):
 			response = api_utils.package_user(existing_user,'private')
 			api_utils.send_response(self,response,existing_user)
 		else:
-			#user does not exist, create new and populate via facebook API
+			#user does not exist, create new and populate via twitter API
 			user = levr.Customer()
-			user.facebook_token = token
+			user.twitter_token = token
 #			#
 #			#populate with twitter stuff here
 #			#

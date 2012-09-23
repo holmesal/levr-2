@@ -44,6 +44,7 @@ class AuthorizeCompleteHandler(webapp2.RequestHandler):
 		url = "https://foursquare.com/oauth2/access_token?client_id="+client_id+"&client_secret="+secret+"&grant_type=authorization_code&redirect_uri="+redirect+"&code="+code
 		result = urlfetch.fetch(url=url)
 		token = json.loads(result.content)['access_token']
+		logging.info(token)
 		
 		#grab more user details
 		url = 'https://api.foursquare.com/v2/users/self?v=20120920&oauth_token='+token
