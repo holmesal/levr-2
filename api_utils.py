@@ -16,6 +16,8 @@ def package_user(user,privacyLevel):
 	return {'user':'This is a placeholder for the user, which will be packaged later'}
 	
 def send_response(self,response,user=None):
+	'''The optional third argument should be passed a user object if this is a private response
+		and left out if a public response '''
 	#build meta object
 	meta = {'success':True,
 			'error':''}

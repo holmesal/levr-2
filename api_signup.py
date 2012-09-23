@@ -24,7 +24,15 @@ class SignupFacebookHandler(webapp2.RequestHandler):
 			api_utils.send_response(self,response,existing_user)
 		else:
 			#user does not exist, create new and populate via facebook API
-			pass
+			user = levr.Customer()
+			user.facebook_token = token
+#			#
+#			#populate with facebook stuff here
+#			#
+			user.put()
+			response = api_utils.package_user(user,'private')
+			api_utils.send_response(self,response,user)
+			
 
 class SignupFoursquareHandler(webapp2.RequestHandler):
 	def get(self):
