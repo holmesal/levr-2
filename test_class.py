@@ -38,53 +38,62 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		
 		# new customer
 #		c = levr.Customer(key='agtkZXZ-Z2V0bGV2cnIOCxIIQ3VzdG9tZXIYEgw')
-		c = levr.Customer()
-		c.email	= 'ethan@getlevr.com'
-		c.payment_email = c.email
-		c.pw 	= enc.encrypt_password('ethan')
-		c.alias	= 'alonso'
-		c.favorites	= []
-		c.put()
+		c = levr.Customer.all().get()
+		if not c:
+			c = levr.Customer()
+			c.email	= 'ethan@getlevr.com'
+			c.payment_email = c.email
+			c.pw 	= enc.encrypt_password('ethan')
+			c.alias	= 'alonso'
+			c.favorites	= []
+			c.put()
 		
 		#new ninja
 #		ninja = levr.Customer(key='agtkZXZ-Z2V0bGV2cnIOCxIIQ3VzdG9tZXIYCww')
-		ninja = levr.Customer()
-		ninja.email	= 'santa@getlevr.com'
-		ninja.payment_email = c.email
-		ninja.pw 	= enc.encrypt_password('ethan')
-		ninja.alias	= 'ninja'
-		ninja.favorites = []
-		ninja.put()
+		ninja = levr.Customer.all().get()
+		if not ninja:
+			ninja = levr.Customer()
+			ninja.email	= 'santa@getlevr.com'
+			ninja.payment_email = c.email
+			ninja.pw 	= enc.encrypt_password('ethan')
+			ninja.alias	= 'ninja'
+			ninja.favorites = []
+			ninja.put()
 		
 		
-		b = levr.Business.all(keys_only=True).get()
-		
-		
+#		#existing business
+#		b = levr.Business.all(keys_only=True).get()
+#		
+#		
+#		params = {
+#					'uid'				: enc.encrypt_key(c.key()),
+#					'business'			: enc.encrypt_key(str(b)),
+#					'deal_description'	: 'description!!!',
+#					'deal_line1'		: 'DEAL LINE!',
+#					'img_key'			: img_key
+#					}
+#
+
+
+		#/existing business
 		params = {
 					'uid'				: enc.encrypt_key(c.key()),
-					'business'			: enc.encrypt_key(str(b)),
-					'deal_description'	: 'description!!!',
-					'deal_line1'		: 'DEAL LINE!',
+					'business_name'		: 'Als Sweatshop',
+					'geo_point'			: '32,-42',
+					'vicinity'			: '10 Buick St',
+					'types'				: 'Establishment,Food',
+					'deal_description'	: 'This is a description',
+					'deal_line1'		: 'I am a deal',
+					'distance'			: '10', #is -1 if unknown = double
 					'img_key'			: img_key
 					}
 
-		(share_url,dealID) = levr_utils.dealCreate(params,'phone')
+
+
+		(share_url,dealID) = levr_utils.dealCreate(params,'phone_new_business')
 		logging.debug(share_url)
 		logging.debug(dealID)
-		
-		
-#		#new business
-##		b = levr.Business(key='agtkZXZ-Z2V0bGV2cnIOCxIIQnVzaW5lc3MYBAw')
-#		b = levr.Business()
-#		b.email 		= 'alonso@getlevr.com'
-#		b.pw 			= enc.encrypt_password('alonso')
-#		b.business_name = 'Shaws'
-#		b.vicinity		= '260 Everett St East Boston, MA'
-#		b.alias 		= 'Joe'
-#		b.contact_phone = '603-603-6003'
-#		b.geo_point		= levr.geo_converter("15.23213,60.2342")
-#		b.types			= ['tag1','tag2']
-#		b.put()
+
 
 
 #		#new deal
@@ -279,12 +288,50 @@ class FilterGeohashHandler(webapp2.RequestHandler):
 #		for b in businesses:
 #			self.response.out.write(b.geo_hash)
 #			self.response.out.write('<br/>')
+
+class Cust(db.Model):
+#root class
+	email 			= db.EmailProperty()
+	pw 				= db.StringProperty()
+
+class Note(db.Model):
+	date			= db.DateTimeProperty(auto_now_add=True)
+	notification_type = db.StringProperty(required=True,choices=set(['redemption','thanks','friendUpload','newFollower']))
+	user			= db.ReferenceProperty(Cust,collection_name='notifications',required=True)
+
+class TestHandler(webapp2.RequestHandler):
+	def get(self):
+#		customer = Cust(
+#						email	= 'patrick@levr.com',
+#						pw		= 'patrick').put()
+#		customer
+#		
+#		#create notifications
+#		n1 = Note(
+#						notification_type = 'redemption',
+#						user = customer
+#						).put()
+#		n2 = Note(
+#						notification_type = 'thanks',
+#						user = customer
+#						).put()
+#		self.response.out.write(customer)
+#		#start the fun
+		
+		#get customer
+		customer = Cust.all().get()
+		
+		logging.info(levr_utils.log_dict(customer.properties()))
+		logging.info(customer.notifications.fetch(None))
+		n = customer.notifications.filter('notification_type =','redemption').get()
+		logging.debug(n.user.email)
 		
 		
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload.*', DatabaseUploadHandler),
 								('/new/geohash', StoreGeohashHandler),
 								('/new/find', FilterGeohashHandler),
+								('/new/test', TestHandler)
 #								('/new/update' , UpdateUsersHandler)
 								],debug=True)
 

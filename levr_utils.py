@@ -18,9 +18,11 @@ import geo.geohash as geohash
 if os.environ['SERVER_SOFTWARE'].startswith('Development') == True:
 	#we are on the development environment
 	URL = 'http://localhost:8080'
+	development = True
 else:
 	#we are deployed on the server
 	URL = 'http://www.levr.com'
+	development = False
 
 
 
@@ -247,6 +249,8 @@ def dealCreate(params,origin,upload_flag=True):
 			geo_point = params['geo_point']
 			geo_point = levr.geo_converter(geo_point)
 			logging.debug("geo point: "+str(geo_point))
+			#create geohash from geopoint
+			geo_hash = geohash.encode(geo_point.lat,geo_point.lon)
 		else:
 			raise KeyError('geo_point not in params')
 		
@@ -281,8 +285,7 @@ def dealCreate(params,origin,upload_flag=True):
 			business = levr.Business()
 			logging.debug(log_model_props(business))
 			
-			#create geohash from geopoint
-			geo_hash = geohash.encode(geo_point.lat,geo_point.lon)
+			
 			
 			#add data to the new business
 			business.business_name 	= business_name
@@ -445,7 +448,7 @@ def dealCreate(params,origin,upload_flag=True):
 	deal.description 		= description
 	deal.tags				= list(set(tags)) #list->set->list removes duplicates
 	deal.business_name		= business_name
-	deal.businessID			= businessID.__str__()
+	deal.businessID			= str(businessID)
 	deal.vicinity			= vicinity
 	deal.geo_point			= geo_point
 	deal.geo_hash			= geo_hash
@@ -503,10 +506,10 @@ def create_img_url(deal_entity,size):
 	#creates a share url for a deal
 	if os.environ['SERVER_SOFTWARE'].startswith('Development') == True:
 		#we are on the development environment
-		URL = 'http://localhost:8080/phone/img?dealID='+enc.encrypt_key(deal_entity.key())+'&size='+size
+		img_url= 'http://localhost:8081/phone/img?dealID='+enc.encrypt_key(deal_entity.key())+'&size='+size
 	else:
 		#we are deployed on the server
-		URL = 'http://www.levr.com/phone/img?dealID='+enc.encrypt_key(deal_entity.key())+'&size='+size
+		img_url = 'http://www.levr.com/phone/img?dealID='+enc.encrypt_key(deal_entity.key())+'&size='+size
 		
 	return img_url
 	
@@ -610,25 +613,35 @@ def log_dir(obj,props=None):
 	finally:
 		return log_str
 
-def log_dict(obj,props=None):
+def log_dict(obj,props=None,delimeter= "\n\t\t"):
 	#returns a long multiline string of a regular python object in key: prop
-	delimeter = "\n\t\t"
+#	delimeter = "\n\t\t"
 	log_str = delimeter
+	logging.debug(obj)
 	try:
 		if type(props) is list:
 			#only display certain keys
 			for key in props:
-				log_str += str(key)+": "+str(obj[key])+delimeter
+				if type(obj[key]) == dict:
+					log_str += str(key)+": "+ log_dict(obj[key],None,delimeter+'\t\t')+delimeter
+				else:
+					log_str += str(key)+": "+str(obj[key])+delimeter
 		else:
 			#display all keys
 			key_list = []
 			for key in obj:
+				logging.debug(key)
 				key_list.append(key)
 			key_list.sort()
 			for key in key_list:
-				log_str += str(key)+": "+str(obj[key])+delimeter
-	except:
-		logging.warning('There was an error in log_dict')
+				logging.debug(key)
+				if type(obj[key]) == dict:
+					log_str += str(key)+": "+ log_dict(obj[key],None,delimeter+'\t\t')+delimeter
+
+				else:
+					log_str += str(key)+": "+str(obj[key])+delimeter
+	except Exception,e:
+		logging.warning('There was an error in log_dict %s',e)
 	finally:
 		return log_str
 		

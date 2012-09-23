@@ -4,6 +4,9 @@ import levr_encrypt as enc
 import levr_classes as levr
 import api_utils
 import levr_utils
+from google.appengine.ext import db
+from google.appengine.api import mail
+
 '''
 DEAL OBJECT :{
 			#PUBLIC
@@ -51,20 +54,46 @@ class RedeemHandler(webapp2.RequestHandler):
 		'''
 		#RESTRICTED
 		try:
-			if api_utils.check_param(self,'uid',True):
-				uid = self.request.params['uid']
+#			#spoof development vals
+#			dealID	= 'ahNkZXZ-bGV2ci1wcm9kdWN0aW9uch8LEg1CdXNpbmVzc093bmVyGMIBDAsSBERlYWwYxAEM'
+#			uid		= 'ahNkZXZ-bGV2ci1wcm9kdWN0aW9ucg8LEghDdXN0b21lchjMAQw'
+			
+			logging.info(dealID)
+			logging.info(self.request.get('uid'))
+#			
+			if not api_utils.check_param(self,dealID,'dealID',True):
+				return
 			else:
-				#error message already sent in check_param
+				dealID = db.Key(enc.decrypt_key(dealID))
+			uid = self.request.get('uid')
+			if not api_utils.check_param(self,uid,'uid',True):
 				return
-			try:
-				dealID = enc.decrypt_key(dealID)
-				dealID = db.Key(dealID)
-			except:
-				api_utils.send_error(self,'Invalid parameter: dealID')
+			else:
+				uid = db.Key(enc.decrypt_key(uid))
+			
+			user = levr.Customer.get(uid)
+			if not user:
+				api_utils.send_error(self,'Invalid uid: '+uid)
 				return
+			
+			owner = dealID.parent()
+			logging.debug(owner)
+			
+			#create and store notification entity
+			note = levr.Notification(
+									parent = owner,
+									notification_type = 'redemption',
+									user = uid,
+									deal = dealID
+									)
+			note.put()
+			logging.debug(levr_utils.log_model_props(note))
+			
+			#respond
+			api_utils.send_response(self,{},user)
 		except:
-			levr.log_error(self.request.params)
-			api_utils.send_error(self,'')
+			levr.log_error(self.request)
+			api_utils.send_error(self,'Server Error')
 
 class AddFavoriteHandler(webapp2.RequestHandler):
 	def get(self,dealID):
@@ -78,36 +107,36 @@ class AddFavoriteHandler(webapp2.RequestHandler):
 		'''
 		#RESTRICTED
 		try:
-			if api_utils.check_param(self,'uid',True):
-				uid = self.request.params['uid']
-			else:
-				#error message already sent in check_param
-				return
-			try:
-				dealID = enc.decrypt_key(dealID)
-				dealID = db.Key(dealID)
-			except:
-				api_utils.send_error(self,'Invalid parameter: dealID')
-				return
 			
-			#get user entity
-			user		= levr.Customer.get(uid)
+			logging.info(dealID)
+			logging.info(self.request.get('uid'))
+#			
+			if not api_utils.check_param(self,dealID,'dealID',True):
+				return
+			else:
+				dealID = db.Key(enc.decrypt_key(dealID))
+				logging.debug(dealID)
+			uid = self.request.get('uid')
+			if not api_utils.check_param(self,uid,'uid',True):
+				return
+			else:
+				uid = db.Key(enc.decrypt_key(uid))
+			
+			user = levr.Customer.get(uid)
 			if not user:
-				api_utils.send_error(self,'Invalid uid: %s',uid)
+				api_utils.send_error(self,'Invalid uid: '+uid)
+				return
 			
 			#append dealID to favorites property
-			user.favorites.append(db.Key(dealID))
+			user.favorites.append(dealID)
 			logging.debug(user.favorites)
-	#				
-			#get notifications
-			notifications = user.get_notifications()
 			
 			#close entity
 			user.put()
-			api_utils.send_response(self,{})
+			api_utils.send_response(self,{},user)
 		except:
-			levr.log_error(self.request.params)
-			api_utils.send_error(self,'')
+			levr.log_error(self.request)
+			api_utils.send_error(self,'Server Error')
 		
 	
 class DeleteFavoriteHandler(webapp2.RequestHandler):
@@ -121,41 +150,45 @@ class DeleteFavoriteHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
-			if api_utils.check_param(self,'uid',True):
-				uid = self.request.params['uid']
+			logging.info(dealID)
+			logging.info(self.request.get('uid'))
+#			
+			if not api_utils.check_param(self,dealID,'dealID',True):
+				return
 			else:
-				#error message already sent in check_param
+				dealID = db.Key(enc.decrypt_key(dealID))
+				logging.debug(dealID)
+			uid = self.request.get('uid')
+			if not api_utils.check_param(self,uid,'uid',True):
 				return
-			try:
-				dealID = enc.decrypt_key(dealID)
-				dealID = db.Key(dealID)
-			except:
-				api_utils.send_error(self,'Invalid parameter: dealID')
+			else:
+				uid = db.Key(enc.decrypt_key(uid))
+			
+			user = levr.Customer.get(uid)
+			if not user:
+				api_utils.send_error(self,'Invalid uid: '+uid)
 				return
-			#get user entity
-			user	= levr.Customer.get(uid)
-			logging.debug(levr_utils.log_model_props(user))
 			
 			#grab favorites list
 			favorites	= user.favorites
 			logging.debug(favorites)
 			
 			#generate new favorites list without requested dealID
-			new_favorites	= [deal for deal in favorites if deal != deal_to_delete]
+			new_favorites	= [deal for deal in favorites if deal != dealID]
 			logging.debug(new_favorites)
 			
 			#reassign user favorites to new list
 			user.favorites	= new_favorites
 			logging.debug(user.favorites)
 			
-			#get notifications
-			notifications = user.get_notifications()
-			
 			#close entity
 			user.put()
+			
+			api_utils.send_response(self,{},user
+								)
 		except:
-			levr.log_error(levr_utils.log_dict(self.request))
-			api_utils.send_error('Server Error')
+			levr.log_error(self.request)
+			api_utils.send_error(self,'Server Error')
 		
 		
 
@@ -170,45 +203,44 @@ class ReportHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
-			if api_utils.check_param(self,'uid',True):
-				uid = self.request.params['uid']
+			logging.info(dealID)
+			logging.info(self.request.get('uid'))
+#			
+			if not api_utils.check_param(self,dealID,'dealID',True):
+				return
 			else:
-				#error message already sent in check_param
+				dealID = db.Key(enc.decrypt_key(dealID))
+				logging.debug(dealID)
+			uid = self.request.get('uid')
+			if not api_utils.check_param(self,uid,'uid',True):
 				return
-			try:
-				dealID = enc.decrypt_key(dealID)
-				dealID = db.Key(dealID)
-			except:
-				api_utils.send_error(self,'Invalid parameter: dealID')
-				return
-			
-			
-			#create report Entity
-			report = levr.ReportedDeal(
-									uid = db.Key(uid),
-									dealID = db.Key(dealID)
-									).put()
-			
-			#get human readable info for email
-			deal = levr.Deal.get(dealID)
-			if not deal:
-				api_utils.send_error('Invalid parameter: dealID')
-			business_name = deal.business_name
+			else:
+				uid = db.Key(enc.decrypt_key(uid))
 			
 			user = levr.Customer.get(uid)
 			if not user:
-				api_utils.send_error('Invalid parameter: uid')
-			alias = user.alias
+				api_utils.send_error(self,'Invalid uid: '+uid)
+				return
+#			
+#			logging.warning(dealID)
+#			#get human readable info for email
+#			deal = levr.Deal.get(dealID)
+#			if not deal:
+#				api_utils.send_error('Invalid parameter: dealID')
+#			business_name = deal.business_name
+#			
+#			user = levr.Customer.get(uid)
+#			if not user:
+#				api_utils.send_error('Invalid parameter: uid')
+#			alias = user.alias
+#			
 			
-			deal_class = str(deal.class_name())
-			if deal_class == 'CustomerDeal':
-				deal_kind = "Ninja Deal"
-			elif deal_class == 'Deal':
-				deal_kind = "Business Deal"
-			else:
-				raise ValueError('deal class_name not recognized')
+			#create report Entity
+			report = levr.ReportedDeal(
+									uid = uid,
+									dealID = dealID
+									).put()
 			
-			logging.debug(report)
 			
 			#send notification via email
 			message = mail.EmailMessage(
@@ -218,21 +250,15 @@ class ReportHandler(webapp2.RequestHandler):
 			
 			logging.debug(message)
 			body = 'New Reported Deal\n\n'
-			body += 'reporter uid: '  +str(uid)+"\n\n"
-			body += 'reporter alias: ' +str(alias)+"\n\n"
-			body += 'Business name: '+str(business_name)+"\n\n"
-			body += "Deal: "+str(deal.deal_text)+"\n\n"
-			body += "Deal Kind: "+deal_kind+"\n\n"
-			body += "dealID: "+str(dealID)+"\n\n"
 			message.body = body
 			logging.debug(message.body)
 			message.send()
 			
-			notifications = user.get_notifications()
 			
-			api_utils.send_response(self,response,user)
+			
+			api_utils.send_response(self,{},user)
 		except:
-			levr.log_error(levr_utils.log_dict(self.request))
+			levr.log_error(self.request)
 			api_utils.send_error(self,'Server Error')
 
 class DealImgHandler(webapp2.RequestHandler):
@@ -250,14 +276,12 @@ class DealImgHandler(webapp2.RequestHandler):
 		Gets the image from the blobstoreReferenceProperty deal.img'''
 		try:
 			logging.info('img')
-			try:
-				dealID = enc.decrypt_key(dealID)
-				dealID = db.Key(dealID)
-			except:
-				api_utils.send_error(self,'Invalid parameter: dealID')
+			if not api_utils.check_param(self,dealID,'dealID',True):
 				return
-			if api_utils.check_param(self,'size'):
-				size = self.request.params['size']
+			uid = self.request.get('size')
+			if not api_utils.check_param(self,size,'size',True):
+				return
+			
 			
 			logging.debug(dealID)
 			logging.debug(size)
@@ -341,7 +365,7 @@ class DealImgHandler(webapp2.RequestHandler):
 			output_img = img.execute_transforms(output_encoding=images.JPEG)
 #			logging.debug(output_img)
 		except:
-			levr.log_error(self.request.body)
+			levr.log_error(self.request)
 			output_img = None
 		finally:
 			try:
@@ -354,6 +378,8 @@ class DealImgHandler(webapp2.RequestHandler):
 class DealInfoHandler(webapp2.RequestHandler):
 	def get(self,dealID):
 		'''
+		Get information about a deal.
+		
 		Input: None
 		Output:{
 			meta:{
@@ -365,13 +391,30 @@ class DealInfoHandler(webapp2.RequestHandler):
 				}
 			}
 		'''
-		self.response.out.write('Deal Info')
+		try:
+			logging.info(dealID)
+#			
+			if not api_utils.check_param(self,dealID,'dealID',True):
+				return
+			else:
+				dealID = db.Key(enc.decrypt_key(dealID))
+				logging.debug(dealID)
+			logging.warning(type(dealID))
+			deal = levr.Deal.get(dealID)
+			if not deal:
+				api_utils.send_error(self,'Invalid dealID: '+str(dealID))
+			
+			response = api_utils.package_deal(deal)
+			
+			api_utils.send_response(self,response)
+		except:
+			levr.log_error(self.request.body)
+			api_utils.send_error(self,'Server Error')
 		
-		
-app = webapp2.WSGIApplication([('/api/deal/(.*)/redeem', RedeemHandler),
-								('/api/deal/(.*)/addFavorite', AddFavoriteHandler),
-								('/api/deal/(.*)/deleteFavorite', DeleteFavoriteHandler),
-								('/api/deal/(.*)/report', ReportHandler),
-								('/api/deal/(.*)/img', DealImgHandler),
+app = webapp2.WSGIApplication([(r'/api/deal/(.*)/redeem/.*', RedeemHandler),
+								('/api/deal/(.*)/addFavorite/.*', AddFavoriteHandler),
+								('/api/deal/(.*)/deleteFavorite/.*', DeleteFavoriteHandler),
+								('/api/deal/(.*)/report/.*', ReportHandler),
+								('/api/deal/(.*)/img/.*', DealImgHandler),
 								('/api/deal/(.*)', DealInfoHandler)
 								],debug=True)
