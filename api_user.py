@@ -4,40 +4,137 @@ import logging
 
 class UserFavoritesHandler(webapp2.RequestHandler):
 	def get(self,uid):
+		'''
+		inputs: limit, offset
+		Output:{
+			meta:{
+				success
+				errorMsg
+				}
+			response:{
+				[string,string]
+				}
+		'''
+		try:
+			pass
+		except:
+			levr.log_error(levr_utils.log_dir(self.request))
 		#RESTRICTED
-		pass
 
 class UserUploadsHandler(webapp2.RequestHandler):
 	def get(self,uid):
-		pass
+		'''
+		inputs: limit, offset
+		Output:{
+			meta:{
+				success
+				errorMsg
+				}
+			response:{
+				deal: <DEAL OBJECT>
+				}
+		'''
+		try:
+			pass
+		except:
+			levr.log_error(levr_utils.log_dir(self.request))
 		
 class UserFriendsHandler(webapp2.RequestHandler):
 	def get(self,uid):
+		'''
 		#RESTRICTED
-		pass
+		inputs: limit, offset
+		Output:{
+			meta:{
+				success
+				errorMsg
+				}
+			response:{
+				friends:[
+					<USER OBJECT>
+					]
+				}
+		'''
+		try:
+			pass
+		except:
+			levr.log_error(levr_utils.log_dir(self.request))
+		
 		
 class UserImgHandler(webapp2.RequestHandler):
 	def get(self,uid):
-		pass
+		'''
+		inputs: size
+		Output:{
+			meta:{
+				success
+				errorMsg
+				}
+		'''
+		try:
+			pass
+		except:
+			levr.log_error(levr_utils.log_dir(self.request))
 
-class userImgHandler(webapp2.RequestHandler):
-	def get(self,uid):
-		pass
 
 class UserCashOutHandler(webapp2.RequestHandler):
 	def get(self,uid):
+		'''
 		#RESTRICTED
-		pass
+		inputs:
+		Output:{
+			meta:{
+				success
+				errorMsg
+				}
+		'''
+		try:
+			pass
+		except:
+			levr.log_error(levr_utils.log_dir(self.request))
 		
 class UserNotificationsHandler(webapp2.RequestHandler):
 	def get(self,uid):
+		'''
 		#RESTRICTED
-		pass
+		inputs: offset
+		Output:{
+			meta:{
+				success
+				errorMsg
+				}
+			response:{
+					notifications:[
+						<NOTIFICATION OBJECT>
+						]
+				}
+		'''
+		try:
+			pass
+		except:
+			levr.log_error(levr_utils.log_dir(self.request))
+		
 		
 class UserInfoHandler(webapp2.RequestHandler):
 	def get(self,uid):
+		'''
 		#PARTIALLY RESTRICTED
-		pass
+		inputs: lat,lon,limit
+		Output:{
+			meta:{
+				success
+				errorMsg
+				}
+			response:{
+				<USER OBJECT>
+				}
+		'''
+		try:
+			pass
+		except:
+			levr.log_error(levr_utils.log_dir(self.request))
+		
+		
 		
 app = webapp2.WSGIApplication([('/api/user/(.*)/favorites', UserFavoritesHandler),
 								('/api/user/(.*)/uploads', UserUploadsHandler),

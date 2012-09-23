@@ -47,7 +47,6 @@ class RedeemHandler(webapp2.RequestHandler):
 				}
 		'''
 		#RESTRICTED
-		pass
 
 class AddFavoriteHandler(webapp2.RequestHandler):
 	def get(self,dealID):
