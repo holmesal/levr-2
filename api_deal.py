@@ -59,6 +59,26 @@ class AddFavoriteHandler(webapp2.RequestHandler):
 				}
 		'''
 		#RESTRICTED
+		
+		logging.info('addFav')
+		#get inputs
+		uid 		= enc.decrypt_key(decoded["in"]["uid"])
+			
+		#get user entity
+		user		= levr.Customer.get(uid)
+		
+		#append dealID to favorites property
+		user.favorites.append(db.Key(dealID))
+		logging.debug(user.favorites)
+#				
+		#get notifications
+		notifications = user.get_notifications()
+		
+		#close entity
+		user.put()
+		
+		#output
+		toEcho = {"success":True,"notifications":notifications}
 		pass
 		
 class DeleteFavoriteHandler(webapp2.RequestHandler):
