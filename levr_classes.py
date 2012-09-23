@@ -163,17 +163,7 @@ class Deal(polymodel.PolyModel):
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	date_last_edited= db.DateTimeProperty(auto_now=True)
 
-def package_deal(deal):
-	response = {
-			'business'	: {
-							'businessID'	: enc.encrypt_key(businessID),
-							'businessName'	: deal.business_name,
-							'geoPoint'		: deal.geo_point,
-							'geoHash'		: deal.geo_hash
-							}
-			'dealID'	: enc.encrypt_key(deal.key()),
-			
-			}
+
 
 class CustomerDeal(Deal):
 #Sub-class of deal
@@ -214,6 +204,7 @@ class CustomerDeal(Deal):
 	
 
 class Notification(db.Model):
+	date			= db.DateTimeProperty(auto_now_add=True)
 	type			= db.StringProperty(required=True,choices=set(['redemption','thanks','friendUpload','newFollower']))
 	user			= db.ReferenceProperty(Customer,set='notifications',required=True)
 	deal			= db.ReferenceProperty(Deal)

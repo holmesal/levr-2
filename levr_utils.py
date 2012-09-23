@@ -495,11 +495,21 @@ def create_share_url(deal_entity):
 		URL = 'http://localhost:8080/'
 	else:
 		#we are deployed on the server
-		URL = 'levr.com/'
+		URL = 'http://www.levr.com/'
 		
 	share_url = URL+deal_entity.share_id
 	return share_url
-
+def create_img_url(deal_entity,size):
+	#creates a share url for a deal
+	if os.environ['SERVER_SOFTWARE'].startswith('Development') == True:
+		#we are on the development environment
+		URL = 'http://localhost:8080/phone/img?dealID='+enc.encrypt_key(deal_entity.key())+'&size='+size
+	else:
+		#we are deployed on the server
+		URL = 'http://www.levr.com/phone/img?dealID='+enc.encrypt_key(deal_entity.key())+'&size='+size
+		
+	return img_url
+	
 def get_deals_in_area(tags,request_point,precision=5):
 	'''
 	tags = list of tags that are strings
