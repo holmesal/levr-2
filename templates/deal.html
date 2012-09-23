@@ -1,0 +1,110 @@
+{% extends "templates/merchantsBase.html" %}
+{% block htmlhead %}
+<link rel="stylesheet" href="/css/deal.css">
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyDA6oSrrTbFLHVqZSt2JGeJWFLVa9F0074&sensor=false&libraries=places"></script>
+{% endblock %}
+
+{% block content %}
+<div id="main">
+	<div id="top">
+		<h1 id="headerText">
+			Create and launch a promotion in seconds.
+		</h1>
+	</div>
+	<div id="left">
+		<p class="pane_header">
+			Start typing here
+		</p>
+		<form id="deal_form" action="{{ upload_url }}" method="POST" enctype="multipart/form-data">
+			<p class="prompt">
+				What's the offer?
+			</p>
+			<input value="{{ deal.dealText }}" class="textIn error_check" type="text" name="deal_line1" placeholder="Your discount...">
+			<p class="aide">
+				Ex: 50% Off Jeans
+			</p>
+			<p class="prompt">
+				With purchase of: <span class="optional">&nbsp; (optional)</span>
+			</p>
+			<input value="{{ deal.secondaryName }}" class="textIn" type="text" name="deal_line2" placeholder="With purchase of...">
+			<p class="prompt">
+				Why is this a great offer?
+			</p>
+			<input value="{{ deal.description }}" class="textIn error_check" type="text" name="deal_description" placeholder="A short description...">
+			<div id="results"></div>
+			<p class="prompt">
+				Upload a{% if edit==True%} new{% endif %} picture:
+			</p>
+			<input type="file" name="image" id="img_upload" value="Upload" onchange="previewImage(this);">
+			<!--button type="button" id="fake_upload_button" >Choose a file...</button-->
+			<button type="submit" name="submit" id="deal_submit" value='submittt'>
+				Launch this offer!
+			</button>
+		</form>
+	</div>
+	<div id="right">
+		<p class="pane_header">
+			See what customers will see here.
+		</p>
+		<div id="iphone_outer">
+			<div id="iphone_inner">
+				<div id="uploaded_img"></div>
+				<p id="deal_line1">
+					{% if deal.dealText %}
+					{{ deal.dealText }}
+					{% else %}
+					&nbsp;
+					{% endif %}
+				</p>
+				<p id="deal_line2">
+					{% if deal.dealTextExtra %}
+					{{ deal.dealTextExtra }}
+					{% else %}
+					&nbsp;
+					{% endif %}
+				</p>
+				<p id="deal_description" class="dealText">
+					{% if deal.description %}
+					{{ deal.description }}
+					{% else %}
+					&nbsp;
+					{% endif %}
+				</p>
+				<p id="deal_business" class="dealText"> <!--TODO: this will be multiple businesses later-->
+					{% if business.business_name %}
+					{{ business.business_name }}
+					{% else %}
+					&nbsp;
+					{% endif %}
+				</p>
+				<p id="deal_address" class="dealText">
+					{% if business.vicinity %}
+					{{ business.vicinity }}
+					{% else %}
+					&nbsp;
+					{% endif %}
+				</p>
+			</div>
+		</div>
+		
+
+	</div>
+</div>
+<div style="clear:both"></div>
+{% endblock %}
+{% block javascript %}
+<script type="text/javascript">google.load("jquery", "1.4.2");</script>
+<!--script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?libraries=places&sensor=true"></script-->
+<script src="../js/deal.js"></script>
+<script type="text/javascript">
+	{% if edit == True %}
+	$('#uploaded_img').css('background-image','url(\'{{ deal.imgURLLarge }}\')');
+	
+	//this needs to be a global variable so that the form validation works correctly
+	isEditing = true;
+	{% else %}
+	isEditing = false;
+	{% endif %}
+</script>
+{% endblock %}

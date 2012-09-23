@@ -1,0 +1,41 @@
+{% extends "templates/merchantsBase.html" %}
+
+{% block htmlhead %}
+<link rel="stylesheet" href="../css/emailUpload.css">
+{% endblock %}
+
+{% block content %}
+<div id='main'>
+	<div id='top'>
+			<div id="topHelper">Your email</div>
+			<a id="topEmail" href="mailto:joe@example.com?subject=feedback">{{ business.upload_email }}</a>
+	</div>
+	<div id='left'>
+		<img id="phone" src='/img/create_iphone_blank.png' />
+	</div>
+	<div id='right'>
+		<div id='rightContainer'>
+			<h1 id="title">Upload Deals from your Email</h1>
+			<div class='helpText' id='header-description'>Levr makes it easy for you to manage your promotions anywhere.</div>
+			<div class='helpText' id='header-description2'>To upload, simply send an email to <a id="email" href="mailto:joe@example.com?subject=feedback">{{ business.upload_email }}</a> with the following:</div>
+			<div id='instructions'>
+				<div id='instructions-left'>
+					<div class="content">Promotion </div>
+					<div class="content">Description</div>
+					<div class="content">Image</div>
+					<div class="content">Expiration<br /> <span id="optional">(optional)</span></div>
+				</div>
+				<div id='instructions-right'>
+						<div class='eg'>Free soda with purchase of two slices of pizza.</div>
+						<div class='eg'>This pizza is the best. Everyone loves it.</div>
+						<div class='eg'>(Dont forget to attach a picture to go with your promotion.)</div>
+						<div class='eg'>e.g. February 9, 2012</div>
+				</div>
+			</div>
+<!-- 			<p class='helpText' id='bottom-text'>That's how easy it is to promote through Levr.</p> -->
+		</div>
+
+		
+	</div>
+</div>
+{% endblock %}

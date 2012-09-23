@@ -1,0 +1,105 @@
+application: levr-production
+version: beta
+runtime: python27
+api_version: 1
+threadsafe: true
+default_expiration: "1m"
+
+handlers:
+- url: /
+  script: landing.app
+- url: /ninjas
+  script: ninjas.app
+- url: /phone.*
+  script: phone.app
+- url: /merchants.*
+  script: merchants.app
+- url: /new.*
+  script: test_class.app
+  login: admin
+- url: /loginstate
+  script: loginstate.app
+- url: /logout
+  script: logout.app
+- url: /emptySet.*
+  script: emptySet.app
+  login: admin
+- url: /admin.*
+  script: admin.app
+  login: admin
+- url: /payments/.*
+  script: payments.app
+  login: admin
+  secure: always
+- url: /sandbox
+  script: test.app
+  login: admin
+- url: /password.*
+  script: password.app
+- url: /widget.*
+  script: widget.app
+- url: /_ah/mail/.+
+  #mail services
+  script: uploadEmail.app
+  login: admin
+- url: /target.*
+  login: admin
+  script: store_businesses.app
+- url: /download.*
+  script: download.app
+- url: /beta.*
+  script: beta.app
+- url: /foursquare.*
+  script: foursquare.app
+  secure: always
+
+
+
+- url: /img
+  static_dir: img
+- url: /css
+  static_dir: css
+- url: /js
+  static_dir: js
+- url: /beta
+  static_dir: beta
+
+- url: /robots.txt
+  static_files: robots.txt
+  upload: robots.txt
+- url: /sitemap.xml
+  static_files: sitemap.xml
+  upload: sitemap.xml
+
+- url: /.*
+  #share handler - alphanumeric appendage
+  script: share.app
+- url: .*
+  script: landing.app
+  
+libraries:
+- name: jinja2
+  version: latest
+- name: pycrypto
+  version: 2.3
+
+builtins:
+- appstats: on
+
+inbound_services:
+- mail
+
+
+skip_files:
+- ^(.*/)?app\.yaml
+- ^(.*/)?app\.yml
+- ^(.*/)?index\.yaml
+- ^(.*/)?index\.yml
+- ^(.*/)?#.*#
+- ^(.*/)?.*~
+- ^(.*/)?.*\.py[co]
+- ^(.*/)?.*/RCS/.*
+- ^(.*/)?\..*
+- ^(.*/)?.*\.bak$
+- ^Crypto/
+

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Welcome to Levr.</title>
+		<!--meta name="viewport" content="width=device-width, initial-scale=1.0"-->
+		<meta name="viewport" content="width = 600, initial-scale = 0.6, user-scalable = no">
+		<meta name="author" content="Patrick Walsh, Alonso Holmes, Ethan Sherr">
+		<!-- Le styles
+		=======================================================-->
+		<link href="../css/landing.css" rel="stylesheet">
+		<link rel="icon" type="image/png" href="../img/favicon.png">
+		<!--start load timer -->
+		<script>var startTime = (new Date()).getTime();</script>
+		
+		<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+		
+		<!--MIXPANEL-->
+		<script type="text/javascript">(function(c,a){window.mixpanel=a;var b,d,h,e;b=c.createElement("script");b.type="text/javascript";b.async=!0;b.src=("https:"===c.location.protocol?"https:":"http:")+'//cdn.mxpnl.com/libs/mixpanel-2.0.min.js';d=c.getElementsByTagName("script")[0];d.parentNode.insertBefore(b,d);a._i=[];a.init=function(b,c,f){function d(a,b){var c=b.split(".");2==c.length&&(a=a[c[0]],b=c[1]);a[b]=function(){a.push([b].concat(Array.prototype.slice.call(arguments,0)))}}var g=a;"undefined"!==typeof f?
+g=a[f]=[]:f="mixpanel";g.people=g.people||[];h="disable track track_pageview track_links track_forms register register_once unregister identify name_tag set_config people.set people.increment".split(" ");for(e=0;e<h.length;e++)d(g,h[e]);a._i.push([b,c,f])};a.__SV=1.1})(document,window.mixpanel||[]);
+mixpanel.init("115b36ec63eb2cb70bb9196c58046f6f");</script>
+		
+	</head>
+	<body>
+		<!--div id="header">
+			<img id="header_logo" src="../img/levr_logo.png" alt="levr_logo"/>
+			<a id="merchants_link" href="http://getlevr.appspot.com/merchants/deal">Merchants</a>
+		</div-->
+		<div id="img1" class="img_slide"><div id="loading"><img id="pinwheel" src="../img/pinwheel.gif"></div></div>
+		<div id="bgin">&nbsp</div>
+		<img id="background1" src="../img/cafe.jpg"></img>
+		<img id="background2" src="../img/street2_low.jpg"></img>
+		<div id="img2" class="img_slide" hidden></div>
+		<div id="img3" class="img_slide" hidden><div id="camera"></div></div>
+		<div id="img4" class="img_slide" hidden></div>
+		<div id="container">
+			<div id="containerbg1" class="containerbg"></div>
+			<div id="containerbg2" class="containerbg"></div>
+			<div id="left" class="side">
+				<div id="left1">
+					<p class="headerText left1">Save money</p>
+					<p class="pane_header left1">Find discounts around your campus on food, clothing, and more.</p>
+				</div>
+				<div id="left2">
+					<p class="headerText left2">Earn money</p>
+					<p class="pane_header left2">Snap a photo of a discount you see, and make money when others redeem it.</p>
+				</div>
+				
+				
+			</div>
+			
+			<!--div id="iphone_outer"></div-->
+			<div id="right" class="side">
+				<p id="launching_soon" class="headerText">Launching soon on select college campuses.</p>
+				<p id="vote_prompt">Vote for yours, get Levr sooner: </p>
+				<input class="textIn" type="text" id="college_select" name="college_select" placeholder="Start typing the name of your college...">
+				<button id="vote" hidden>Vote</button>
+				<p id="vote_confirm"></p>
+				<!--p class="pane_header">Boston University, Harvard University</p-->
+				<!--p class="headerText">Up next: </p>
+				<p class="pane_header">(University names)</p-->
+				</br>
+				<!--div id="download">
+					<img class="downloadbtn" src="../img/google_play_soon.png">
+					<img class="downloadbtn" src="../img/app_store_soon.png">
+				</div-->
+				<div id="download"><img id="download2" src="../img/appsoon.png"></div>
+			</div>
+		</div>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/jquery-ui.min.js"></script>
+		<script src="../js/jquery.cookie.js"></script>
+		 
+		<script src="../js/landing.js"></script>
+	</body>
+</html>

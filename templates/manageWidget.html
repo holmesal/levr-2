@@ -1,0 +1,30 @@
+{% extends "templates/merchantsBase.html" %}
+
+{% block htmlhead %}
+<link rel="stylesheet" href="/css/manageWidget.css">
+{% endblock %}
+
+{% block content %}
+<div id='main'>
+	<div id="top">
+		<h2>Convert web traffic into paying customers.</h2>
+		<!-- 
+		<input type="text" id='widget_tag' readonly="readonly" value="{{ frame }}" />
+		 -->
+		
+	</div>
+	<div id="body">
+		<div id="left">
+			<div id="topText"  ><p>Engage customers visiting your website with this embeddable widget.</p> <p>To add the widget, simply copy and paste this code into your website.</p></div>
+			<textarea rows="4" cols="40">{{frame}}</textarea>
+			<div id="bottomText">If you need help, or don't know what to do, try <a href="mailto:feedback@levr.com?Subject=Widget%20Support">contacting us</a>. We can help you out.</div>
+		</div>
+		<div id="right">
+			<iframe src="/widget?id={{ businessID }}" frameborder='0' border="0" width='620' height='350' >Your Widget</iframe>
+		</div>
+	
+	</div>
+		
+	
+</div>
+{% endblock %}
