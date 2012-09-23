@@ -12,8 +12,8 @@ def missing_param(self,param):
 	
 	self.response.out.write(json.dumps(reply))
 	
-def packageUser(user,privacyLevel):
-	pass
+def package_user(user,privacyLevel):
+	return {'user':'This is a placeholder for the user, which will be packaged later'}
 	
 def send_response(self,response,user=None):
 	#build meta object

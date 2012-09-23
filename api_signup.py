@@ -15,17 +15,13 @@ class SignupFacebookHandler(webapp2.RequestHandler):
 			api_utils.missing_param(self,'token')
 			return
 		
-		customer = levr.Customer
-		customer.new_notifications = 534
-		customer.facebook_token = 'asd123'
-		customer.put()
-		
 		#check if token currently exists in datastore
 		existing_user = levr.Customer.gql('WHERE facebook_token = :1',token).get()
 		
 		if existing_user:
 			#user already exists and is trying to log in again, return this user
-			pass
+			response = api_utils.package_user(existing_user,'private')
+			api_utils.send_response(self,response,existing_user)
 		else:
 			#user does not exist, create new and populate via facebook API
 			pass
