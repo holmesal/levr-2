@@ -1,10 +1,10 @@
 import json
 
-def missing_param(self,param):
+def send_error(self,error):
 	reply = {
 			'meta':{
 				'success':False,
-				'error':'Required parameter not passed: '+param
+				'error':error
 			},
 			'alerts':{},
 			'response':{}
