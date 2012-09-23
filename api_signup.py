@@ -1,7 +1,7 @@
 import webapp2
 import logging
 import api_utils
-import levr_classes
+import levr_classes as levr
 from google.appengine.ext import db
 
 
@@ -14,9 +14,15 @@ class SignupFacebookHandler(webapp2.RequestHandler):
 		if token == '':
 			self.response.out.write(api_utils.missing_param('token'))
 			return
-			
-		#check if token currently exists in datastore
 		
+		#check if token currently exists in datastore
+		existing_user = levr.Customer.gql('WHERE facebook_token = :1',token).get()
+		
+		if existing_user:
+			#user already exists and is trying to log in again, return this user
+			
+		else:
+			#user does not exist, create new and populate via facebook API
 		
 
 class SignupFoursquareHandler(webapp2.RequestHandler):

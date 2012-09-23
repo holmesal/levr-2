@@ -9,3 +9,7 @@ def missing_param(param):
 			}
 		}
 	})
+	
+def packageUser(user,privacyLevel):
+	pass
+	

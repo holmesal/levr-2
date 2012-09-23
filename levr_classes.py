@@ -28,7 +28,9 @@ class Customer(db.Model):
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	date_last_edited= db.DateTimeProperty(auto_now_add=True)
 	date_last_login = db.DateTimeProperty(auto_now=True)
+	facebook_token= db.StringProperty()
 	foursquare_token= db.StringProperty()
+	twitter_token= db.StringProperty()
 	
 	def increment_new_redeem_count(self):
 		logging.info('incrementing!')
