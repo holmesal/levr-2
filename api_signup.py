@@ -15,6 +15,11 @@ class SignupFacebookHandler(webapp2.RequestHandler):
 			api_utils.missing_param(self,'token')
 			return
 		
+		customer = levr.Customer
+		customer.new_notifications = 534
+		customer.facebook_token = 'asd123'
+		customer.put()
+		
 		#check if token currently exists in datastore
 		existing_user = levr.Customer.gql('WHERE facebook_token = :1',token).get()
 		

@@ -20,11 +20,6 @@ def send_response(self,response,user=None):
 	meta = {'success':True,
 			'error':''}
 	
-	customer = levr.Customer
-	customer.new_notifications = 534
-	customer.facebook_token = 'asd123'
-	customer.put()
-	
 	#build alerts object		
 	#only send back alerts with private (user-authenticated) responses (optional parameter user)
 	if user != None:
