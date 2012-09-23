@@ -1,17 +1,24 @@
-import os
 import webapp2
-import jinja2
 import logging
 
 
-class UploadRequestHandler(webapp2.RequestHandler):
-	def get(self):
-		pass
-
-class UploadPostHandler(webapp2.RequestHandler):
+class SearchNewHandler(webapp2.RequestHandler):
 	def get(self):
 		pass
 		
+class SearchHotHandler(webapp2.RequestHandler):
+	def get(self):
+		pass
 		
-app = webapp2.WSGIApplication([('/api/upload/request', UploadRequestHandler),
-								('/api/upload/post', UploadPostHandler)],debug=True)
+class SearchPopularHandler(webapp2.RequestHandler):
+	def get(self):
+		pass
+		
+class SearchQueryHandler(webapp2.RequestHandler):
+	def get(self):
+		pass
+		
+app = webapp2.WSGIApplication([('/api/search/new', SearchNewHandler),
+								('/api/search/hot', SearchHotHandler),
+								('/api/search/popular', SearchPopularHandler),
+								('/api/search.*', SearchQueryHandler)],debug=True)

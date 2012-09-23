@@ -1,19 +1,20 @@
-import os
 import webapp2
-import jinja2
 import logging
 
 
 class RedeemHandler(webapp2.RequestHandler):
 	def get(self,dealID):
-		self.response.out.write('Redeem')
+		#RESTRICTED
+		pass
 
 class AddFavoriteHandler(webapp2.RequestHandler):
 	def get(self,dealID):
+		#RESTRICTED
 		pass
 		
 class DeleteFavoriteHandler(webapp2.RequestHandler):
 	def get(self,dealID):
+		#RESTRICTED
 		pass
 		
 class ReportHandler(webapp2.RequestHandler):
