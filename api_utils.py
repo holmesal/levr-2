@@ -1,5 +1,5 @@
 import json
-
+import levr_encrypt as enc
 def send_error(self,error):
 	reply = {
 			'meta':{
@@ -11,7 +11,34 @@ def send_error(self,error):
 	}
 	
 	self.response.out.write(json.dumps(reply))
-
+def check_param(self,parameter,is_key=False):
+	#check if parameter sent in params
+	if parameter not in self.request.params:
+		#parameter was not passed
+		send_error(self,'Required parameter not passed: %s',parameter)
+		return False
+	else:
+		#parameter is passed
+		logging.info(parameter)
+		if not parameter:
+			#parameter is empty
+			send_error(self,'Required parameter not passed: %s',parameter)
+			return False
+		else:
+			#parameter is not empty
+			#if parameter is an entity key, make sure
+			if is_key == True:
+				#parameter is an entity key
+				try:
+					parameter = enc.decrypt_key(parameter)
+					parameter = db.Key(parameter)
+				except:
+					send_error('Invalid parameter: %s',parameter)
+					return False
+				else:
+					return True
+			else:
+				return True
 
 def package_deal(deal,privacyLevel='public'):
 	response = {
