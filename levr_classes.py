@@ -170,8 +170,8 @@ def package_deal(deal):
 							'businessName'	: deal.business_name,
 							'geoPoint'		: deal.geo_point,
 							'geoHash'		: deal.geo_hash
-							}
-			'dealID'	: enc.encrypt_key(deal.key()),
+							},
+			'dealID'	: enc.encrypt_key(deal.key())
 			
 			}
 
@@ -214,8 +214,8 @@ class CustomerDeal(Deal):
 	
 
 class Notification(db.Model):
-	type			= db.StringProperty(required=True,choices=set(['redemption','thanks','friendUpload','newFollower']))
-	user			= db.ReferenceProperty(Customer,set='notifications',required=True)
+	notification_type = db.StringProperty(required=True,choices=set(['redemption','thanks','friendUpload','newFollower']))
+	user			= db.ReferenceProperty(Customer,collection_name='notifications',required=True)
 	deal			= db.ReferenceProperty(Deal)
 	follower		= db.ReferenceProperty(Customer)
 	
