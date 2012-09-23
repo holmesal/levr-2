@@ -15,11 +15,12 @@ class UserFavoritesHandler(webapp2.RequestHandler):
 				[string,string]
 				}
 		'''
+		#RESTRICTED
 		try:
 			pass
 		except:
 			levr.log_error(levr_utils.log_dir(self.request))
-		#RESTRICTED
+		
 
 class UserUploadsHandler(webapp2.RequestHandler):
 	def get(self,uid):

@@ -17,18 +17,18 @@ class Customer(db.Model):
 	pw 				= db.StringProperty()
 	alias			= db.StringProperty(default='')
 	group			= db.StringProperty(choices=set(["paid","unpaid"]),default="paid")
-	#stats
 	money_earned	= db.FloatProperty(default = 0.0) #new earning for all deals
 	money_available = db.FloatProperty(default = 0.0) #aka payment pending
 	money_paid		= db.FloatProperty(default = 0.0) #amount we have transfered
-	redemptions		= db.StringListProperty(default = [])	#id's of all of their redeemed deals
-	new_redeem_count= db.IntegerProperty(default = 0) #number of unseen redemptions
-	vicinity		= db.StringProperty(default='') #the area of the user, probably a college campus
+#	redemptions		= db.StringListProperty(default = [])	#id's of all of their redeemed deals
+#	new_redeem_count= db.IntegerProperty(default = 0) #number of unseen redemptions
+#	vicinity		= db.StringProperty(default='') #the area of the user, probably a college campus
 	favorites		= db.ListProperty(db.Key,default=[])
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	date_last_edited= db.DateTimeProperty(auto_now_add=True)
 	date_last_login = db.DateTimeProperty(auto_now=True)
 	foursquare_token= db.StringProperty()
+	
 	
 	def increment_new_redeem_count(self):
 		logging.info('incrementing!')
@@ -75,16 +75,6 @@ class Customer(db.Model):
 		return count
 
 
-	def echo_stats(self):
-		logging.info('Customer money earned: ' 		+ str(self.money_earned))
-		logging.info('Customer money available: ' 	+ str(self.money_available))
-		logging.info('Customer money paid: ' 		+ str(self.money_paid))
-		
-	
-#class Redemption(db.Model):
-#child of customer
-#	dealID
-	
 
 
 class BusinessOwner(db.Model):
@@ -106,7 +96,7 @@ class Business(db.Model):
 	targeted		= db.BooleanProperty(default=False)
 	owner			= db.ReferenceProperty(BusinessOwner,collection_name='businesses')
 	upload_email	= db.EmailProperty()
-	creation_date	= db.DateTimeProperty(auto_now_add=True)
+#	creation_date	= db.DateTimeProperty(auto_now_add=True)
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	date_last_edited= db.DateTimeProperty(auto_now=True)
 	widget_id		= db.StringProperty(default=levr_utils.create_unique_id())
@@ -121,33 +111,39 @@ class Business(db.Model):
 		#takes a business, and returns critical properties taggified
 		business_name	= tagger(self.business_name)
 		tags.extend(business_name)
-		vicinity		= tagger(self.vicinity)
-		tags.extend(vicinity)
-		
+#		vicinity		= tagger(self.vicinity)
+#		tags.extend(vicinity)
+#		
 		for t in self.types:
 			t			= tagger(t)
 			tags.extend(t)
 		
-		
-		
-		
-		
 		return tags
 	
+def package_business(business):
+	response = {
+			'businessID'	: enc.encrypt_key(business.key()),
+			'businessName'	: business.business_name,
+			'vicinity'		: business.vicinity,
+			'geoPoint'		: business.geo_point,
+			'geoHash'		: business.geo_hash
+			}
+	return response
+
 class Deal(polymodel.PolyModel):
 #Child of business owner OR customer ninja
 	#deal information
 	img				= blobstore.BlobReferenceProperty()
 	barcode			= blobstore.BlobReferenceProperty()
-	businessID 		= db.StringProperty(default='') #CHANGE TO REFERENCEPROPERTY
+	businessID 		= db.ReferenceProperty(Business,collection_name='deals') #CHANGE TO REFERENCEPROPERTY
 	business_name 	= db.StringProperty(default='') #name of business
-	secondary_name 	= db.StringProperty(default='') #== with purchase of
-	deal_type 		= db.StringProperty(choices=set(["single","bundle"])) #two items or one item
+#	secondary_name 	= db.StringProperty(default='') #== with purchase of
+#	deal_type 		= db.StringProperty(choices=set(["single","bundle"])) #two items or one item
 	deal_text		= db.StringProperty(default='')
 	is_exclusive	= db.BooleanProperty(default=False)
 	share_id		= db.StringProperty(default=levr_utils.create_unique_id())
 	description 	= db.StringProperty(multiline=True,default='') #description of deal
-	date_start 		= db.DateTimeProperty(auto_now_add=False) #start date
+#	date_start 		= db.DateTimeProperty(auto_now_add=False) #start date
 	date_end 		= db.DateTimeProperty(auto_now_add=False)
 	count_redeemed 	= db.IntegerProperty(default = 0) 	#total redemptions
 	count_seen 		= db.IntegerProperty(default = 0)  #number seen
@@ -160,9 +156,21 @@ class Deal(polymodel.PolyModel):
 	tags			= db.ListProperty(str)
 	rank			= db.IntegerProperty(default = 0)
 	has_been_shared	= db.BooleanProperty(default = False)
-	date_uploaded	= db.DateTimeProperty(auto_now_add=True)
+#	date_uploaded	= db.DateTimeProperty(auto_now_add=True)
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	date_last_edited= db.DateTimeProperty(auto_now=True)
+
+def package_deal(deal):
+	response = {
+			'business'	: {
+							'businessID'	: enc.encrypt_key(businessID),
+							'businessName'	: deal.business_name,
+							'geoPoint'		: deal.geo_point,
+							'geoHash'		: deal.geo_hash
+							}
+			'dealID'	: enc.encrypt_key(deal.key()),
+			
+			}
 
 class CustomerDeal(Deal):
 #Sub-class of deal
@@ -201,18 +209,14 @@ class CustomerDeal(Deal):
 			
 		return difference
 	
-	def echo_stats(self):
-		logging.info('Deal money earned: ' + str(self.earned_total))
-		logging.info('Deal money paid: ' + str(self.paid_out))
 
-class EmptySetResponse(db.Model):
-#root class
-	primary_cat		= db.StringProperty()
-	img				= blobstore.BlobReferenceProperty()
-	index			= db.IntegerProperty()
-	date_created	= db.DateTimeProperty(auto_now_add=True)
-	date_last_edited= db.DateTimeProperty(auto_now=True)
+class Notification(db.Model):
+	type			= db.StringProperty(required=True,choices=set(['redemption','thanks','friendUpload','newFollower']))
+	user			= db.ReferenceProperty(Customer,set='notifications',required=True)
+	deal			= db.ReferenceProperty(Deal)
+	follower		= db.ReferenceProperty(Customer)
 	
+
 class CashOutRequest(db.Model):
 #child of ninja
 	amount			= db.FloatProperty()
@@ -236,6 +240,7 @@ class BusinessBetaRequest(db.Model):
 	contact_email	= db.StringProperty()
 	contact_phone	= db.StringProperty()
 	date_created	= db.DateTimeProperty(auto_now_add=True)
+
 
 
 #functions!
@@ -347,6 +352,7 @@ def geo_converter(geo_str):
 	return None
 
 def tagger(text): 
+	# text is a string
 #	parsing function for creating tags from description, etc
 	#replace underscores with spaces
 	text.replace("_"," ")
