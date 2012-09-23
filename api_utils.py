@@ -11,9 +11,9 @@ def send_error(self,error):
 	}
 	
 	self.response.out.write(json.dumps(reply))
-	
 
-def package_deal(deal,privacyLevel):
+
+def package_deal(deal,privacyLevel='public'):
 	response = {
 			'barcode'		: deal.barcode,
 			'business'		: {
@@ -37,7 +37,7 @@ def package_deal(deal,privacyLevel):
 			'tags'			: deal.tags
 			}
 	return response
-def package_user(user,privacyLevel):
+def package_user(user,privacyLevel='public'):
 	return {'user':'This is a placeholder for the user, which will be packaged later'}
 	
 def send_response(self,response,user=None):
