@@ -1,0 +1,25 @@
+bin
+
+#pats local files
+.metadata
+.project
+.pydevproject
+todo*
+test.py
+Copy*
+Crypto/
+pycrypto-2.3*
+python-geohash-*
+org.eclipse*
+
+
+#extraneous files
+*.pyc
+*~
+.DS_store
+
+#old files
+*.old
+
+#git mergetool files
+*.orig
