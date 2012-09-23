@@ -16,7 +16,7 @@ class Customer(db.Model):
 	payment_email	= db.EmailProperty()
 	pw 				= db.StringProperty()
 	alias			= db.StringProperty(default='')
-	group			= db.StringProperty(choices=set(["paid","unpaid"]),default="paid")
+	group			= db.StringProperty(choices=set(["paid","unpaid"]),default="unpaid")
 	money_earned	= db.FloatProperty(default = 0.0) #new earning for all deals
 	money_available = db.FloatProperty(default = 0.0) #aka payment pending
 	money_paid		= db.FloatProperty(default = 0.0) #amount we have transfered
@@ -164,7 +164,6 @@ class Deal(polymodel.PolyModel):
 	date_last_edited= db.DateTimeProperty(auto_now=True)
 
 
-
 class CustomerDeal(Deal):
 #Sub-class of deal
 #A deal that has been uploaded by a user
@@ -205,8 +204,8 @@ class CustomerDeal(Deal):
 
 class Notification(db.Model):
 	date			= db.DateTimeProperty(auto_now_add=True)
-	type			= db.StringProperty(required=True,choices=set(['redemption','thanks','friendUpload','newFollower']))
-	user			= db.ReferenceProperty(Customer,set='notifications',required=True)
+	notification_type = db.StringProperty(required=True,choices=set(['redemption','thanks','friendUpload','newFollower']))
+	user			= db.ReferenceProperty(Customer,collection_name='notifications',required=True)
 	deal			= db.ReferenceProperty(Deal)
 	follower		= db.ReferenceProperty(Customer)
 	

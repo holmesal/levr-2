@@ -12,8 +12,6 @@ def missing_param(self,param):
 	
 	self.response.out.write(json.dumps(reply))
 	
-def packageUser(user,privacyLevel):
-	pass
 
 def package_deal(deal,privacyLevel):
 	response = {
@@ -39,7 +37,12 @@ def package_deal(deal,privacyLevel):
 			'tags'			: deal.tags
 			}
 	return response
+def package_user(user,privacyLevel):
+	return {'user':'This is a placeholder for the user, which will be packaged later'}
+	
 def send_response(self,response,user=None):
+	'''The optional third argument should be passed a user object if this is a private response
+		and left out if a public response '''
 	#build meta object
 	meta = {'success':True,
 			'error':''}
