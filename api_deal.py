@@ -153,8 +153,8 @@ class DealInfoHandler(webapp2.RequestHandler):
 		
 		
 app = webapp2.WSGIApplication([('/api/deal/(.*)/redeem', RedeemHandler),
-								('/api/deal/(.*)/addFavorite', AddFavoriteHandler),
-								('/api/deal/(.*)/deleteFavorite', DeleteFavoriteHandler),
+								('/api/deal/(.*)/addfavorite', AddFavoriteHandler),
+								('/api/deal/(.*)/deletefavorite', DeleteFavoriteHandler),
 								('/api/deal/(.*)/report', ReportHandler),
 								('/api/deal/(.*)/img', DealImgHandler),
 								('/api/deal/(.*)', DealInfoHandler)
