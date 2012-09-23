@@ -621,3 +621,10 @@ def log_dict(obj,props=None):
 		logging.warning('There was an error in log_dict')
 	finally:
 		return log_str
+		
+def input_does_exist(test_input,key):
+	if test_input:
+		return test_input
+	else:
+		self.response.out.write('ARGFSGDJFKSJFB')
+		raise Exception('Required input not passed: '+key)
