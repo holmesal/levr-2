@@ -12,7 +12,7 @@ class SignupFacebookHandler(webapp2.RequestHandler):
 		#check token
 		token = self.request.get('token')
 		if token == '':
-			self.response.out.write(api_utils.missing_param('token'))
+			api_utils.missing_param(self,'token')
 			return
 		
 		#check if token currently exists in datastore
@@ -20,10 +20,10 @@ class SignupFacebookHandler(webapp2.RequestHandler):
 		
 		if existing_user:
 			#user already exists and is trying to log in again, return this user
-			
+			pass
 		else:
 			#user does not exist, create new and populate via facebook API
-		
+			pass
 
 class SignupFoursquareHandler(webapp2.RequestHandler):
 	def get(self):
