@@ -5,27 +5,27 @@ import logging
 
 
 class RedeemHandler(webapp2.RequestHandler):
-	def get(self,uid):
+	def get(self,dealID):
 		self.response.out.write('Redeem')
 
 class AddFavoriteHandler(webapp2.RequestHandler):
-	def get(self,uid):
+	def get(self,dealID):
 		pass
 		
 class DeleteFavoriteHandler(webapp2.RequestHandler):
-	def get(self,uid):
+	def get(self,dealID):
 		pass
 		
 class ReportHandler(webapp2.RequestHandler):
-	def get(self,uid):
+	def get(self,dealID):
 		pass
 
 class DealImgHandler(webapp2.RequestHandler):
-	def get(self,uid):
+	def get(self,dealID):
 		pass
 
 class DealInfoHandler(webapp2.RequestHandler):
-	def get(self,uid):
+	def get(self,dealID):
 		self.response.out.write('Deal Info')
 		
 		
