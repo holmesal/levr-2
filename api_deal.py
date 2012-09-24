@@ -61,12 +61,12 @@ class RedeemHandler(webapp2.RequestHandler):
 			logging.info(dealID)
 			logging.info(self.request.get('uid'))
 #			
-			if not api_utils.check_param(self,dealID,'dealID',True):
+			if not api_utils.check_param(self,dealID,'dealID','key',True):
 				return
 			else:
 				dealID = db.Key(enc.decrypt_key(dealID))
 			uid = self.request.get('uid')
-			if not api_utils.check_param(self,uid,'uid',True):
+			if not api_utils.check_param(self,uid,'uid','key',True):
 				return
 			else:
 				uid = db.Key(enc.decrypt_key(uid))
@@ -111,13 +111,13 @@ class AddFavoriteHandler(webapp2.RequestHandler):
 			logging.info(dealID)
 			logging.info(self.request.get('uid'))
 #			
-			if not api_utils.check_param(self,dealID,'dealID',True):
+			if not api_utils.check_param(self,dealID,'dealID','key',True):
 				return
 			else:
 				dealID = db.Key(enc.decrypt_key(dealID))
 				logging.debug(dealID)
 			uid = self.request.get('uid')
-			if not api_utils.check_param(self,uid,'uid',True):
+			if not api_utils.check_param(self,uid,'uid','key',True):
 				return
 			else:
 				uid = db.Key(enc.decrypt_key(uid))
@@ -153,13 +153,13 @@ class DeleteFavoriteHandler(webapp2.RequestHandler):
 			logging.info(dealID)
 			logging.info(self.request.get('uid'))
 #			
-			if not api_utils.check_param(self,dealID,'dealID',True):
+			if not api_utils.check_param(self,dealID,'dealID','key',True):
 				return
 			else:
 				dealID = db.Key(enc.decrypt_key(dealID))
 				logging.debug(dealID)
 			uid = self.request.get('uid')
-			if not api_utils.check_param(self,uid,'uid',True):
+			if not api_utils.check_param(self,uid,'uid','key',True):
 				return
 			else:
 				uid = db.Key(enc.decrypt_key(uid))
@@ -206,13 +206,13 @@ class ReportHandler(webapp2.RequestHandler):
 			logging.info(dealID)
 			logging.info(self.request.get('uid'))
 #			
-			if not api_utils.check_param(self,dealID,'dealID',True):
+			if not api_utils.check_param(self,dealID,'dealID','key',True):
 				return
 			else:
 				dealID = db.Key(enc.decrypt_key(dealID))
 				logging.debug(dealID)
 			uid = self.request.get('uid')
-			if not api_utils.check_param(self,uid,'uid',True):
+			if not api_utils.check_param(self,uid,'uid','key',True):
 				return
 			else:
 				uid = db.Key(enc.decrypt_key(uid))
@@ -276,10 +276,10 @@ class DealImgHandler(webapp2.RequestHandler):
 		Gets the image from the blobstoreReferenceProperty deal.img'''
 		try:
 			logging.info('img')
-			if not api_utils.check_param(self,dealID,'dealID',True):
+			if not api_utils.check_param(self,dealID,'dealID','key',True):
 				return
 			uid = self.request.get('size')
-			if not api_utils.check_param(self,size,'size',True):
+			if not api_utils.check_param(self,size,'size','key',True):
 				return
 			
 			
@@ -394,7 +394,7 @@ class DealInfoHandler(webapp2.RequestHandler):
 		try:
 			logging.info(dealID)
 #			
-			if not api_utils.check_param(self,dealID,'dealID',True):
+			if not api_utils.check_param(self,dealID,'dealID','key',True):
 				return
 			else:
 				dealID = db.Key(enc.decrypt_key(dealID))

@@ -14,19 +14,20 @@ def send_error(self,error):
 	}
 	
 	self.response.out.write(json.dumps(reply))
-def check_param(self,parameter,parameter_name,is_key=False):
+def check_param(self,parameter,parameter_name,param_type='str',required=True):
 	#check if parameter sent in params
 	#parameter is passed
 	logging.info(parameter_name+": "+str(parameter))
 	if not parameter:
 		logging.info("EERRRRR")
 		#parameter is empty
-		send_error(self,'Required parameter not passed: '+str(parameter_name))
+		if required == True:
+			send_error(self,'Required parameter not passed: '+str(parameter_name))
 		return False
 	else:
 		#parameter is not empty
 		#if parameter is an entity key, make sure
-		if is_key == True:
+		if param_type == 'key':
 			logging.info('HI')
 			#parameter is an entity key
 			try:
@@ -39,12 +40,16 @@ def check_param(self,parameter,parameter_name,is_key=False):
 				logging.debug(parameter)
 				logging.debug('end')
 			except:
-				send_error(self,'Invalid parameter: '+str(parameter_name))
+				if required == True:
+					send_error(self,'Invalid parameter: '+str(parameter_name)+"; "+str(parameter))
 				return False
-			else:
-				return True
-		else:
-			return True
+		elif param_type == 'int':
+			logging.debug('integer')
+			if not parameter.isDigit():
+				if required == True:
+					send_error(self,'Invalid parameter: '+str(parameter_name)+"; "+str(parameter))
+				return False
+	return True
 
 def package_deal(deal,privacyLevel='public'):
 	logging.debug(str(deal.geo_point))

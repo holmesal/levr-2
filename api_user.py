@@ -5,7 +5,7 @@ import logging
 class UserFavoritesHandler(webapp2.RequestHandler):
 	def get(self,uid):
 		'''
-		inputs: limit, offset
+		inputs: limit(optional), offset(optional)
 		Output:{
 			meta:{
 				success
@@ -17,7 +17,47 @@ class UserFavoritesHandler(webapp2.RequestHandler):
 		'''
 		#RESTRICTED
 		try:
-			pass
+			logging.info(uid)
+			logging.info(self.request.get('uid'))
+			
+			LIMIT_DEFAULT = 20
+			OFFSET_DEFAULT = 0
+			
+			if not api_utils.check_param(self,uid,'uid','key',True):
+				return
+			else:
+				uid = db.Key(enc.decrypt_key(uid))
+			
+			limit = self.request.get('limit')
+			if not api_utils.check_param(self,limit,'limit','int',False):
+				#limit not passed
+				limit = LIMIT_DEFAULT
+				
+			offset = self.request.get('offset')
+			if not api_utils.check_param(self,offset,'offset','int',False):
+				#limit not passed
+				offset = OFFSET_DEFAULT
+			
+			#grab user entity
+			user = levr.Customer.get(uid)
+			if not user:
+				api_utils.send_error(self,'Invalid uid: '+uid)
+				return
+			
+			#grab all favorites
+			favorites = user.favorites
+			
+			#check list is longer than offset
+				
+			#grab list from offset to end
+			#check list is longer than limit
+			
+			#grab list from beginning to limit or end
+			
+				#Hmmm What do we do here?
+			
+			
+			
 		except:
 			levr.log_error(levr_utils.log_dir(self.request))
 		
