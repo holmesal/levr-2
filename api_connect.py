@@ -3,6 +3,7 @@ import logging
 import api_utils
 import levr_classes as levr
 import levr_encrypt as enc
+import api_social as social
 from google.appengine.ext import db
 
 class ConnectFacebookHandler(webapp2.RequestHandler):
@@ -60,6 +61,9 @@ class ConnectFoursquareHandler(webapp2.RequestHandler):
 		user = levr.Customer.get(uid)
 		#add foursquare token
 		user.foursquare_token = token
+		#query foursquare for user data
+		user = social.foursquare_deets(user,token)
+
 		#update
 		user.put()
 		

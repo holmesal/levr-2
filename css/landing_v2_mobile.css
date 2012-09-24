@@ -3,9 +3,16 @@ body{
 	margin-left: auto;
 	margin-right: auto;
 	width: 100%;
-	max-width: 640px;
+	
 	background-image: url(../img/paper_no_shadow.jpg);
 	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+#top{
+	max-width: 640px;
+	display: block;
+	margin-left:auto;
+	margin-right: auto;
 }
 
 /*#welcome_top{
@@ -17,6 +24,19 @@ body{
 	background-repeat: no-repeat;
 	height: auto;
 }*/
+
+#home_map{
+	margin-top: 20px;
+	max-width: 60%;
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+#landing_v2_text{
+	margin-top: 20px;
+	width: 100%;
+}
 
 #welcome_top{
 	width:100%;
@@ -50,7 +70,7 @@ body{
 }
 
 #requestBeta{
-	font-size: 16pt;
+	font-size: 12pt;
 	margin-top: 10px;
 	margin-left: auto;
 	margin-right: auto;
@@ -65,11 +85,17 @@ body{
 }
 
 #vote_text{
-	margin-top: 100px;
+	margin-top: 80px;
+	width: 80%
 }
 
 .featureImg{
-	width: 100%;
+	width: 90%;
+	max-width: 450px;
+	margin-top: 20px;
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
 }
 
 #footer{
