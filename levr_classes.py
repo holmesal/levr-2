@@ -146,7 +146,7 @@ class Deal(polymodel.PolyModel):
 	#deal information
 	img				= blobstore.BlobReferenceProperty()
 	barcode			= blobstore.BlobReferenceProperty()
-	businessID 		= db.ReferenceProperty(Business,collection_name='deals') #CHANGE TO REFERENCEPROPERTY
+	businessID 		= db.StringProperty() #CHANGE TO REFERENCEPROPERTY
 	business_name 	= db.StringProperty(default='') #name of business
 	secondary_name 	= db.StringProperty(default='') #== with purchase of
 	deal_type 		= db.StringProperty(choices=set(["single","bundle"])) #two items or one item
