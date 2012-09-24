@@ -1,6 +1,11 @@
 import webapp2
 import logging
-
+import levr_encrypt as enc
+import levr_classes as levr
+import api_utils
+import levr_utils
+from google.appengine.ext import db
+#from google.appengine.api import mail
 
 class UserFavoritesHandler(webapp2.RequestHandler):
 	def get(self,uid):
@@ -18,7 +23,6 @@ class UserFavoritesHandler(webapp2.RequestHandler):
 		#RESTRICTED
 		try:
 			logging.info(uid)
-			logging.info(self.request.get('uid'))
 			
 			LIMIT_DEFAULT = 20
 			OFFSET_DEFAULT = 0
@@ -48,24 +52,39 @@ class UserFavoritesHandler(webapp2.RequestHandler):
 			favorites = user.favorites
 			
 			#check list is longer than offset
-				
+			if favorites.__len__() < offset:
+				offset = 0
 			#grab list from offset to end
+			favorites = favorites[offset:]
 			#check list is longer than limit
+			if favorites.__len__() > limit:
+				#there are more favorites than the limit requests so shorten favorites
+				favorites = favorites[:limit]
 			
-			#grab list from beginning to limit or end
+			#fetch all favorite entities
+			favorites = levr.Deal.get(favorites)
 			
-				#Hmmm What do we do here?
+			#package each deal object
+			deals = [api_utils.package_deal(deal,'public') for deal in favorites]
 			
+			#create response object
+			response = {
+					'numResults': str(favorites.__len__()),
+					'deals'		: deals
+					}
 			
+			#respond
+			api_utils.send_response(self,response,user)
 			
 		except:
-			levr.log_error(levr_utils.log_dir(self.request))
+			levr.log_error(self.request)
+			api_utils.send_error(self,'Server Error')
 		
 
 class UserUploadsHandler(webapp2.RequestHandler):
 	def get(self,uid):
 		'''
-		inputs: limit, offset
+		inputs: limit(optional), offset(optional)
 		Output:{
 			meta:{
 				success
@@ -76,9 +95,49 @@ class UserUploadsHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
-			pass
+			logging.info(uid)
+			
+			LIMIT_DEFAULT = 20
+			OFFSET_DEFAULT = 0
+			
+			if not api_utils.check_param(self,uid,'uid','key',True):
+				return
+			else:
+				uid = db.Key(enc.decrypt_key(uid))
+			
+			limit = self.request.get('limit')
+			if not api_utils.check_param(self,limit,'limit','int',False):
+				#limit not passed
+				limit = LIMIT_DEFAULT
+				
+			offset = self.request.get('offset')
+			if not api_utils.check_param(self,offset,'offset','int',False):
+				#limit not passed
+				offset = OFFSET_DEFAULT
+			
+#			#grab user entity
+#			user = levr.Customer.get(uid)
+#			if not user:
+#				api_utils.send_error(self,'Invalid uid: '+uid)
+#				return
+			
+			#grab all deals that are owned by the specified customer
+			deals = levr.Deal.all().ancestor(uid).fetch(limit,offset=offset)
+			
+			#package up the dealios
+			packaged_deals = [api_utils.package_deal(deal,'public') for deal in deals]
+			
+			#create response object
+			response = {
+					'numResults': str(packaged_deals.__len__()),
+					'deals'		: packaged_deals
+					}
+			
+			#respond
+			api_utils.send_response(self,response,user)
 		except:
-			levr.log_error(levr_utils.log_dir(self.request))
+			levr.log_error(self.request)
+			api_utils.send_error(self,'Server Error')
 		
 class UserFriendsHandler(webapp2.RequestHandler):
 	def get(self,uid):
@@ -97,9 +156,39 @@ class UserFriendsHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
-			pass
+			logging.info(uid)
+			
+			LIMIT_DEFAULT = 20
+			OFFSET_DEFAULT = 0
+			
+			if not api_utils.check_param(self,uid,'uid','key',True):
+				return
+			else:
+				uid = db.Key(enc.decrypt_key(uid))
+			
+			limit = self.request.get('limit')
+			if not api_utils.check_param(self,limit,'limit','int',False):
+				#limit not passed
+				limit = LIMIT_DEFAULT
+			
+			offset = self.request.get('offset')
+			if not api_utils.check_param(self,offset,'offset','int',False):
+				#limit not passed
+				offset = OFFSET_DEFAULT
+			
+			#grab user entity
+			logging.warning('START USER')
+			user = db.get(uid)
+			logging.warning('END USER')
+			if not user:
+				api_utils.send_error(self,'Invalid uid: '+uid)
+				return
+			
+			self.response.out.write('dooone')
+			
 		except:
-			levr.log_error(levr_utils.log_dir(self.request))
+			levr.log_error(self.request)
+			api_utils.send_error(self,'Server Error')
 		
 		
 class UserImgHandler(webapp2.RequestHandler):
@@ -132,7 +221,8 @@ class UserCashOutHandler(webapp2.RequestHandler):
 		try:
 			pass
 		except:
-			levr.log_error(levr_utils.log_dir(self.request))
+			levr.log_error(self.request)
+			api_utils.send_error(self,'Server Error')
 		
 class UserNotificationsHandler(webapp2.RequestHandler):
 	def get(self,uid):
@@ -153,7 +243,8 @@ class UserNotificationsHandler(webapp2.RequestHandler):
 		try:
 			pass
 		except:
-			levr.log_error(levr_utils.log_dir(self.request))
+			levr.log_error(self.request)
+			api_utils.send_error(self,'Server Error')
 		
 		
 class UserInfoHandler(webapp2.RequestHandler):
@@ -173,7 +264,8 @@ class UserInfoHandler(webapp2.RequestHandler):
 		try:
 			pass
 		except:
-			levr.log_error(levr_utils.log_dir(self.request))
+			levr.log_error(self.request)
+			api_utils.send_error(self,'Server Error')
 		
 		
 		

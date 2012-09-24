@@ -20,9 +20,9 @@ class Customer(db.Model):
 	money_earned	= db.FloatProperty(default = 0.0) #new earning for all deals
 	money_available = db.FloatProperty(default = 0.0) #aka payment pending
 	money_paid		= db.FloatProperty(default = 0.0) #amount we have transfered
-#	redemptions		= db.StringListProperty(default = [])	#id's of all of their redeemed deals
-#	new_redeem_count= db.IntegerProperty(default = 0) #number of unseen redemptions
-#	vicinity		= db.StringProperty(default='') #the area of the user, probably a college campus
+	redemptions		= db.StringListProperty(default = [])	#id's of all of their redeemed deals
+	new_redeem_count= db.IntegerProperty(default = 0) #number of unseen redemptions
+	vicinity		= db.StringProperty(default='') #the area of the user, probably a college campus
 	favorites		= db.ListProperty(db.Key,default=[])
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	date_last_edited= db.DateTimeProperty(auto_now_add=True)
@@ -34,6 +34,11 @@ class Customer(db.Model):
 	first_name		= db.StringProperty(default='')
 	last_name		= db.StringProperty(default='')
 	photo			= db.StringProperty(default='')
+	following		= db.ListProperty(db.Key)
+	
+	@property
+	def followers(self):
+		return levr.Customer.all().filter('following',self.key())
 	
 	
 	def increment_new_redeem_count(self):
@@ -143,13 +148,13 @@ class Deal(polymodel.PolyModel):
 	barcode			= blobstore.BlobReferenceProperty()
 	businessID 		= db.ReferenceProperty(Business,collection_name='deals') #CHANGE TO REFERENCEPROPERTY
 	business_name 	= db.StringProperty(default='') #name of business
-#	secondary_name 	= db.StringProperty(default='') #== with purchase of
-#	deal_type 		= db.StringProperty(choices=set(["single","bundle"])) #two items or one item
+	secondary_name 	= db.StringProperty(default='') #== with purchase of
+	deal_type 		= db.StringProperty(choices=set(["single","bundle"])) #two items or one item
 	deal_text		= db.StringProperty(default='')
 	is_exclusive	= db.BooleanProperty(default=False)
 	share_id		= db.StringProperty(default=levr_utils.create_unique_id())
 	description 	= db.StringProperty(multiline=True,default='') #description of deal
-#	date_start 		= db.DateTimeProperty(auto_now_add=False) #start date
+	date_start 		= db.DateTimeProperty(auto_now_add=False) #start date
 	date_end 		= db.DateTimeProperty(auto_now_add=False)
 	count_redeemed 	= db.IntegerProperty(default = 0) 	#total redemptions
 	count_seen 		= db.IntegerProperty(default = 0)  #number seen
@@ -162,7 +167,7 @@ class Deal(polymodel.PolyModel):
 	tags			= db.ListProperty(str)
 	rank			= db.IntegerProperty(default = 0)
 	has_been_shared	= db.BooleanProperty(default = False)
-#	date_uploaded	= db.DateTimeProperty(auto_now_add=True)
+	date_uploaded	= db.DateTimeProperty(auto_now_add=True)
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	date_last_edited= db.DateTimeProperty(auto_now=True)
 
