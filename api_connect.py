@@ -33,7 +33,7 @@ class ConnectFacebookHandler(webapp2.RequestHandler):
 		user.put()
 		
 		#return the user
-		response = api_utils.package_user(user,'private')
+		response = {'user':api_utils.package_user(user,'private')}
 		api_utils.send_response(self,response,user)
 
 
@@ -64,7 +64,7 @@ class ConnectFoursquareHandler(webapp2.RequestHandler):
 		user.put()
 		
 		#return the user
-		response = api_utils.package_user(user,'private')
+		response = {'user':api_utils.package_user(user,'private')}
 		api_utils.send_response(self,response,user)
 		
 class ConnectTwitterHandler(webapp2.RequestHandler):
@@ -95,7 +95,7 @@ class ConnectTwitterHandler(webapp2.RequestHandler):
 		user.put()
 		
 		#return the user
-		response = api_utils.package_user(user,'private')
+		response = {'user':api_utils.package_user(user,'private')}
 		api_utils.send_response(self,response,user)
 
 

@@ -81,9 +81,9 @@ def package_user(user,privacyLevel='public'):
 		alias = 'Clint Eastwood'
 	
 	packaged_user = {
-		'uid'			: str(user.key()),
+		'uid'			: enc.encrypt_key(str(user.key())),
 		'alias'			: alias,
-		'dateCreated'	: user.date_created,
+		'dateCreated'	: user.date_created.__str__()[:19],
 		'firstName'		: user.first_name,
 		'lastName'		: user.last_name,
 		'photo'			: user.photo
@@ -98,7 +98,7 @@ def package_business(business):
 		'vicinity'		: business.vicinity,
 		'owner'			: business.owner,
 		'foursquareID'	: business.foursquare_id,
-		'foursquareName': business.foursquare_name
+		'foursquareName': business.foursquare_name,
 		'geoPoint'		: str(deal.geo_point),
 		'geoHash'		: deal.geo_hash
 						}
