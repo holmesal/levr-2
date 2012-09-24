@@ -53,15 +53,9 @@ def check_param(self,parameter,parameter_name,param_type='str',required=True):
 
 def package_deal(deal,privacyLevel='public'):
 	logging.debug(str(deal.geo_point))
-	response = {
+	packaged_deal = {
 			'barcode'		: deal.barcode,
-			'business'		: {
-								'businessID'	: enc.encrypt_key(deal.businessID),
-								'businessName'	: deal.business_name,
-								'geoPoint'		: str(deal.geo_point)
-								,
-								'geoHash'		: deal.geo_hash
-							},
+			'business'		: package_business(levr.Business.gql('WHERE businessID = :1',deal.businessID)),
 			'dateUploaded'	: str(deal.date_end),
 			'dealID'		: enc.encrypt_key(deal.key()),
 			'dealText'		: deal.deal_text,
@@ -76,11 +70,39 @@ def package_deal(deal,privacyLevel='public'):
 			'shareURL'		: levr_utils.create_share_url(deal),
 			'tags'			: deal.tags
 			}
-	return response
+	return packaged_deal
 def package_user(user,privacyLevel='public'):
 	'''alias is added by us, first_name and last_name should be added by all other services (foursquare for sure right now)'''
+	if user.alias != '':
+		alias  = user.alias
+	elif user.first_name != '':
+		alias = user.first_name + ' ' + user.last_name[0] + '.'
+	else:
+		alias = 'Clint Eastwood'
 	
-	return {'user':'This is a placeholder for the user, which will be packaged later'}
+	packaged_user = {
+		'uid'			: enc.encrypt_key(str(user.key())),
+		'alias'			: alias,
+		'dateCreated'	: user.date_created.__str__()[:19],
+		'firstName'		: user.first_name,
+		'lastName'		: user.last_name,
+		'photo'			: user.photo
+	}
+	
+	return packaged_user
+	
+def package_business(business):
+	packaged_business = {
+		'businessID'	: enc.encrypt_key(str(business.key())),
+		'businessName'	: business.business_name,
+		'vicinity'		: business.vicinity,
+		'owner'			: business.owner,
+		'foursquareID'	: business.foursquare_id,
+		'foursquareName': business.foursquare_name,
+		'geoPoint'		: str(deal.geo_point),
+		'geoHash'		: deal.geo_hash
+						}
+	return packaged_business
 	
 def send_response(self,response,user=None):
 	'''The optional third argument should be passed a user object if this is a private response
