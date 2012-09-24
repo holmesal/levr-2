@@ -59,6 +59,8 @@ $(window).load(function(){
 	//$('#img1').delay(delay).animate({'margin-left':'-254px'}).delay(delay).animate({'margin-left':'-508px'}).delay(delay)
 	//$('#textImg').delay(delay).animate({'margin-left':'-400px'}).delay(delay).animate({'margin-left':'-800px'}).delay(delay,animDone())
 	
+	//$('#scrollImg').delay(delay).animate({opacity:1})
+	
 	//click listeners for votes
 	$('.featureImg').click(function(event){
 		var item = event.target.id;
@@ -82,13 +84,11 @@ $(window).load(function(){
 	})*/
 	
 	//click listeners for mobile button
-	$('#welcome_top').click(function(){
+	$('#home_map').click(function(){
 		/*$('html, body').animate({
 		    scrollTop: $(".middle").offset().top
 		 }, 2000);*/
-		 $('body').animate({
-			 scrollTop: 500
-		 },500);
+		 $('body').animate({scrollTop: $('#landing_v2_text').offset().top},1000)
 	})
 		
 	

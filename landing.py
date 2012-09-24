@@ -14,9 +14,14 @@ class landing(webapp2.RequestHandler):
 		uastring = str(self.request.headers['user-agent'])
 		
 		if 'Mobile' in uastring:
-			logging.info('THIS IS A MOBILE DEVICE')
-			#serve mobile landing page
-			template = jinja_environment.get_template('templates/landing_v2_mobile.html')
+			if 'iPad' in uastring:
+				logging.info('THIS IS AN iPad')
+				#serve desktop landing page
+				template = jinja_environment.get_template('templates/landing_v2.html')
+			else:
+				logging.info('THIS IS A MOBILE DEVICE')
+				#serve mobile landing page
+				template = jinja_environment.get_template('templates/landing_v2_mobile.html')
 		else:
 			logging.info('THIS IS A DESKTOP DEVICE')
 			#serve desktop landing page
