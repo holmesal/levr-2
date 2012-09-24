@@ -56,8 +56,8 @@ $(window).load(function(){
 
 
 	var delay = 1000;
-	$('#img1').delay(delay).animate({'margin-left':'-254px'}).delay(delay).animate({'margin-left':'-508px'}).delay(delay)
-	$('#textImg').delay(delay).animate({'margin-left':'-400px'}).delay(delay).animate({'margin-left':'-800px'}).delay(delay,animDone())
+	//$('#img1').delay(delay).animate({'margin-left':'-254px'}).delay(delay).animate({'margin-left':'-508px'}).delay(delay)
+	//$('#textImg').delay(delay).animate({'margin-left':'-400px'}).delay(delay).animate({'margin-left':'-800px'}).delay(delay,animDone())
 	
 	//click listeners for votes
 	$('.featureImg').click(function(event){
