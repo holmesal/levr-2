@@ -16,8 +16,6 @@ class Customer(db.Model):
 	payment_email	= db.EmailProperty()
 	pw 				= db.StringProperty()
 	alias			= db.StringProperty(default='')
-	first_name		= db.StringProperty(default='')
-	last_name		= db.StringProperty(default='')
 	group			= db.StringProperty(choices=set(["paid","unpaid"]),default="unpaid")
 	money_earned	= db.FloatProperty(default = 0.0) #new earning for all deals
 	money_available = db.FloatProperty(default = 0.0) #aka payment pending
@@ -33,6 +31,9 @@ class Customer(db.Model):
 	foursquare_token= db.StringProperty()
 	twitter_token	= db.StringProperty()
 	new_notifications = db.IntegerProperty(default=0)
+	first_name		= db.StringProperty(default='')
+	last_name		= db.StringProperty(default='')
+	photo			= db.StringProperty(default='')
 	
 	
 	def increment_new_redeem_count(self):
