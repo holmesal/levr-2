@@ -34,11 +34,18 @@ class Customer(db.Model):
 	first_name		= db.StringProperty(default='')
 	last_name		= db.StringProperty(default='')
 	photo			= db.StringProperty(default='')
-	following		= db.ListProperty(db.Key)
+	followers		= db.ListProperty(db.Key)
+	date_last_notified = db.DateTimeProperty(auto_now_add=True)
 	
 	@property
-	def followers(self):
-		return levr.Customer.all().filter('following',self.key())
+	def following(self):
+		#returns a query object that will return all followers of this user entity
+		return levr.Customer.all().filter('followers',self.key())
+	
+	def get_notifications(self,date=None):
+		#returns a query object for all notifications since the specified date
+		#reset user date_last_notified
+		return levr.Notification.all().filter('to_be_notified',self.key()).filter('date_last_notified >=',date)
 	
 	
 	def increment_new_redeem_count(self):
@@ -212,10 +219,11 @@ class CustomerDeal(Deal):
 
 class Notification(db.Model):
 	date			= db.DateTimeProperty(auto_now_add=True)
-	notification_type = db.StringProperty(required=True,choices=set(['redemption','thanks','friendUpload','newFollower']))
-	user			= db.ReferenceProperty(Customer,collection_name='notifications',required=True)
-	deal			= db.ReferenceProperty(Deal)
-	follower		= db.ReferenceProperty(Customer)
+	notification_type = db.StringProperty(required=True,choices=set(['redemption','thanks','followerUpload','newFollower']))
+#	owner			= db.ReferenceProperty(Customer,collection_name='notifications',required=True)
+	to_be_notified	= db.ListProperty(db.Key)
+	deal			= db.ReferenceProperty(Deal,collection_name='notifications')
+	actor			= db.ReferenceProperty(Customer)
 	
 
 class CashOutRequest(db.Model):

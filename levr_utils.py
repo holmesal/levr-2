@@ -24,7 +24,75 @@ else:
 	URL = 'http://www.levr.com'
 	development = False
 
+def create_notification(notification_type,to_be_notified,actor,deal=None):
+	'''
+	notification_type	= choices: 'redemption', 'thanks', 'followerUpload', 'newFollower'
+						The action being performed
+	to_be_notified		= [db.Key,db.Key,db.Key,...]
+						The people or entities to be notified of this action
+	deal				= db.Key
+						The deal in question
+	actor				= db.Key
+						The person performing the action
+	'''
+	try:
+		#type cast to_be_notified as a list
+		if type(to_be_notified) != list:
+			#to_be_notified is not a list, make it one
+			#this allows to_be_notified to be passed as a single value
+			to_be_notified = [to_be_notified]
+		
+		#create and put the notification
+		notification = levr.Notification(
+										notification_type	= notification_type,
+										to_be_notified		= to_be_notified,
+										actor				= actor,
+										deal				= deal #default to None
+										)
+		notification.put()
+		logging.debug(levr_utils.log_model_props(notification))
+		if notification_type == 'redemption' or notification_type == 'thanks' or notification_type == 'followerUpload':
+			#select necessary properties
+			properties = ['new_notifications']
+			
+			#users = the people to be notified
+			users = levr.Customer.get(to_be_notified,projection=properties)
+			
+			for user in users:
+				user.new_notifications += 1
+			
+			#replace users in db
+			db.put(users)
+			
+		elif notification_type == 'newFollower':
+			#get only the necessary properties
+			properties = ['followers','new_notifications']
+			#user is the person that is being followed
+			user = levr.Customer.get(to_be_notified[0],projection=properties)
+			logging.debug(levr_utils.log_model_props(user))
+			
+			#add the actor to the list of followers
+			user.followers.append(actor)
+			
+			#increment the number of notifications
+			user.new_notifications += 1
+			
+			#replace user
+			db.put(user)
+			
+		else:
+			raise Exception('notification_type not recognized in create_notification')
+		
+		
+		
+	except Exception,e:
+		levr.log_error()
+		return False
+	else:
+		return True
 
+#def get_notifications(requester,start_date):
+	
 
 # ==== Functions ==== #
 def loginCheck(self,strict):
@@ -506,7 +574,7 @@ def create_img_url(deal_entity,size):
 	#creates a share url for a deal
 	if os.environ['SERVER_SOFTWARE'].startswith('Development') == True:
 		#we are on the development environment
-		img_url= 'http://localhost:8081/phone/img?dealID='+enc.encrypt_key(deal_entity.key())+'&size='+size
+		img_url= 'http://localhost:8080/phone/img?dealID='+enc.encrypt_key(deal_entity.key())+'&size='+size
 	else:
 		#we are deployed on the server
 		img_url = 'http://www.levr.com/phone/img?dealID='+enc.encrypt_key(deal_entity.key())+'&size='+size

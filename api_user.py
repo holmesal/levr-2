@@ -10,6 +10,8 @@ from google.appengine.ext import db
 class UserFavoritesHandler(webapp2.RequestHandler):
 	def get(self,uid):
 		'''
+		Get all of a users favorite deals
+		
 		inputs: limit(optional), offset(optional)
 		Output:{
 			meta:{
@@ -84,6 +86,8 @@ class UserFavoritesHandler(webapp2.RequestHandler):
 class UserUploadsHandler(webapp2.RequestHandler):
 	def get(self,uid):
 		'''
+		Get all of a users uploaded deals
+		
 		inputs: limit(optional), offset(optional)
 		Output:{
 			meta:{
@@ -139,9 +143,11 @@ class UserUploadsHandler(webapp2.RequestHandler):
 			levr.log_error(self.request)
 			api_utils.send_error(self,'Server Error')
 		
-class UserFriendsHandler(webapp2.RequestHandler):
+class UserFollowersHandler(webapp2.RequestHandler):
 	def get(self,uid):
 		'''
+		Get all of a users followers
+		
 		#RESTRICTED
 		inputs: limit, offset
 		Output:{
@@ -177,20 +183,57 @@ class UserFriendsHandler(webapp2.RequestHandler):
 				offset = OFFSET_DEFAULT
 			
 			#grab user entity
-			logging.warning('START USER')
-			user = db.get(uid)
-			logging.warning('END USER')
+			user = levr.Customer.get(uid)
 			if not user:
 				api_utils.send_error(self,'Invalid uid: '+uid)
 				return
 			
-			self.response.out.write('dooone')
-			
+			#respond
+			api_utils.send_response(self,response,user)
 		except:
 			levr.log_error(self.request)
 			api_utils.send_error(self,'Server Error')
 		
+class UserAddFollowHandler(webapp2.RequestHandler):
+	def get(self,uid):
+		'''
+		A user (specified in ?uid=USER_ID) follows the user specified in (/api/USER_ID/follow)
 		
+		inputs: followerID(required)
+		Output:{
+			meta:{
+				success
+				errorMsg
+				}
+		'''
+		try:
+			logging.info(uid)
+			
+			#uid is the user that is being followed
+			if not api_utils.check_param(self,uid,'uid','key',True):
+				return
+			else:
+				uid = db.Key(enc.decrypt_key(uid))
+			
+			#followerID is the user that is doing the following
+			followerID = self.request.get('followerID')
+			if not api_utils.check_param(self,followerID,'followerID','key',True):
+				return
+			else:
+				followerID = db.Key(enc.decrypt_key(followerID))
+			
+			
+			#go through the notification process 
+			if not levr_utils.create_notification('newFollower',uid,followerID):
+				return
+			
+			
+			#respond
+			api_utils.send_response(self,response,user)
+			
+		except:
+			levr.log_error(self.request)
+			api_utils.send_error(self,'Server Error')
 class UserImgHandler(webapp2.RequestHandler):
 	def get(self,uid):
 		'''
@@ -228,7 +271,7 @@ class UserNotificationsHandler(webapp2.RequestHandler):
 	def get(self,uid):
 		'''
 		#RESTRICTED
-		inputs: offset
+		inputs: sinceDate(required)
 		Output:{
 			meta:{
 				success
@@ -271,7 +314,8 @@ class UserInfoHandler(webapp2.RequestHandler):
 		
 app = webapp2.WSGIApplication([('/api/user/(.*)/favorites', UserFavoritesHandler),
 								('/api/user/(.*)/uploads', UserUploadsHandler),
-								('/api/user/(.*)/friends', UserFriendsHandler),
+								('/api/user/(.*)/followers', UserFriendsHandler),
+								('/api/user/(.*)/follow', UserAddFollowHandler),
 								('/api/user/(.*)/img', UserImgHandler),
 								('/api/user/(.*)/cashout', UserCashOutHandler),
 								('/api/user/(.*)/notifications', UserNotificationsHandler),

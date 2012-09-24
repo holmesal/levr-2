@@ -38,25 +38,43 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		
 		# new customer
 #		c = levr.Customer(key='agtkZXZ-Z2V0bGV2cnIOCxIIQ3VzdG9tZXIYEgw')
-		c = levr.Customer.all().get()
+		c = levr.Customer.all().filter('email','ethan@levr.com').get()
 		if not c:
 			c = levr.Customer()
-			c.email	= 'ethan@getlevr.com'
+			c.email	= 'ethan@levr.com'
 			c.payment_email = c.email
 			c.pw 	= enc.encrypt_password('ethan')
-			c.alias	= 'alonso'
+			c.alias	= 'ethan'
 			c.favorites	= []
 			c.put()
+		c2 = levr.Customer.all().filter('email','patrick@levr.com').get()
+		if not c2:
+			c2 = levr.Customer()
+			c2.email	= 'patrick@levr.com'
+			c2.payment_email = c.email
+			c2.pw 	= enc.encrypt_password('patrick')
+			c2.alias	= 'patrick'
+			c2.favorites	= []
+			c2.put()
+		c3 = levr.Customer.all().filter('email','alonso@levr.com').get()
+		if not c3:
+			c3 = levr.Customer()
+			c3.email	= 'alonso@levr.com'
+			c3.payment_email = c.email
+			c3.pw 	= enc.encrypt_password('alonso')
+			c3.alias	= 'alonso'
+			c3.favorites	= []
+			c3.put()
 		
 		#new ninja
 #		ninja = levr.Customer(key='agtkZXZ-Z2V0bGV2cnIOCxIIQ3VzdG9tZXIYCww')
-		ninja = levr.Customer.all().get()
+		ninja = levr.Customer.all().filter('email','santa@levr.com').get()
 		if not ninja:
 			ninja = levr.Customer()
-			ninja.email	= 'santa@getlevr.com'
+			ninja.email	= 'santa@levr.com'
 			ninja.payment_email = c.email
-			ninja.pw 	= enc.encrypt_password('ethan')
-			ninja.alias	= 'ninja'
+			ninja.pw 	= enc.encrypt_password('santa')
+			ninja.alias	= 'santa'
 			ninja.favorites = []
 			ninja.put()
 		
@@ -95,58 +113,6 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		logging.debug(dealID)
 
 
-
-#		#new deal
-#		d = levr.Deal(parent=b)
-#		d.img				= upload.key()
-#		d.businessID		= str(b)
-#		d.business_name 	= 'Shaws'
-#		d.secondary_name	= 'second name'
-#		d.deal_text			= '50% off booze'
-#		d.deal_type			= 'bundle'
-#		d.description 		= 'describe me, hun.'
-#		d.img_path 			= './img/bobs-discount-furniture.png'
-#		d.city 				= 'Qatar'
-#		d.deal_status		= 'active'
-#		d.vicinity			= '7 Gardner Terrace, Allston, MA'
-#		d.tags				= ['alonso','pat','ethan']
-#		d.deal_status		= 'pending'
-#		d.rank				= 5
-#		
-#		#create the share ID - based on milliseconds since epoch
-#		milliseconds = int(levr_utils.unix_time_millis(datetime.now()))
-#		#make it smaller so we get ids with 5 chars, not 6
-#		shortened_milliseconds = milliseconds % 100000000
-#		unique_id = converter.dehydrate(shortened_milliseconds)
-#		d.share_id = unique_id
-#		d.put()
-#
-#		#new customer deal
-#		cd = levr.CustomerDeal(parent=ninja)
-#		cd.businessID		= str(b)
-#		cd.img				= upload.key()
-#		cd.business_name 	= 'Shaws'
-#		cd.deal_text		= '40% of sijo'
-#		cd.deal_type		= 'single'
-#		cd.description 		= 'describe me, hun.'
-#		cd.rating 			= 50
-#		cd.count_end 		= 101
-#		cd.count_redeemed 	= 0
-#		cd.count_seen 		= 43
-#		cd.new_redeem_count	= 0
-#		cd.deal_status		= 'pending'
-#		cd.geo_point		= levr.geo_converter('-80.,70.')
-#		cd.vicinity			= '1234 Cherry Lane, Boston, MA 02134, USA'
-#		cd.tags				= ['alonso','pat','ethan']
-#		cd.rank				= 10
-#		#create the share ID - based on milliseconds since epoch
-#		milliseconds = int(levr_utils.unix_time_millis(datetime.now()))
-#		#make it smaller so we get ids with 5 chars, not 6
-#		shortened_milliseconds = milliseconds % 100000000
-#		unique_id = converter.dehydrate(shortened_milliseconds)
-#		cd.share_id = unique_id
-#		
-#		cd.put()
 
 
 		self.response.headers['Content-Type'] = 'text/plain'
