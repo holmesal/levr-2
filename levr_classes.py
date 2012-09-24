@@ -16,248 +16,6 @@ from google.appengine.ext import blobstore
 
 #from gaesessions import get_current_session
 
-
-
-class Customer(db.Model):
-#root class
-	email 			= db.EmailProperty()
-	payment_email	= db.EmailProperty()
-	pw 				= db.StringProperty()
-	alias			= db.StringProperty(default='')
-	group			= db.StringProperty(choices=set(["paid","unpaid"]),default="unpaid")
-	money_earned	= db.FloatProperty(default = 0.0) #new earning for all deals
-	money_available = db.FloatProperty(default = 0.0) #aka payment pending
-	money_paid		= db.FloatProperty(default = 0.0) #amount we have transfered
-	redemptions		= db.StringListProperty(default = [])	#id's of all of their redeemed deals
-	new_redeem_count= db.IntegerProperty(default = 0) #number of unseen redemptions
-	vicinity		= db.StringProperty(default='') #the area of the user, probably a college campus
-	favorites		= db.ListProperty(db.Key,default=[])
-	date_created	= db.DateTimeProperty(auto_now_add=True)
-	date_last_edited= db.DateTimeProperty(auto_now_add=True)
-	date_last_login = db.DateTimeProperty(auto_now=True)
-	facebook_token	= db.StringProperty()
-	foursquare_token= db.StringProperty()
-	twitter_token	= db.StringProperty()
-	new_notifications = db.IntegerProperty(default=0)
-	first_name		= db.StringProperty(default='')
-	last_name		= db.StringProperty(default='')
-	photo			= db.StringProperty(default='')
-	followers		= db.ListProperty(db.Key)
-	date_last_notified = db.DateTimeProperty(auto_now_add=True)
-	
-	@property
-	def following(self):
-		#returns a query object that will return all followers of this user entity
-		return levr.Customer.all().filter('followers',self.key())
-	
-	def get_notifications(self,date=None):
-		#returns a query object for all notifications since the specified date
-		#reset user date_last_notified
-		return levr.Notification.all().filter('to_be_notified',self.key()).filter('date_last_notified >=',date)
-	
-	
-	def increment_new_redeem_count(self):
-		logging.info('incrementing!')
-		self.new_redeem_count += 1
-		return
-	
-	def flush_new_redeem_count(self):
-		self.new_redeem_count = 0
-		return
-		
-	def get_notifications(self):
-		#grab new notifications
-		new_redemption = self.new_redeem_count
-		#flush notifications
-		self.flush_new_redeem_count()
-		#return new notification information
-		return {
-			"newRedemption"	: new_redemption
-		}
-		
-	def get_stats(self):
-		data = {
-			"alias"				: self.alias,
-			"numUploads"		: self.get_num_uploads(),
-			"numRedemptions"	: self.redemptions.__len__(),
-			"moneyAvailable"	: self.money_available,
-			"moneyEarned"		: self.money_earned,
-			"new_redeem_count"	: self.new_redeem_count
-		}
-		return data
-
-	def update_money_earned(self,difference):
-		self.money_earned += difference
-		
-	
-	def update_money_available(self,difference):
-		self.money_available += difference
-		
-		
-	def get_num_uploads(self):
-		'''Returns the number of deal children of user i.e. num they have uploaded'''
-		uploads = CustomerDeal.gql("WHERE ANCESTOR IS :1",self.key())
-		count = uploads.count()
-		return count
-
-
-
-
-class BusinessOwner(db.Model):
-	email 			= db.EmailProperty()
-	pw 				= db.StringProperty()
-	validated		= db.BooleanProperty(default=False)
-	date_created	= db.DateTimeProperty(auto_now_add=True)
-	date_last_edited= db.DateTimeProperty(auto_now=True)
-	
-	#psudoproperty: businesses - see business entity - this is a query for all the businesses that list this owner as the owner
-
-class Business(db.Model):
-	#root class
-	business_name 	= db.StringProperty()
-	vicinity		= db.StringProperty()
-	geo_point		= db.GeoPtProperty() #latitude the longitude
-	geo_hash		= db.StringProperty()
-	types			= db.ListProperty(str)
-	targeted		= db.BooleanProperty(default=False)
-	owner			= db.ReferenceProperty(BusinessOwner,collection_name='businesses')
-	upload_email	= db.EmailProperty()
-#	creation_date	= db.DateTimeProperty(auto_now_add=True)
-	date_created	= db.DateTimeProperty(auto_now_add=True)
-	date_last_edited= db.DateTimeProperty(auto_now=True)
-	widget_id		= db.StringProperty(default=levr_utils.create_unique_id())
-	foursquare_id	= db.StringProperty(default="undefined")
-	foursquare_name	= db.StringProperty(default="undefined")
-
-
-	def create_tags(self):
-		#create tags list
-		tags = []
-		
-		#takes a business, and returns critical properties taggified
-		business_name	= tagger(self.business_name)
-		tags.extend(business_name)
-#		vicinity		= tagger(self.vicinity)
-#		tags.extend(vicinity)
-#		
-		for t in self.types:
-			t			= tagger(t)
-			tags.extend(t)
-		
-		return tags
-	
-def package_business(business):
-	response = {
-			'businessID'	: enc.encrypt_key(business.key()),
-			'businessName'	: business.business_name,
-			'vicinity'		: business.vicinity,
-			'geoPoint'		: business.geo_point,
-			'geoHash'		: business.geo_hash
-			}
-	return response
-
-class Deal(polymodel.PolyModel):
-#Child of business owner OR customer ninja
-	#deal information
-	img				= blobstore.BlobReferenceProperty()
-	barcode			= blobstore.BlobReferenceProperty()
-	businessID 		= db.StringProperty() #CHANGE TO REFERENCEPROPERTY
-	business_name 	= db.StringProperty(default='') #name of business
-	secondary_name 	= db.StringProperty(default='') #== with purchase of
-	deal_type 		= db.StringProperty(choices=set(["single","bundle"])) #two items or one item
-	deal_text		= db.StringProperty(default='')
-	is_exclusive	= db.BooleanProperty(default=False)
-	share_id		= db.StringProperty(default=levr_utils.create_unique_id())
-	description 	= db.StringProperty(multiline=True,default='') #description of deal
-	date_start 		= db.DateTimeProperty(auto_now_add=False) #start date
-	date_end 		= db.DateTimeProperty(auto_now_add=False)
-	count_redeemed 	= db.IntegerProperty(default = 0) 	#total redemptions
-	count_seen 		= db.IntegerProperty(default = 0)  #number seen
-	geo_point		= db.GeoPtProperty() #latitude the longitude
-	geo_hash		= db.StringProperty()
-	deal_status		= db.StringProperty(choices=set(["pending","active","rejected","expired"]),default="active")
-	been_reviewed	= db.BooleanProperty(default=False)
-	reject_message	= db.StringProperty()
-	vicinity		= db.StringProperty()
-	tags			= db.ListProperty(str)
-	rank			= db.IntegerProperty(default = 0)
-	has_been_shared	= db.BooleanProperty(default = False)
-	date_uploaded	= db.DateTimeProperty(auto_now_add=True)
-	date_created	= db.DateTimeProperty(auto_now_add=True)
-	date_last_edited= db.DateTimeProperty(auto_now=True)
-
-
-class CustomerDeal(Deal):
-#Sub-class of deal
-#A deal that has been uploaded by a user
-
-	gate_requirement= db.IntegerProperty(default = 5) #threshold of redeems that must be passed to earn a gate
-	gate_payment_per= db.IntegerProperty(default = 1) #dollar amount per gate
-	gate_count		= db.IntegerProperty(default = 0) #number of gates passed so far
-	gate_max		= db.IntegerProperty(default = 5) #max number of gates allowed
-	earned_total	= db.FloatProperty(default = 0.0) #amount earned by this deal
-	paid_out		= db.FloatProperty(default = 0.0) #amount paid out by this deal
-	
-	def share_deal(self):
-		if self.has_been_shared == False:
-			#deal has never been shared before
-			#flag that it has been shared
-			self.has_been_shared = True
-			
-			#increase the max payment gates the ninja can earn
-			self.gate_max += 5
-		else:
-			#deal has been shared - do nothing
-			pass
-		return self.has_been_shared
-	
-	def update_earned_total(self):
-		#what was self.earned_total to start with?
-		old = self.earned_total
-		#update
-		self.earned_total = float(self.gate_count*self.gate_payment_per)
-		#if changed, find the difference
-		difference = 0.0
-		if self.earned_total > old:
-			difference = self.earned_total - old
-			logging.info('Earned ' + difference.__str__() + ' dollar!')
-			
-		return difference
-	
-
-class Notification(db.Model):
-	date			= db.DateTimeProperty(auto_now_add=True)
-	notification_type = db.StringProperty(required=True,choices=set(['redemption','thanks','followerUpload','newFollower']))
-#	owner			= db.ReferenceProperty(Customer,collection_name='notifications',required=True)
-	to_be_notified	= db.ListProperty(db.Key)
-	deal			= db.ReferenceProperty(Deal,collection_name='notifications')
-	actor			= db.ReferenceProperty(Customer)
-	
-
-class CashOutRequest(db.Model):
-#child of ninja
-	amount			= db.FloatProperty()
-	date_paid		= db.DateTimeProperty()
-	status			= db.StringProperty(choices=set(['pending','paid','rejected']))
-	payKey			= db.StringProperty()
-	money_available_paytime	= db.FloatProperty()
-	note			= db.StringProperty()
-	date_created	= db.DateTimeProperty(auto_now_add=True)
-	date_last_edited= db.DateTimeProperty(auto_now=True)
-
-class ReportedDeal(db.Model):
-	uid				= db.ReferenceProperty(Customer,collection_name='reported_deals')
-	dealID			= db.ReferenceProperty(Deal,collection_name='reported_deals')
-	date_created	= db.DateTimeProperty(auto_now_add=True)
-	date_last_edited= db.DateTimeProperty(auto_now=True)
-	
-class BusinessBetaRequest(db.Model):
-	business_name	= db.StringProperty()
-	contact_name	= db.StringProperty()
-	contact_email	= db.StringProperty()
-	contact_phone	= db.StringProperty()
-	date_created	= db.DateTimeProperty(auto_now_add=True)
-
 # ==== Variables ==== #
 if os.environ['SERVER_SOFTWARE'].startswith('Development') == True:
 	#we are on the development environment
@@ -295,7 +53,7 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 										deal				= deal #default to None
 										)
 		notification.put()
-		logging.debug(levr_utils.log_model_props(notification))
+		logging.debug(log_model_props(notification))
 		if notification_type == 'redemption' or notification_type == 'thanks' or notification_type == 'followerUpload':
 			#select necessary properties
 			properties = ['new_notifications']
@@ -314,7 +72,7 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 			properties = ['followers','new_notifications']
 			#user is the person that is being followed
 			user = levr.Customer.get(to_be_notified[0],projection=properties)
-			logging.debug(levr_utils.log_model_props(user))
+			logging.debug(log_model_props(user))
 			
 			#add the actor to the list of followers
 			user.followers.append(actor)
@@ -359,8 +117,8 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 		#mydeals is for the list of a users uploaded deals
 		#widget is for the html iframe for merchants
 		data = {"dealID"		: dealID,
-				"imgURL"		: levr_utils.URL+'/phone/img?dealID='+dealID+'&size=list',
-				"imgURLlarge"	: levr_utils.URL+'/phone/img?dealID='+dealID+'&size=dealDetail',
+				"imgURL"		: URL+'/phone/img?dealID='+dealID+'&size=list',
+				"imgURLlarge"	: URL+'/phone/img?dealID='+dealID+'&size=dealDetail',
 				"geoPoint"		: deal.geo_point,
 				"vicinity"		: deal.vicinity,
 				"dealText"  	: dealText,
@@ -385,7 +143,7 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 				"ninjaMoneyEarned"	: deal_parent.money_paid,						#The amount of money that the ninja has earned to date
 				"weightedRedeems"	: deal.count_redeemed % deal.gate_requirement,	#The number of redemptions they need to earn another dollar
 				"dealCountRedeemed"	: deal.count_redeemed,							#The number of times that the deal has been redeemed
-				"shareURL"			: levr_utils.create_share_url(deal)				#The URL for them to share
+				"shareURL"			: create_share_url(deal)				#The URL for them to share
 			})
 		if use == 'widget':
 			data.update({
@@ -398,7 +156,7 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 #		b = db.get(deal.businessID)
 		#uploaded by a user
 		data = {"dealID"		: dealID,
-				"imgURL"	  	: levr_utils.URL+'/phone/img?dealID='+dealID+'&size=dealDetail',
+				"imgURL"	  	: URL+'/phone/img?dealID='+dealID+'&size=dealDetail',
 				"dealText"  	: dealText,
 				"dealTextExtra" : dealTextExtra,
 				"businessName"	: deal.business_name,
@@ -418,7 +176,7 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 #			business = deal_parent
 			alias = ''
 			
-		data = {"barcodeURL"	: levr_utils.URL+'/phone/img?dealID='+dealID+'&size=dealDetail',
+		data = {"barcodeURL"	: URL+'/phone/img?dealID='+dealID+'&size=dealDetail',
 				"ninjaName"		: alias,
 				"isExclusive"	: deal.is_exclusive}
 	elif use == 'manage':
@@ -431,12 +189,12 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 			"vicinity"		:deal.vicinity,
 			"description"	:deal.description,
 			"isExclusive"	:deal.is_exclusive,
-			"imgURLLarge"	:levr_utils.URL+'/phone/img?dealID='+dealID+'&size=dealDetail',
-			"imgURLSmall"	:levr_utils.URL+'/phone/img?dealID='+dealID+'&size=list',
+			"imgURLLarge"	:URL+'/phone/img?dealID='+dealID+'&size=dealDetail',
+			"imgURLSmall"	:URL+'/phone/img?dealID='+dealID+'&size=list',
 
 			}
 	data.update({'geoPoint':str(deal.geo_point)})
-	logging.info(levr_utils.log_dict(data))
+	logging.info(log_dict(data))
 	return data'''
 
 def geo_converter(geo_str):
@@ -880,4 +638,246 @@ def dealCreate(params,origin,upload_flag=True):
 	else:
 		#return share url
 		return share_url
+
+
+
+class Customer(db.Model):
+#root class
+	email 			= db.EmailProperty()
+	payment_email	= db.EmailProperty()
+	pw 				= db.StringProperty()
+	alias			= db.StringProperty(default='')
+	group			= db.StringProperty(choices=set(["paid","unpaid"]),default="unpaid")
+	money_earned	= db.FloatProperty(default = 0.0) #new earning for all deals
+	money_available = db.FloatProperty(default = 0.0) #aka payment pending
+	money_paid		= db.FloatProperty(default = 0.0) #amount we have transfered
+	redemptions		= db.StringListProperty(default = [])	#id's of all of their redeemed deals
+	new_redeem_count= db.IntegerProperty(default = 0) #number of unseen redemptions
+	vicinity		= db.StringProperty(default='') #the area of the user, probably a college campus
+	favorites		= db.ListProperty(db.Key,default=[])
+	date_created	= db.DateTimeProperty(auto_now_add=True)
+	date_last_edited= db.DateTimeProperty(auto_now_add=True)
+	date_last_login = db.DateTimeProperty(auto_now=True)
+	facebook_token	= db.StringProperty()
+	foursquare_token= db.StringProperty()
+	twitter_token	= db.StringProperty()
+	new_notifications = db.IntegerProperty(default=0)
+	first_name		= db.StringProperty(default='')
+	last_name		= db.StringProperty(default='')
+	photo			= db.StringProperty(default='')
+	followers		= db.ListProperty(db.Key)
+	date_last_notified = db.DateTimeProperty(auto_now_add=True)
+	
+	@property
+	def following(self):
+		#returns a query object that will return all followers of this user entity
+		return levr.Customer.all().filter('followers',self.key())
+	
+	def get_notifications(self,date=None):
+		#returns a query object for all notifications since the specified date
+		#reset user date_last_notified
+		return levr.Notification.all().filter('to_be_notified',self.key()).filter('date_last_notified >=',date)
+	
+	
+	def increment_new_redeem_count(self):
+		logging.info('incrementing!')
+		self.new_redeem_count += 1
+		return
+	
+	def flush_new_redeem_count(self):
+		self.new_redeem_count = 0
+		return
+		
+	def get_notifications(self):
+		#grab new notifications
+		new_redemption = self.new_redeem_count
+		#flush notifications
+		self.flush_new_redeem_count()
+		#return new notification information
+		return {
+			"newRedemption"	: new_redemption
+		}
+		
+	def get_stats(self):
+		data = {
+			"alias"				: self.alias,
+			"numUploads"		: self.get_num_uploads(),
+			"numRedemptions"	: self.redemptions.__len__(),
+			"moneyAvailable"	: self.money_available,
+			"moneyEarned"		: self.money_earned,
+			"new_redeem_count"	: self.new_redeem_count
+		}
+		return data
+
+	def update_money_earned(self,difference):
+		self.money_earned += difference
+		
+	
+	def update_money_available(self,difference):
+		self.money_available += difference
+		
+		
+	def get_num_uploads(self):
+		'''Returns the number of deal children of user i.e. num they have uploaded'''
+		uploads = CustomerDeal.gql("WHERE ANCESTOR IS :1",self.key())
+		count = uploads.count()
+		return count
+
+
+
+
+class BusinessOwner(db.Model):
+	email 			= db.EmailProperty()
+	pw 				= db.StringProperty()
+	validated		= db.BooleanProperty(default=False)
+	date_created	= db.DateTimeProperty(auto_now_add=True)
+	date_last_edited= db.DateTimeProperty(auto_now=True)
+	
+	#psudoproperty: businesses - see business entity - this is a query for all the businesses that list this owner as the owner
+
+class Business(db.Model):
+	#root class
+	business_name 	= db.StringProperty()
+	vicinity		= db.StringProperty()
+	geo_point		= db.GeoPtProperty() #latitude the longitude
+	geo_hash		= db.StringProperty()
+	types			= db.ListProperty(str)
+	targeted		= db.BooleanProperty(default=False)
+	owner			= db.ReferenceProperty(BusinessOwner,collection_name='businesses')
+	upload_email	= db.EmailProperty()
+#	creation_date	= db.DateTimeProperty(auto_now_add=True)
+	date_created	= db.DateTimeProperty(auto_now_add=True)
+	date_last_edited= db.DateTimeProperty(auto_now=True)
+	widget_id		= db.StringProperty(default=create_unique_id())
+	foursquare_id	= db.StringProperty(default="undefined")
+	foursquare_name	= db.StringProperty(default="undefined")
+
+
+	def create_tags(self):
+		#create tags list
+		tags = []
+		
+		#takes a business, and returns critical properties taggified
+		business_name	= tagger(self.business_name)
+		tags.extend(business_name)
+#		vicinity		= tagger(self.vicinity)
+#		tags.extend(vicinity)
+#		
+		for t in self.types:
+			t			= tagger(t)
+			tags.extend(t)
+		
+		return tags
+	
+def package_business(business):
+	response = {
+			'businessID'	: enc.encrypt_key(business.key()),
+			'businessName'	: business.business_name,
+			'vicinity'		: business.vicinity,
+			'geoPoint'		: business.geo_point,
+			'geoHash'		: business.geo_hash
+			}
+	return response
+
+class Deal(polymodel.PolyModel):
+#Child of business owner OR customer ninja
+	#deal information
+	img				= blobstore.BlobReferenceProperty()
+	barcode			= blobstore.BlobReferenceProperty()
+	businessID 		= db.StringProperty() #CHANGE TO REFERENCEPROPERTY
+	business_name 	= db.StringProperty(default='') #name of business
+	secondary_name 	= db.StringProperty(default='') #== with purchase of
+	deal_type 		= db.StringProperty(choices=set(["single","bundle"])) #two items or one item
+	deal_text		= db.StringProperty(default='')
+	is_exclusive	= db.BooleanProperty(default=False)
+	share_id		= db.StringProperty(default=create_unique_id())
+	description 	= db.StringProperty(multiline=True,default='') #description of deal
+	date_start 		= db.DateTimeProperty(auto_now_add=False) #start date
+	date_end 		= db.DateTimeProperty(auto_now_add=False)
+	count_redeemed 	= db.IntegerProperty(default = 0) 	#total redemptions
+	count_seen 		= db.IntegerProperty(default = 0)  #number seen
+	geo_point		= db.GeoPtProperty() #latitude the longitude
+	geo_hash		= db.StringProperty()
+	deal_status		= db.StringProperty(choices=set(["pending","active","rejected","expired"]),default="active")
+	been_reviewed	= db.BooleanProperty(default=False)
+	reject_message	= db.StringProperty()
+	vicinity		= db.StringProperty()
+	tags			= db.ListProperty(str)
+	rank			= db.IntegerProperty(default = 0)
+	has_been_shared	= db.BooleanProperty(default = False)
+	date_uploaded	= db.DateTimeProperty(auto_now_add=True)
+	date_created	= db.DateTimeProperty(auto_now_add=True)
+	date_last_edited= db.DateTimeProperty(auto_now=True)
+
+
+class CustomerDeal(Deal):
+#Sub-class of deal
+#A deal that has been uploaded by a user
+
+	gate_requirement= db.IntegerProperty(default = 5) #threshold of redeems that must be passed to earn a gate
+	gate_payment_per= db.IntegerProperty(default = 1) #dollar amount per gate
+	gate_count		= db.IntegerProperty(default = 0) #number of gates passed so far
+	gate_max		= db.IntegerProperty(default = 5) #max number of gates allowed
+	earned_total	= db.FloatProperty(default = 0.0) #amount earned by this deal
+	paid_out		= db.FloatProperty(default = 0.0) #amount paid out by this deal
+	
+	def share_deal(self):
+		if self.has_been_shared == False:
+			#deal has never been shared before
+			#flag that it has been shared
+			self.has_been_shared = True
+			
+			#increase the max payment gates the ninja can earn
+			self.gate_max += 5
+		else:
+			#deal has been shared - do nothing
+			pass
+		return self.has_been_shared
+	
+	def update_earned_total(self):
+		#what was self.earned_total to start with?
+		old = self.earned_total
+		#update
+		self.earned_total = float(self.gate_count*self.gate_payment_per)
+		#if changed, find the difference
+		difference = 0.0
+		if self.earned_total > old:
+			difference = self.earned_total - old
+			logging.info('Earned ' + difference.__str__() + ' dollar!')
+			
+		return difference
+	
+
+class Notification(db.Model):
+	date			= db.DateTimeProperty(auto_now_add=True)
+	notification_type = db.StringProperty(required=True,choices=set(['redemption','thanks','followerUpload','newFollower']))
+#	owner			= db.ReferenceProperty(Customer,collection_name='notifications',required=True)
+	to_be_notified	= db.ListProperty(db.Key)
+	deal			= db.ReferenceProperty(Deal,collection_name='notifications')
+	actor			= db.ReferenceProperty(Customer)
+	
+
+class CashOutRequest(db.Model):
+#child of ninja
+	amount			= db.FloatProperty()
+	date_paid		= db.DateTimeProperty()
+	status			= db.StringProperty(choices=set(['pending','paid','rejected']))
+	payKey			= db.StringProperty()
+	money_available_paytime	= db.FloatProperty()
+	note			= db.StringProperty()
+	date_created	= db.DateTimeProperty(auto_now_add=True)
+	date_last_edited= db.DateTimeProperty(auto_now=True)
+
+class ReportedDeal(db.Model):
+	uid				= db.ReferenceProperty(Customer,collection_name='reported_deals')
+	dealID			= db.ReferenceProperty(Deal,collection_name='reported_deals')
+	date_created	= db.DateTimeProperty(auto_now_add=True)
+	date_last_edited= db.DateTimeProperty(auto_now=True)
+	
+class BusinessBetaRequest(db.Model):
+	business_name	= db.StringProperty()
+	contact_name	= db.StringProperty()
+	contact_email	= db.StringProperty()
+	contact_phone	= db.StringProperty()
+	date_created	= db.DateTimeProperty(auto_now_add=True)
 

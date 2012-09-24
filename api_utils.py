@@ -62,13 +62,13 @@ def package_deal(deal,privacyLevel='public'):
 			'dealText'		: deal.deal_text,
 			'description'	: deal.description,
 			'isExclusive'	: deal.is_exclusive,
-			'largeImg'		: levr_utils.create_img_url(deal,'large'),
+			'largeImg'		: levr.create_img_url(deal,'large'),
 			'geoHash'		: deal.geo_hash,
 			'geoPoint'		: str(deal.geo_point),
 			'redemptions'	: 'TODO!!',
-			'smallURL'		: levr_utils.create_img_url(deal,'small'),
+			'smallURL'		: levr.create_img_url(deal,'small'),
 			'status'		: deal.deal_status,
-			'shareURL'		: levr_utils.create_share_url(deal),
+			'shareURL'		: levr.create_share_url(deal),
 			'tags'			: deal.tags
 			}
 	return packaged_deal
@@ -124,7 +124,7 @@ def send_response(self,response,user=None):
 				'response':response}
 				
 	#reply
-	logging.debug(levr_utils.log_dict(reply))
+	logging.debug(levr.log_dict(reply))
 	self.response.out.write(json.dumps(reply))
 	
 def create_share_url(deal_entity):
@@ -190,7 +190,7 @@ def get_deals_in_area(tags,request_point,precision=5):
 		#filter by geohash
 		q.filter('geo_hash >=',query_hash).filter('geo_hash <=',query_hash+"{") #max bound
 #					logging.debug(q)
-#					logging.debug(levr_utils.log_dict(q.__dict__))
+#					logging.debug(levr.log_dict(q.__dict__))
 		
 		#get all keys for this neighborhood
 		fetched_deals = q.fetch(None)
