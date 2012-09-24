@@ -1,8 +1,9 @@
 import json
 import levr_encrypt as enc
-import levr_utils
+import levr_classes as levr
 import logging
 from google.appengine.ext import db
+
 def send_error(self,error):
 	reply = {
 			'meta':{
@@ -125,3 +126,79 @@ def send_response(self,response,user=None):
 	#reply
 	logging.debug(levr_utils.log_dict(reply))
 	self.response.out.write(json.dumps(reply))
+	
+def create_share_url(deal_entity):
+	#creates a share url for a deal
+	if os.environ['SERVER_SOFTWARE'].startswith('Development') == True:
+		#we are on the development environment
+		URL = 'http://localhost:8080/'
+	else:
+		#we are deployed on the server
+		URL = 'http://www.levr.com/'
+		
+	share_url = URL+deal_entity.share_id
+	return share_url
+	
+def create_img_url(deal_entity,size):
+	#creates a share url for a deal
+	if os.environ['SERVER_SOFTWARE'].startswith('Development') == True:
+		#we are on the development environment
+		img_url= 'http://localhost:8080/phone/img?dealID='+enc.encrypt_key(deal_entity.key())+'&size='+size
+	else:
+		#we are deployed on the server
+		img_url = 'http://www.levr.com/phone/img?dealID='+enc.encrypt_key(deal_entity.key())+'&size='+size
+		
+	return img_url
+	
+def get_deals_in_area(tags,request_point,precision=5):
+	'''
+	tags = list of tags that are strings
+	request point is db.GeoPt format
+	precision is int
+	'''
+	request_point = levr.geo_converter('42.35,-71.110')
+	logging.debug(precision)
+	center_hash = geohash.encode(request_point.lat,request_point.lon,precision=precision)
+	logging.debug(center_hash)
+	hash_set = geohash.expand(center_hash)
+	logging.debug(hash_set)
+	
+	##DEBUG
+	ref_query = levr.Deal.all().filter('deal_status =','active')
+	for tag in tags:
+		if tag != 'all':
+			ref_query.filter('tags =',tag)
+	ref_deals = ref_query.fetch(None)
+	logging.info("total number of deals: "+str(ref_deals.__len__()))
+#	for d in ref_deals:
+#		logging.debug(d.geo_hash)
+	##/DEBUG
+	
+	
+	####build search query
+	#only grabbing deal keys, then batch get array
+	deal_keys = []
+	for query_hash in hash_set:
+		#only grab keys for deals that have active status
+		q = levr.Deal.all(keys_only=True).filter('deal_status =','active')
+		#grab all deals where primary_cat is in tags
+		for tag in tags:
+			#all is a special keyword
+			if tag != 'all':
+				logging.debug('tag: '+str(tag))
+				q.filter('tags =',tag)
+		#filter by geohash
+		q.filter('geo_hash >=',query_hash).filter('geo_hash <=',query_hash+"{") #max bound
+#					logging.debug(q)
+#					logging.debug(levr_utils.log_dict(q.__dict__))
+		
+		#get all keys for this neighborhood
+		fetched_deals = q.fetch(None)
+		logging.info('From: '+query_hash+", fetched: "+str(fetched_deals.__len__()))
+		
+		deal_keys.extend(fetched_deals)
+#					logging.debug(deal_keys)
+	
+	#batch get results. here is where we would set the number of results we want and the offset
+	deals = levr.Deal.get(deal_keys)
+	return deals

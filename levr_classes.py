@@ -1,14 +1,22 @@
-#import webapp2
-#import datetime
+import os
+import logging
+import re
+import sys, traceback
+from datetime import datetime
+from datetime import timedelta
+import base_62_converter as converter
+from random import randint 
+import geo.geohash as geohash
+
+import levr_encrypt as enc
+
 from google.appengine.ext import db
 from google.appengine.ext.db import polymodel
 from google.appengine.ext import blobstore
-import re
-#import string
-import logging
-import sys, traceback
-import levr_encrypt as enc
-import levr_utils
+
+#from gaesessions import get_current_session
+
+
 
 class Customer(db.Model):
 #root class
@@ -250,10 +258,87 @@ class BusinessBetaRequest(db.Model):
 	contact_phone	= db.StringProperty()
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 
+# ==== Variables ==== #
+if os.environ['SERVER_SOFTWARE'].startswith('Development') == True:
+	#we are on the development environment
+	URL = 'http://localhost:8080'
+	development = True
+else:
+	#we are deployed on the server
+	URL = 'http://www.levr.com'
+	development = False
+
+# FUNCTIONS
+def create_notification(notification_type,to_be_notified,actor,deal=None):
+	'''
+	notification_type	= choices: 'redemption', 'thanks', 'followerUpload', 'newFollower'
+						The action being performed
+	to_be_notified		= [db.Key,db.Key,db.Key,...]
+						The people or entities to be notified of this action
+	deal				= db.Key
+						The deal in question
+	actor				= db.Key
+						The person performing the action
+	'''
+	try:
+		#type cast to_be_notified as a list
+		if type(to_be_notified) != list:
+			#to_be_notified is not a list, make it one
+			#this allows to_be_notified to be passed as a single value
+			to_be_notified = [to_be_notified]
+		
+		#create and put the notification
+		notification = levr.Notification(
+										notification_type	= notification_type,
+										to_be_notified		= to_be_notified,
+										actor				= actor,
+										deal				= deal #default to None
+										)
+		notification.put()
+		logging.debug(levr_utils.log_model_props(notification))
+		if notification_type == 'redemption' or notification_type == 'thanks' or notification_type == 'followerUpload':
+			#select necessary properties
+			properties = ['new_notifications']
+			
+			#users = the people to be notified
+			users = levr.Customer.get(to_be_notified,projection=properties)
+			
+			for user in users:
+				user.new_notifications += 1
+			
+			#replace users in db
+			db.put(users)
+			
+		elif notification_type == 'newFollower':
+			#get only the necessary properties
+			properties = ['followers','new_notifications']
+			#user is the person that is being followed
+			user = levr.Customer.get(to_be_notified[0],projection=properties)
+			logging.debug(levr_utils.log_model_props(user))
+			
+			#add the actor to the list of followers
+			user.followers.append(actor)
+			
+			#increment the number of notifications
+			user.new_notifications += 1
+			
+			#replace user
+			db.put(user)
+			
+		else:
+			raise Exception('notification_type not recognized in create_notification')
+		
+		
+		
+	except Exception,e:
+		levr.log_error()
+		return False
+	else:
+		return True
 
 
 #functions!
-def phoneFormat(deal,use,primary_cat=None):
+'''def phoneFormat(deal,use,primary_cat=None):
 	#dealID is used in a number of places
 	dealID = enc.encrypt_key(str(deal.key()))
 #	logging.info(deal.key())
@@ -352,7 +437,7 @@ def phoneFormat(deal,use,primary_cat=None):
 			}
 	data.update({'geoPoint':str(deal.geo_point)})
 	logging.info(levr_utils.log_dict(data))
-	return data
+	return data'''
 
 def geo_converter(geo_str):
 	if geo_str:
@@ -370,7 +455,6 @@ def tagger(text):
 	#parse text string into a list of words if it is longer than 2 chars long
 	tags = [w.lower() for w in re.findall("[\'\w]+", text) if len(w)>2]
 
-
 	return tags
 
 def log_error(message=''):
@@ -380,4 +464,420 @@ def log_error(message=''):
 	logging.error(exc_value)
 	logging.error(traceback.format_exc(exc_trace))
 	logging.error(message)
+
+def log_model_props(model,props=None):
+	#returns a long multiline string of the model in key: prop
+	delimeter = "\n\t\t"
+	log_str = delimeter
+	try:
+		if type(props) is list:
+			#only display certain keys
+			for key in props:
+				log_str += str(key)+": "+str(getattr(model,key))+delimeter
+		else:
+			#display all keys
+			key_list = []
+			for key in model.properties():
+				key_list.append(key)
+			key_list.sort()
+			for key in key_list:
+				log_str += str(key)+": "+str(getattr(model,key))+delimeter
+	except Exception,e:
+		logging.warning('There was an error in log_model_props %s',e)
+	finally:
+		return log_str
+
+def log_dir(obj,props=None):
+	#returns a long multiline string of a regular python object in key: prop
+	delimeter = "\n\t\t"
+	log_str = delimeter
+	try:
+		if type(props) is list:
+			logging.debug('log some keys')
+			#only display certain keys
+			key_list = []
+			for key in props:
+				key_list.append(key)
+			key_list.sort()
+			for key in key_list:
+				log_str += str(key)+": "+str(getattr(obj,key))+delimeter
+		else:
+			logging.debug('log all keys')
+			#display all keys
+			for key in dir(obj):
+				log_str += str(key)+": "+str(getattr(obj,key))+delimeter
+	except:
+		logging.warning('There was an error in log_dir')
+	finally:
+		return log_str
+
+def log_dict(obj,props=None,delimeter= "\n\t\t"):
+	#returns a long multiline string of a regular python object in key: prop
+#	delimeter = "\n\t\t"
+	log_str = delimeter
+	logging.debug(obj)
+	try:
+		if type(props) is list:
+			#only display certain keys
+			for key in props:
+				if type(obj[key]) == dict:
+					log_str += str(key)+": "+ log_dict(obj[key],None,delimeter+'\t\t')+delimeter
+				else:
+					log_str += str(key)+": "+str(obj[key])+delimeter
+		else:
+			#display all keys
+			key_list = []
+			for key in obj:
+				logging.debug(key)
+				key_list.append(key)
+			key_list.sort()
+			for key in key_list:
+				logging.debug(key)
+				if type(obj[key]) == dict:
+					log_str += str(key)+": "+ log_dict(obj[key],None,delimeter+'\t\t')+delimeter
+
+				else:
+					log_str += str(key)+": "+str(obj[key])+delimeter
+	except Exception,e:
+		logging.warning('There was an error in log_dict %s',e)
+	finally:
+		return log_str
+		
+def create_unique_id():
+	#create the share ID - based on milliseconds since epoch
+	milliseconds = int(unix_time_millis(datetime.now()))
+	#make it smaller so we get ids with 5 chars, not 6
+	shortened_milliseconds = milliseconds/10 % 1000000000
+	unique_id = converter.dehydrate(shortened_milliseconds)
+	return unique_id
+
+def unix_time(dt):
+	epoch = datetime.utcfromtimestamp(0)
+	delta = dt - epoch
+	return delta.total_seconds()
+	
+def unix_time_millis(dt):
+	return unix_time(dt)
+
+def dealCreate(params,origin,upload_flag=True):
+	'''pass in "self"'''
+	logging.debug('DEAL CREATE')
+	
+	logging.debug("origin: "+str(origin))
+	logging.debug(log_dict(params))
+	
+	
+	logging.debug("image was uploaded: "+str(upload_flag))
+	#init tags list for deal
+	tags = []
+	
+	#business information - never create business unless old phone
+		#just want to get tags to store on deal
+	#get deal information
+	#create deals with appropriate owners
+	
+	'''
+
+	
+	#####merchant_edit
+		params = {
+				'uid'			#uid is businessOwner
+				'business'		#businessID
+				'deal'			#dealID
+				'deal_description'
+				'deal_line1'
+				'deal_line2'
+				}
+		!!! check for uploaded image !!!
+		
+
+	#####merchant_create
+		params = {
+				'uid'			#uid is businessOwner
+				'business'
+				'deal_line1'
+				'deal_line2' 	#optional
+				'deal_description'
+				'img_key'
+				}
+		
+	#####phone_existing_business
+		params = {
+				'uid' 			#uid is ninja
+				'business' 
+				'deal_description'
+				'deal_line1'
+				!!! no deal_line2 !!!
+				}
+	#####phone_new_business
+		params = {
+				'uid'			#uid is ninja
+				'business_name'
+				'geo_point'
+				'vicinity'
+				'types'
+				'deal_description'
+				'deal_line1'
+				}
+	#####admin_review
+		params = {
+				'uid'		#uid is ninja
+				'deal'		#deal id
+				'business'	#business id
+				'deal_line1'
+				'deal_line2'
+				'deal_description'
+				'tags'
+				'end date'
+				!!! other stuff !!!
+				}
+	'''
+	
+	
+	#==== deal information ====#
+	
+	
+	#==== business stuff ====#
+	if origin == 'phone_new_business':
+		#The business to which a deal is being uploaded is not targeted
+		logging.debug('origin is phone, new business being added')
+		
+		
+		#business name
+		if 'business_name' in params:
+			business_name = params['business_name']
+			logging.debug("business name: "+str(business_name))
+		else:
+			raise KeyError('business_name not in params')
+		#geo point
+		
+		if 'geo_point' in params:
+			geo_point = params['geo_point']
+			geo_point = levr.geo_converter(geo_point)
+			logging.debug("geo point: "+str(geo_point))
+			#create geohash from geopoint
+			geo_hash = geohash.encode(geo_point.lat,geo_point.lon)
+		else:
+			raise KeyError('geo_point not in params')
+		
+		#vicinity
+		if 'vicinity' in params:
+			vicinity = params['vicinity']
+			logging.debug("vicinity: "+str(vicinity))
+		else:
+			raise KeyError('vicinity not in params')
+		
+		#types
+		if 'types' in params:
+			types = params['types']
+			logging.debug('start types')
+			logging.debug(types)
+			logging.debug(type(types))
+			types = levr.tagger(types)
+			logging.debug(types)
+			logging.debug('end types')
+		else:
+			raise KeyError('types not in params')
+		#check if business exists - get businessID
+#		business= levr.Business.gql("WHERE business_name=:1 and geo_point=:2", business_name, geo_point).get()
+		business = levr.Business.all().filter('business_name =',business_name).filter('vicinity =',vicinity).get()
+		logging.debug('start business info')
+		logging.debug(log_model_props(business))
+		logging.debug('end business info')
+		
+		if not business:
+			logging.debug('business doesnt exist')
+			#if a business doesn't exist in db, then create a new one
+			business = levr.Business()
+			logging.debug(log_model_props(business))
+			
+			
+			
+			#add data to the new business
+			business.business_name 	= business_name
+			business.vicinity 		= vicinity
+			business.geo_point		= geo_point
+			business.types			= types
+			business.geo_hash		= geo_hash
+			
+			#put business
+			business.put()
+			
+			
+		else:
+			logging.debug('business exists')
+			#business exists- grab its tags
+		
+		
+		#grab the businesses tags
+		tags.extend(business.create_tags())
+		#get businessID - not encrypted - from database
+		businessID = business.key()
+		logging.debug("businessID: "+str(businessID))
+		
+		#Create tags
+		
+		logging.debug('-------------------------------------------')
+		logging.debug(tags)
+	else:
+		#BusinessID was passed, grab the business
+		logging.debug('not oldphoone')
+		
+		if 'business' in params:
+			businessID = params['business']
+			businessID	= enc.decrypt_key(businessID)
+			businessID	= db.Key(businessID)
+			business	= levr.Business.get(businessID)
+		else:
+			raise KeyError('business not passed in params')
+		#get the tags from the business
+		tags.extend(business.create_tags())
+		
+		#grab all the other information that needs to go into the deals
+		business_name 	= business.business_name
+		geo_point		= business.geo_point
+		vicinity		= business.vicinity
+		geo_hash		= business.geo_hash
+		
+
+	logging.debug('!!!!!')
+	#====Deal Information Lines ====#
+	#deal line 1
+	if 'deal_line1' in params:
+		deal_text	= params['deal_line1']
+		logging.debug(deal_text)
+		tags.extend(levr.tagger(deal_text))
+		logging.info(tags)
+	else:
+		raise KeyError('deal_line1 not passed in params')
+	
+	#deal line 2
+	if origin != 'phone_existing_business' and origin != 'phone_new_business':
+		if 'deal_line2' in params:
+			secondary_name = params['deal_line2']
+		else:
+			secondary_name = False
+		logging.debug(secondary_name)
+		if secondary_name:
+			#deal is bundled
+			logging.debug('deal is bundled')
+			tags.extend(levr.tagger(secondary_name))
+			logging.info(tags)
+			deal_type = 'bundle'
+		else:
+			#deal is not bundled
+			'deal is NOT bundled'
+			deal_type = 'single'
+	else:
+		#phone uploaded deals do not pass deal_line2
+		deal_type = 'single'
+	
+	#description
+	if 'deal_description' in params:
+		description = params['deal_description']
+		#truncate description to a length of 500 chars
+		logging.debug(description.__len__())
+		description = description[:500]
+		logging.debug(description)
+		tags.extend(levr.tagger(description))
+		logging.info(tags)
+	else:
+		raise KeyError('deal_description not passed in params')
+	
+	
+	
+	
+	#==== create the deal entity ====#
+	if origin	== 'merchant_create':
+		#web deals get active status and are the child of the owner
+		ownerID = params['uid']
+		ownerID = enc.decrypt_key(ownerID)
+		
+		deal = levr.Deal(parent = db.Key(ownerID))
+		deal.is_exclusive		= True
+
+	elif origin	=='merchant_edit':
+		dealID	= params['deal']
+		dealID	= enc.decrypt_key(dealID)
+		deal	= levr.Deal.get(dealID)
+
+	elif origin	=='phone_existing_business' or origin == 'phone_new_business':
+		#phone deals are the child of a ninja
+		logging.debug('STOP!')
+		uid = enc.decrypt_key(params['uid'])
+
+		deal = levr.CustomerDeal(parent = db.Key(uid))
+		deal.is_exclusive		= False
+		
+		
+		deal.date_end			= datetime.now() + timedelta(days=7)
+
+	elif origin == 'admin_review':
+		#deal has already been uploaded by ninja - rewriting info that has been reviewed
+		dealID = enc.decrypt_key(params['deal'])
+		deal = levr.CustomerDeal.get(db.Key(dealID))
+		deal.been_reviewed		= True
+		deal.date_start			= datetime.now()
+		days_active				= int(params['days_active'])
+		deal.date_end			= datetime.now() + timedelta(days=days_active)
+		
+		new_tags = params['extra_tags']
+		tags.extend(levr.tagger(new_tags))
+		logging.debug('!!!!!!!!!!!!')
+		logging.debug(tags)
+	
+	
+	#==== Link deal to blobstore image ====#
+	if upload_flag == True:
+		#an image has been uploaded, and the blob needs to be tied to the deal
+		logging.debug('image uploaded')
+		if origin == 'merchant_edit' or origin == 'admin_review':
+			#an image was uploaded, so remove the old one.
+			blob = deal.img
+			blob.delete()
+		#if an image has been uploaded, add it to the deal. otherwise do nothing.
+		#assumes that if an image already exists, that it the old one has been deleted elsewhere
+		blob_key = params['img_key']
+		deal.img= blob_key
+	else:
+		#an image was not uploaded. do nothing
+		logging.debug('image not uploaded')
+	
+	
+	
+	
+	
+	
+	#add the data
+	deal.deal_text 			= deal_text
+	deal.deal_type			= deal_type
+	deal.description 		= description
+	deal.tags				= list(set(tags)) #list->set->list removes duplicates
+	deal.business_name		= business_name
+	deal.businessID			= str(businessID)
+	deal.vicinity			= vicinity
+	deal.geo_point			= geo_point
+	deal.geo_hash			= geo_hash
+	
+	#secondary_name
+	if deal_type == 'bundle':
+		deal.secondary_name = secondary_name
+	
+	
+	
+	#put the deal
+	deal.put()
+	
+	#dealput is the deal key i.e. dealID
+	logging.debug(log_model_props(deal))
+	logging.debug(log_model_props(business))
+	
+	share_url = create_share_url(deal)
+	
+	if origin == 'phone_existing_business' or origin =='phone_new_business':
+		#needs share url and dealID
+		return share_url,deal
+	else:
+		#return share url
+		return share_url
 
