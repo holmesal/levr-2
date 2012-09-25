@@ -29,7 +29,7 @@ else:
 # FUNCTIONS
 def create_notification(notification_type,to_be_notified,actor,deal=None):
 	'''
-	notification_type	= choices: 'redemption', 'thanks', 'followerUpload', 'newFollower'
+	notification_type	= choices: 'redemption', 'thanks','favorite', 'followerUpload', 'newFollower'
 						The action being performed
 	to_be_notified		= [db.Key,db.Key,db.Key,...]
 						The people or entities to be notified of this action
@@ -54,17 +54,9 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 										)
 		notification.put()
 		logging.debug(log_model_props(notification))
-		if notification_type == 'redemption' or notification_type == 'thanks' or notification_type == 'followerUpload':
-			#users = the people to be notified
-			users = Customer.get(to_be_notified)
+		
 			
-			for user in users:
-				user.new_notifications += 1
-			
-			#replace users in db
-			db.put(users)
-			
-		elif notification_type == 'newFollower':
+		if notification_type == 'newFollower':
 			#user is the person that is being followed
 			user = Customer.get(to_be_notified[0])
 			
@@ -79,10 +71,28 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 			
 			#replace user
 			db.put(user)
+		elif notification_type == 'favorite':
+			#grab deal owner
+			user = Customer.get(to_be_notified[0])
 			
+			#update notification count
+			user.new_notifications += 1
+			
+			
+			db.put(user)
 		else:
-			raise Exception('notification_type not recognized in create_notification')
-		
+			#users = the people to be notified
+			users = Customer.get(to_be_notified)
+			
+			for user in users:
+				if user:
+					user.new_notifications += 1
+			
+			#replace users in db
+			db.put(users)
+#		else:
+#			raise Exception('notification_type not recognized in create_notification')
+#		
 		
 		
 	except Exception,e:
@@ -688,7 +698,7 @@ class Customer(db.Model):
 	last_name		= db.StringProperty(default='')
 	photo			= db.StringProperty(default='')
 	followers		= db.ListProperty(db.Key)
-	date_last_notified = db.DateTimeProperty()
+	date_last_notified = db.DateTimeProperty(auto_now_add=True)
 	last_notified	= db.IntegerProperty(default=long(unix_time(datetime.now())))
 	
 	@property
@@ -705,15 +715,17 @@ class Customer(db.Model):
 			date = self.last_notified
 		logging.debug(date)
 		
-		#reset last notification time
-		self.last_notified = long(unix_time(datetime.now()))
+		notifications = Notification.all().filter('to_be_notified',self.key()).filter('date_in_seconds >=',date).fetch(None)
 		
+		now = datetime.now()
+		#reset last notification time
+		self.last_notified = long(unix_time(now))
+		self.date_last_notified = now
 		#reset new_notifications counter
 		self.new_notifications = 0
 		
 		#return all notifications
-		return Notification.all().filter('to_be_notified',self.key()).filter('date_in_seconds >=',date).fetch(None)
-	
+		return notifications
 	
 #	def increment_new_redeem_count(self):
 #		logging.info('incrementing!')
@@ -877,7 +889,7 @@ class CustomerDeal(Deal):
 class Notification(db.Model):
 	date			= db.DateTimeProperty(auto_now_add=True)
 	date_in_seconds	= db.IntegerProperty(default=long(unix_time(datetime.now())))
-	notification_type = db.StringProperty(required=True,choices=set(['redemption','thanks','followerUpload','newFollower']))
+	notification_type = db.StringProperty(required=True,choices=set(['redemption','thanks','favorite','followerUpload','newFollower']))
 #	owner			= db.ReferenceProperty(Customer,collection_name='notifications',required=True)
 	to_be_notified	= db.ListProperty(db.Key)
 	deal			= db.ReferenceProperty(Deal,collection_name='notifications')

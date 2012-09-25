@@ -12,8 +12,6 @@ from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
 from datetime import datetime
 from random import randint
-from urllib2 import Request
-from urllib2 import urlopen as open
 
 class MainPage(webapp2.RequestHandler):
 	def get(self):
@@ -101,25 +99,8 @@ class TestHandler(webapp2.RequestHandler):
 		ninja = enc.encrypt_key(levr.Customer.all().filter('email','santa@levr.com').get().key())
 		deal = enc.encrypt_key(levr.Deal.all().ancestor(db.Key(enc.decrypt_key(ethan))).get().key())
 		
-		
-#		#patrick follows ethan
-#		levr.create_notification('newFollow',ethan.key(),pat.key(),None)
-#		
-#		#alonso follows ethan
-#		levr.create_notification('newFollow',ethan.key(),alonso.key(),None)
-#		
-#		#ethan creates a deal
-#		levr.create_notification('friendUpload',ethan.followers,ethan.key(),enc.encrypt_key(deal.key()))
-#		
-#		#ninja redeems ethans deal
-#		levr.create_notification('redemption',deal.key().parent(),ninja.key(),enc.encrypt_key(deal.key()))
-#		
-#		#ninja thanks ethan for his deal
-#		levr.create_notification('thanks',deal.key().parent(),ninja.key(),enc.encrypt_key(deal.key()))
-		
 		url = 'http://0.0.0.0:8080/api'
 		
-		ethan
 		
 		ethan_url = url+'/user/'+ethan
 		pat_url = url+'/user/'+pat
@@ -148,21 +129,15 @@ class TestHandler(webapp2.RequestHandler):
 		self.response.out.write(deal+'<br/><br/>')
 		self.response.out.write('curl '+deal_url)
 		
+		self.response.out.write('<br><br><br><br> | python -mjson.tool')
+		
 		follow = '/follow?followerID='
 		redeem = '/redeem?uid='
 		
-		self.response.out.write('Pat follows Ethan')
-		self.response.out.write('<br/>')
 		
-		r = Request(ethan_url+follow+pat,
-						headers = {
-								"Accept": "*/*"
-								}
-						)
-		r1 = open(r)
-		self.response.out.write(r1,{},{"Accept": "application/json"})
+#		
+	
 		
-
 class FilterGeohashHandler(webapp2.RequestHandler):
 	def get(self):
 		#take in geo_point

@@ -125,19 +125,29 @@ class AddFavoriteHandler(webapp2.RequestHandler):
 			if not user:
 				api_utils.send_error(self,'Invalid uid: '+uid)
 				return
+
 			
-			#append dealID to favorites property
-			user.favorites.append(dealID)
-			logging.debug(user.favorites)
+			logging.debug(levr.log_model_props(user))
+			#only add to favorites if not already in favorites
+			if dealID not in user.favorites:
+				logging.debug('Flag not in favorites')
+				#append dealID to favorites property
+				user.favorites.append(dealID)
+				logging.debug(user.favorites)
+				
+				#create favorite notification
+				levr.create_notification('favorite',dealID.parent(),uid,dealID)
 			
-			#close entity
-			user.put()
+				#close entity
+				user.put()
+			else:
+				logging.debug('Flag in favorites')
+			
 			api_utils.send_response(self,{},user)
 		except:
 			levr.log_error(self.request)
 			api_utils.send_error(self,'Server Error')
-		
-	
+
 class DeleteFavoriteHandler(webapp2.RequestHandler):
 	def get(self,dealID):
 		'''
@@ -172,16 +182,19 @@ class DeleteFavoriteHandler(webapp2.RequestHandler):
 			favorites	= user.favorites
 			logging.debug(favorites)
 			
-			#generate new favorites list without requested dealID
-			new_favorites	= [deal for deal in favorites if deal != dealID]
-			logging.debug(new_favorites)
+			#only go through the motions if the dealID is in the favorites list
+			if dealID in user.favorites:
+				#generate new favorites list without requested dealID
+				new_favorites	= [deal for deal in favorites if deal != dealID]
+				logging.debug(new_favorites)
+				
+				#reassign user favorites to new list
+				user.favorites	= new_favorites
+				logging.debug(user.favorites)
+				
+				#close entity
+				user.put()
 			
-			#reassign user favorites to new list
-			user.favorites	= new_favorites
-			logging.debug(user.favorites)
-			
-			#close entity
-			user.put()
 			
 			api_utils.send_response(self,{},user
 								)
@@ -220,19 +233,6 @@ class ReportHandler(webapp2.RequestHandler):
 			if not user:
 				api_utils.send_error(self,'Invalid uid: '+uid)
 				return
-#			
-#			logging.warning(dealID)
-#			#get human readable info for email
-#			deal = levr.Deal.get(dealID)
-#			if not deal:
-#				api_utils.send_error('Invalid parameter: dealID')
-#			business_name = deal.business_name
-#			
-#			user = levr.Customer.get(uid)
-#			if not user:
-#				api_utils.send_error('Invalid parameter: uid')
-#			alias = user.alias
-#			
 			
 			#create report Entity
 			report = levr.ReportedDeal(
@@ -411,7 +411,7 @@ class DealInfoHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 
 app = webapp2.WSGIApplication([('/api/deal/(.*)/redeem.*', RedeemHandler),
-								('/api/deal/(.*)/addfavorite.*', AddFavoriteHandler),
+								('/api/deal/(.*)/favorite.*', AddFavoriteHandler),
 								('/api/deal/(.*)/deletefavorite.*', DeleteFavoriteHandler),
 								('/api/deal/(.*)/report.*', ReportHandler),
 								('/api/deal/(.*)/img.*', DealImgHandler),

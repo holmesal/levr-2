@@ -289,7 +289,7 @@ class UserUnfollowHandler(webapp2.RequestHandler):
 			
 			#user is the person being followed
 			user = levr.Customer.get(uid)
-			if not actor:
+			if not user:
 				api_utils.send_error(self,'Invalid uid: '+uid)
 				return
 			
@@ -358,10 +358,11 @@ class UserNotificationsHandler(webapp2.RequestHandler):
 		
 		Output:{
 			meta:{
-				success
-				errorMsg
+				success :<bool>
+				errorMsg : <str>
 				}
 			response:{
+					numResults : <int>
 					notifications:[
 						<NOTIFICATION OBJECT>
 						]
@@ -373,6 +374,8 @@ class UserNotificationsHandler(webapp2.RequestHandler):
 				return
 			else:
 				uid = db.Key(enc.decrypt_key(uid))
+				
+			#sinceDate is the date of how far back you want notifications
 			sinceDate = self.request.get('sinceDate')
 			if not api_utils.check_param(self,sinceDate,'sinceDate','int',False):
 				sinceDate = None
@@ -380,6 +383,7 @@ class UserNotificationsHandler(webapp2.RequestHandler):
 			
 			logging.debug('sinceDate: '+str(sinceDate))
 			user = levr.Customer.get(uid)
+			logging.debug(levr.log_model_props(user))
 			logging.debug('last notified: '+str(user.last_notified))
 			
 			#get notifications 
@@ -420,7 +424,24 @@ class UserInfoHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
-			pass
+			if not api_utils.check_param(self,uid,'uid','key',True):
+				return
+			else:
+				uid = db.Key(enc.decrypt_key(uid))
+				
+			#get user entity
+			user = levr.Customer.get(uid)
+			if not user:
+				api_utils.send_error(self,'Invalid uid: '+uid)
+				return
+			
+			#create response object
+			response = {
+					'user'	: api_utils.package_user(user)
+					}
+			
+			#respond
+			api_utils.send_response(self,response,user)
 		except:
 			levr.log_error(self.request)
 			api_utils.send_error(self,'Server Error')

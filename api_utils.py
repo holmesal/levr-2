@@ -49,6 +49,8 @@ def check_param(self,parameter,parameter_name,param_type='str',required=True):
 			if not parameter.isdigit():
 				if required == True:
 					send_error(self,'Invalid parameter: '+str(parameter_name)+"; "+str(parameter))
+				else:
+					logging.error('Flag parameter: '+str(parameter))
 				return False
 	logging.info(parameter_name+": "+str(parameter))
 	return True
@@ -73,7 +75,7 @@ def package_deal(deal,privacyLevel='public'):
 			'tags'			: deal.tags
 			}
 	return packaged_deal
-def package_user(user,privacyLevel='public'):
+def package_user(user,privacyLevel='public',followers=True):
 	'''alias is added by us, first_name and last_name should be added by all other services (foursquare for sure right now)'''
 	if user.alias != '':
 		alias  = user.alias
@@ -88,14 +90,18 @@ def package_user(user,privacyLevel='public'):
 		'dateCreated'	: user.date_created.__str__()[:19],
 		'firstName'		: user.first_name,
 		'lastName'		: user.last_name,
-		'photo'			: user.photo
-	}
+		'photo'			: user.photo,
+		}
+	if followers == True:
+		followers_list = levr.Customer.get(user.followers)
+		packaged_user['followers'] = [package_user(f,'public',False) for f in followers_list]
+	
 	
 	return packaged_user
 def package_notification(notification):
 	packaged_notification = {
 		'notificationID'	: enc.encrypt_key(str(notification.key())),
-		'date'				: str(notification.date),
+		'date'				: str(notification.date)[:19],
 		'dateInSeconds'		: notification.date_in_seconds,
 		'notificationType'	: notification.notification_type,
 		'user'				: package_user(notification.actor)
