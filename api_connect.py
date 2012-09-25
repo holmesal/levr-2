@@ -84,6 +84,11 @@ class ConnectTwitterHandler(webapp2.RequestHandler):
 		if uid == '':
 			api_utils.send_error(self,'Required parameter not passed: uid')
 			return
+		#check screen_name
+		screen_name = self.request.get('screenName')
+		if screen_name == '':
+			api_utils.send_error(self,'Required parameter not passed: screenName')
+			return
 		#decrypt uid
 		try:
 			uid = db.Key(enc.decrypt_key(uid))
@@ -95,6 +100,8 @@ class ConnectTwitterHandler(webapp2.RequestHandler):
 		user = levr.Customer.get(uid)
 		#add twitter token
 		user.twitter_token = token
+		#add screen name
+		user.twitter_screen_name = screen_name
 		#update
 		user.put()
 		

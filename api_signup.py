@@ -6,7 +6,6 @@ import levr_classes as levr
 import levr_encrypt as enc
 from random import randint
 from google.appengine.ext import db
-from google.appengine.api import urlfetch
 import json
 
 
@@ -79,6 +78,11 @@ class SignupTwitterHandler(webapp2.RequestHandler):
 		if token == '':
 			api_utils.send_error(self,'Required parameter not passed: token')
 			return
+		#check screen_name
+		screen_name = self.request.get('screenName')
+		if screen_name == '':
+			api_utils.send_error(self,'Required parameter not passed: screenName')
+			return
 		
 		#check if token currently exists in datastore
 		existing_user = levr.Customer.gql('WHERE twitter_token = :1',token).get()
@@ -91,9 +95,12 @@ class SignupTwitterHandler(webapp2.RequestHandler):
 			#user does not exist, create new and populate via twitter API
 			user = levr.Customer()
 			user.twitter_token = token
-#			#
-#			#populate with twitter stuff here
-#			#
+			user.twitter_screen_name = screen_name
+			user.alias = screen_name
+			
+			'''#grab twitter deets
+			user = social.twitter_deets(user,token,screen_name)'''
+			
 			user.put()
 			response = {'user':api_utils.package_user(user,'private')}
 			api_utils.send_response(self,response,user)
