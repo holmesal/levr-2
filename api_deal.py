@@ -7,40 +7,6 @@ import levr_utils
 from google.appengine.ext import db
 from google.appengine.api import mail
 
-'''
-DEAL OBJECT :{
-			#PUBLIC
-			dealID:
-			business:{
-					businessID:
-					businessName:
-					vicinity:
-					geoPoint:
-					geoHash:
-					}
-			dealText:
-			description:
-			shareURL: URL
-			geoPoint:
-			geoHash:
-			status:
-			largeImg: URL
-			smallImg: URL
-			dateUploaded:
-			dateEnd:
-			isExclusive: bool
-			barcode: None if empty
-			redemptions: number
-			tags: [list]
-			#PRIVATE
-			
-			}
-USER OBJECT :{
-			#PUBLIC
-			uid:
-			alias:
-			}
-'''
 
 class RedeemHandler(webapp2.RequestHandler):
 	def get(self,dealID):
@@ -54,42 +20,43 @@ class RedeemHandler(webapp2.RequestHandler):
 		'''
 		#RESTRICTED
 		try:
-#			#spoof development vals
-#			dealID	= 'ahNkZXZ-bGV2ci1wcm9kdWN0aW9uch8LEg1CdXNpbmVzc093bmVyGMIBDAsSBERlYWwYxAEM'
-#			uid		= 'ahNkZXZ-bGV2ci1wcm9kdWN0aW9ucg8LEghDdXN0b21lchjMAQw'
-			
-			logging.info(dealID)
-			logging.info(self.request.get('uid'))
-#			
+			#CHECK PARAMS
 			if not api_utils.check_param(self,dealID,'dealID','key',True):
 				return
 			else:
 				dealID = db.Key(enc.decrypt_key(dealID))
-				
-			#get actor
+			
 			uid = self.request.get('uid')
 			if not api_utils.check_param(self,uid,'uid','key',True):
 				return
 			else:
 				uid = db.Key(enc.decrypt_key(uid))
 			
-			actor = levr.Customer.get(uid)
-			if not actor:
+			
+			
+			
+			#GET ENTITIES
+			[user,deal] = db.get([uid,dealID])
+			if not user or user.kind() != 'Customer':
 				api_utils.send_error(self,'Invalid uid: '+uid)
+				return
+			if not deal or deal.kind() != 'Deal':
+				api_utils.send_error(self,'Invalid dealID: '+str(dealID))
 				return
 			
 			
 			
+			#PERFORM ACTIONS
 			owner = dealID.parent()
 			logging.debug(owner)
 			
-			if not levr.create_notification('redemption',owner,actor.key(),dealID):
+			if not levr.create_notification('redemption',dealID.parent(),uid,dealID):
 				raise Exception('Problem in create_notifications')
 			
 			
 			
 			#respond
-			api_utils.send_response(self,{},actor)
+			api_utils.send_response(self,{},user)
 		except:
 			levr.log_error(self.request)
 			api_utils.send_error(self,'Server Error')
@@ -106,27 +73,32 @@ class AddFavoriteHandler(webapp2.RequestHandler):
 		'''
 		#RESTRICTED
 		try:
-			
-			logging.info(dealID)
-			logging.info(self.request.get('uid'))
-#			
+			#CHECK PARAMS
 			if not api_utils.check_param(self,dealID,'dealID','key',True):
 				return
 			else:
 				dealID = db.Key(enc.decrypt_key(dealID))
 				logging.debug(dealID)
+				
 			uid = self.request.get('uid')
 			if not api_utils.check_param(self,uid,'uid','key',True):
 				return
 			else:
 				uid = db.Key(enc.decrypt_key(uid))
 			
-			user = levr.Customer.get(uid)
-			if not user:
+			
+			#GET ENTITIES
+			[user,deal] = db.get([uid,dealID])
+			if not user or user.kind() != 'Customer':
 				api_utils.send_error(self,'Invalid uid: '+uid)
 				return
-
+			if not deal or deal.kind() != 'Deal':
+				api_utils.send_error(self,'Invalid dealID: '+str(dealID))
+				return
 			
+			
+			
+			#PERFORM ACTIONS
 			logging.debug(levr.log_model_props(user))
 			#only add to favorites if not already in favorites
 			if dealID not in user.favorites:
@@ -159,25 +131,31 @@ class DeleteFavoriteHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
-			logging.info(dealID)
-			logging.info(self.request.get('uid'))
-#			
+			#CHECK PARAMS
 			if not api_utils.check_param(self,dealID,'dealID','key',True):
 				return
 			else:
 				dealID = db.Key(enc.decrypt_key(dealID))
 				logging.debug(dealID)
+				
 			uid = self.request.get('uid')
 			if not api_utils.check_param(self,uid,'uid','key',True):
 				return
 			else:
 				uid = db.Key(enc.decrypt_key(uid))
 			
-			user = levr.Customer.get(uid)
-			if not user:
+			
+			#GET ENTITIES
+			[user,deal] = db.get([uid,dealID])
+			if not user or user.kind() != 'Customer':
 				api_utils.send_error(self,'Invalid uid: '+uid)
 				return
+			if not deal or deal.kind() != 'Deal':
+				api_utils.send_error(self,'Invalid dealID: '+str(dealID))
+				return
 			
+			
+			#PERFORM ACTIONS
 			#grab favorites list
 			favorites	= user.favorites
 			logging.debug(favorites)
@@ -196,8 +174,7 @@ class DeleteFavoriteHandler(webapp2.RequestHandler):
 				user.put()
 			
 			
-			api_utils.send_response(self,{},user
-								)
+			api_utils.send_response(self,{},user)
 		except:
 			levr.log_error(self.request)
 			api_utils.send_error(self,'Server Error')
@@ -215,24 +192,29 @@ class ReportHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
-			logging.info(dealID)
-			logging.info(self.request.get('uid'))
-#			
+			#CHECK PARAMS
 			if not api_utils.check_param(self,dealID,'dealID','key',True):
 				return
 			else:
 				dealID = db.Key(enc.decrypt_key(dealID))
 				logging.debug(dealID)
+				
 			uid = self.request.get('uid')
 			if not api_utils.check_param(self,uid,'uid','key',True):
 				return
 			else:
 				uid = db.Key(enc.decrypt_key(uid))
 			
-			user = levr.Customer.get(uid)
-			if not user:
+			
+			#GET ENTITIES
+			[user,deal] = db.get([uid,dealID])
+			if not user or user.kind() != 'Customer':
 				api_utils.send_error(self,'Invalid uid: '+uid)
 				return
+			if not deal or deal.kind() != 'Deal':
+				api_utils.send_error(self,'Invalid dealID: '+str(dealID))
+				return
+			
 			
 			#create report Entity
 			report = levr.ReportedDeal(
@@ -264,115 +246,44 @@ class DealImgHandler(webapp2.RequestHandler):
 	def get(self,dealID):
 		'''
 		Input: None
-		Output:{
-			meta:{
-				success
-				errorMsg
-				}
+		Output: image/jpeg
 		'''
 		#get inputs
 		'''Returns ONLY an image for a deal specified by dealID
 		Gets the image from the blobstoreReferenceProperty deal.img'''
 		try:
-			logging.info('img')
+			logging.info('\n\n\nIMAGE')
+			
+			
+			#CHECK PARAMS
 			if not api_utils.check_param(self,dealID,'dealID','key',True):
 				return
-			uid = self.request.get('size')
-			if not api_utils.check_param(self,size,'size','key',True):
+			else:
+				dealID = db.Key(enc.decrypt_key(dealID))
+				logging.debug(dealID)
+			
+			size = self.request.get('size')
+			if not api_utils.check_param(self,size,'size','str',True):
 				return
 			
-			
-			logging.debug(dealID)
-			logging.debug(size)
-			
-			#get deal object
+			#GET ENTITIES
 			deal = db.get(dealID)
-
+			if not user or user.kind() != 'Customer':
+				api_utils.send_error(self,'Invalid uid: '+uid)
+				return
+			
 			#get the blob
 			blob_key = deal.img
 			
-			logging.debug(dir(blob_key.properties))
-			#read the blob data into a string !!!! important !!!!
-			blob_data = blob_key.open().read()
+			#send image to response output
+			if not api_utils.send_img(self,blob_key,size):
+				return
 			
-			#pass blob data to the image handler
-			img			= images.Image(blob_data)
-			#get img dimensions
-			img_width	= img.width
-			img_height	= img.height
-			logging.debug(img_width)
-			logging.debug(img_height)
-			
-			#define output parameters
-			if size == 'dealDetail':
-				#view for top of deal screen
-				aspect_ratio 	= 3. 	#width/height
-				output_width 	= 640.	#arbitrary standard
-			elif size == 'list':
-				#view for in deal or favorites list
-				aspect_ratio	= 1.	#width/height
-				output_width	= 200.	#arbitrary standard
-			elif size == 'fullSize':
-				#full size image
-				aspect_ratio	= float(img_width)/float(img_height)
-				output_width	= float(img_width)
-	#			self.response.out.write(deal.img)
-			elif size == 'webShare':
-				aspect_ratio	= 4.
-				output_width	= 600.
-			elif size == 'facebook':
-				aspect_ratio 	= 1.
-				output_width	= 250.
-			elif size == 'emptySet':
-				aspect_ratio	= 3.
-				output_width	= 640.
-			elif size == 'widget':
-				aspect_ratio	= 1.
-				output_width	= 150.
-			else:
-				raise Exception('invalid size parameter')
-				
-				##set this to some default for production
-			#calculate output_height from output_width
-			output_height	= output_width/aspect_ratio
-			
-			##get crop dimensions
-			if img_width > img_height*aspect_ratio:
-				#width must be cropped
-				w_crop_unscaled = (img_width-img_height*aspect_ratio)/2
-				w_crop 	= float(w_crop_unscaled/img_width)
-				left_x 	= w_crop
-				right_x = 1.-w_crop
-				top_y	= 0.
-				bot_y	= 1.
-			else:
-				#height must be cropped
-				h_crop_unscaled = (img_height-img_width/aspect_ratio)/2
-				h_crop	= float(h_crop_unscaled/img_height)
-				left_x	= 0.
-				right_x	= 1.
-				top_y	= h_crop
-				bot_y	= 1.-h_crop
-		
-			#crop image to aspect ratio
-			img.crop(left_x,top_y,right_x,bot_y)
-			logging.debug(img)
-			
-			#resize cropped image
-			img.resize(width=int(output_width),height=int(output_height))
-			logging.debug(img)
-			output_img = img.execute_transforms(output_encoding=images.JPEG)
-#			logging.debug(output_img)
 		except:
-			levr.log_error(self.request)
-			output_img = None
-		finally:
-			try:
-				self.response.headers['Content-Type'] = 'image/jpeg'
-				self.response.out.write(output_img)
-			except:
-				levr.log_error()
-		
+			levr.log_error()
+			self.response.headers['Content-Type'] = 'image/jpeg'
+			self.response.out.write(None)
+			
 
 class DealInfoHandler(webapp2.RequestHandler):
 	def get(self,dealID):
@@ -391,20 +302,25 @@ class DealInfoHandler(webapp2.RequestHandler):
 			}
 		'''
 		try:
-			logging.info(dealID)
-#			
+			#CHECK PARAMS
 			if not api_utils.check_param(self,dealID,'dealID','key',True):
 				return
 			else:
 				dealID = db.Key(enc.decrypt_key(dealID))
 				logging.debug(dealID)
-			logging.warning(type(dealID))
-			deal = levr.Deal.get(dealID)
-			if not deal:
-				api_utils.send_error(self,'Invalid dealID: '+str(dealID))
+				
 			
-			response = api_utils.package_deal(deal)
 			
+			#GET ENTITIES
+			deal = db.get(dealID)
+			if not deal or deal.kind() != 'Deal':
+				api_utils.send_error(self,'Invalid dealID: '+dealID)
+				return
+			
+			
+			response = {
+				'deal'	: api_utils.package_deal(deal)
+			}
 			api_utils.send_response(self,response)
 		except:
 			levr.log_error(self.request.body)

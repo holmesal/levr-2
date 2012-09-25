@@ -4,6 +4,18 @@ import levr_classes as levr
 import logging
 import os
 from google.appengine.ext import db
+from google.appengine.api import images
+
+
+#creates a url for remote or local server
+if os.environ['SERVER_SOFTWARE'].startswith('Development') == True:
+	#we are on the development environment
+	host_url = 'http://localhost:8080/'
+else:
+	#we are deployed on the server
+	host_url = 'http://www.levr.com/'
+
+
 
 def send_error(self,error):
 	reply = {
@@ -16,6 +28,10 @@ def send_error(self,error):
 	}
 	
 	self.response.out.write(json.dumps(reply))
+	
+	
+
+
 def check_param(self,parameter,parameter_name,param_type='str',required=True):
 	#check if parameter sent in params
 	#parameter is passed
@@ -146,28 +162,131 @@ def send_response(self,response,user=None):
 	logging.debug(levr.log_dict(reply))
 	self.response.out.write(json.dumps(reply))
 	
+
+
 def create_share_url(deal_entity):
 	#creates a share url for a deal
-	if os.environ['SERVER_SOFTWARE'].startswith('Development') == True:
-		#we are on the development environment
-		URL = 'http://localhost:8080/'
-	else:
-		#we are deployed on the server
-		URL = 'http://www.levr.com/'
-		
-	share_url = URL+deal_entity.share_id
+	share_url = host_url+deal_entity.share_id
 	return share_url
 	
-def create_img_url(deal_entity,size):
-	#creates a share url for a deal
-	if os.environ['SERVER_SOFTWARE'].startswith('Development') == True:
-		#we are on the development environment
-		img_url= 'http://localhost:8080/phone/img?dealID='+enc.encrypt_key(deal_entity.key())+'&size='+size
+def create_img_url(entity,size):
+	#creates a url that will serve the deals image
+#	logging.debug(levr.log_dir(entity))
+#	logging.debug(entity.class_name())
+#	logging.debug(type(entity.kind()))
+	
+	logging.debug(entity.kind())
+	logging.debug(entity.kind() == 'Deal')
+	if entity.kind() == 'Customer':
+		hook = 'api/user/'
+	elif entity.kind() == 'Deal':
+		hook = 'api/deal/'
 	else:
-		#we are deployed on the server
-		img_url = 'http://www.levr.com/phone/img?dealID='+enc.encrypt_key(deal_entity.key())+'&size='+size
-		
+		raise KeyError('entity does not have an image: '+entity.kind())
+	
+	#create one glorious url
+	img_url = host_url+hook+enc.encrypt_key(entity.key())+'/img?size='+size
 	return img_url
+
+
+
+def send_img(self,blob_key,size):
+	try:
+		logging.debug(levr.log_dir(blob_key.properties))
+		
+		
+		#read the blob data into a string !!!! important !!!!
+		blob_data = blob_key.open().read()
+		
+		#pass blob data to the image handler
+		img			= images.Image(blob_data)
+		#get img dimensions
+		img_width	= img.width
+		img_height	= img.height
+		logging.debug(img_width)
+		logging.debug(img_height)
+		
+		#define output parameters
+		if size == 'large':
+			#view for top of deal screen
+			aspect_ratio 	= 3. 	#width/height
+			output_width 	= 640.	#arbitrary standard
+		elif size == 'small':
+			#view for in deal or favorites list
+			aspect_ratio	= 1.	#width/height
+			output_width	= 200.	#arbitrary standard
+		elif size == 'dealDetail':
+			#view for top of deal screen
+			aspect_ratio 	= 3. 	#width/height
+			output_width 	= 640.	#arbitrary standard
+		elif size == 'list':
+			#view for in deal or favorites list
+			aspect_ratio	= 1.	#width/height
+			output_width	= 200.	#arbitrary standard
+		elif size == 'fullSize':
+			#full size image
+			aspect_ratio	= float(img_width)/float(img_height)
+			output_width	= float(img_width)
+	#			self.response.out.write(deal.img)
+		elif size == 'webShare':
+			aspect_ratio	= 4.
+			output_width	= 600.
+		elif size == 'facebook':
+			aspect_ratio 	= 1.
+			output_width	= 250.
+		elif size == 'emptySet':
+			aspect_ratio	= 3.
+			output_width	= 640.
+		elif size == 'widget':
+			aspect_ratio	= 1.
+			output_width	= 150.
+		else:
+			raise KeyError('Invalid image size: '+size)
+		
+			
+			##set this to some default for production
+		#calculate output_height from output_width
+		output_height	= output_width/aspect_ratio
+		
+		##get crop dimensions
+		if img_width > img_height*aspect_ratio:
+			#width must be cropped
+			w_crop_unscaled = (img_width-img_height*aspect_ratio)/2
+			w_crop 	= float(w_crop_unscaled/img_width)
+			left_x 	= w_crop
+			right_x = 1.-w_crop
+			top_y	= 0.
+			bot_y	= 1.
+		else:
+			#height must be cropped
+			h_crop_unscaled = (img_height-img_width/aspect_ratio)/2
+			h_crop	= float(h_crop_unscaled/img_height)
+			left_x	= 0.
+			right_x	= 1.
+			top_y	= h_crop
+			bot_y	= 1.-h_crop
+	
+		#crop image to aspect ratio
+		img.crop(left_x,top_y,right_x,bot_y)
+		logging.debug(img)
+		
+		#resize cropped image
+		img.resize(width=int(output_width),height=int(output_height))
+		logging.debug(img)
+		
+		#package image
+		output_img = img.execute_transforms(output_encoding=images.JPEG)
+		
+		#write image to output
+		self.response.headers['Content-Type'] = 'image/jpeg'
+		self.response.out.write(output_img)
+		
+	except KeyError,e:
+		send_error(self,e)
+	except Exception,e:
+		levr.log_error(e)
+		send_error(self,'Server Error')
+	
 	
 def get_deals_in_area(tags,request_point,precision=5):
 	'''
