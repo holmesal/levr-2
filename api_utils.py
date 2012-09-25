@@ -20,7 +20,7 @@ def check_param(self,parameter,parameter_name,param_type='str',required=True):
 	#parameter is passed
 	logging.info(parameter_name+": "+str(parameter))
 	if not parameter:
-		logging.info("EERRRRR")
+#		logging.info("EERRRRR")
 		#parameter is empty
 		if required == True:
 			send_error(self,'Required parameter not passed: '+str(parameter_name))
@@ -29,27 +29,27 @@ def check_param(self,parameter,parameter_name,param_type='str',required=True):
 		#parameter is not empty
 		#if parameter is an entity key, make sure
 		if param_type == 'key':
-			logging.info('HI')
+#			logging.info('key')
 			#parameter is an entity key
 			try:
-				logging.info('HEY THERE')
-				logging.debug(parameter)
+#				logging.info('start test key')
+#				logging.debug(parameter)
 				parameter = enc.decrypt_key(parameter)
-				logging.debug(parameter)
-				logging.debug('err')
+#				logging.debug(parameter)
 				parameter = db.Key(parameter)
-				logging.debug(parameter)
-				logging.debug('end')
+#				logging.debug(parameter)
+#				logging.debug('end test key')
 			except:
 				if required == True:
 					send_error(self,'Invalid parameter: '+str(parameter_name)+"; "+str(parameter))
 				return False
 		elif param_type == 'int':
-			logging.debug('integer')
+#			logging.debug('integer')
 			if not parameter.isDigit():
 				if required == True:
 					send_error(self,'Invalid parameter: '+str(parameter_name)+"; "+str(parameter))
 				return False
+	logging.info(parameter_name+": "+str(parameter))
 	return True
 
 def package_deal(deal,privacyLevel='public'):

@@ -87,7 +87,7 @@ class RedeemHandler(webapp2.RequestHandler):
 									deal = dealID
 									)
 			note.put()
-			logging.debug(levr_utils.log_model_props(note))
+			logging.debug(levr.log_model_props(note))
 			
 			#respond
 			api_utils.send_response(self,{},user)

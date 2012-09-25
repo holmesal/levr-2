@@ -4,7 +4,6 @@ import webapp2
 import levr_classes as levr
 import logging
 import levr_encrypt as enc
-import levr_utils
 import base_62_converter as converter
 #import geo.geohash as geohash
 import geo.geohash as geohash
@@ -108,7 +107,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 
 
 
-		(share_url,dealID) = levr_utils.dealCreate(params,'phone_new_business')
+		(share_url,dealID) = levr.dealCreate(params,'phone_new_business')
 		logging.debug(share_url)
 		logging.debug(dealID)
 
@@ -134,9 +133,9 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 #				group = 'paid'
 #			else:
 #				group = 'unpaid'
-#			logging.debug(levr_utils.log_model_props(user))
+#			logging.debug(levr.log_model_props(user))
 #			user.group = group
-#			logging.debug(levr_utils.log_model_props(user))
+#			logging.debug(levr.log_model_props(user))
 #			
 #		db.put(users)
 class StoreGeohashHandler(webapp2.RequestHandler):
@@ -287,7 +286,7 @@ class TestHandler(webapp2.RequestHandler):
 		#get customer
 		customer = Cust.all().get()
 		
-		logging.info(levr_utils.log_dict(customer.properties()))
+		logging.info(levr.log_dict(customer.properties()))
 		logging.info(customer.notifications.fetch(None))
 		n = customer.notifications.filter('notification_type =','redemption').get()
 		logging.debug(n.user.email)

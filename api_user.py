@@ -143,7 +143,7 @@ class UserUploadsHandler(webapp2.RequestHandler):
 			levr.log_error(self.request)
 			api_utils.send_error(self,'Server Error')
 		
-class UserFollowersHandler(webapp2.RequestHandler):
+class UserGetFollowersHandler(webapp2.RequestHandler):
 	def get(self,uid):
 		'''
 		Get all of a users followers
@@ -156,12 +156,13 @@ class UserFollowersHandler(webapp2.RequestHandler):
 				errorMsg
 				}
 			response:{
-				friends:[
+				followers:[
 					<USER OBJECT>
 					]
 				}
 		'''
 		try:
+			logging.info('GET USER FOLLOWERS')
 			logging.info(uid)
 			
 			LIMIT_DEFAULT = 20
@@ -188,6 +189,14 @@ class UserFollowersHandler(webapp2.RequestHandler):
 				api_utils.send_error(self,'Invalid uid: '+uid)
 				return
 			
+			#package each follower into <USER OBJECT>
+			followers = levr.Customer.get(user.followers)
+			followers = [api_utils.package_user(u) for u in followers]
+			
+			response = {
+					'numResults'	: followers.__len__(),
+					'followers'		: followers
+					}
 			#respond
 			api_utils.send_response(self,response,user)
 		except:
@@ -207,7 +216,7 @@ class UserAddFollowHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
-			logging.info(uid)
+			logging.info('USER ADD FOLLOWER')
 			
 			#uid is the user that is being followed
 			if not api_utils.check_param(self,uid,'uid','key',True):
@@ -222,14 +231,88 @@ class UserAddFollowHandler(webapp2.RequestHandler):
 			else:
 				followerID = db.Key(enc.decrypt_key(followerID))
 			
-			
-			#go through the notification process 
-			if not levr_utils.create_notification('newFollower',uid,followerID):
+			#user is the follower
+			actor = levr.Customer.get(followerID)
+			if not actor:
+				api_utils.send_error(self,'Invalid followerID: '+uid)
 				return
 			
 			
+			#go through the notification process 
+			if not levr.create_notification('newFollower',uid,followerID):
+				api_utils.send_error(self,'Server Error')
+				return
+			
+			#get notifications
+			
+			
 			#respond
-			api_utils.send_response(self,response,user)
+			api_utils.send_response(self,{},actor)
+			
+		except:
+			levr.log_error(self.request)
+			api_utils.send_error(self,'Server Error')
+class UserUnfollowHandler(webapp2.RequestHandler):
+	def get(self,uid):
+		'''
+		A user (specified in ?uid=USER_ID) stops following the user specified in (/api/USER_ID/follow)
+		If the user is not a follower and they request to unfollow, then nothing happens and success is true
+		
+		inputs: followerID(required)
+		Output:{
+			meta:{
+				success
+				errorMsg
+				}
+		'''
+		try:
+			logging.info('USER REMOVE FOLLOWER')
+			
+			#uid is the user that is being followed
+			if not api_utils.check_param(self,uid,'uid','key',True):
+				return
+			else:
+				uid = db.Key(enc.decrypt_key(uid))
+			
+			#followerID is the user that is doing the following
+			followerID = self.request.get('followerID')
+			if not api_utils.check_param(self,followerID,'followerID','key',True):
+				return
+			else:
+				followerID = db.Key(enc.decrypt_key(followerID))
+			
+			#actor is the follower
+			actor = levr.Customer.get(followerID)
+			if not actor:
+				api_utils.send_error(self,'Invalid followerID: '+followerID)
+				return
+			
+			#user is the person being followed
+			user = levr.Customer.get(uid)
+			if not actor:
+				api_utils.send_error(self,'Invalid uid: '+uid)
+				return
+			
+			#grab a list of existing followers
+			old_followers = user.followers
+			logging.debug(old_followers)
+			
+			if followerID in old_followers:
+				logging.debug('Follower exists')
+				#create new list of followers that excludes the requested id
+				new_followers = [u for u in old_followers if u != followerID]
+				logging.debug(new_followers)
+				
+				#replace list of followers
+				user.followers = new_followers
+				
+				#replace user that lost a follower
+				db.put(user)
+			else:
+				logging.debug('follower does not exist')
+			
+			#respond
+			api_utils.send_response(self,{},actor)
 			
 		except:
 			levr.log_error(self.request)
@@ -314,8 +397,9 @@ class UserInfoHandler(webapp2.RequestHandler):
 		
 app = webapp2.WSGIApplication([('/api/user/(.*)/favorites', UserFavoritesHandler),
 								('/api/user/(.*)/uploads', UserUploadsHandler),
-								('/api/user/(.*)/followers', UserFriendsHandler),
+								('/api/user/(.*)/followers', UserGetFollowersHandler),
 								('/api/user/(.*)/follow', UserAddFollowHandler),
+								('/api/user/(.*)/unfollow', UserUnfollowHandler),
 								('/api/user/(.*)/img', UserImgHandler),
 								('/api/user/(.*)/cashout', UserCashOutHandler),
 								('/api/user/(.*)/notifications', UserNotificationsHandler),

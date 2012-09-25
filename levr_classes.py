@@ -46,7 +46,7 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 			to_be_notified = [to_be_notified]
 		
 		#create and put the notification
-		notification = levr.Notification(
+		notification = Notification(
 										notification_type	= notification_type,
 										to_be_notified		= to_be_notified,
 										actor				= actor,
@@ -55,11 +55,8 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 		notification.put()
 		logging.debug(log_model_props(notification))
 		if notification_type == 'redemption' or notification_type == 'thanks' or notification_type == 'followerUpload':
-			#select necessary properties
-			properties = ['new_notifications']
-			
 			#users = the people to be notified
-			users = levr.Customer.get(to_be_notified,projection=properties)
+			users = Customer.get(to_be_notified)
 			
 			for user in users:
 				user.new_notifications += 1
@@ -68,14 +65,14 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 			db.put(users)
 			
 		elif notification_type == 'newFollower':
-			#get only the necessary properties
-			properties = ['followers','new_notifications']
 			#user is the person that is being followed
-			user = levr.Customer.get(to_be_notified[0],projection=properties)
-			logging.debug(log_model_props(user))
+			user = Customer.get(to_be_notified[0])
+			
 			
 			#add the actor to the list of followers
-			user.followers.append(actor)
+			if actor not in user.followers:
+				user.followers.append(actor)
+			logging.debug(log_model_props(user))
 			
 			#increment the number of notifications
 			user.new_notifications += 1
@@ -89,7 +86,7 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 		
 		
 	except Exception,e:
-		levr.log_error()
+		log_error()
 		return False
 	else:
 		return True
@@ -216,7 +213,7 @@ def tagger(text):
 	return tags
 
 def log_error(message=''):
-	#called by: levr.log_error(*self.request.body)
+	#called by: log_error(*self.request.body)
 	exc_type,exc_value,exc_trace = sys.exc_info()
 	logging.error(exc_type)
 	logging.error(exc_value)
@@ -273,7 +270,7 @@ def log_dict(obj,props=None,delimeter= "\n\t\t"):
 	#returns a long multiline string of a regular python object in key: prop
 #	delimeter = "\n\t\t"
 	log_str = delimeter
-	logging.debug(obj)
+
 	try:
 		if type(props) is list:
 			#only display certain keys
@@ -286,11 +283,9 @@ def log_dict(obj,props=None,delimeter= "\n\t\t"):
 			#display all keys
 			key_list = []
 			for key in obj:
-				logging.debug(key)
 				key_list.append(key)
 			key_list.sort()
 			for key in key_list:
-				logging.debug(key)
 				if type(obj[key]) == dict:
 					log_str += str(key)+": "+ log_dict(obj[key],None,delimeter+'\t\t')+delimeter
 
@@ -300,7 +295,8 @@ def log_dict(obj,props=None,delimeter= "\n\t\t"):
 		logging.warning('There was an error in log_dict %s',e)
 	finally:
 		return log_str
-		
+	
+
 def create_unique_id():
 	#create the share ID - based on milliseconds since epoch
 	milliseconds = int(unix_time_millis(datetime.now()))
@@ -411,7 +407,7 @@ def dealCreate(params,origin,upload_flag=True):
 		
 		if 'geo_point' in params:
 			geo_point = params['geo_point']
-			geo_point = levr.geo_converter(geo_point)
+			geo_point = geo_converter(geo_point)
 			logging.debug("geo point: "+str(geo_point))
 			#create geohash from geopoint
 			geo_hash = geohash.encode(geo_point.lat,geo_point.lon)
@@ -431,14 +427,14 @@ def dealCreate(params,origin,upload_flag=True):
 			logging.debug('start types')
 			logging.debug(types)
 			logging.debug(type(types))
-			types = levr.tagger(types)
+			types = tagger(types)
 			logging.debug(types)
 			logging.debug('end types')
 		else:
 			raise KeyError('types not in params')
 		#check if business exists - get businessID
-#		business= levr.Business.gql("WHERE business_name=:1 and geo_point=:2", business_name, geo_point).get()
-		business = levr.Business.all().filter('business_name =',business_name).filter('vicinity =',vicinity).get()
+#		business= Business.gql("WHERE business_name=:1 and geo_point=:2", business_name, geo_point).get()
+		business = Business.all().filter('business_name =',business_name).filter('vicinity =',vicinity).get()
 		logging.debug('start business info')
 		logging.debug(log_model_props(business))
 		logging.debug('end business info')
@@ -446,7 +442,7 @@ def dealCreate(params,origin,upload_flag=True):
 		if not business:
 			logging.debug('business doesnt exist')
 			#if a business doesn't exist in db, then create a new one
-			business = levr.Business()
+			business = Business()
 			logging.debug(log_model_props(business))
 			
 			
@@ -485,7 +481,7 @@ def dealCreate(params,origin,upload_flag=True):
 			businessID = params['business']
 			businessID	= enc.decrypt_key(businessID)
 			businessID	= db.Key(businessID)
-			business	= levr.Business.get(businessID)
+			business	= Business.get(businessID)
 		else:
 			raise KeyError('business not passed in params')
 		#get the tags from the business
@@ -504,7 +500,7 @@ def dealCreate(params,origin,upload_flag=True):
 	if 'deal_line1' in params:
 		deal_text	= params['deal_line1']
 		logging.debug(deal_text)
-		tags.extend(levr.tagger(deal_text))
+		tags.extend(tagger(deal_text))
 		logging.info(tags)
 	else:
 		raise KeyError('deal_line1 not passed in params')
@@ -519,7 +515,7 @@ def dealCreate(params,origin,upload_flag=True):
 		if secondary_name:
 			#deal is bundled
 			logging.debug('deal is bundled')
-			tags.extend(levr.tagger(secondary_name))
+			tags.extend(tagger(secondary_name))
 			logging.info(tags)
 			deal_type = 'bundle'
 		else:
@@ -537,7 +533,7 @@ def dealCreate(params,origin,upload_flag=True):
 		logging.debug(description.__len__())
 		description = description[:500]
 		logging.debug(description)
-		tags.extend(levr.tagger(description))
+		tags.extend(tagger(description))
 		logging.info(tags)
 	else:
 		raise KeyError('deal_description not passed in params')
@@ -551,20 +547,20 @@ def dealCreate(params,origin,upload_flag=True):
 		ownerID = params['uid']
 		ownerID = enc.decrypt_key(ownerID)
 		
-		deal = levr.Deal(parent = db.Key(ownerID))
+		deal = Deal(parent = db.Key(ownerID))
 		deal.is_exclusive		= True
 
 	elif origin	=='merchant_edit':
 		dealID	= params['deal']
 		dealID	= enc.decrypt_key(dealID)
-		deal	= levr.Deal.get(dealID)
+		deal	= Deal.get(dealID)
 
 	elif origin	=='phone_existing_business' or origin == 'phone_new_business':
 		#phone deals are the child of a ninja
 		logging.debug('STOP!')
 		uid = enc.decrypt_key(params['uid'])
 
-		deal = levr.CustomerDeal(parent = db.Key(uid))
+		deal = CustomerDeal(parent = db.Key(uid))
 		deal.is_exclusive		= False
 		
 		
@@ -573,14 +569,14 @@ def dealCreate(params,origin,upload_flag=True):
 	elif origin == 'admin_review':
 		#deal has already been uploaded by ninja - rewriting info that has been reviewed
 		dealID = enc.decrypt_key(params['deal'])
-		deal = levr.CustomerDeal.get(db.Key(dealID))
+		deal = CustomerDeal.get(db.Key(dealID))
 		deal.been_reviewed		= True
 		deal.date_start			= datetime.now()
 		days_active				= int(params['days_active'])
 		deal.date_end			= datetime.now() + timedelta(days=days_active)
 		
 		new_tags = params['extra_tags']
-		tags.extend(levr.tagger(new_tags))
+		tags.extend(tagger(new_tags))
 		logging.debug('!!!!!!!!!!!!')
 		logging.debug(tags)
 	
@@ -641,6 +637,32 @@ def dealCreate(params,origin,upload_flag=True):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###################################################
+###					CLASSES						###
+###################################################
+
+
+
 class Customer(db.Model):
 #root class
 	email 			= db.EmailProperty()
@@ -671,12 +693,12 @@ class Customer(db.Model):
 	@property
 	def following(self):
 		#returns a query object that will return all followers of this user entity
-		return levr.Customer.all().filter('followers',self.key())
+		return Customer.all().filter('followers',self.key())
 	
 	def get_notifications(self,date=None):
 		#returns a query object for all notifications since the specified date
 		#reset user date_last_notified
-		return levr.Notification.all().filter('to_be_notified',self.key()).filter('date_last_notified >=',date)
+		return Notification.all().filter('to_be_notified',self.key()).filter('date_last_notified >=',date)
 	
 	
 	def increment_new_redeem_count(self):
