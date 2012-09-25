@@ -98,7 +98,7 @@ libraries:
 - name: jinja2
   version: latest
 - name: pycrypto
-  version: 2.6
+  version: 2.3
 
 builtins:
 - appstats: on
@@ -118,5 +118,5 @@ skip_files:
 - ^(.*/)?.*/RCS/.*
 - ^(.*/)?\..*
 - ^(.*/)?.*\.bak$
-# - ^Crypto/
+- ^Crypto/
 
