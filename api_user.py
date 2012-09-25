@@ -24,7 +24,7 @@ class UserFavoritesHandler(webapp2.RequestHandler):
 		'''
 		#RESTRICTED
 		try:
-			logging.info(uid)
+			logging.info("\n\nGET USER FAVORITES")
 			
 			LIMIT_DEFAULT = 20
 			OFFSET_DEFAULT = 0
@@ -44,8 +44,9 @@ class UserFavoritesHandler(webapp2.RequestHandler):
 				#limit not passed
 				offset = OFFSET_DEFAULT
 			
-			#grab user entity
-			user = levr.Customer.get(uid)
+			
+			#GET ENTITIES
+			user = db.get(uid)
 			if not user:
 				api_utils.send_error(self,'Invalid uid: '+uid)
 				return
@@ -54,21 +55,22 @@ class UserFavoritesHandler(webapp2.RequestHandler):
 			favorites = user.favorites
 			
 			#check list is longer than offset
-			if favorites.__len__() < offset:
-				offset = 0
-			#grab list from offset to end
-			favorites = favorites[offset:]
-			#check list is longer than limit
-			if favorites.__len__() > limit:
-				#there are more favorites than the limit requests so shorten favorites
-				favorites = favorites[:limit]
-			
-			#fetch all favorite entities
-			favorites = levr.Deal.get(favorites)
-			
-			#package each deal object
-			deals = [api_utils.package_deal(deal,'public') for deal in favorites]
-			
+			if favorites.__len__() > offset:
+				#grab list from offset to end
+				favorites = favorites[offset:]
+				#check list is longer than limit
+				if favorites.__len__() > limit:
+					#there are more favorites than the limit requests so shorten favorites
+					favorites = favorites[:limit]
+				
+				#fetch all favorite entities
+				favorites = levr.Deal.get(favorites)
+				
+				#package each deal object
+				deals = [api_utils.package_deal(deal,'public') for deal in favorites]
+			else:
+				#favorites is either empty or the offset is past the length of it
+				deals = []
 			#create response object
 			response = {
 					'numResults': str(favorites.__len__()),
@@ -99,11 +101,13 @@ class UserUploadsHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
-			logging.info(uid)
+			logging.info("\n\nGET USER UPLOADS")
 			
-			LIMIT_DEFAULT = 20
+			LIMIT_DEFAULT = 10
 			OFFSET_DEFAULT = 0
 			
+			
+			#CHECK PARAMS
 			if not api_utils.check_param(self,uid,'uid','key',True):
 				return
 			else:
@@ -119,11 +123,12 @@ class UserUploadsHandler(webapp2.RequestHandler):
 				#limit not passed
 				offset = OFFSET_DEFAULT
 			
-#			#grab user entity
-#			user = levr.Customer.get(uid)
-#			if not user:
-#				api_utils.send_error(self,'Invalid uid: '+uid)
-#				return
+			#GET ENTITIES
+			user = db.get(uid)
+			if not user:
+				api_utils.send_error(self,'Invalid uid: '+uid)
+				return
+			
 			
 			#grab all deals that are owned by the specified customer
 			deals = levr.Deal.all().ancestor(uid).fetch(limit,offset=offset)
@@ -167,11 +172,14 @@ class UserGetFollowersHandler(webapp2.RequestHandler):
 			
 			LIMIT_DEFAULT = 20
 			OFFSET_DEFAULT = 0
-			
+			#CHECK PARAMS
 			if not api_utils.check_param(self,uid,'uid','key',True):
 				return
 			else:
 				uid = db.Key(enc.decrypt_key(uid))
+				
+			
+			
 			
 			limit = self.request.get('limit')
 			if not api_utils.check_param(self,limit,'limit','int',False):
@@ -183,15 +191,18 @@ class UserGetFollowersHandler(webapp2.RequestHandler):
 				#limit not passed
 				offset = OFFSET_DEFAULT
 			
-			#grab user entity
-			user = levr.Customer.get(uid)
+			#GET ENTITIES
+			user = db.get(uid)
 			if not user:
 				api_utils.send_error(self,'Invalid uid: '+uid)
 				return
 			
+			
+			
+			#PERFORM ACTIONS
+			
 			#package each follower into <USER OBJECT>
-			followers = levr.Customer.get(user.followers)
-			followers = [api_utils.package_user(u) for u in followers]
+			followers = [api_utils.package_user(u) for u in levr.Customer.get(user.followers)]
 			
 			response = {
 					'numResults'	: followers.__len__(),
@@ -208,7 +219,7 @@ class UserAddFollowHandler(webapp2.RequestHandler):
 		'''
 		A user (specified in ?uid=USER_ID) follows the user specified in (/api/USER_ID/follow)
 		
-		inputs: followerID(required)
+		inputs: uid(required)
 		Output:{
 			meta:{
 				success
@@ -216,30 +227,33 @@ class UserAddFollowHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
-			logging.info('USER ADD FOLLOWER')
+			logging.info('\n\nUSER ADD FOLLOWER')
 			
-			#uid is the user that is being followed
+			#CHECK PARAMS
 			if not api_utils.check_param(self,uid,'uid','key',True):
 				return
 			else:
 				uid = db.Key(enc.decrypt_key(uid))
-			
-			#followerID is the user that is doing the following
-			followerID = self.request.get('followerID')
-			if not api_utils.check_param(self,followerID,'followerID','key',True):
+				
+			actorID = self.request.get('uid')
+			if not api_utils.check_param(self,actorID,'uid','key',True):
 				return
 			else:
-				followerID = db.Key(enc.decrypt_key(followerID))
+				actorID = db.Key(enc.decrypt_key(actorID))
 			
-			#user is the follower
-			actor = levr.Customer.get(followerID)
-			if not actor:
-				api_utils.send_error(self,'Invalid followerID: '+uid)
+			
+			#GET ENTITIES
+			[user,actor] = db.get([uid,actorID])
+			if not user or user.kind() != 'Customer':
+				api_utils.send_error(self,'Invalid uid: '+uid)
+				return
+			if not actor or actor.kind() != 'Customer':
+				api_utils.send_error(self,'Invalid follower uid: '+str(actorID))
 				return
 			
 			
-			#go through the notification process 
-			if not levr.create_notification('newFollower',uid,followerID):
+			#PERFORM ACTIONS
+			if not levr.create_notification('newFollower',uid,actorID):
 				api_utils.send_error(self,'Server Error')
 				return
 			
@@ -266,41 +280,41 @@ class UserUnfollowHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
-			logging.info('USER REMOVE FOLLOWER')
+			logging.info('\n\nUSER REMOVE FOLLOWER')
 			
-			#uid is the user that is being followed
+			#CHECK PARAMS
 			if not api_utils.check_param(self,uid,'uid','key',True):
 				return
 			else:
 				uid = db.Key(enc.decrypt_key(uid))
-			
-			#followerID is the user that is doing the following
-			followerID = self.request.get('followerID')
-			if not api_utils.check_param(self,followerID,'followerID','key',True):
+				
+			actorID = self.request.get('uid')
+			if not api_utils.check_param(self,actorID,'uid','key',True):
 				return
 			else:
-				followerID = db.Key(enc.decrypt_key(followerID))
+				actorID = db.Key(enc.decrypt_key(actorID))
 			
-			#actor is the follower
-			actor = levr.Customer.get(followerID)
-			if not actor:
-				api_utils.send_error(self,'Invalid followerID: '+followerID)
-				return
 			
-			#user is the person being followed
-			user = levr.Customer.get(uid)
-			if not user:
+			#GET ENTITIES
+			[user,actor] = db.get([uid,actorID])
+			if not user or user.kind() != 'Customer':
 				api_utils.send_error(self,'Invalid uid: '+uid)
 				return
+			if not actor or actor.kind() != 'Customer':
+				api_utils.send_error(self,'Invalid follower uid: '+str(actorID))
+				return
 			
+			
+			#PERFORM ACTIONS
 			#grab a list of existing followers
 			old_followers = user.followers
 			logging.debug(old_followers)
 			
-			if followerID in old_followers:
+			#check if in list of existing followers
+			if actorID in old_followers:
 				logging.debug('Follower exists')
 				#create new list of followers that excludes the requested id
-				new_followers = [u for u in old_followers if u != followerID]
+				new_followers = [u for u in old_followers if u != actorID]
 				logging.debug(new_followers)
 				
 				#replace list of followers
@@ -309,7 +323,7 @@ class UserUnfollowHandler(webapp2.RequestHandler):
 				#replace user that lost a follower
 				db.put(user)
 			else:
-				logging.debug('follower does not exist')
+				logging.debug('follower does not exist. Do nothing')
 			
 			#respond
 			api_utils.send_response(self,{},actor)
@@ -319,18 +333,40 @@ class UserUnfollowHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 class UserImgHandler(webapp2.RequestHandler):
 	def get(self,uid):
-		'''
-		inputs: size
-		Output:{
-			meta:{
-				success
-				errorMsg
-				}
-		'''
+		'''Returns ONLY an image for a deal specified by dealID
+		Gets the image from the blobstoreReferenceProperty deal.img'''
 		try:
-			pass
+			logging.info('\n\n\nIMAGE')
+			
+			
+			#CHECK PARAMS
+			if not api_utils.check_param(self,uid,'uid','key',True):
+				return
+			else:
+				uid = db.Key(enc.decrypt_key(uid))
+				logging.debug(uid)
+			
+			size = self.request.get('size')
+			if not api_utils.check_param(self,size,'size','str',True):
+				return
+			
+			#GET ENTITIES
+			user = db.get(dealID)
+			if not user or user.kind() != 'Customer':
+				api_utils.send_error(self,'Invalid uid: '+uid)
+				return
+			
+			#get the blob
+			blob_key = user.img
+			
+			#send image to response output
+			if not api_utils.send_img(self,blob_key,size):
+				return
+			
 		except:
-			levr.log_error(levr_utils.log_dir(self.request))
+			levr.log_error()
+			self.response.headers['Content-Type'] = 'image/jpeg'
+			self.response.out.write(None)
 
 
 class UserCashOutHandler(webapp2.RequestHandler):

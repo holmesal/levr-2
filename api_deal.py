@@ -244,11 +244,6 @@ class ReportHandler(webapp2.RequestHandler):
 
 class DealImgHandler(webapp2.RequestHandler):
 	def get(self,dealID):
-		'''
-		Input: None
-		Output: image/jpeg
-		'''
-		#get inputs
 		'''Returns ONLY an image for a deal specified by dealID
 		Gets the image from the blobstoreReferenceProperty deal.img'''
 		try:
@@ -268,8 +263,8 @@ class DealImgHandler(webapp2.RequestHandler):
 			
 			#GET ENTITIES
 			deal = db.get(dealID)
-			if not user or user.kind() != 'Customer':
-				api_utils.send_error(self,'Invalid uid: '+uid)
+			if not deal or deal.kind() != 'Deal':
+				api_utils.send_error(self,'Invalid dealID: '+dealID)
 				return
 			
 			#get the blob
