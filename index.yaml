@@ -85,3 +85,18 @@ indexes:
   ancestor: yes
   properties:
   - name: is_exclusive
+
+- kind: Notification
+  properties:
+  - name: to_be_notified
+  - name: date
+
+- kind: Notification
+  properties:
+  - name: to_be_notified
+  - name: date_in_seconds
+
+- kind: Notification
+  properties:
+  - name: to_be_notified
+  - name: date_last_notified

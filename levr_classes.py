@@ -299,7 +299,7 @@ def log_dict(obj,props=None,delimeter= "\n\t\t"):
 
 def create_unique_id():
 	#create the share ID - based on milliseconds since epoch
-	milliseconds = int(unix_time_millis(datetime.now()))
+	milliseconds = int(unix_time(datetime.now()))
 	#make it smaller so we get ids with 5 chars, not 6
 	shortened_milliseconds = milliseconds/10 % 1000000000
 	unique_id = converter.dehydrate(shortened_milliseconds)
@@ -311,7 +311,7 @@ def unix_time(dt):
 	return delta.total_seconds()
 	
 def unix_time_millis(dt):
-	return unix_time(dt)
+	return unix_time(dt) *1000.0
 
 def dealCreate(params,origin,upload_flag=True):
 	'''pass in "self"'''
@@ -626,14 +626,14 @@ def dealCreate(params,origin,upload_flag=True):
 	logging.debug(log_model_props(deal))
 	logging.debug(log_model_props(business))
 	
-	share_url = create_share_url(deal)
+#	share_url = create_share_url(deal)
 	
 	if origin == 'phone_existing_business' or origin =='phone_new_business':
 		#needs share url and dealID
-		return share_url,deal
+		return deal
 	else:
 		#return share url
-		return share_url
+		return deal
 
 
 
@@ -678,8 +678,8 @@ class Customer(db.Model):
 	vicinity		= db.StringProperty(default='') #the area of the user, probably a college campus
 	favorites		= db.ListProperty(db.Key,default=[])
 	date_created	= db.DateTimeProperty(auto_now_add=True)
-	date_last_edited= db.DateTimeProperty(auto_now_add=True)
-	date_last_login = db.DateTimeProperty(auto_now=True)
+	date_last_edited= db.DateTimeProperty(auto_now=True)
+	date_last_login = db.DateTimeProperty(auto_now_add=True)
 	facebook_token	= db.StringProperty()
 	foursquare_token= db.StringProperty()
 	twitter_token	= db.StringProperty()
@@ -688,7 +688,8 @@ class Customer(db.Model):
 	last_name		= db.StringProperty(default='')
 	photo			= db.StringProperty(default='')
 	followers		= db.ListProperty(db.Key)
-	date_last_notified = db.DateTimeProperty(auto_now_add=True)
+	date_last_notified = db.DateTimeProperty()
+	last_notified	= db.IntegerProperty(default=long(unix_time(datetime.now())))
 	
 	@property
 	def following(self):
@@ -698,27 +699,40 @@ class Customer(db.Model):
 	def get_notifications(self,date=None):
 		#returns a query object for all notifications since the specified date
 		#reset user date_last_notified
-		return Notification.all().filter('to_be_notified',self.key()).filter('date_last_notified >=',date)
-	
-	
-	def increment_new_redeem_count(self):
-		logging.info('incrementing!')
-		self.new_redeem_count += 1
-		return
-	
-	def flush_new_redeem_count(self):
-		self.new_redeem_count = 0
-		return
+		logging.debug('Customer.get_notifications')
+		if date == None:
+			#date was not specified, use the default
+			date = self.last_notified
+		logging.debug(date)
 		
-	def get_notifications(self):
-		#grab new notifications
-		new_redemption = self.new_redeem_count
-		#flush notifications
-		self.flush_new_redeem_count()
-		#return new notification information
-		return {
-			"newRedemption"	: new_redemption
-		}
+		#reset last notification time
+		self.last_notified = long(unix_time(datetime.now()))
+		
+		#reset new_notifications counter
+		self.new_notifications = 0
+		
+		#return all notifications
+		return Notification.all().filter('to_be_notified',self.key()).filter('date_in_seconds >=',date).fetch(None)
+	
+	
+#	def increment_new_redeem_count(self):
+#		logging.info('incrementing!')
+#		self.new_redeem_count += 1
+#		return
+#	
+#	def flush_new_redeem_count(self):
+#		self.new_redeem_count = 0
+#		return
+		
+#	def get_notifications(self):
+#		#grab new notifications
+#		new_redemption = self.new_redeem_count
+#		#flush notifications
+#		self.flush_new_redeem_count()
+#		#return new notification information
+#		return {
+#			"newRedemption"	: new_redemption
+#		}
 		
 	def get_stats(self):
 		data = {
@@ -738,12 +752,12 @@ class Customer(db.Model):
 	def update_money_available(self,difference):
 		self.money_available += difference
 		
-		
-	def get_num_uploads(self):
-		'''Returns the number of deal children of user i.e. num they have uploaded'''
-		uploads = CustomerDeal.gql("WHERE ANCESTOR IS :1",self.key())
-		count = uploads.count()
-		return count
+#		
+#	def get_num_uploads(self):
+#		'''Returns the number of deal children of user i.e. num they have uploaded'''
+#		uploads = CustomerDeal.gql("WHERE ANCESTOR IS :1",self.key())
+#		count = uploads.count()
+#		return count
 
 
 
@@ -790,16 +804,6 @@ class Business(db.Model):
 			tags.extend(t)
 		
 		return tags
-	
-def package_business(business):
-	response = {
-			'businessID'	: enc.encrypt_key(business.key()),
-			'businessName'	: business.business_name,
-			'vicinity'		: business.vicinity,
-			'geoPoint'		: business.geo_point,
-			'geoHash'		: business.geo_hash
-			}
-	return response
 
 class Deal(polymodel.PolyModel):
 #Child of business owner OR customer ninja
@@ -872,6 +876,7 @@ class CustomerDeal(Deal):
 
 class Notification(db.Model):
 	date			= db.DateTimeProperty(auto_now_add=True)
+	date_in_seconds	= db.IntegerProperty(default=long(unix_time(datetime.now())))
 	notification_type = db.StringProperty(required=True,choices=set(['redemption','thanks','followerUpload','newFollower']))
 #	owner			= db.ReferenceProperty(Customer,collection_name='notifications',required=True)
 	to_be_notified	= db.ListProperty(db.Key)

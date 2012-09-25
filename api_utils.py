@@ -2,6 +2,7 @@ import json
 import levr_encrypt as enc
 import levr_classes as levr
 import logging
+import os
 from google.appengine.ext import db
 
 def send_error(self,error):
@@ -45,7 +46,7 @@ def check_param(self,parameter,parameter_name,param_type='str',required=True):
 				return False
 		elif param_type == 'int':
 #			logging.debug('integer')
-			if not parameter.isDigit():
+			if not parameter.isdigit():
 				if required == True:
 					send_error(self,'Invalid parameter: '+str(parameter_name)+"; "+str(parameter))
 				return False
@@ -56,19 +57,19 @@ def package_deal(deal,privacyLevel='public'):
 	logging.debug(str(deal.geo_point))
 	packaged_deal = {
 			'barcode'		: deal.barcode,
-			'business'		: package_business(levr.Business.gql('WHERE businessID = :1',deal.businessID)),
-			'dateUploaded'	: str(deal.date_end),
+			'business'		: package_business(levr.Business.get(deal.businessID)),
+			'dateUploaded'	: str(deal.date_end)[:19],
 			'dealID'		: enc.encrypt_key(deal.key()),
 			'dealText'		: deal.deal_text,
 			'description'	: deal.description,
 			'isExclusive'	: deal.is_exclusive,
-			'largeImg'		: levr.create_img_url(deal,'large'),
+			'largeImg'		: create_img_url(deal,'large'),
 			'geoHash'		: deal.geo_hash,
 			'geoPoint'		: str(deal.geo_point),
-			'redemptions'	: 'TODO!!',
-			'smallURL'		: levr.create_img_url(deal,'small'),
+			'redemptions'	: str(deal.count_redeemed),
+			'smallURL'		: create_img_url(deal,'small'),
 			'status'		: deal.deal_status,
-			'shareURL'		: levr.create_share_url(deal),
+			'shareURL'		: create_share_url(deal),
 			'tags'			: deal.tags
 			}
 	return packaged_deal
@@ -91,6 +92,18 @@ def package_user(user,privacyLevel='public'):
 	}
 	
 	return packaged_user
+def package_notification(notification):
+	packaged_notification = {
+		'notificationID'	: enc.encrypt_key(str(notification.key())),
+		'date'				: str(notification.date),
+		'dateInSeconds'		: notification.date_in_seconds,
+		'notificationType'	: notification.notification_type,
+		'user'				: package_user(notification.actor)
+		}
+	if notification.deal:
+		packaged_notification['deal'] = package_deal(notification.deal)
+	
+	return packaged_notification
 	
 def package_business(business):
 	packaged_business = {
@@ -100,8 +113,8 @@ def package_business(business):
 		'owner'			: business.owner,
 		'foursquareID'	: business.foursquare_id,
 		'foursquareName': business.foursquare_name,
-		'geoPoint'		: str(deal.geo_point),
-		'geoHash'		: deal.geo_hash
+		'geoPoint'		: str(business.geo_point),
+		'geoHash'		: business.geo_hash
 						}
 	return packaged_business
 	

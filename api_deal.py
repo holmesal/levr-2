@@ -65,32 +65,31 @@ class RedeemHandler(webapp2.RequestHandler):
 				return
 			else:
 				dealID = db.Key(enc.decrypt_key(dealID))
+				
+			#get actor
 			uid = self.request.get('uid')
 			if not api_utils.check_param(self,uid,'uid','key',True):
 				return
 			else:
 				uid = db.Key(enc.decrypt_key(uid))
 			
-			user = levr.Customer.get(uid)
-			if not user:
+			actor = levr.Customer.get(uid)
+			if not actor:
 				api_utils.send_error(self,'Invalid uid: '+uid)
 				return
+			
+			
 			
 			owner = dealID.parent()
 			logging.debug(owner)
 			
-			#create and store notification entity
-			note = levr.Notification(
-									parent = owner,
-									notification_type = 'redemption',
-									user = uid,
-									deal = dealID
-									)
-			note.put()
-			logging.debug(levr.log_model_props(note))
+			if not levr.create_notification('redemption',owner,actor.key(),dealID):
+				raise Exception('Problem in create_notifications')
+			
+			
 			
 			#respond
-			api_utils.send_response(self,{},user)
+			api_utils.send_response(self,{},actor)
 		except:
 			levr.log_error(self.request)
 			api_utils.send_error(self,'Server Error')

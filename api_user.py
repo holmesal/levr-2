@@ -3,7 +3,7 @@ import logging
 import levr_encrypt as enc
 import levr_classes as levr
 import api_utils
-import levr_utils
+from datetime import datetime
 from google.appengine.ext import db
 #from google.appengine.api import mail
 
@@ -355,6 +355,7 @@ class UserNotificationsHandler(webapp2.RequestHandler):
 		'''
 		#RESTRICTED
 		inputs: sinceDate(required)
+		
 		Output:{
 			meta:{
 				success
@@ -367,7 +368,38 @@ class UserNotificationsHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
-			pass
+
+			if not api_utils.check_param(self,uid,'uid','key',True):
+				return
+			else:
+				uid = db.Key(enc.decrypt_key(uid))
+			sinceDate = self.request.get('sinceDate')
+			if not api_utils.check_param(self,sinceDate,'sinceDate','int',False):
+				sinceDate = None
+			
+			
+			logging.debug('sinceDate: '+str(sinceDate))
+			user = levr.Customer.get(uid)
+			logging.debug('last notified: '+str(user.last_notified))
+			
+			#get notifications 
+			notifications = user.get_notifications(sinceDate)
+			logging.debug('notifications: '+str(notifications.__len__()))
+			
+			packaged_notifications = [api_utils.package_notification(n) for n in notifications]
+			
+			
+			response = {
+					'numResults'	: packaged_notifications.__len__(),
+					'notifications'	: packaged_notifications
+					}
+			
+			api_utils.send_response(self,response)
+#			logging.debug(notes)
+			
+			#replace user
+			#!!!!!!!IMPORTANT!!!!
+			user.put()
 		except:
 			levr.log_error(self.request)
 			api_utils.send_error(self,'Server Error')
