@@ -694,6 +694,7 @@ class Customer(db.Model):
 	facebook_token	= db.StringProperty()
 	foursquare_token= db.StringProperty()
 	twitter_token	= db.StringProperty()
+	twitter_screen_name = db.StringProperty()
 	new_notifications = db.IntegerProperty(default=0)
 	first_name		= db.StringProperty(default='')
 	last_name		= db.StringProperty(default='')

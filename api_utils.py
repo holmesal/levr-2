@@ -120,8 +120,6 @@ def package_user(user,privacyLevel='public',followers=True):
 	'''alias is added by us, first_name and last_name should be added by all other services (foursquare for sure right now)'''
 	if user.alias != '':
 		alias  = user.alias
-	elif user.first_name != '':
-		alias = user.first_name + ' ' + user.last_name[0] + '.'
 	else:
 		alias = 'Clint Eastwood'
 	
