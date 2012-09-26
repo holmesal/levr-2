@@ -3,8 +3,12 @@ import levr_encrypt as enc
 import levr_classes as levr
 import logging
 import os
+import geo.geohash as geohash
+from datetime import datetime
+
 from google.appengine.ext import db
 from google.appengine.api import images
+from math import sin, cos, asin, sqrt, degrees, radians
 
 
 #creates a url for remote or local server
@@ -93,7 +97,7 @@ def check_param(self,parameter,parameter_name,param_type='str',required=True):
 	return True
 
 def package_deal(deal,privacyLevel='public'):
-	logging.debug(str(deal.geo_point))
+#	logging.debug(str(deal.geo_point))
 	packaged_deal = {
 			'barcode'		: deal.barcode,
 			'business'		: package_business(levr.Business.get(deal.businessID)),
@@ -196,8 +200,8 @@ def create_img_url(entity,size):
 #	logging.debug(entity.class_name())
 #	logging.debug(type(entity.kind()))
 	
-	logging.debug(entity.kind())
-	logging.debug(entity.kind() == 'Deal')
+#	logging.debug(entity.kind())
+#	logging.debug(entity.kind() == 'Deal')
 	if entity.kind() == 'Customer':
 		hook = 'api/user/'
 	elif entity.kind() == 'Deal':
@@ -309,53 +313,167 @@ def send_img(self,blob_key,size):
 		send_error(self,'Server Error')
 	
 	
-def get_deals_in_area(tags,request_point,range=2,limit=None):
+def get_deals_in_area(tags,request_point,radius=2,limit=None,precision=5):
 	'''
 	tags = list of tags that are strings
 	request point is db.GeoPt format
-	range is miles
+	radius is miles
 	'''
-	center_hash = geohash.encode(request_point.lat,request_point.lon,precision=5)
+	
+	#hash the reuqested geo_point
+	center_hash = geohash.encode(request_point.lat,request_point.lon,precision=precision)
 	logging.debug(center_hash)
+	
+	#get the hashes of the center geo_point and the 8 surrounding hashes
 	hash_set = geohash.expand(center_hash)
 	logging.debug(hash_set)
 	
+	t0 = datetime.now()
 	##DEBUG
-	ref_query = levr.Deal.all().filter('deal_status =','active')
-	for tag in tags:
-		if tag != 'all':
-			ref_query.filter('tags =',tag)
-	ref_deals = ref_query.fetch(None)
-	logging.info("total number of deals: "+str(ref_deals.__len__()))
+#	ref_query = levr.Deal.all().filter('deal_status =','active')
+#	for tag in tags:
+#		if tag != 'all':
+#			ref_query.filter('tags =',tag)
+#	ref_deals = ref_query.fetch(None)
+#	logging.info("total number of deals: "+str(ref_deals.__len__()))
 #	for d in ref_deals:
 #		logging.debug(d.geo_hash)
 	##/DEBUG
 	
-	
+	t1 = datetime.now()
+	SPECIAL_QUERIES = ['all','popular','new','hot']
 	####build search query
 	#only grabbing deal keys, then batch get array
 	deal_keys = []
 	for query_hash in hash_set:
 		#only grab keys for deals that have active status
 		q = levr.Deal.all(keys_only=True).filter('deal_status =','active')
-		#grab all deals where primary_cat is in tags
-		for tag in tags:
-			#all is a special keyword
-			if tag != 'all':
+		
+		
+		#FILTER BY TAG
+		#do not filter by tags if the tag is one of the special key words
+		if tags[0] not in SPECIAL_QUERIES:
+			#grab all deals where primary_cat is in tags
+			for tag in tags:
 				logging.debug('tag: '+str(tag))
 				q.filter('tags =',tag)
-		#filter by geohash
+		else:
+			logging.debug('This is a special case. Not filtering by tags: '+str(tags[0]))
+		
+		
+		#FILTER BY GEOHASH
 		q.filter('geo_hash >=',query_hash).filter('geo_hash <=',query_hash+"{") #max bound
 #					logging.debug(q)
 #					logging.debug(levr.log_dict(q.__dict__))
 		
-		#get all keys for this neighborhood
+		
+		#FETCH DEAL KEYS
 		fetched_deals = q.fetch(None)
 		logging.info('From: '+query_hash+", fetched: "+str(fetched_deals.__len__()))
 		
 		deal_keys.extend(fetched_deals)
 #					logging.debug(deal_keys)
+	t2 = datetime.now()
 	
-	#batch get results. here is where we would set the number of results we want and the offset
+	#BATCH GET RESULTS
 	deals = levr.Deal.get(deal_keys)
-	return deals
+	t3 = datetime.now()
+	
+	#FILTER THE DEALS BY DISTANCE
+	filtered_deals = filter_deals_by_radius(deals,request_point,radius)
+	t4 = datetime.now()
+	
+	
+	logging.debug('Start')
+	logging.debug(deals.__len__())
+	logging.debug(filtered_deals.__len__())
+	logging.debug('End')
+	
+	fetch_time = t2-t1
+	get_time = t3-t2
+	filter_time = t4-t3
+	unfiltered_count = deals.__len__()
+	filtered_count = filtered_deals.__len__()
+	
+	return (filtered_deals,fetch_time,get_time,filter_time,unfiltered_count,filtered_count)
+
+
+def filter_deals_by_radius(deals,center,radius):
+	logging.debug('FILTER BY RADIUS')
+	#Only returns deals that are within a radius of the center
+	Earth_radius_km = 6371.0
+	RADIUS = Earth_radius_km
+	
+	def haversine(angle_radians):
+		return sin(angle_radians / 2.0) ** 2
+	
+	def inverse_haversine(h):
+		return 2 * asin(sqrt(h)) # radians
+	
+	def distance_between_points(lat1, lon1, lat2, lon2):
+		# all args are in degrees
+		# WARNING: loss of absolute precision when points are near-antipodal
+		lat1 = radians(lat1)
+		lat2 = radians(lat2)
+		dlat = lat2 - lat1
+		dlon = radians(lon2 - lon1)
+		h = haversine(dlat) + cos(lat1) * cos(lat2) * haversine(dlon)
+		return RADIUS * inverse_haversine(h)
+	
+	def bounding_box(lat, lon, distance):
+		# Input and output lats/longs are in degrees.
+		# Distance arg must be in same units as RADIUS.
+		# Returns (dlat, dlon) such that
+		# no points outside lat +/- dlat or outside lon +/- dlon
+		# are <= "distance" from the (lat, lon) point.
+		# Derived from: http://janmatuschek.de/LatitudeLongitudeBoundingCoordinates
+		# WARNING: problems if North/South Pole is in circle of interest
+		# WARNING: problems if longitude meridian +/-180 degrees intersects circle of interest
+		# See quoted article for how to detect and overcome the above problems.
+		# Note: the result is independent of the longitude of the central point, so the
+		# "lon" arg is not used.
+		dlat = distance / RADIUS
+		dlon = asin(sin(dlat) / cos(radians(lat)))
+		return degrees(dlat), degrees(dlon)
+	
+	#get the geopoints of all deals
+	
+	#create list of deals to be returned
+	acceptable_deals = []
+	
+	#parse center geo_point into lat, lon
+	lat1 = center.lat
+	lon1 = center.lon
+	
+	radius = float(radius)
+	
+	for deal in deals:
+		#parse geo_point into lat,lon
+		lat2 = deal.geo_point.lat
+		lon2 = deal.geo_point.lon
+		
+		#calculate distance
+		distance = distance_between_points(lat1,lon1,lat2,lon2)
+		if distance < radius:
+			logging.debug(distance)
+#			deal['distance'] = distance
+			acceptable_deals.append(deal)
+#			acceptable_deals.append(distance)
+		else:
+			logging.debug('False')
+			logging.debug(distance)
+	
+	return acceptable_deals
+		
+
+
+
+
+
+
+
+
+
+
+
+

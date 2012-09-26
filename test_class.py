@@ -73,7 +73,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			ninja = ninja.put()
 		
 		
-
+		
 		params = {
 					'uid'				: enc.encrypt_key(ethan),
 					'business_name'		: 'Als Sweatshop',
@@ -134,9 +134,33 @@ class TestHandler(webapp2.RequestHandler):
 		follow = '/follow?followerID='
 		redeem = '/redeem?uid='
 		
+class AddDealsHandler(webapp2.RequestHandler):
+	def get(self):
 		
-#		
-	
+		lons = [x/1000. for x in range(72400,72600,10) if x%1 ==0]
+		lats = [x/1000. for x in range(42400,42600,10) if x%1 ==0]
+		self.response.out.write(lons.__len__()*lats.__len__())
+		self.response.out.write(lats)
+		
+		ethan = levr.Customer.all().get().key()
+		
+		for lat in lats:
+			for lon in lons:
+				
+				params = {
+							'uid'				: enc.encrypt_key(ethan),
+							'business_name'		: 'Als Sweatshop',
+							'geo_point'			: str(lat)+','+str(lon),
+							'vicinity'			: '10 Buick St',
+							'types'				: 'Establishment,Food',
+							'deal_description'	: 'This is a description',
+							'deal_line1'		: 'I am a deal',
+							'distance'			: '10', #is -1 if unknown = double
+	#						'img_key'			: img_key
+							}
+		
+				dealID = levr.dealCreate(params,'phone_new_business',False)
+				self.response.out.write(dealID)
 		
 class FilterGeohashHandler(webapp2.RequestHandler):
 	def get(self):
@@ -172,7 +196,8 @@ class FilterGeohashHandler(webapp2.RequestHandler):
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload.*', DatabaseUploadHandler),
 								('/new/find', FilterGeohashHandler),
-								('/new/test', TestHandler)
+								('/new/test', TestHandler),
+								('/new/inundate', AddDealsHandler)
 #								('/new/update' , UpdateUsersHandler)
 								],debug=True)
 
