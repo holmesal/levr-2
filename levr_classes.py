@@ -205,10 +205,11 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 	return data'''
 
 def geo_converter(geo_str):
-	if geo_str:
+	try:
 		lat, lng = geo_str.split(',')
 		return db.GeoPt(lat=float(lat), lon=float(lng))
-	return None
+	except Exception,e:
+		raise TypeError('lat,lon: '+str(geo_str))
 
 def tagger(text): 
 	# text is a string

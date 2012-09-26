@@ -30,8 +30,29 @@ def send_error(self,error):
 	self.response.out.write(json.dumps(reply))
 	
 	
-
-
+def check_search_inputs(self,lat,lon,limit):
+	
+	#check geopoint
+	try:
+		geo_string = str(lat)+","+str(lon)
+		geo_point = levr.geo_converter(geo_string)
+	except:
+		self.send_error(self,'Invalid parameter: lat or lon'+geo_string)
+		return (False,None,None)
+	
+	if limit != '':
+		#limit was passed, so check if it is integer
+		if not limit.isdigit():
+			#limit fails, return false
+			self.send_error(self,'Invalid parameter: limit'+str(limit))
+			return (False,None,None)
+	else:
+		#limit was not passed, set to default
+		limit = None
+	
+	return (True,geo_point,limit)
+	
+	
 def check_param(self,parameter,parameter_name,param_type='str',required=True):
 	#check if parameter sent in params
 	#parameter is passed
@@ -288,15 +309,13 @@ def send_img(self,blob_key,size):
 		send_error(self,'Server Error')
 	
 	
-def get_deals_in_area(tags,request_point,precision=5):
+def get_deals_in_area(tags,request_point,range=2,limit=None):
 	'''
 	tags = list of tags that are strings
 	request point is db.GeoPt format
-	precision is int
+	range is miles
 	'''
-	request_point = levr.geo_converter('42.35,-71.110')
-	logging.debug(precision)
-	center_hash = geohash.encode(request_point.lat,request_point.lon,precision=precision)
+	center_hash = geohash.encode(request_point.lat,request_point.lon,precision=5)
 	logging.debug(center_hash)
 	hash_set = geohash.expand(center_hash)
 	logging.debug(hash_set)

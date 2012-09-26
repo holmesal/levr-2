@@ -53,7 +53,7 @@ class RedeemHandler(webapp2.RequestHandler):
 			if not levr.create_notification('redemption',dealID.parent(),uid,dealID):
 				raise Exception('Problem in create_notifications')
 			
-			
+			deal.count_redeemed += 1
 			
 			#respond
 			api_utils.send_response(self,{},user)
