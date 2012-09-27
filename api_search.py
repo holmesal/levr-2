@@ -86,6 +86,8 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			limit 		= kwargs.get('limit')
 			query 		= kwargs.get('query')
 			
+			logging.debug("limit: "+str(limit))
+			
 			#create tags from the query
 			tags = levr.tagger(query)
 			logging.debug("tags: "+str(tags))
@@ -119,7 +121,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			api_utils.send_response(self,response)
 		except:
 			levr.log_error(self.request.params)
-			api_utils.send_error('Server Error')
+			api_utils.send_error(self,'Server Error')
 class LoadTestHandler(webapp2.RequestHandler):
 	@validate
 	def get(self,**kwargs):
@@ -192,7 +194,7 @@ class LoadTestHandler(webapp2.RequestHandler):
 			
 		except:
 			levr.log_error(self.request.params)
-			api_utils.send_error('Server Error')
+			api_utils.send_error(self,'Server Error')
 
 class SearchNewHandler(webapp2.RequestHandler):
 	@validate
@@ -234,7 +236,7 @@ class SearchHotHandler(webapp2.RequestHandler):
 			pass
 		except:
 			levr.log_error(self.request.params)
-			api_utils.send_error('Server Error')
+			api_utils.send_error(self,'Server Error')
 class SearchPopularHandler(webapp2.RequestHandler):
 	@validate
 	def get(self,**kwargs):

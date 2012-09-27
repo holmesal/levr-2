@@ -327,7 +327,7 @@ def get_deals_in_area(tags,request_point,radius=2,limit=None,precision=5,verbose
 	logging.debug(hash_set)
 	
 	t0 = datetime.now()
-	##DEBUG
+	#################DEBUG
 #	ref_query = levr.Deal.all().filter('deal_status =','active')
 #	for tag in tags:
 #		if tag != 'all':
@@ -336,7 +336,7 @@ def get_deals_in_area(tags,request_point,radius=2,limit=None,precision=5,verbose
 #	logging.info("total number of deals: "+str(ref_deals.__len__()))
 #	for d in ref_deals:
 #		logging.debug(d.geo_hash)
-	##/DEBUG
+	##################/DEBUG
 	
 	t1 = datetime.now()
 	SPECIAL_QUERIES = ['all','popular','new','hot']
@@ -376,13 +376,32 @@ def get_deals_in_area(tags,request_point,radius=2,limit=None,precision=5,verbose
 	
 	#BATCH GET RESULTS
 	deals = levr.Deal.get(deal_keys)
+	
 	t3 = datetime.now()
 	
 	#FILTER THE DEALS BY DISTANCE
 	filtered_deals = filter_deals_by_radius(deals,request_point,radius)
+	
+	logging.debug(limit)
+	#LIMIT DEALS
+	if limit:
+		logging.debug('flag')
+	else:
+		logging.debug('unflag')
+	logging.debug(filtered_deals.__len__())
+	logging.debug(filtered_deals.__len__() >= int(limit))
+	
+	
+	if limit and filtered_deals.__len__() >= int(limit):
+		logging.debug('FLAG LIMITED')
+		filtered_deals = filtered_deals[:int(limit)]
+	else:
+		logging.debug('FLAG UNLIMITED')
+	
 	t4 = datetime.now()
 	
 	
+	####################### DEBUG
 	logging.debug('Start')
 	logging.debug(deals.__len__())
 	logging.debug(filtered_deals.__len__())
@@ -396,6 +415,10 @@ def get_deals_in_area(tags,request_point,radius=2,limit=None,precision=5,verbose
 	if verbose == True:
 		return (filtered_deals,fetch_time,get_time,filter_time,unfiltered_count,filtered_count)
 	else:
+	######################### /DEBUG
+	
+	
+	
 		return filtered_deals
 
 def filter_deals_by_radius(deals,center,radius):
