@@ -36,7 +36,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		
 		# new customer
 #		c = levr.Customer(key='agtkZXZ-Z2V0bGV2cnIOCxIIQ3VzdG9tZXIYEgw')
-		ethan = levr.Customer.all().filter('email','ethan@levr.com').get()
+		ethan = levr.Customer.all().filter('email','ethan@levr.com').get().key()
 		if not ethan:
 			ethan = levr.Customer()
 			ethan.email	= 'ethan@levr.com'
@@ -45,7 +45,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			ethan.favorites	= []
 			ethan = ethan.put()
 		
-		pat = levr.Customer.all().filter('email','patrick@levr.com').get()
+		pat = levr.Customer.all().filter('email','patrick@levr.com').get().key()
 		if not pat:
 			pat = levr.Customer()
 			pat.email	= 'patrick@levr.com'
@@ -54,7 +54,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			pat.favorites	= []
 			pat = pat.put()
 		
-		alonso = levr.Customer.all().filter('email','alonso@levr.com').get()
+		alonso = levr.Customer.all().filter('email','alonso@levr.com').get().key()
 		if not alonso:
 			alonso = levr.Customer()
 			alonso.email	= 'alonso@levr.com'
@@ -63,7 +63,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			alonso.favorites	= []
 			alonso = alonso.put()
 		
-		ninja = levr.Customer.all().filter('email','santa@levr.com').get()
+		ninja = levr.Customer.all().filter('email','santa@levr.com').get().key()
 		if not ninja:
 			ninja = levr.Customer()
 			ninja.email	= 'santa@levr.com'
@@ -77,10 +77,10 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		params = {
 					'uid'				: enc.encrypt_key(ethan),
 					'business_name'		: 'Als Sweatshop',
-					'geo_point'			: '32,-42',
+					'geo_point'			: '42.5,-72.5',
 					'vicinity'			: '10 Buick St',
 					'types'				: 'Establishment,Food',
-					'deal_description'	: 'This is a description',
+					'deal_description'	: 'This is a description gut guts who why when you buy a shoe with feet',
 					'deal_line1'		: 'I am a deal',
 					'distance'			: '10', #is -1 if unknown = double
 					'img_key'			: img_key

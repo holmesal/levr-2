@@ -8,7 +8,10 @@ import base_62_converter as converter
 from random import randint 
 import geo.geohash as geohash
 
+
 import levr_encrypt as enc
+from common_word_list import blacklist
+
 
 from google.appengine.ext import db
 from google.appengine.ext.db import polymodel
@@ -215,13 +218,22 @@ def tagger(text):
 	# text is a string
 #	parsing function for creating tags from description, etc
 	#replace underscores with spaces
-	text.replace("_"," ")
+	text = text.replace("_"," ")
 	#remove all non text characters
 	text = re.sub(r"[^\w\s]", '', text)
 	#parse text string into a list of words if it is longer than 2 chars long
-	tags = [w.lower() for w in re.findall("[\'\w]+", text) if len(w)>2]
-
-	return tags
+	tags = [w.lower() for w in re.findall("[\'\w]+", text)]# if len(w)>2]
+	#remove redundancies
+	tags = list(set(tags))
+	#remove unwanted tags
+	filtered_tags = []
+	for tag in tags:
+		if tag.isdigit() == False:
+			#tag is not a number 
+			if tag not in blacklist:
+				filtered_tags.append(tag)
+	
+	return filtered_tags
 
 def log_error(message=''):
 	#called by: log_error(*self.request.body)
@@ -776,12 +788,12 @@ class Customer(db.Model):
 
 
 
-class BusinessOwner(db.Model):
-	email 			= db.EmailProperty()
-	pw 				= db.StringProperty()
-	validated		= db.BooleanProperty(default=False)
-	date_created	= db.DateTimeProperty(auto_now_add=True)
-	date_last_edited= db.DateTimeProperty(auto_now=True)
+#class BusinessOwner(db.Model):
+#	email 			= db.EmailProperty()
+#	pw 				= db.StringProperty()
+#	validated		= db.BooleanProperty(default=False)
+#	date_created	= db.DateTimeProperty(auto_now_add=True)
+#	date_last_edited= db.DateTimeProperty(auto_now=True)
 	
 	#psudoproperty: businesses - see business entity - this is a query for all the businesses that list this owner as the owner
 
@@ -793,9 +805,9 @@ class Business(db.Model):
 	geo_hash		= db.StringProperty()
 	types			= db.ListProperty(str)
 	targeted		= db.BooleanProperty(default=False)
-	owner			= db.ReferenceProperty(BusinessOwner,collection_name='businesses')
+	owner			= db.ReferenceProperty(Customer,collection_name='businesses')
 	upload_email	= db.EmailProperty()
-#	creation_date	= db.DateTimeProperty(auto_now_add=True)
+	creation_date	= db.DateTimeProperty(auto_now_add=True)
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	date_last_edited= db.DateTimeProperty(auto_now=True)
 	widget_id		= db.StringProperty(default=create_unique_id())

@@ -46,6 +46,19 @@ indexes:
 - kind: Deal
   properties:
   - name: deal_status
+  - name: geo_hash
+  - name: business_name
+  - name: tags
+
+- kind: Deal
+  properties:
+  - name: deal_status
+  - name: geo_hash
+  - name: tags
+
+- kind: Deal
+  properties:
+  - name: deal_status
   - name: geo_point
     direction: desc
 

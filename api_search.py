@@ -3,6 +3,8 @@ import logging
 import levr_encrypt as enc
 import levr_classes as levr
 import api_utils
+import geo.geohash as geohash
+
 from datetime import datetime
 from google.appengine.ext import db
 
@@ -15,6 +17,7 @@ def validate(handler_method):
 		try:
 			logging.debug('SEARCH DECORATOR\n\n\n\n')
 #			logging.debug(levr.log_dir(self.request))
+			logging.warning(query)
 			
 			DEFAULT_RADIUS = 2 #miles
 			DEFAULT_LIMIT = None
@@ -46,10 +49,6 @@ def validate(handler_method):
 			geo_point = levr.geo_converter(geo_string)
 			
 			
-			paths = self.request.path.split('/')
-			path = paths[paths.__len__()-1]
-			logging.debug(path)
-			
 			logging.debug(radius)
 			logging.debug(limit)
 			
@@ -58,7 +57,7 @@ def validate(handler_method):
 		except TypeError,e:
 			api_utils.send_error(self,'Invalid parameter, '+str(e))
 		else:
-			handler_method(self,query,geo_point,radius,limit)
+			handler_method(self,query=query,geo_point=geo_point,radius=radius,limit=limit)
 	
 	return check_params
 
@@ -66,7 +65,64 @@ def validate(handler_method):
 
 class SearchQueryHandler(webapp2.RequestHandler):
 	@validate
-	def get(self,query,geo_point,rad,limit):
+	def get(self,**kwargs):
+		'''
+		inputs: lat,lon,limit, query
+		Output:{
+			meta:{
+				success
+				errorMsg
+				}
+			response:{
+				[string,string]
+				}
+		'''
+		try:
+			logging.debug('SEARCH BY QUERY\n\n\n')
+	#		logging.debug(kwargs)
+			#GET PARAMS
+			geo_point 	= kwargs.get('geo_point')
+			radius 		= kwargs.get('radius')
+			limit 		= kwargs.get('limit')
+			query 		= kwargs.get('query')
+			
+			#create tags from the query
+			tags = levr.tagger(query)
+			logging.debug("tags: "+str(tags))
+			
+			t1 = datetime.now()
+			#fetch deals
+			deals = api_utils.get_deals_in_area(tags,geo_point,radius,limit)
+			
+			t2 = datetime.now()
+			#package deals
+			packaged_deals = [api_utils.package_deal(deal) for deal in deals]
+			
+			t3 = datetime.now()
+			
+			geo_hash = geohash.encode(geo_point.lat,geo_point.lon)
+			
+			logging.debug(geo_hash)
+			deals = levr.Deal.all().fetch(None)
+			for deal in deals:
+				logging.debug(levr.log_model_props(deal,['geo_hash']))
+			
+	#		packaged_deals.append(api_utils.package_deal(deal))
+			#create response dict
+			response = {
+					'numResults': packaged_deals.__len__(),
+					'fetching'	: str(t2-t1),
+					'packaging'	: str(t3-t2),
+					'total'		: str(t3-t1),
+					'deals'		: packaged_deals
+					}
+			api_utils.send_response(self,response)
+		except:
+			levr.log_error(self.request.params)
+			api_utils.send_error('Server Error')
+class LoadTestHandler(webapp2.RequestHandler):
+	@validate
+	def get(self,**kwargs):
 		'''
 		inputs: lat,lon,limit, query
 		Output:{
@@ -136,11 +192,11 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			
 		except:
 			levr.log_error(self.request.params)
-
+			api_utils.send_error('Server Error')
 
 class SearchNewHandler(webapp2.RequestHandler):
 	@validate
-	def get(self,query,geo_point,radius,limit):
+	def get(self,**kwargs):
 		'''
 		inputs: lat,lon,limit,radius
 		Output:{
@@ -154,10 +210,12 @@ class SearchNewHandler(webapp2.RequestHandler):
 		'''
 		try:
 			logging.debug(query)
-			logging.info("\n\nSEARCH")
+			logging.info("\n\nSEARCH NEW")
 			
 		except:
 			levr.log_error(levr_utils.log_dir(self.request))
+			api_utils.send_error('Server Error')
+
 class SearchHotHandler(webapp2.RequestHandler):
 	@validate
 	def get(self,query,geo_point,radius,limit):
@@ -176,9 +234,10 @@ class SearchHotHandler(webapp2.RequestHandler):
 			pass
 		except:
 			levr.log_error(self.request.params)
+			api_utils.send_error('Server Error')
 class SearchPopularHandler(webapp2.RequestHandler):
 	@validate
-	def get(self,query,geo_point,radius,limit):
+	def get(self,**kwargs):
 		'''
 		inputs: lat,lon,limit
 		Output:{
@@ -191,12 +250,93 @@ class SearchPopularHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
-			pass
+			logging.info('SEARCH POPULAR\n\n\n')
+			#GET PARAMS
+			request_point 	= kwargs.get('geo_point')
+			radius 		= kwargs.get('radius')
+			limit 		= kwargs.get('limit')
+			
+			deals = []
+			t1 = datetime.now()
+			#fetch deals
+			#hash the reuqested geo_point
+			center_hash = geohash.encode(request_point.lat,request_point.lon,precision=5)
+			logging.debug(center_hash)
+			
+			#get the hashes of the center geo_point and the 8 surrounding hashes
+			hash_set = geohash.expand(center_hash)
+			logging.debug(hash_set)
+			
+			for query_hash in hash_set:
+				#only grab keys for deals that have active status
+				q = levr.Deal.all(projection=['tags']).filter('deal_status =','active')
+				#FILTER BY GEOHASH
+				q.filter('geo_hash >=',query_hash).filter('geo_hash <=',query_hash+"{") #max bound
+				
+				logging.debug(levr.log_dir(q))
+				#FETCH DEAL KEYS
+				fetched_deals = q.fetch(None)
+				logging.info('From: '+query_hash+", fetched: "+str(fetched_deals.__len__()))
+				
+				deals.extend(fetched_deals)
+		#					logging.debug(deal_keys)
+			t2 = datetime.now()
+			
+			#FILTER
+			tags = []
+			for deal in deals:
+				logging.debug(dir(deals))
+				tags.extend(deal.tags)
+			logging.debug(tags)
+			
+			#convert list of all tags to a dict of key=tag, val=frequency
+			count = {}
+			for tag in tags:
+#					logging.debug(tag in count)
+				if tag in count:
+					count[tag] += 1
+				else:
+					count[tag] = 1
+			
+			#convert dict of tag:freq into list of tuples
+			tuple_list = []
+			for key in count:
+				tuple_list.append((count[key],key))
+				
+			#sort tags by frequency, highest first
+			tuple_list.sort()
+			tuple_list.reverse()
+			
+			#select only the most popular ones, and convert to list
+			word_list = [x[1] for x in tuple_list]
+			
+			#if the popular items list is longer than 6, send entire list, else only send 6
+			logging.debug(word_list.__len__())
+			if word_list.__len__()<6:
+				popular_items = word_list
+			else:
+				popular_items = word_list[:6]
+			
+			#BATCH GET RESULTS
+			t3 = datetime.now()
+			
+			
+			
+			#create response dict
+			response = {
+					'numResults': popular_items.__len__(),
+					'fetching'	: str(t2-t1),
+					'packaging'	: str(t3-t2),
+					'total'		: str(t3-t1),
+					'searches'	: popular_items
+					}
+			api_utils.send_response(self,response)
 		except:
 			levr.log_error(self.request.params)
+			api_utils.send_error(self,'Server Error')
 
 		
-app = webapp2.WSGIApplication([('/api/search/new', SearchNewHandler),
+app = webapp2.WSGIApplication([(r'/api/search/new', SearchNewHandler),
 								('/api/search/hot', SearchHotHandler),
 								('/api/search/popular', SearchPopularHandler),
 								('/api/search/(.*)', SearchQueryHandler)

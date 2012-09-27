@@ -311,7 +311,7 @@ def send_img(self,blob_key,size):
 		send_error(self,'Server Error')
 	
 	
-def get_deals_in_area(tags,request_point,radius=2,limit=None,precision=5):
+def get_deals_in_area(tags,request_point,radius=2,limit=None,precision=5,verbose=False):
 	'''
 	tags = list of tags that are strings
 	request point is db.GeoPt format
@@ -347,16 +347,17 @@ def get_deals_in_area(tags,request_point,radius=2,limit=None,precision=5):
 		#only grab keys for deals that have active status
 		q = levr.Deal.all(keys_only=True).filter('deal_status =','active')
 		
-		
+		logging.debug('FLAG')
+		logging.debug("tags: "+str(tags))
 		#FILTER BY TAG
 		#do not filter by tags if the tag is one of the special key words
-		if tags[0] not in SPECIAL_QUERIES:
+		if tags and tags[0] not in SPECIAL_QUERIES:
 			#grab all deals where primary_cat is in tags
 			for tag in tags:
 				logging.debug('tag: '+str(tag))
 				q.filter('tags =',tag)
 		else:
-			logging.debug('This is a special case. Not filtering by tags: '+str(tags[0]))
+			logging.debug('This is a special case. Not filtering by tags: '+str(tags))
 		
 		
 		#FILTER BY GEOHASH
@@ -392,11 +393,15 @@ def get_deals_in_area(tags,request_point,radius=2,limit=None,precision=5):
 	filter_time = t4-t3
 	unfiltered_count = deals.__len__()
 	filtered_count = filtered_deals.__len__()
-	
-	return (filtered_deals,fetch_time,get_time,filter_time,unfiltered_count,filtered_count)
-
+	if verbose == True:
+		return (filtered_deals,fetch_time,get_time,filter_time,unfiltered_count,filtered_count)
+	else:
+		return filtered_deals
 
 def filter_deals_by_radius(deals,center,radius):
+	'''
+	http://stackoverflow.com/questions/3182260/python-geocode-filtering-by-distance
+	'''
 	logging.debug('FILTER BY RADIUS')
 	#Only returns deals that are within a radius of the center
 	Earth_radius_km = 6371.0
@@ -443,6 +448,7 @@ def filter_deals_by_radius(deals,center,radius):
 	lat1 = center.lat
 	lon1 = center.lon
 	
+	#convert radius to float for comparison to work
 	radius = float(radius)
 	
 	for deal in deals:
@@ -453,13 +459,11 @@ def filter_deals_by_radius(deals,center,radius):
 		#calculate distance
 		distance = distance_between_points(lat1,lon1,lat2,lon2)
 		if distance < radius:
-			logging.debug(distance)
-#			deal['distance'] = distance
+			#append deal to output deals
 			acceptable_deals.append(deal)
-#			acceptable_deals.append(distance)
-		else:
-			logging.debug('False')
-			logging.debug(distance)
+#		else:
+#			logging.debug('False')
+#			logging.debug(distance)
 	
 	return acceptable_deals
 		

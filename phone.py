@@ -51,14 +51,82 @@ class phone(webapp2.RequestHandler):
 			
 			#***************dealResults************************************************
 			elif action == "popularItems":
-				geo_point = decoded['in']['geoPoint']
-				request_point = levr.geo_converter(geo_point)
+				logging.info('popularItems')
+				lat = decoded['in']['latitude']
+				lon = decoded['in']['longitude']
 				
+				request_point = levr.geo_converter(str(lat)+","+str(lon))
+				
+				#get all deals in the area
 				deals = levr_utils.get_deals_in_area(['all'],request_point)
 				
-				logging.info('popularItems')
+				#compile a list of all of the tags
+				tags = []
+				for deal in deals:
+					tags.extend(list(set(deal.tags)))
+				tags.sort()
+				logging.debug(tags)
+				
+				
+				
+				#convert list of all tags to a dict of key=tag, val=frequency
+				count = {}
+				for tag in tags:
+#					logging.debug(tag in count)
+					if tag in count:
+						count[tag] += 1
+					else:
+						count[tag] = 1
+						
+				#DEBUG
+				#convert dict of tag:freq into list of tuples
+				tuple_list1 = []
+				for key in count:
+					tuple_list1.append((count[key],key))
+				tuple_list1.sort()
+				tuple_list1.reverse()
+				logging.debug(tuple_list1)
+				#/DEBUG
+				
+				#remove unwanted stuff
+				new_count = {}
+				for tag in count:
+					#search occurs more than once
+					if count[tag] >1:
+						#tag is not a number
+						if tag.isdigit() == False:
+							#tag is not in blacklist
+							if tag not in blacklist:
+								new_count[tag] = count[tag]
+					
+#				logging.debug(levr_utils.log_dict(count))
+
+				
+				#convert dict of tag:freq into list of tuples
+				tuple_list = []
+				for key in new_count:
+					tuple_list.append((new_count[key],key))
+				tuple_list.sort()
+				tuple_list.reverse()
+				
+				logging.debug(tuple_list)
+#				for i in tuple_list:
+#					logging.debug(i)
+				
+				#select only the most popular ones, and convert to list
+				word_list = [x[1] for x in tuple_list]
+				
+				
+				#if the popular items list is longer than 6, send entire list, else only send 6
+				logging.debug(word_list.__len__())
+				if word_list.__len__()<6:
+					popularItems = word_list
+				else:
+					popularItems = word_list[:6]
+				
+				
 				data = {
-					'popularItems' : ['all','food','indian','pizza','BU','commonwealth']
+					'popularItems' : popularItems
 					}
 				toEcho = {'success': True,'data':data}
 			
