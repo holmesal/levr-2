@@ -10,7 +10,7 @@ import json
 
 
 class SignupFacebookHandler(webapp2.RequestHandler):
-	def get(self):
+	def post(self):
 		#RESTRICTED
 		
 		#check token
@@ -39,7 +39,7 @@ class SignupFacebookHandler(webapp2.RequestHandler):
 			
 
 class SignupFoursquareHandler(webapp2.RequestHandler):
-	def get(self):
+	def post(self):
 		#RESTRICTED
 		
 		#check token
@@ -70,7 +70,7 @@ class SignupFoursquareHandler(webapp2.RequestHandler):
 			api_utils.send_response(self,response,user)
 		
 class SignupTwitterHandler(webapp2.RequestHandler):
-	def get(self):
+	def post(self):
 		#RESTRICTED
 		
 		#check token
@@ -106,7 +106,7 @@ class SignupTwitterHandler(webapp2.RequestHandler):
 			api_utils.send_response(self,response,user)
 		
 class SignupLevrHandler(webapp2.RequestHandler):
-	def get(self):
+	def post(self):
 		#RESTRICTED
 		
 		logging.info(self.request.get('email'))
