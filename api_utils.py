@@ -99,7 +99,7 @@ def check_param(self,parameter,parameter_name,param_type='str',required=True):
 def package_deal(deal,private=False):
 #	logging.debug(str(deal.geo_point))
 	packaged_deal = {
-			'barcode'		: deal.barcode,
+			'barcodeImg'	: deal.barcode,
 			'business'		: package_business(levr.Business.get(deal.businessID)),
 			'dateUploaded'	: str(deal.date_end)[:19],
 			'dealID'		: enc.encrypt_key(deal.key()),
@@ -109,30 +109,15 @@ def package_deal(deal,private=False):
 			'largeImg'		: create_img_url(deal,'large'),
 			'geoHash'		: deal.geo_hash,
 			'geoPoint'		: str(deal.geo_point),
-			'redemptions'	: str(deal.count_redeemed),
+			'redemptions'	: deal.count_redeemed,
 			'smallImg'		: create_img_url(deal,'small'),
 			'status'		: deal.deal_status,
 			'shareURL'		: create_share_url(deal),
-			'tags'			: deal.tags
+			'tags'			: deal.tags,
+			'dateEnd'		: str(deal.date_end)[:19]
 			}
 	if private == True:
 		packaged_deal.update({
-							'owner'	: {
-										'moneyAvailable'	: 1,
-										'moneyEarned'		: 1,
-										},
-							'gateRequirement'	: 1,
-							'gatePaymentPer'	: 1,
-							'earnedTotal'		: 1,
-							'paymentMax'		: 1,
-							'paidOut'			: 1,
-							'dealStatus'		: 1,
-							'dateEnd'			: 1,
-							'weightedRedeems'	: 1,
-							'dealCountRedeemed'	: 1,
-							
-							
-							
 							})
 		
 	return packaged_deal
@@ -164,7 +149,8 @@ def package_user(user,private=False,followers=True,**kwargs):
 	
 	if private:
 		packaged_user.update({
-							
+							'moneyAvailable'	: 1,
+							'moneyEarned'		: 1,
 							})
 	
 	return packaged_user

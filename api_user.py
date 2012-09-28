@@ -34,7 +34,7 @@ def authorize(handler_method):
 			if not user or user.kind() != 'Customer':
 				raise Exception('uid: '+str(uid))
 			
-			levr_token = self.request.get('levr_token')
+			levr_token = self.request.get('levrToken')
 			
 			#if the levr_token matches up, then private request, otherwise public
 			if user.levr_token == levr_token:
@@ -151,6 +151,7 @@ class UserUploadsHandler(webapp2.RequestHandler):
 			logging.info("\n\nGET USER UPLOADS")
 			
 			user = kwargs.get('user')
+			uid = user.key()
 			private = kwargs.get('private')
 			
 			
@@ -172,12 +173,16 @@ class UserUploadsHandler(webapp2.RequestHandler):
 			deals = levr.Deal.all().ancestor(uid).fetch(limit,offset=offset)
 			
 			#package up the dealios
-			packaged_deals = [api_utils.package_deal(deal,'public') for deal in deals]
+			packaged_deals = [api_utils.package_deal(deal,private) for deal in deals]
+			
+			#package the user object
+			packaged_user = api_utils.package_user(user,private)
 			
 			#create response object
 			response = {
 					'numResults': str(packaged_deals.__len__()),
-					'deals'		: packaged_deals
+					'deals'		: packaged_deals,
+					'user'		: packaged_user
 					}
 			
 			#respond
