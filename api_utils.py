@@ -120,11 +120,6 @@ def package_deal(deal,private=False):
 		
 	return packaged_deal
 def package_user(user,private=False,followers=True,**kwargs):
-	'''alias is added by us, first_name and last_name should be added by all other services (foursquare for sure right now)'''
-	if user.alias != '':
-		alias  = user.alias
-	else:
-		alias = 'Clint Eastwood'
 	
 	packaged_user = {
 		'uid'			: enc.encrypt_key(str(user.key())),
@@ -532,6 +527,18 @@ def filter_deals_by_radius(deals,center,radius):
 	return acceptable_deals
 		
 
+def build_display_name(user):
+	'''Goes through cases of semi-populated user information from best to worst and updates display name.
+	To be used when the user is created, and every time an account is connected'''
+	
+	if user.first_name != '' and user.last_name != '':
+		user.display_name = user.first_name + ' ' + user.last_name[0] + '.'
+	elif user.alias != '':
+		user.display_name = user.alias
+	else:
+		user.display_name = 'Clint Eastwood'
+	
+	return user
 
 
 

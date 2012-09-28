@@ -751,6 +751,7 @@ class Customer(db.Model):
 	followers		= db.ListProperty(db.Key)
 	date_last_notified = db.DateTimeProperty(auto_now_add=True)
 	last_notified	= db.IntegerProperty(default=0)
+	display_name	= db.StringProperty()
 	
 	@property
 	def following(self):
