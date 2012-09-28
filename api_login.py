@@ -106,4 +106,5 @@ class LoginLevrHandler(webapp2.RequestHandler):
 app = webapp2.WSGIApplication([('/api/login/facebook', LoginFacebookHandler),
 								('/api/login/foursquare', LoginFoursquareHandler),
 								('/api/login/twitter', LoginTwitterHandler),
-								('/api/login/levr', LoginLevrHandler)],debug=True)
+								('/api/login/levr', LoginLevrHandler)
+								],debug=True)
