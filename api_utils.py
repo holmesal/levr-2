@@ -110,13 +110,30 @@ def package_deal(deal,private=False):
 			'geoHash'		: deal.geo_hash,
 			'geoPoint'		: str(deal.geo_point),
 			'redemptions'	: str(deal.count_redeemed),
-			'smallURL'		: create_img_url(deal,'small'),
+			'smallImg'		: create_img_url(deal,'small'),
 			'status'		: deal.deal_status,
 			'shareURL'		: create_share_url(deal),
 			'tags'			: deal.tags
 			}
 	if private == True:
-		packaged_deal.update({})
+		packaged_deal.update({
+							'owner'	: {
+										'moneyAvailable'	: 1,
+										'moneyEarned'		: 1,
+										},
+							'gateRequirement'	: 1,
+							'gatePaymentPer'	: 1,
+							'earnedTotal'		: 1,
+							'paymentMax'		: 1,
+							'paidOut'			: 1,
+							'dealStatus'		: 1,
+							'dateEnd'			: 1,
+							'weightedRedeems'	: 1,
+							'dealCountRedeemed'	: 1,
+							
+							
+							
+							})
 		
 	return packaged_deal
 def package_user(user,private=False,followers=True,**kwargs):
@@ -513,7 +530,8 @@ def filter_deals_by_radius(deals,center,radius):
 	lon1 = center.lon
 	
 	#convert radius to float for comparison to work
-	radius = float(radius)
+	if type(radius) != float:
+		radius = float(radius)
 	
 	for deal in deals:
 		#parse geo_point into lat,lon

@@ -62,11 +62,112 @@ def validate(handler_method):
 	
 	return check_params
 
-
+#def validate(*a,**to_validate):
+#	'''
+#	General function for validating the inputs that are passed as arguments
+#	to use, pass kwargs in form of key:bool,
+#	where key is the input name and bool is true if required and false if optional
+#	'''
+#	
+#	def wrapper(handler_method):
+#		'''
+#		This is the decorator that operates on the function being decorated
+#		I dont understand this. Gah!
+#		'''
+#		def validator(self,*args,**kwargs):
+#			logging.debug('Validator')
+#			logging.debug(args)
+#			logging.debug(kwargs)
+#			logging.debug(kwargs)
+#			logging.debug(a)
+#			logging.debug(to_validate)
+#			
+#			c = levr.Customer.all().get()
+#			logging.debug(type(c))
+#			logging.debug(type(c.key()))
+#			try:
+#				type_cast = {
+#						'limit'	: int,
+#						'lat'	: float,
+#						'lon'	: float,
+#						'radius': float,
+#						'since'	: int,
+#						'uid'	: levr.Customer,
+#						'dealID': levr.Deal,
+#						}
+#				defaults = {
+#						'limit'	: 30,
+#						'lat'	: 42.349798,
+#						'lon'	: -71.120000,
+#						'radius': 2,
+#						'since'	: None,
+#						}
+#				
+#				for (key,required) in to_validate.iteritems():
+#					logging.debug(type(key))
+#					logging.debug(key)
+#					val			= self.request.get(key)
+#					required	= to_validate.get(key)
+#					data_type	= type_cast[key]
+#					msg			= key+": "+val
+#					
+#					logging.debug(val)
+#					logging.debug(data_type)
+#					logging.debug(msg)
+#					logging.debug(required)
+#					if not val:
+#						if required:
+#							raise KeyError(msg)
+#						else:
+#							#not required, set to default value
+#							val = defaults[key]
+#					elif data_type == int and not val.isdigit():
+#						#integer input is not valid
+#						raise TypeError(msg)
+#					elif data_type == float:
+#						#float input is not valid
+#						try:
+#							val = float(val)
+#						except ValueError,e:
+#							raise KeyError(msg)
+#					elif data_type == db.Key:
+#						#key input is not valid
+#						val = enc.decrypt_key(val)
+#						if key == 'uid' and type(val) != levr.Customer:
+#							raise KeyError(msg)
+#						elif key == 'dealID' and type(val) != levr.Deal:
+#							raise KeyError(msg)
+#					kwargs.update({key:val})
+#						
+#				lat = kwargs.get('lat')
+#				lon = kwargs.get('lon')
+#				if lat and lon:
+#					#check geopoint
+#					try:
+#						geo_point = levr.geo_converter(str(lat)+','+str(lon))
+#						kwargs.update({'geo_point':geo_point})
+#					except:
+#						levr.log_error()
+#						raise TypeError('lat,lon: '+str(lat)+","+str(lon))
+#				logging.debug(kwargs)
+#				
+#			except KeyError,e:
+#				api_utils.send_error(self,'Required paramter not passed, '+str(e))
+#			except TypeError,e:
+#				api_utils.send_error(self,'Invalid parameter, '+str(e))
+#			except Exception,e:
+#				levr.log_error()
+#				api_utils.send_error(self,'Server Error: '+str(e))
+#			else:
+#				return handler_method(self,*args,**kwargs)
+#		
+#		return validator
+#	
+#	return wrapper
 
 class SearchQueryHandler(webapp2.RequestHandler):
-	@validate
-	def get(self,**kwargs):
+	@validate #(lat=True,lon=True,limit=False,uid=True)
+	def get(self,*args,**kwargs):
 		'''
 		inputs: lat,lon,limit, query
 		Output:{
@@ -82,10 +183,11 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			logging.debug('SEARCH BY QUERY\n\n\n')
 	#		logging.debug(kwargs)
 			#GET PARAMS
+			logging.debug(kwargs)
 			geo_point 	= kwargs.get('geo_point')
 			radius 		= kwargs.get('radius')
 			limit 		= kwargs.get('limit')
-			query 		= kwargs.get('query')
+			query 		= kwargs.get('query','all')
 			
 			logging.debug("limit: "+str(limit))
 			
@@ -249,7 +351,7 @@ class SearchPopularHandler(webapp2.RequestHandler):
 				errorMsg
 				}
 			response:{
-				[string,string]
+				searches :[string,string]
 				}
 		'''
 		try:

@@ -68,6 +68,8 @@ def authorize(handler_method):
 
 
 
+		
+		
 
 class RedeemHandler(webapp2.RequestHandler):
 	@authorize
