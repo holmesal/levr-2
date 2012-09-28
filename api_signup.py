@@ -62,16 +62,15 @@ class SignupFoursquareHandler(webapp2.RequestHandler):
 			logging.info(token)
 			
 			#add info from foursquare login on phone
-			user.first_name = self.request.get('firstName')
-			user.last_name = self.request.get('lastName')
-			user.email = self.request.get('email')
-			
-			#build alias if appropriate
-			if user.first_name != '' and user.last_name != '':
-				user.alias = user.first_name + ' ' + user.last_name[0] + '.'
+			#user.first_name = self.request.get('firstName')
+			#user.last_name = self.request.get('lastName')
+			#user.email = self.request.get('email')
 			
 			#grab foursquare deets
-			#user = social.foursquare_deets(user,token)
+			user = social.foursquare_deets(user,token)
+			
+			#create or refresh the alias
+			user = api_utils.build_display_name(user)
 			
 			#store user
 			user.put()
