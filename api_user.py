@@ -3,6 +3,7 @@ import logging
 import levr_encrypt as enc
 import levr_classes as levr
 import api_utils
+from api_utils import private
 from datetime import datetime
 from google.appengine.ext import db
 #from google.appengine.api import mail
@@ -54,37 +55,11 @@ def authorize(handler_method):
 			handler_method(self,*args,**kwargs)
 	
 	return check
-def private(handler_method):
-	'''
-	Decorator used to reject calls that require private auth and do not have them
-	'''
-	def check(self,*args,**kwargs):
-		try:
-			logging.debug('PRIVATE SCREENING DECORATOR\n\n\n')
-			logging.debug(args)
-			logging.debug(kwargs)
-			
-			private = kwargs.get('private')
-			
-			if private:
-				#RPC is authorized
-				handler_method(self,*args,**kwargs)
-			else:
-				#call is unauthorized - reject
-				api_utils.send_error(self,'Not Authorized')
-			
-			
-			
-		except Exception,e:
-			levr.log_error()
-			api_utils.send_error(self,'Server Error')
-			
-	
-	return check
+
 	
 class UserFavoritesHandler(webapp2.RequestHandler):
 	@authorize
-	@private
+	@api_utils.private
 	def get(self,*args,**kwargs):
 		'''
 		Get all of a users favorite deals
@@ -147,7 +122,7 @@ class UserFavoritesHandler(webapp2.RequestHandler):
 					'numResults': str(favorites.__len__()),
 					'deals'		: deals
 					}
-			
+			logging.debug(response)
 			#respond
 			api_utils.send_response(self,response,user)
 			
@@ -256,6 +231,7 @@ class UserGetFollowersHandler(webapp2.RequestHandler):
 			
 			#package each follower into <USER OBJECT>
 			followers = [api_utils.package_user(u) for u in levr.Customer.get(user.followers)]
+			logging.debug(followers)
 			
 			response = {
 					'numResults'	: followers.__len__(),
@@ -269,6 +245,7 @@ class UserGetFollowersHandler(webapp2.RequestHandler):
 		
 class UserAddFollowHandler(webapp2.RequestHandler):
 	@authorize
+	@api_utils.private
 	def get(self,*args,**kwargs):
 		'''
 		A user (specified in ?uid=USER_ID) follows the user specified in (/api/USER_ID/follow)
@@ -317,6 +294,7 @@ class UserAddFollowHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 class UserUnfollowHandler(webapp2.RequestHandler):
 	@authorize
+	@api_utils.private
 	def get(self,*args,**kwargs):
 		'''
 		A user (specified in ?uid=USER_ID) stops following the user specified in (/api/USER_ID/follow)
@@ -407,6 +385,7 @@ class UserImgHandler(webapp2.RequestHandler):
 
 class UserCashOutHandler(webapp2.RequestHandler):
 	@authorize
+	@api_utils.private
 	def get(self,*args,**kwargs):
 		'''
 		#RESTRICTED
@@ -498,6 +477,7 @@ class UserInfoHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
+			logging.debug('USER INFO\n\n')
 			user 	= kwargs.get('user')
 			private	= kwargs.get('private')
 			#create response object
@@ -521,4 +501,5 @@ app = webapp2.WSGIApplication([('/api/user/(.*)/favorites', UserFavoritesHandler
 								('/api/user/(.*)/img', UserImgHandler),
 								('/api/user/(.*)/cashout', UserCashOutHandler),
 								('/api/user/(.*)/notifications', UserNotificationsHandler),
-								('/api/user/(.*)', UserInfoHandler)],debug=True)
+								('/api/user/(.*)', UserInfoHandler)
+								],debug=True)

@@ -219,7 +219,33 @@ def create_img_url(entity,size):
 	img_url = host_url+hook+enc.encrypt_key(entity.key())+'/img?size='+size
 	return img_url
 
-
+def private(handler_method):
+	'''
+	Decorator used to reject calls that require private auth and do not have them
+	'''
+	def check(self,*args,**kwargs):
+		try:
+			logging.debug('PRIVATE SCREENING DECORATOR\n\n\n')
+			logging.debug(args)
+			logging.debug(kwargs)
+			
+			private = kwargs.get('private')
+			
+			if private:
+				#RPC is authorized
+				handler_method(self,*args,**kwargs)
+			else:
+				#call is unauthorized - reject
+				send_error(self,'Not Authorized')
+			
+			
+			
+		except Exception,e:
+			levr.log_error()
+			send_error(self,'Server Error')
+			
+	
+	return check
 
 def send_img(self,blob_key,size):
 	try:

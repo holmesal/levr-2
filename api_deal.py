@@ -3,13 +3,76 @@ import logging
 import levr_encrypt as enc
 import levr_classes as levr
 import api_utils
+#from api_utils import private
 import levr_utils
 from google.appengine.ext import db
 from google.appengine.api import mail
 
+def authorize(handler_method):
+	'''
+	Decorator checks the privacy level of the request.
+	If the user is identified as the owner of the deal, then private
+	
+	'''
+	def check(self,*args,**kwargs):
+		try:
+			logging.debug('AUTHORIZE DECORATOR\n\n\n')
+#			logging.debug(levr.log_dir(self.request))
+			logging.debug(args)
+			logging.debug(kwargs)
+			logging.debug(handler_method)
+			
+			dealID = args[0]
+			#CHECK PARAMS
+			if not api_utils.check_param(self,dealID,'dealID','key',True):
+				raise Exception('dealID: '+str(uid))
+			else:
+				dealID = db.Key(enc.decrypt_key(dealID))
+			
+			#CHECK USER
+			uid = self.request.get('uid')
+			if not api_utils.check_param(self,uid,'uid','key',True):
+				raise Exception('uid: '+str(uid))
+			else:
+				uid = db.Key(enc.decrypt_key(uid))
+			
+			#GET ENTITIES
+			[deal,user] = db.get([dealID,uid])
+			if not deal or deal.kind() != 'Deal':
+				raise Exception('dealID: '+str(dealID))
+			if not user or user.kind() != 'Customer':
+				raise Exception('uid: '+str(uid))
+			
+			levr_token = self.request.get('levr_token')
+			
+			#if the levr_token matches up, then private request, otherwise public
+			if user.levr_token == levr_token:
+				private = True
+			else:
+				private = False
+			
+			logging.debug(private)
+			
+			
+			kwargs.update({
+						'user'	: user,
+						'deal'	: deal,
+						'private': private
+						})
+		except Exception,e:
+			api_utils.send_error(self,'Invalid parameter, '+str(e))
+		else:
+			handler_method(self,*args,**kwargs)
+	
+	return check
+
+
+
 
 class RedeemHandler(webapp2.RequestHandler):
-	def get(self,dealID):
+	@authorize
+	@api_utils.private
+	def get(self,*args,**kwargs):
 		'''
 		inputs: uid
 		Output:{
@@ -20,30 +83,10 @@ class RedeemHandler(webapp2.RequestHandler):
 		'''
 		#RESTRICTED
 		try:
-			#CHECK PARAMS
-			if not api_utils.check_param(self,dealID,'dealID','key',True):
-				return
-			else:
-				dealID = db.Key(enc.decrypt_key(dealID))
-			
-			uid = self.request.get('uid')
-			if not api_utils.check_param(self,uid,'uid','key',True):
-				return
-			else:
-				uid = db.Key(enc.decrypt_key(uid))
-			
-			
-			
-			
-			#GET ENTITIES
-			[user,deal] = db.get([uid,dealID])
-			if not user or user.kind() != 'Customer':
-				api_utils.send_error(self,'Invalid uid: '+uid)
-				return
-			if not deal or deal.kind() != 'Deal':
-				api_utils.send_error(self,'Invalid dealID: '+str(dealID))
-				return
-			
+			user 	= kwargs.get('user')
+			uid 	= user.key()
+			deal 	= kwargs.get('deal')
+			dealID 	= deal.key()
 			
 			
 			#PERFORM ACTIONS
@@ -62,7 +105,9 @@ class RedeemHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 
 class AddFavoriteHandler(webapp2.RequestHandler):
-	def get(self,dealID):
+	@authorize
+	@api_utils.private
+	def get(self,*args,**kwargs):
 		'''
 		Input: uid
 		Output:{
@@ -73,29 +118,10 @@ class AddFavoriteHandler(webapp2.RequestHandler):
 		'''
 		#RESTRICTED
 		try:
-			#CHECK PARAMS
-			if not api_utils.check_param(self,dealID,'dealID','key',True):
-				return
-			else:
-				dealID = db.Key(enc.decrypt_key(dealID))
-				logging.debug(dealID)
-				
-			uid = self.request.get('uid')
-			if not api_utils.check_param(self,uid,'uid','key',True):
-				return
-			else:
-				uid = db.Key(enc.decrypt_key(uid))
-			
-			
-			#GET ENTITIES
-			[user,deal] = db.get([uid,dealID])
-			if not user or user.kind() != 'Customer':
-				api_utils.send_error(self,'Invalid uid: '+uid)
-				return
-			if not deal or deal.kind() != 'Deal':
-				api_utils.send_error(self,'Invalid dealID: '+str(dealID))
-				return
-			
+			user 	= kwargs.get('user')
+			uid 	= user.key()
+			deal 	= kwargs.get('deal')
+			dealID 	= deal.key()
 			
 			
 			#PERFORM ACTIONS
@@ -121,7 +147,9 @@ class AddFavoriteHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 
 class DeleteFavoriteHandler(webapp2.RequestHandler):
-	def get(self,dealID):
+	@authorize
+	@api_utils.private
+	def get(self,*args,**kwargs):
 		'''
 		Input: uid
 		Output:{
@@ -131,28 +159,10 @@ class DeleteFavoriteHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
-			#CHECK PARAMS
-			if not api_utils.check_param(self,dealID,'dealID','key',True):
-				return
-			else:
-				dealID = db.Key(enc.decrypt_key(dealID))
-				logging.debug(dealID)
-				
-			uid = self.request.get('uid')
-			if not api_utils.check_param(self,uid,'uid','key',True):
-				return
-			else:
-				uid = db.Key(enc.decrypt_key(uid))
-			
-			
-			#GET ENTITIES
-			[user,deal] = db.get([uid,dealID])
-			if not user or user.kind() != 'Customer':
-				api_utils.send_error(self,'Invalid uid: '+uid)
-				return
-			if not deal or deal.kind() != 'Deal':
-				api_utils.send_error(self,'Invalid dealID: '+str(dealID))
-				return
+			user 	= kwargs.get('user')
+			uid 	= user.key()
+			deal 	= kwargs.get('deal')
+			dealID 	= deal.key()
 			
 			
 			#PERFORM ACTIONS
@@ -182,7 +192,9 @@ class DeleteFavoriteHandler(webapp2.RequestHandler):
 		
 
 class ReportHandler(webapp2.RequestHandler):
-	def get(self,dealID):
+	@authorize
+	@api_utils.private
+	def get(self,*args,**kwargs):
 		'''
 		Input: uid
 		Output:{
@@ -323,7 +335,7 @@ class DealInfoHandler(webapp2.RequestHandler):
 
 app = webapp2.WSGIApplication([('/api/deal/(.*)/redeem.*', RedeemHandler),
 								('/api/deal/(.*)/favorite.*', AddFavoriteHandler),
-								('/api/deal/(.*)/deletefavorite.*', DeleteFavoriteHandler),
+								('/api/deal/(.*)/deleteFavorite.*', DeleteFavoriteHandler),
 								('/api/deal/(.*)/report.*', ReportHandler),
 								('/api/deal/(.*)/img.*', DealImgHandler),
 								('/api/deal/(.*)', DealInfoHandler)
