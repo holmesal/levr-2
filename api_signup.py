@@ -24,7 +24,7 @@ class SignupFacebookHandler(webapp2.RequestHandler):
 		
 		if existing_user:
 			#user already exists and is trying to log in again, return this user
-			response = {'user':api_utils.package_user(existing_user,'private')}
+			response = {'user':api_utils.package_user(existing_user,True,send_token=True)}
 			api_utils.send_response(self,response,existing_user)
 		else:
 			#user does not exist, create new and populate via facebook API
@@ -34,7 +34,7 @@ class SignupFacebookHandler(webapp2.RequestHandler):
 #			#populate with facebook stuff here
 #			#
 			user.put()
-			response = {'user':api_utils.package_user(user,'private')}
+			response = {'user':api_utils.package_user(user,True,send_token=True)}
 			api_utils.send_response(self,response,user)
 			
 
@@ -53,7 +53,7 @@ class SignupFoursquareHandler(webapp2.RequestHandler):
 		
 		if existing_user:
 			#user already exists and is trying to log in again, return this user
-			response = {'user':api_utils.package_user(existing_user,'private')}
+			response = {'user':api_utils.package_user(existing_user,True,send_token=True)}
 			api_utils.send_response(self,response,existing_user)
 		else:
 			#user does not exist, create new and populate via foursquare API
@@ -75,7 +75,7 @@ class SignupFoursquareHandler(webapp2.RequestHandler):
 			
 			#store user
 			user.put()
-			response = {'user':api_utils.package_user(user,'private')}
+			response = {'user':api_utils.package_user(user,True,send_token=True)}
 			api_utils.send_response(self,response,user)
 		
 class SignupTwitterHandler(webapp2.RequestHandler):
@@ -98,7 +98,7 @@ class SignupTwitterHandler(webapp2.RequestHandler):
 		
 		if existing_user:
 			#user already exists and is trying to log in again, return this user
-			response = {'user':api_utils.package_user(existing_user,'private')}
+			response = {'user':api_utils.package_user(existing_user,True,send_token=True)}
 			api_utils.send_response(self,response,existing_user)
 		else:
 			#user does not exist, create new and populate via twitter API
@@ -111,7 +111,7 @@ class SignupTwitterHandler(webapp2.RequestHandler):
 			user = social.twitter_deets(user,token,screen_name)'''
 			
 			user.put()
-			response = {'user':api_utils.package_user(user,'private')}
+			response = {'user':api_utils.package_user(user,True,send_token=True)}
 			api_utils.send_response(self,response,user)
 		
 class SignupLevrHandler(webapp2.RequestHandler):
@@ -169,7 +169,7 @@ class SignupLevrHandler(webapp2.RequestHandler):
 		
 		#put and reply
 		user.put()
-		response = {'user':api_utils.package_user(user,'private')}
+		response = {'user':api_utils.package_user(user,True,send_token=True)}
 		api_utils.send_response(self,response,user)
 		
 		
