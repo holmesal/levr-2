@@ -7,7 +7,7 @@ import api_social as social
 from google.appengine.ext import db
 
 class ConnectFacebookHandler(webapp2.RequestHandler):
-	def get(self):
+	def post(self):
 		#RESTRICTED
 		
 		token = self.request.get('token')
@@ -39,7 +39,7 @@ class ConnectFacebookHandler(webapp2.RequestHandler):
 
 
 class ConnectFoursquareHandler(webapp2.RequestHandler):
-	def get(self):
+	def post(self):
 		#RESTRICTED
 		
 		token = self.request.get('token')
@@ -72,7 +72,7 @@ class ConnectFoursquareHandler(webapp2.RequestHandler):
 		api_utils.send_response(self,response,user)
 		
 class ConnectTwitterHandler(webapp2.RequestHandler):
-	def get(self):
+	def post(self):
 		#RESTRICTED
 		
 		token = self.request.get('token')
