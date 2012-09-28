@@ -69,6 +69,8 @@ handlers:
   script: api_login.app
 - url: /api/connect.*
   script: api_connect.app
+- url: /api/merchant.*
+  script: api_merchant.app
 
 
 
@@ -118,5 +120,5 @@ skip_files:
 - ^(.*/)?.*/RCS/.*
 - ^(.*/)?\..*
 - ^(.*/)?.*\.bak$
-- ^Crypto/
+#- ^Crypto/
 
