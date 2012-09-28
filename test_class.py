@@ -214,45 +214,47 @@ class AddDealsHandler(webapp2.RequestHandler):
 	
 class FilterGeohashHandler(webapp2.RequestHandler):
 	def get(self):
-		#take in geo_point
-		#set radius, expand, get all deals
-		
-		
-		
-		request_point = levr.geo_converter('42.35,-71.110')
-		center_hash = geohash.encode(request_point.lat,request_point.lon,precision=6)
-		all_squares = geohash.expand(center_hash)
-		
-		all = levr.Business.all().count()
-		self.response.out.write(all)
-		self.response.out.write('<br/>')
-		
-		keys = []
-		for query_hash in all_squares:
-			q = levr.Business.all(keys_only=True).filter('geo_hash >=',query_hash).filter('geo_hash <=',query_hash+"{")
-			keys.extend(q.fetch(None))
-		
-		self.response.out.write(str(keys.__len__())+"<br/>")
-		
-		#get all deals
-		deals = levr.Business.get(keys)
-		logging.debug(deals)
-		for deal in deals:
-			self.response.out.write(deal.geo_hash+"<br/>")
+#		#take in geo_point
+#		#set radius, expand, get all deals
+#		
+#		
+#		
+#		request_point = levr.geo_converter('42.35,-71.110')
+#		center_hash = geohash.encode(request_point.lat,request_point.lon,precision=6)
+#		all_squares = geohash.expand(center_hash)
+#		
+#		all = levr.Business.all().count()
+#		self.response.out.write(all)
+#		self.response.out.write('<br/>')
+#		
+#		keys = []
+#		for query_hash in all_squares:
+#			q = levr.Business.all(keys_only=True).filter('geo_hash >=',query_hash).filter('geo_hash <=',query_hash+"{")
+#			keys.extend(q.fetch(None))
+#		
+#		self.response.out.write(str(keys.__len__())+"<br/>")
+#		
+#		#get all deals
+#		deals = levr.Business.get(keys)
+#		logging.debug(deals)
+#		for deal in deals:
+#			self.response.out.write(deal.geo_hash+"<br/>")
+		pass
 
 class UpdateUsersHandler(webapp2.RequestHandler):
 	def get(self):
 		try:
-			logging.warning('!!!!!!!\n\n\n\n')
-			users = levr.Customer.all().fetch(None)
-			for user in users:
-				user.levr_token = levr.create_levr_token()
-			
-			db.put(users)
-			
-			for user in users:
-				self.response.out.write(user.levr_token)
-				self.response.out.write('<br/>')
+#			logging.warning('!!!!!!!\n\n\n\n')
+#			users = levr.Customer.all().fetch(None)
+#			for user in users:
+#				user.levr_token = levr.create_levr_token()
+#			
+#			db.put(users)
+#			
+#			for user in users:
+#				self.response.out.write(user.levr_token)
+#				self.response.out.write('<br/>')
+			pass
 		except:
 			levr.log_error()
 		
