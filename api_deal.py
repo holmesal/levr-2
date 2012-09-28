@@ -264,6 +264,7 @@ class DealImgHandler(webapp2.RequestHandler):
 			
 			#CHECK PARAMS
 			if not api_utils.check_param(self,dealID,'dealID','key',True):
+				api_utils.send_error('Invalid parameter, dealID: '+str(dealID))
 				return
 			else:
 				dealID = db.Key(enc.decrypt_key(dealID))
@@ -271,12 +272,13 @@ class DealImgHandler(webapp2.RequestHandler):
 			
 			size = self.request.get('size')
 			if not api_utils.check_param(self,size,'size','str',True):
+				api_utils.send_error('Invalid parameter, size: '+str(size))
 				return
 			
 			#GET ENTITIES
 			deal = db.get(dealID)
 			if not deal or deal.kind() != 'Deal':
-				api_utils.send_error(self,'Invalid dealID: '+dealID)
+				api_utils.send_error(self,'Invalid parameter, dealID: '+str(dealID))
 				return
 			
 			#get the blob
