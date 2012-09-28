@@ -110,7 +110,8 @@ class TwilioAnswerHandler(webapp2.RequestHandler):
 		<?xml version="1.0" encoding="UTF-8"?>
 		<Response>
 		    <Gather timeout="10" finishOnKey="*">
-		        <Say>Please enter your pin number and then press star.</Say>
+		    	<Say>Thanks for using Levr!</Say>
+		        <Say>Please enter your activation code and then press star.</Say>
 		    </Gather>
 		</Response>
 		''')
