@@ -259,10 +259,9 @@ class UserAddFollowHandler(webapp2.RequestHandler):
 		'''
 		try:
 			logging.info('USER ADD FOLLOWER\n\n\n')
-			user = kwargs.get('user')
-			uid = user.key()
+			user 	= kwargs.get('user')
+			uid 	= user.key()
 			private = kwargs.get('private')
-			
 			
 			actorID = self.request.get('uid')
 			if not api_utils.check_param(self,actorID,'uid','key',True):
@@ -292,6 +291,7 @@ class UserAddFollowHandler(webapp2.RequestHandler):
 		except:
 			levr.log_error(self.request)
 			api_utils.send_error(self,'Server Error')
+
 class UserUnfollowHandler(webapp2.RequestHandler):
 	@authorize
 	@api_utils.private

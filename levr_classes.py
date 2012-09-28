@@ -48,17 +48,9 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 			#this allows to_be_notified to be passed as a single value
 			to_be_notified = [to_be_notified]
 		
-		#create and put the notification
-		notification = Notification(
-										notification_type	= notification_type,
-										to_be_notified		= to_be_notified,
-										actor				= actor,
-										deal				= deal #default to None
-										)
-		notification.put()
-		logging.debug(log_model_props(notification))
 		
-			
+		
+		
 		if notification_type == 'newFollower':
 			#user is the person that is being followed
 			user = Customer.get(to_be_notified[0])
@@ -67,22 +59,53 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 			#add the actor to the list of followers
 			if actor not in user.followers:
 				user.followers.append(actor)
-			logging.debug(log_model_props(user))
+			else:
+				#do nothing
+				return True
+			
 			
 			#increment the number of notifications
 			user.new_notifications += 1
 			
 			#replace user
 			db.put(user)
+			
+			
 		elif notification_type == 'favorite':
-			#grab deal owner
-			user = Customer.get(to_be_notified[0])
+			#get actor
+			[user,actor_entity] = db.get([to_be_notified[0],actor])
+			#check deal is not already favorited
+			if deal not in actor_entity.favorites:
+				actor_entity.favorites.append(deal)
+			else:
+				#do nothing
+				return True
 			
 			#update notification count
 			user.new_notifications += 1
 			
+			#replace users
+			db.put([user,actor_entity])
 			
-			db.put(user)
+			
+		elif notification_type == 'redemption':
+			#get user,actor
+			[user,actor_entity] = db.get([to_be_notified[0],actor])
+			#check actor has not redeemed yet
+			if deal.is_exclusive:
+				#deal can only be redeemed once
+				if deal not in actor_entity.redemptions:
+					actor.redemptions.append(deal)
+				else:
+					#do nothing
+					return True
+			
+			#update notification count
+			user.new_notifications += 1
+			
+			#replace users
+			db.put([user,actor_entity])
+			
 		else:
 			#users = the people to be notified
 			users = Customer.get(to_be_notified)
@@ -96,7 +119,15 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 #		else:
 #			raise Exception('notification_type not recognized in create_notification')
 #		
-		
+		#create and put the notification
+		notification = Notification(
+										notification_type	= notification_type,
+										to_be_notified		= to_be_notified,
+										actor				= actor,
+										deal				= deal #default to None
+										)
+		notification.put()
+		logging.debug(log_model_props(notification))
 		
 	except Exception,e:
 		log_error()

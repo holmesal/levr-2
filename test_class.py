@@ -185,31 +185,33 @@ class TestHandler(webapp2.RequestHandler):
 class AddDealsHandler(webapp2.RequestHandler):
 	def get(self):
 		
-		lons = [x/1000. for x in range(72400,72600,10) if x%1 ==0]
-		lats = [x/1000. for x in range(42400,42600,10) if x%1 ==0]
-		self.response.out.write(lons.__len__()*lats.__len__())
-		self.response.out.write(lats)
-		
-		ethan = levr.Customer.all().get().key()
-		
-		for lat in lats:
-			for lon in lons:
-				
-				params = {
-							'uid'				: enc.encrypt_key(ethan),
-							'business_name'		: 'Als Sweatshop',
-							'geo_point'			: str(lat)+','+str(lon),
-							'vicinity'			: '10 Buick St',
-							'types'				: 'Establishment,Food',
-							'deal_description'	: 'This is a description',
-							'deal_line1'		: 'I am a deal',
-							'distance'			: '10', #is -1 if unknown = double
-	#						'img_key'			: img_key
-							}
-		
-				dealID = levr.dealCreate(params,'phone_new_business',False)
-				self.response.out.write(dealID)
-		
+#		lons = [x/1000. for x in range(72400,72600,10) if x%5 ==0]
+#		lats = [x/1000. for x in range(42400,42600,10) if x%5 ==0]
+#		self.response.out.write(lons.__len__()*lats.__len__())
+#		self.response.out.write(lats)
+#		
+#		ethan = levr.Customer.all().get().key()
+#		
+#		for lat in lats:
+#			for lon in lons:
+#				
+#				params = {
+#							'uid'				: enc.encrypt_key(ethan),
+#							'business_name'		: 'Als Sweatshop',
+#							'geo_point'			: str(lat)+','+str(lon),
+#							'vicinity'			: '10 Buick St',
+#							'types'				: 'Establishment,Food',
+#							'deal_description'	: 'This is a description',
+#							'deal_line1'		: 'I am a deal',
+#							'distance'			: '10', #is -1 if unknown = double
+#	#						'img_key'			: img_key
+#							}
+#		
+#				dealID = levr.dealCreate(params,'phone_new_business',False)
+#				self.response.out.write(dealID)
+		pass
+	
+	
 class FilterGeohashHandler(webapp2.RequestHandler):
 	def get(self):
 		#take in geo_point
@@ -238,14 +240,28 @@ class FilterGeohashHandler(webapp2.RequestHandler):
 		for deal in deals:
 			self.response.out.write(deal.geo_hash+"<br/>")
 
-
-		
+class UpdateUsersHandler(webapp2.RequestHandler):
+	def get(self):
+		try:
+			logging.warning('!!!!!!!\n\n\n\n')
+			users = levr.Customer.all().fetch(None)
+			for user in users:
+				user.levr_token = levr.create_levr_token()
+			
+			db.put(users)
+			
+			for user in users:
+				self.response.out.write(user.levr_token)
+				self.response.out.write('<br/>')
+		except:
+			levr.log_error()
 		
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload.*', DatabaseUploadHandler),
 								('/new/find', FilterGeohashHandler),
 								('/new/test', TestHandler),
-								('/new/inundate', AddDealsHandler)
+								('/new/inundate', AddDealsHandler),
+								('/new/updateUser', UpdateUsersHandler)
 #								('/new/update' , UpdateUsersHandler)
 								],debug=True)
 

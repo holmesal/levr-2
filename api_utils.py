@@ -119,7 +119,7 @@ def package_deal(deal,private=False):
 		packaged_deal.update({})
 		
 	return packaged_deal
-def package_user(user,private=False,followers=True):
+def package_user(user,private=False,followers=True,**kwargs):
 	'''alias is added by us, first_name and last_name should be added by all other services (foursquare for sure right now)'''
 	if user.alias != '':
 		alias  = user.alias
@@ -137,6 +137,13 @@ def package_user(user,private=False,followers=True):
 	if followers == True:
 		followers_list = levr.Customer.get(user.followers)
 		packaged_user['followers'] = [package_user(f,True,False) for f in followers_list]
+	
+	#check if the token will be sent with the response
+	send_token = kwargs.get('send_token')
+	if send_token:
+		packaged_user.update({
+							'levr_token': user.levr_token
+							})
 	
 	if private:
 		packaged_user.update({

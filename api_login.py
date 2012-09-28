@@ -21,7 +21,7 @@ class LoginFacebookHandler(webapp2.RequestHandler):
 		
 		if existing_user:
 			#return the user
-			response = {'user':api_utils.package_user(existing_user,'private')}
+			response = {'user':api_utils.package_user(existing_user,True,send_token=True)}
 			api_utils.send_response(self,response,existing_user)
 		else:
 			api_utils.send_error(self,'Authentication failed.')
@@ -42,7 +42,7 @@ class LoginFoursquareHandler(webapp2.RequestHandler):
 		
 		if existing_user:
 			#return the user
-			response = {'user':api_utils.package_user(existing_user,'private')}
+			response = {'user':api_utils.package_user(existing_user,True,send_token=True)}
 			api_utils.send_response(self,response,existing_user)
 		else:
 			api_utils.send_error(self,'Authentication failed.')
@@ -63,7 +63,7 @@ class LoginTwitterHandler(webapp2.RequestHandler):
 		
 		if existing_user:
 			#return the user
-			response = {'user':api_utils.package_user(existing_user,'private')}
+			response = {'user':api_utils.package_user(existing_user,True,send_token=True)}
 			api_utils.send_response(self,response,existing_user)
 		else:
 			api_utils.send_error(self,'Authentication failed.')
@@ -100,7 +100,7 @@ class LoginLevrHandler(webapp2.RequestHandler):
 		
 		#still here? update last login by putting
 		existing_user.put()
-		response = {'user':api_utils.package_user(existing_user,'private')}
+		response = {'user':api_utils.package_user(existing_user,True,send_token=True)}
 		api_utils.send_response(self,response,existing_user)
 		
 app = webapp2.WSGIApplication([('/api/login/facebook', LoginFacebookHandler),
