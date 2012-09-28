@@ -10,11 +10,17 @@ import json
 import urllib
 from google.appengine.api import urlfetch
 import base64
+import time
 
 
 class InitializeMerchantHandler(webapp2.RequestHandler):
 	def post(self):
-		'''curl --data 'businessName=testBsuiness&vicinity=testVicinity&phone=1234567890&geoPoint=-71.234,43.2345' http://localhost:8082/api/merchant/initialize'''
+		#curl --data 'businessName=alonsostestbusiness&vicinity=testVicinity&phone=%2B16052610083&geoPoint=-71.234,43.2345' http://www.levr.com/api/merchant/initialize | python -mjson.tool
+		
+		'''REMEMBER PHONE NUMBER FORMATTING STUFF'''
+		#api_utils.send_error(self,'Hey ethan. Ask alonso about the formatting of the phone number.')
+		#return
+		
 		#Grab incoming merchant data
 		business_name = self.request.get('businessName')
 		if business_name == '':
@@ -44,12 +50,14 @@ class InitializeMerchantHandler(webapp2.RequestHandler):
 				return
 			#if a business has been created but no owner has been set, return the business
 		else:
+			logging.debug('Creating a new business.')
 			#create a new business entity with no owner
 			business = levr.Business()
 			business.business_name = business_name
 			business.vicinity = vicinity
 			business.phone = phone
 			business.geo_point = levr.geo_converter(geo_point)
+			business.activation_code = str(int(time.time()))[-4:]
 			#put
 			business.put()
 		
@@ -106,15 +114,45 @@ class VerifyMerchantHandler(webapp2.RequestHandler):
 		
 class TwilioAnswerHandler(webapp2.RequestHandler):
 	def post(self):
-		self.response.out.write('''
-		<?xml version="1.0" encoding="UTF-8"?>
+		self.response.out.write('''<?xml version="1.0" encoding="UTF-8"?>
 		<Response>
-		    <Gather timeout="10" finishOnKey="*">
-		    	<Say>Thanks for using Levr!</Say>
-		        <Say>Please enter your activation code and then press star.</Say>
-		    </Gather>
-		</Response>
-		''')
+			<Gather timeout="10" finishOnKey="*" action="http://www.levr.com/api/merchant/twiliocheckcode">
+				<Say>Thanks for using Levr!</Say>
+				<Say>Please enter your activation code and then press star.</Say>
+			</Gather>
+		</Response>''')
+		
+class TwilioCheckCodeHandler(webapp2.RequestHandler):
+	def post(self):
+		logging.debug(self.request.body)
+		code = self.request.get('Digits')
+		callto = self.request.get('To')
+		
+		logging.debug(code)
+		logging.debug(callto)
+		
+		business = levr.Business.gql('WHERE phone=:1 AND activation_code=:2',callto,code).get()
+		
+		if business:
+			logging.debug('Business found')
+			logging.debug(business)
+			self.response.out.write('''<?xml version="1.0" encoding="UTF-8"?>
+		<Response>
+			<Say>Your account has been activated. Goodbye.</Say>
+			<Hangup/>
+		</Response>''')
+		else:
+			logging.debug('Business NOT found')
+			'''THIS ISN'T WORKING PROPERLY - A SECOND CALL IS INITIATED WHEN INCORRECT PIN IS ENTERED'''
+			self.response.out.write('''<?xml version="1.0" encoding="UTF-8"?>
+		<Response>
+			<Gather timeout="10" finishOnKey="*" action="http://www.levr.com/api/merchant/twiliocheckcode">
+				<Say>That code doesn't look right. Could you try again?</Say>
+				<Say>Please enter your activation code and then press star.</Say>
+			</Gather>
+			<Hangup/>
+		</Response>''')
+		
 		
 class TwilioCallbackHandler(webapp2.RequestHandler):
 	def post(self):
@@ -125,4 +163,5 @@ app = webapp2.WSGIApplication([('/api/merchant/initialize', InitializeMerchantHa
 								('/api/merchant/call', CallMerchantHandler),
 								('/api/merchant/verify', VerifyMerchantHandler),
 								('/api/merchant/twilioanswer', TwilioAnswerHandler),
+								('/api/merchant/twiliocheckcode', TwilioCheckCodeHandler),
 								('/api/merchant/twiliocallback', TwilioCallbackHandler)],debug=True)

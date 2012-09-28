@@ -858,6 +858,7 @@ class Business(db.Model):
 	foursquare_id	= db.StringProperty(default="undefined")
 	foursquare_name	= db.StringProperty(default="undefined")
 	phone			= db.StringProperty()
+	activation_code = db.StringProperty()
 
 
 	def create_tags(self):
