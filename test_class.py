@@ -33,10 +33,9 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		blob_key= upload.key()
 		img_key = blob_key
 		logging.info(upload)
-		
+#		ethan = pat = alonso = ninja = False
 		# new customer
-#		c = levr.Customer(key='agtkZXZ-Z2V0bGV2cnIOCxIIQ3VzdG9tZXIYEgw')
-		ethan = levr.Customer.all().filter('email','ethan@levr.com').get().key()
+		ethan = levr.Customer.all(keys_only=True).filter('email','ethan@levr.com').get()
 		if not ethan:
 			ethan = levr.Customer()
 			ethan.email	= 'ethan@levr.com'
@@ -45,7 +44,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			ethan.favorites	= []
 			ethan = ethan.put()
 		
-		pat = levr.Customer.all().filter('email','patrick@levr.com').get().key()
+		pat = levr.Customer.all(keys_only=True).filter('email','patrick@levr.com').get()
 		if not pat:
 			pat = levr.Customer()
 			pat.email	= 'patrick@levr.com'
@@ -54,7 +53,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			pat.favorites	= []
 			pat = pat.put()
 		
-		alonso = levr.Customer.all().filter('email','alonso@levr.com').get().key()
+		alonso = levr.Customer.all(keys_only=True).filter('email','alonso@levr.com').get()
 		if not alonso:
 			alonso = levr.Customer()
 			alonso.email	= 'alonso@levr.com'
@@ -63,7 +62,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			alonso.favorites	= []
 			alonso = alonso.put()
 		
-		ninja = levr.Customer.all().filter('email','santa@levr.com').get().key()
+		ninja = levr.Customer.all(keys_only=True).filter('email','santa@levr.com').get()
 		if not ninja:
 			ninja = levr.Customer()
 			ninja.email	= 'santa@levr.com'
@@ -87,9 +86,14 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 					}
 
 		dealID = levr.dealCreate(params,'phone_new_business')
+		dealID = levr.dealCreate(params,'phone_new_business')
+		dealID = levr.dealCreate(params,'phone_new_business')
 		logging.debug(dealID)
 		self.redirect('/new/test')
-		
+
+class TestModel(db.Model):
+	date = db.IntegerProperty()
+	
 class TestHandler(webapp2.RequestHandler):
 	def get(self):
 		
@@ -108,31 +112,72 @@ class TestHandler(webapp2.RequestHandler):
 		ninja_url = url+'/user/'+ninja
 		deal_url = url+'/deal/'+deal
 		
+		token = db.get(enc.decrypt_key(ethan)).levr_token
 		
 		self.response.out.write('<b>For ethan: </b><br/><br/>')
-		self.response.out.write(ethan+'<br/><br/>')
+		self.response.out.write(ethan)
+		self.response.out.write('<br/><br/>')
+		
+#		self.response.out.write('<br/><br/>')
 		self.response.out.write('curl '+ethan_url)
 		
 		self.response.out.write('<br/><br/><br/><b>For pat: </b><br/><br/>')
-		self.response.out.write(pat+'<br/><br/>')
+		self.response.out.write(pat)
+		self.response.out.write('<br/><br/>')
+#		self.response.out.write('<br/><br/>')
 		self.response.out.write('curl '+pat_url)
 		
 		self.response.out.write('<br/><br/><br/><b>For alonso: </b><br/><br/>')
-		self.response.out.write(alonso+'<br/><br/>')
+		self.response.out.write(alonso)
+		self.response.out.write('<br/><br/>')
+#		self.response.out.write('<br/><br/>')
 		self.response.out.write('curl '+alonso_url)
 		
 		self.response.out.write('<br/><br/><br/><b>For ninja: </b><br/><br/>')
-		self.response.out.write(ninja+'<br/><br/>')
+		self.response.out.write(ninja)
+		self.response.out.write('<br/><br/>')
+#		self.response.out.write('<br/><br/>')
 		self.response.out.write('curl '+ninja_url)
 		
 		self.response.out.write('<br/><br/><br/><b>For deal stuff: </b><br/><br/>')
-		self.response.out.write(deal+'<br/><br/>')
+		self.response.out.write(deal)
+		self.response.out.write('<br/><br/>')
+#		self.response.out.write('<br/><br/>')
 		self.response.out.write('curl '+deal_url)
 		
-		self.response.out.write('<br><br><br><br> | python -mjson.tool')
+		self.response.out.write('<br/><br/>')
+		self.response.out.write('<br/><br/>')
+		self.response.out.write('token: ')
+		self.response.out.write('<br/><br/>')
+		self.response.out.write(str(token))
+		self.response.out.write('<br/><br/>')
+		self.response.out.write(levr.unix_time(datetime.now()))
+		self.response.out.write('<br/><br/>')
+		self.response.out.write('| python -mjson.tool')
+		self.response.out.write('<br/><br/>')
+		self.response.out.write('<br/><br/>')
+		
+		t1 = TestModel(
+					date = long(levr.unix_time(datetime.now()))
+					).put()
+		t2 = TestModel(
+					date = long(levr.unix_time(datetime.now()))
+					).put()
+		
+		mod1 = db.get(t1)
+		mod2 = db.get(t2)
+		self.response.out.write(levr.unix_time(datetime.now()))
+		self.response.out.write(long(levr.unix_time(datetime.now())))
+		self.response.out.write('<br/><br/>')
+		self.response.out.write(mod1.date)
+		self.response.out.write('<br/><br/>')
+		self.response.out.write(mod2.date)
+		
 		
 		follow = '/follow?followerID='
 		redeem = '/redeem?uid='
+		
+	
 		
 class AddDealsHandler(webapp2.RequestHandler):
 	def get(self):

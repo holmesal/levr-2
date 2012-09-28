@@ -7,8 +7,85 @@ from datetime import datetime
 from google.appengine.ext import db
 #from google.appengine.api import mail
 
+def authorize(handler_method):
+	'''
+	Decorator checks the privacy level of the request.
+	If the uid is valid and the user exists, it checks the levr_token to  privacy level
+	
+	'''
+	def check(self,*args,**kwargs):
+		try:
+			logging.debug('PUBLIC OR PRIVATE DECORATOR\n\n\n')
+#			logging.debug(levr.log_dir(self.request))
+			logging.debug(args)
+			logging.debug(kwargs)
+			
+			#CHECK USER
+			uid = args[0]
+			if not api_utils.check_param(self,uid,'uid','key',True):
+				raise Exception('uid: '+str(uid))
+			else:
+				uid = db.Key(enc.decrypt_key(uid))
+			
+			
+			#GET ENTITIES
+			user = db.get(uid)
+			if not user or user.kind() != 'Customer':
+				raise Exception('uid: '+str(uid))
+			
+			levr_token = self.request.get('levr_token')
+			
+			#if the levr_token matches up, then private request, otherwise public
+			if user.levr_token == levr_token:
+				private = True
+			else:
+				private = False
+			
+			logging.debug(private)
+			
+			
+			kwargs.update({
+						'user'	: user,
+						'private': private
+						})
+		except Exception,e:
+			api_utils.send_error(self,'Invalid uid, '+str(e))
+		else:
+			handler_method(self,*args,**kwargs)
+	
+	return check
+def private(handler_method):
+	'''
+	Decorator used to reject calls that require private auth and do not have them
+	'''
+	def check(self,*args,**kwargs):
+		try:
+			logging.debug('PRIVATE SCREENING DECORATOR\n\n\n')
+			logging.debug(args)
+			logging.debug(kwargs)
+			
+			private = kwargs.get('private')
+			
+			if private:
+				#RPC is authorized
+				handler_method(self,*args,**kwargs)
+			else:
+				#call is unauthorized - reject
+				api_utils.send_error(self,'Not Authorized')
+			
+			
+			
+		except Exception,e:
+			levr.log_error()
+			api_utils.send_error(self,'Server Error')
+			
+	
+	return check
+	
 class UserFavoritesHandler(webapp2.RequestHandler):
-	def get(self,uid):
+	@authorize
+	@private
+	def get(self,*args,**kwargs):
 		'''
 		Get all of a users favorite deals
 		
@@ -25,15 +102,15 @@ class UserFavoritesHandler(webapp2.RequestHandler):
 		#RESTRICTED
 		try:
 			logging.info("\n\nGET USER FAVORITES")
+			logging.info(kwargs)
+			logging.info(args)
 			
 			LIMIT_DEFAULT = 20
 			OFFSET_DEFAULT = 0
 			
-			if not api_utils.check_param(self,uid,'uid','key',True):
-				return
-			else:
-				uid = db.Key(enc.decrypt_key(uid))
-			
+			user = kwargs.get('user')
+			uid = user.key()
+			private = kwargs.get('private')
 			limit = self.request.get('limit')
 			if not api_utils.check_param(self,limit,'limit','int',False):
 				#limit not passed
@@ -44,12 +121,6 @@ class UserFavoritesHandler(webapp2.RequestHandler):
 				#limit not passed
 				offset = OFFSET_DEFAULT
 			
-			
-			#GET ENTITIES
-			user = db.get(uid)
-			if not user:
-				api_utils.send_error(self,'Invalid uid: '+uid)
-				return
 			
 			#grab all favorites
 			favorites = user.favorites
@@ -86,7 +157,8 @@ class UserFavoritesHandler(webapp2.RequestHandler):
 		
 
 class UserUploadsHandler(webapp2.RequestHandler):
-	def get(self,uid):
+	@authorize
+	def get(self,*args,**kwargs):
 		'''
 		Get all of a users uploaded deals
 		
@@ -103,15 +175,13 @@ class UserUploadsHandler(webapp2.RequestHandler):
 		try:
 			logging.info("\n\nGET USER UPLOADS")
 			
+			user = kwargs.get('user')
+			private = kwargs.get('private')
+			
+			
 			LIMIT_DEFAULT = 10
 			OFFSET_DEFAULT = 0
 			
-			
-			#CHECK PARAMS
-			if not api_utils.check_param(self,uid,'uid','key',True):
-				return
-			else:
-				uid = db.Key(enc.decrypt_key(uid))
 			
 			limit = self.request.get('limit')
 			if not api_utils.check_param(self,limit,'limit','int',False):
@@ -122,13 +192,6 @@ class UserUploadsHandler(webapp2.RequestHandler):
 			if not api_utils.check_param(self,offset,'offset','int',False):
 				#limit not passed
 				offset = OFFSET_DEFAULT
-			
-			#GET ENTITIES
-			user = db.get(uid)
-			if not user:
-				api_utils.send_error(self,'Invalid uid: '+uid)
-				return
-			
 			
 			#grab all deals that are owned by the specified customer
 			deals = levr.Deal.all().ancestor(uid).fetch(limit,offset=offset)
@@ -149,7 +212,8 @@ class UserUploadsHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 		
 class UserGetFollowersHandler(webapp2.RequestHandler):
-	def get(self,uid):
+	@authorize
+	def get(self,*args,**kwargs):
 		'''
 		Get all of a users followers
 		
@@ -167,20 +231,15 @@ class UserGetFollowersHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
-			logging.info('GET USER FOLLOWERS')
-			logging.info(uid)
+			logging.info('GET USER FOLLOWERS\n\n\n')
+			
+			user = kwargs.get('user')
+			uid = user.key()
+			private = kwargs.get('private')
 			
 			LIMIT_DEFAULT = 20
 			OFFSET_DEFAULT = 0
 			#CHECK PARAMS
-			if not api_utils.check_param(self,uid,'uid','key',True):
-				return
-			else:
-				uid = db.Key(enc.decrypt_key(uid))
-				
-			
-			
-			
 			limit = self.request.get('limit')
 			if not api_utils.check_param(self,limit,'limit','int',False):
 				#limit not passed
@@ -190,12 +249,6 @@ class UserGetFollowersHandler(webapp2.RequestHandler):
 			if not api_utils.check_param(self,offset,'offset','int',False):
 				#limit not passed
 				offset = OFFSET_DEFAULT
-			
-			#GET ENTITIES
-			user = db.get(uid)
-			if not user:
-				api_utils.send_error(self,'Invalid uid: '+uid)
-				return
 			
 			
 			
@@ -215,7 +268,8 @@ class UserGetFollowersHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 		
 class UserAddFollowHandler(webapp2.RequestHandler):
-	def get(self,uid):
+	@authorize
+	def get(self,*args,**kwargs):
 		'''
 		A user (specified in ?uid=USER_ID) follows the user specified in (/api/USER_ID/follow)
 		
@@ -227,14 +281,12 @@ class UserAddFollowHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
-			logging.info('\n\nUSER ADD FOLLOWER')
+			logging.info('USER ADD FOLLOWER\n\n\n')
+			user = kwargs.get('user')
+			uid = user.key()
+			private = kwargs.get('private')
 			
-			#CHECK PARAMS
-			if not api_utils.check_param(self,uid,'uid','key',True):
-				return
-			else:
-				uid = db.Key(enc.decrypt_key(uid))
-				
+			
 			actorID = self.request.get('uid')
 			if not api_utils.check_param(self,actorID,'uid','key',True):
 				return
@@ -243,17 +295,14 @@ class UserAddFollowHandler(webapp2.RequestHandler):
 			
 			
 			#GET ENTITIES
-			[user,actor] = db.get([uid,actorID])
-			if not user or user.kind() != 'Customer':
-				api_utils.send_error(self,'Invalid uid: '+uid)
-				return
+			actor = db.get(actorID)
 			if not actor or actor.kind() != 'Customer':
 				api_utils.send_error(self,'Invalid follower uid: '+str(actorID))
 				return
 			
 			
 			#PERFORM ACTIONS
-			if not levr.create_notification('newFollower',uid,actorID):
+			if not levr.create_notification('newFollower',user.key(),actorID):
 				api_utils.send_error(self,'Server Error')
 				return
 			
@@ -261,13 +310,14 @@ class UserAddFollowHandler(webapp2.RequestHandler):
 			
 			
 			#respond
-			api_utils.send_response(self,{},actor)
+			api_utils.send_response(self,{'dt':str(actor.date_last_notified)},actor)
 			
 		except:
 			levr.log_error(self.request)
 			api_utils.send_error(self,'Server Error')
 class UserUnfollowHandler(webapp2.RequestHandler):
-	def get(self,uid):
+	@authorize
+	def get(self,*args,**kwargs):
 		'''
 		A user (specified in ?uid=USER_ID) stops following the user specified in (/api/USER_ID/follow)
 		If the user is not a follower and they request to unfollow, then nothing happens and success is true
@@ -281,25 +331,19 @@ class UserUnfollowHandler(webapp2.RequestHandler):
 		'''
 		try:
 			logging.info('\n\nUSER REMOVE FOLLOWER')
+			user = kwargs.get('user')
+			uid = user.key()
+			private = kwargs.get('private')
 			
 			#CHECK PARAMS
-			if not api_utils.check_param(self,uid,'uid','key',True):
-				return
-			else:
-				uid = db.Key(enc.decrypt_key(uid))
-				
 			actorID = self.request.get('uid')
 			if not api_utils.check_param(self,actorID,'uid','key',True):
 				return
 			else:
 				actorID = db.Key(enc.decrypt_key(actorID))
 			
-			
 			#GET ENTITIES
-			[user,actor] = db.get([uid,actorID])
-			if not user or user.kind() != 'Customer':
-				api_utils.send_error(self,'Invalid uid: '+uid)
-				return
+			actor = db.get(actorID)
 			if not actor or actor.kind() != 'Customer':
 				api_utils.send_error(self,'Invalid follower uid: '+str(actorID))
 				return
@@ -332,29 +376,21 @@ class UserUnfollowHandler(webapp2.RequestHandler):
 			levr.log_error(self.request)
 			api_utils.send_error(self,'Server Error')
 class UserImgHandler(webapp2.RequestHandler):
-	def get(self,uid):
-		'''Returns ONLY an image for a deal specified by dealID
+	@authorize
+	def get(self,*args,**kwargs):
+		'''Returns ONLY an image for a deal specified by uid
 		Gets the image from the blobstoreReferenceProperty deal.img'''
 		try:
-			logging.info('\n\n\nIMAGE')
+			logging.info('IMAGE\n\n\n')
+			user = kwargs.get('user')
+			uid = user.key()
+			private = kwargs.get('private')
 			
-			
-			#CHECK PARAMS
-			if not api_utils.check_param(self,uid,'uid','key',True):
-				return
-			else:
-				uid = db.Key(enc.decrypt_key(uid))
-				logging.debug(uid)
 			
 			size = self.request.get('size')
 			if not api_utils.check_param(self,size,'size','str',True):
 				return
 			
-			#GET ENTITIES
-			user = db.get(dealID)
-			if not user or user.kind() != 'Customer':
-				api_utils.send_error(self,'Invalid uid: '+uid)
-				return
 			
 			#get the blob
 			blob_key = user.img
@@ -370,7 +406,8 @@ class UserImgHandler(webapp2.RequestHandler):
 
 
 class UserCashOutHandler(webapp2.RequestHandler):
-	def get(self,uid):
+	@authorize
+	def get(self,*args,**kwargs):
 		'''
 		#RESTRICTED
 		inputs:
@@ -387,10 +424,12 @@ class UserCashOutHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 		
 class UserNotificationsHandler(webapp2.RequestHandler):
-	def get(self,uid):
+	@authorize
+	@private
+	def get(self,*args,**kwargs):
 		'''
 		#RESTRICTED
-		inputs: sinceDate(required)
+		inputs: since(required)
 		
 		Output:{
 			meta:{
@@ -405,27 +444,25 @@ class UserNotificationsHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
-
-			if not api_utils.check_param(self,uid,'uid','key',True):
-				return
-			else:
-				uid = db.Key(enc.decrypt_key(uid))
-				
+			user = kwargs.get('user')
+			uid = user.key()
+			private = kwargs.get('private')
+			
+			
 			#sinceDate is the date of how far back you want notifications
-			sinceDate = self.request.get('sinceDate')
+			sinceDate = kwargs.get('since')
 			if not api_utils.check_param(self,sinceDate,'sinceDate','int',False):
 				sinceDate = None
 			
 			
 			logging.debug('sinceDate: '+str(sinceDate))
-			user = levr.Customer.get(uid)
-			logging.debug(levr.log_model_props(user))
 			logging.debug('last notified: '+str(user.last_notified))
 			
 			#get notifications 
 			notifications = user.get_notifications(sinceDate)
 			logging.debug('notifications: '+str(notifications.__len__()))
 			
+			#package up the notifications
 			packaged_notifications = [api_utils.package_notification(n) for n in notifications]
 			
 			
@@ -446,10 +483,11 @@ class UserNotificationsHandler(webapp2.RequestHandler):
 		
 		
 class UserInfoHandler(webapp2.RequestHandler):
-	def get(self,uid):
+	@authorize
+	def get(self,*args,**kwargs):
 		'''
 		#PARTIALLY RESTRICTED
-		inputs: lat,lon,limit
+		inputs:
 		Output:{
 			meta:{
 				success
@@ -460,20 +498,11 @@ class UserInfoHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
-			if not api_utils.check_param(self,uid,'uid','key',True):
-				return
-			else:
-				uid = db.Key(enc.decrypt_key(uid))
-				
-			#get user entity
-			user = levr.Customer.get(uid)
-			if not user:
-				api_utils.send_error(self,'Invalid uid: '+uid)
-				return
-			
+			user 	= kwargs.get('user')
+			private	= kwargs.get('private')
 			#create response object
 			response = {
-					'user'	: api_utils.package_user(user)
+					'user'	: api_utils.package_user(user,private)
 					}
 			
 			#respond

@@ -7,7 +7,7 @@ from datetime import timedelta
 import base_62_converter as converter
 from random import randint 
 import geo.geohash as geohash
-
+import uuid
 
 import levr_encrypt as enc
 from common_word_list import blacklist
@@ -319,6 +319,12 @@ def log_dict(obj,props=None,delimeter= "\n\t\t"):
 	finally:
 		return log_str
 	
+
+def create_levr_token():
+	#creates a unique id than forms the levr_token
+	token = uuid.uuid4()
+	token = enc.encrypt_key(''.join(token.__str__().split('-'))).replace('=','')
+	return token
 
 def create_unique_id():
 	#create the share ID - based on milliseconds since epoch
@@ -679,7 +685,6 @@ def dealCreate(params,origin,upload_flag=True):
 
 
 
-
 ###################################################
 ###					CLASSES						###
 ###################################################
@@ -703,6 +708,7 @@ class Customer(db.Model):
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	date_last_edited= db.DateTimeProperty(auto_now=True)
 	date_last_login = db.DateTimeProperty(auto_now_add=True)
+	levr_token		= db.StringProperty(default=create_levr_token())
 	facebook_token	= db.StringProperty()
 	foursquare_token= db.StringProperty()
 	twitter_token	= db.StringProperty()
@@ -713,7 +719,7 @@ class Customer(db.Model):
 	photo			= db.StringProperty(default='')
 	followers		= db.ListProperty(db.Key)
 	date_last_notified = db.DateTimeProperty(auto_now_add=True)
-	last_notified	= db.IntegerProperty(default=long(unix_time(datetime.now())))
+	last_notified	= db.IntegerProperty(default=0)
 	
 	@property
 	def following(self):
@@ -727,9 +733,16 @@ class Customer(db.Model):
 		if date == None:
 			#date was not specified, use the default
 			date = self.last_notified
+#			date = 0
 		logging.debug(date)
 		
+		
 		notifications = Notification.all().filter('to_be_notified',self.key()).filter('date_in_seconds >=',date).fetch(None)
+		
+		dates = Notification.all(projection=['date_in_seconds']).fetch(None)
+		logging.debug(dates)
+		for date in dates:
+			logging.debug(date.date_in_seconds)
 		
 		now = datetime.now()
 		#reset last notification time

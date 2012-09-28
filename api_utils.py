@@ -64,8 +64,8 @@ def check_param(self,parameter,parameter_name,param_type='str',required=True):
 	if not parameter:
 #		logging.info("EERRRRR")
 		#parameter is empty
-		if required == True:
-			send_error(self,'Required parameter not passed: '+str(parameter_name))
+#		if required == True:
+#			send_error(self,'Required parameter not passed: '+str(parameter_name))
 		return False
 	else:
 		#parameter is not empty
@@ -82,21 +82,21 @@ def check_param(self,parameter,parameter_name,param_type='str',required=True):
 #				logging.debug(parameter)
 #				logging.debug('end test key')
 			except:
-				if required == True:
-					send_error(self,'Invalid parameter: '+str(parameter_name)+"; "+str(parameter))
+#				if required == True:
+#					send_error(self,'Invalid parameter: '+str(parameter_name)+"; "+str(parameter))
 				return False
 		elif param_type == 'int':
 #			logging.debug('integer')
 			if not parameter.isdigit():
-				if required == True:
-					send_error(self,'Invalid parameter: '+str(parameter_name)+"; "+str(parameter))
-				else:
-					logging.error('Flag parameter: '+str(parameter))
+#				if required == True:
+#					send_error(self,'Invalid parameter: '+str(parameter_name)+"; "+str(parameter))
+#				else:
+				logging.error('Flag parameter: '+str(parameter))
 				return False
 	logging.info(parameter_name+": "+str(parameter))
 	return True
 
-def package_deal(deal,privacyLevel='public'):
+def package_deal(deal,private=False):
 #	logging.debug(str(deal.geo_point))
 	packaged_deal = {
 			'barcode'		: deal.barcode,
@@ -115,8 +115,11 @@ def package_deal(deal,privacyLevel='public'):
 			'shareURL'		: create_share_url(deal),
 			'tags'			: deal.tags
 			}
+	if private == True:
+		packaged_deal.update({})
+		
 	return packaged_deal
-def package_user(user,privacyLevel='public',followers=True):
+def package_user(user,private=False,followers=True):
 	'''alias is added by us, first_name and last_name should be added by all other services (foursquare for sure right now)'''
 	if user.alias != '':
 		alias  = user.alias
@@ -133,17 +136,22 @@ def package_user(user,privacyLevel='public',followers=True):
 		}
 	if followers == True:
 		followers_list = levr.Customer.get(user.followers)
-		packaged_user['followers'] = [package_user(f,'public',False) for f in followers_list]
+		packaged_user['followers'] = [package_user(f,True,False) for f in followers_list]
 	
+	if private:
+		packaged_user.update({
+							
+							})
 	
 	return packaged_user
 def package_notification(notification):
 	packaged_notification = {
 		'notificationID'	: enc.encrypt_key(str(notification.key())),
-		'date'				: str(notification.date)[:19],
-		'dateInSeconds'		: notification.date_in_seconds,
+#		'date'				: str(notification.date)[:19],
+		'date'				: notification.date_in_seconds,
 		'notificationType'	: notification.notification_type,
-		'user'				: package_user(notification.actor)
+		'user'				: package_user(notification.actor),
+		'notificationID'	: enc.encrypt_key(notification.key())
 		}
 	if notification.deal:
 		packaged_notification['deal'] = package_deal(notification.deal)
