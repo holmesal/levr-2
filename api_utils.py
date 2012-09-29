@@ -107,8 +107,6 @@ def package_deal(deal,private=False):
 			'description'	: deal.description,
 			'isExclusive'	: deal.is_exclusive,
 			'largeImg'		: create_img_url(deal,'large'),
-			'geoHash'		: deal.geo_hash,
-			'geoPoint'		: str(deal.geo_point),
 			'redemptions'	: deal.count_redeemed,
 			'smallImg'		: create_img_url(deal,'small'),
 			'status'		: deal.deal_status,
@@ -125,11 +123,11 @@ def package_user(user,private=False,followers=True,**kwargs):
 	
 	packaged_user = {
 		'uid'			: enc.encrypt_key(str(user.key())),
-		'alias'			: alias,
+		'alias'			: user.alias,
 		'dateCreated'	: user.date_created.__str__()[:19],
 		'firstName'		: user.first_name,
 		'lastName'		: user.last_name,
-		'photo'			: user.photo,
+		'photoURL'		: user.photo,
 		}
 	if followers == True:
 		followers_list = levr.Customer.get(user.followers)
@@ -139,7 +137,7 @@ def package_user(user,private=False,followers=True,**kwargs):
 	send_token = kwargs.get('send_token')
 	if send_token:
 		packaged_user.update({
-							'levr_token': user.levr_token
+							'levrToken': user.levr_token
 							})
 	
 	if private:

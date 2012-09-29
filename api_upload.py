@@ -36,7 +36,7 @@ def authorize(handler_method):
 			if not user or user.kind() != 'Customer':
 				raise Exception('uid: '+str(uid))
 			
-			levr_token = self.request.get('levr_token')
+			levr_token = self.request.get('levrToken')
 			
 			#if the levr_token matches up, then private request, otherwise public
 			if user.levr_token == levr_token:

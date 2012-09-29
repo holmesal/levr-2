@@ -62,17 +62,16 @@ class UserFavoritesHandler(webapp2.RequestHandler):
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		'''
+		/user/uid/favorites
+		
 		Get all of a users favorite deals
 		
-		inputs: limit(optional), offset(optional)
-		Output:{
-			meta:{
-				success
-				errorMsg
-				}
-			response:{
-				[string,string]
-				}
+		inputs: 
+		
+		response:{
+			numResults: <int>
+			deals: [<deal>,<deal>]
+			}
 		'''
 		#RESTRICTED
 		try:
@@ -198,7 +197,7 @@ class UserGetFollowersHandler(webapp2.RequestHandler):
 		Get all of a users followers
 		
 		#RESTRICTED
-		inputs: limit, offset
+		inputs:
 		Output:{
 			meta:{
 				success
@@ -256,11 +255,10 @@ class UserAddFollowHandler(webapp2.RequestHandler):
 		A user (specified in ?uid=USER_ID) follows the user specified in (/api/USER_ID/follow)
 		
 		inputs: uid(required)
-		Output:{
-			meta:{
-				success
-				errorMsg
-				}
+		
+		Response:{
+			None
+			}
 		'''
 		try:
 			logging.info('USER ADD FOLLOWER\n\n\n')
