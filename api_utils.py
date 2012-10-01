@@ -114,6 +114,12 @@ def package_deal(deal,private=False):
 			'tags'			: deal.tags,
 			'dateEnd'		: str(deal.date_end)[:19]
 			}
+			
+	if deal.is_exclusive == False:
+		packaged_deal.update({
+			'owner'			: package_user(levr.Customer.get(deal.key().parent()))
+		})
+	
 	if private == True:
 		packaged_deal.update({
 							})

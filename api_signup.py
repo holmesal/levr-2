@@ -86,11 +86,7 @@ class SignupTwitterHandler(webapp2.RequestHandler):
 		if token == '':
 			api_utils.send_error(self,'Required parameter not passed: token')
 			return
-		#check screen_name
-		screen_name = self.request.get('screenName')
-		if screen_name == '':
-			api_utils.send_error(self,'Required parameter not passed: screenName')
-			return
+		#check everything else
 		
 		#check if token currently exists in datastore
 		existing_user = levr.Customer.gql('WHERE twitter_token = :1',token).get()
