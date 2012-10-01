@@ -6,6 +6,7 @@ import levr_classes as levr
 #from google.appengine.ext import db
 import logging
 import jinja2
+import api_utils
 
 #from gaesessions import get_current_session
 
@@ -23,8 +24,10 @@ class ShareHandler(webapp2.RequestHandler):
 				ninjaKey = deal.key().parent()
 				ninja = levr.Customer.get(ninjaKey)
 				template_values = {
-								'deal':levr.phoneFormat(deal, 'list'),
-								'ninja':ninja.alias
+								'deal'	:api_utils.package_deal(deal),
+								'ninja'	:ninja.alias,
+								'lat'	:deal.geo_point.lat,
+								'lon'	:deal.geo_point.lon
 								}
 				logging.debug(template_values)
 				logging.debug(deal.__str__())

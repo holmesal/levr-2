@@ -1,9 +1,16 @@
 <!DOCTYPE html>
 <html>
-	<head>
+	<head prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb# levrinc: http://ogp.me/ns/fb/levrinc#">
 		<meta charset="UTF-8">
-		<meta property="og:image" content="http://getlevr.appspot.com/phone/img?size=facebook&dealID={{deal.dealID}}"/> 
-		<meta property="og:title" content="Score! {{deal.deal_text}} at {{deal.business_name}}"/>
+		<meta property="fb:app_id" content="448791615162217" /> 
+		<meta property="og:type"   content="levrinc:deal" /> 
+		<meta property="og:url"    content="{{deal.shareURL}}" /> 
+		<meta property="og:image" content="{{deal.largeImg}}" />
+		<meta property="og:description" content="{{deal.description}}" />
+		<meta property="levrinc:location:latitude" content="{{lat}}" />
+		<meta property="levrinc:location:longitude" content="{{lon}}" />
+		<meta property="og:title"  content="Sweetness! {{deal.deal_text}} at {{deal.business.businessName}}" /> 
+<!-- 		<meta property="og:image"  content="https://s-static.ak.fbcdn.net/images/devsite/attachment_blank.png" /> -->
 		<title>{{alias}} wants to share a deal with you.</title>
 		<link href="../css/share_mobile.css" rel="stylesheet">
 		<link rel="icon" type="image/png" href="img/favicon.png">
@@ -12,7 +19,7 @@
 		<p id="shareText">{{ninja}} wants to share a deal with you.</p>
 		<div id="container">
 			<!--img src="http://getlevr.appspot.com/phone/img?size=dealDetail&dealID={{dealID}}"-->
-			<div id="dealImg" style="background-image: url(/phone/img?size=dealDetail&dealID={{deal.dealID}});"></div>
+			<div id="dealImg" style="background-image: url(/phone/img?size=dealDetail&dealID={{deal.dealID}});">&nbsp;</div>
 			<p id='dealText'>{{deal.dealText}}</p>
 			<p id='dealTextExtra'>{{deal.dealTextExtra}}</p>
 			<p id='business_string'>{{deal.businessName}} - {{deal.vicinity}}</p>

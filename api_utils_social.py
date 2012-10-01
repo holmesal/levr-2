@@ -102,7 +102,7 @@ def sort_and_encode_params(params):
 		raise Exception('Invalid twitter response: '+result.content)'''
 
 
-def facebook_deets(user,token):
+def facebook_deets(user,token,*args,**kwargs):
 	try:
 		#goto facebook
 		url = ''+token

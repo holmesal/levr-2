@@ -449,7 +449,7 @@ def get_deals_in_area(tags,request_point,radius=2,limit=None,precision=5,verbose
 	logging.debug(deals.__len__())
 	logging.debug(filtered_deals.__len__())
 	logging.debug('End')
-	
+
 	fetch_time = t2-t1
 	get_time = t3-t2
 	filter_time = t4-t3
