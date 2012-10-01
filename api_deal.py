@@ -158,9 +158,7 @@ class UpvoteHandler(webapp2.RequestHandler):
 			user 	= kwargs.get('user')
 			uid 	= user.key()
 			deal 	= kwargs.get('deal')
-			dealID 	= deal.key()
-			
-			
+			dealID 	= deal.key(
 			
 			#GET ENTITIES
 			deal = db.get(dealID)

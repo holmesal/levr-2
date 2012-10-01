@@ -433,14 +433,17 @@ def get_deals_in_area(tags,request_point,radius=2,limit=None,precision=5,verbose
 	else:
 		logging.debug('unflag')
 	logging.debug(filtered_deals.__len__())
-	logging.debug(filtered_deals.__len__() >= int(limit))
 	
 	
-	if limit and filtered_deals.__len__() >= int(limit):
-		logging.debug('FLAG LIMITED')
-		filtered_deals = filtered_deals[:int(limit)]
-	else:
-		logging.debug('FLAG UNLIMITED')
+	try:
+		logging.debug(filtered_deals.__len__() >= int(limit))
+		if limit and filtered_deals.__len__() >= int(limit):
+			logging.debug('FLAG LIMITED')
+			filtered_deals = filtered_deals[:int(limit)]
+		else:
+			logging.debug('FLAG UNLIMITED')
+	except:
+		pass
 	
 	t4 = datetime.now()
 	

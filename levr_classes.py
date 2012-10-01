@@ -907,7 +907,7 @@ class Deal(polymodel.PolyModel):
 	date_uploaded	= db.DateTimeProperty(auto_now_add=True)
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	date_last_edited= db.DateTimeProperty(auto_now=True)
-	vote_sign		= db.StringProperty(default='unsigned')
+	vote_sign		= db.StringProperty(default='')
 	vote_count		= db.IntegerProperty(default=0)
 
 
