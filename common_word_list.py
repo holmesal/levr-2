@@ -23,6 +23,7 @@ blacklist = [
 'cool',
 'avenue',
 'purchase',
+'free',
 
 ##Roadway words
 'ave',
