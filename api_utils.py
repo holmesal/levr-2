@@ -112,12 +112,13 @@ def package_deal(deal,private=False):
 			'status'		: deal.deal_status,
 			'shareURL'		: create_share_url(deal),
 			'tags'			: deal.tags,
-			'dateEnd'		: str(deal.date_end)[:19]
+			'dateEnd'		: str(deal.date_end)[:19],
+			'vote'			: deal.vote_sign + str(deal.vote_count)
 			}
 			
 	if deal.is_exclusive == False:
 		packaged_deal.update({
-			'owner'			: package_user(levr.Customer.get(deal.key().parent()))
+			'user'			: package_user(levr.Customer.get(deal.key().parent()))
 		})
 	
 	if private == True:

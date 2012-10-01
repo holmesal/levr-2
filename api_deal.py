@@ -148,6 +148,55 @@ class AddFavoriteHandler(webapp2.RequestHandler):
 		except:
 			levr.log_error(self.request)
 			api_utils.send_error(self,'Server Error')
+			
+class UpvoteHandler(webapp2.RequestHandler):
+	@authorize
+	@api_utils.private
+	def get(self,dealID,*args,**kwargs):
+		try:
+
+			user 	= kwargs.get('user')
+			uid 	= user.key()
+			deal 	= kwargs.get('deal')
+			dealID 	= deal.key()
+			
+			
+			
+			#GET ENTITIES
+			deal = db.get(dealID)
+			if not deal or deal.kind() != 'Deal':
+				api_utils.send_error(self,'Invalid dealID: '+dealID)
+				return
+			
+			count = deal.vote_count
+			sign = deal.vote_sign
+			
+			#count stuff
+			if sign == '-':
+				count = count - 1
+			else:
+				count = count + 1
+				
+			#sign stuff
+			if count == 0:
+				sign = ''
+			elif count > 0:
+				sign = '+'
+			elif count < 0:
+				sign = '-'
+				
+			#update count and sign
+			deal.vote_count = count
+			deal.vote_sign = sign
+			
+			deal.put()
+			response = {'deal':api_utils.package_deal(deal)}
+			api_utils.send_response(self,response,user)
+			
+		except:
+			levr.log_error(self.request.body)
+			api_utils.send_error(self,'Server Error')
+
 
 class DeleteFavoriteHandler(webapp2.RequestHandler):
 	@authorize
@@ -340,6 +389,7 @@ class DealInfoHandler(webapp2.RequestHandler):
 
 app = webapp2.WSGIApplication([('/api/deal/(.*)/redeem.*', RedeemHandler),
 								('/api/deal/(.*)/favorite.*', AddFavoriteHandler),
+								('/api/deal/(.*)/upvote.*', UpvoteHandler),
 								('/api/deal/(.*)/deleteFavorite.*', DeleteFavoriteHandler),
 								('/api/deal/(.*)/report.*', ReportHandler),
 								('/api/deal/(.*)/img.*', DealImgHandler),
