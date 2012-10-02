@@ -736,6 +736,7 @@ class Customer(db.Model):
 	new_redeem_count= db.IntegerProperty(default = 0) #number of unseen redemptions
 	vicinity		= db.StringProperty(default='') #the area of the user, probably a college campus
 	favorites		= db.ListProperty(db.Key,default=[])
+	downvotes		= db.ListProperty(db.Key,default=[])
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	date_last_edited= db.DateTimeProperty(auto_now=True)
 	date_last_login = db.DateTimeProperty(auto_now_add=True)
@@ -907,8 +908,8 @@ class Deal(polymodel.PolyModel):
 	date_uploaded	= db.DateTimeProperty(auto_now_add=True)
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	date_last_edited= db.DateTimeProperty(auto_now=True)
-	vote_sign		= db.StringProperty(default='')
-	vote_count		= db.IntegerProperty(default=0)
+	upvotes			= db.IntegerProperty(default=0)
+	downvotes		= db.IntegerProperty(default=0)
 
 
 class CustomerDeal(Deal):

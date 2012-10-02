@@ -25,7 +25,7 @@ def authorize(handler_method):
 			dealID = args[0]
 			#CHECK PARAMS
 			if not api_utils.check_param(self,dealID,'dealID','key',True):
-				raise Exception('dealID: '+str(uid))
+				raise Exception('dealID: '+str(dealID))
 			else:
 				dealID = db.Key(enc.decrypt_key(dealID))
 			
@@ -142,7 +142,7 @@ class AddFavoriteHandler(webapp2.RequestHandler):
 				#close entity
 				user.put()
 			else:
-				logging.debug('Flag in favorites')
+				logging.debug('Already upvoted!')
 			
 			api_utils.send_response(self,{},user)
 		except:
@@ -158,7 +158,7 @@ class UpvoteHandler(webapp2.RequestHandler):
 			user 	= kwargs.get('user')
 			uid 	= user.key()
 			deal 	= kwargs.get('deal')
-			dealID 	= deal.key(
+			dealID 	= deal.key()
 			
 			#GET ENTITIES
 			deal = db.get(dealID)
@@ -166,28 +166,88 @@ class UpvoteHandler(webapp2.RequestHandler):
 				api_utils.send_error(self,'Invalid dealID: '+dealID)
 				return
 			
-			count = deal.vote_count
-			sign = deal.vote_sign
 			
-			#count stuff
-			if sign == '-':
-				count = count - 1
+			
+			#favorite
+			logging.debug(levr.log_model_props(user))
+			#only add to favorites if not already in favorites
+			if dealID not in user.favorites:
+				logging.debug('Flag not yet upvoted')
+				#append dealID to favorites property
+				user.favorites.append(dealID)
+				logging.debug(user.favorites)
+				
+				#create favorite notification
+				levr.create_notification('favorite',dealID.parent(),uid,dealID)
+				
+				#put user
+				user.put()
+				
+				#increment
+				deal.upvotes += 1
 			else:
-				count = count + 1
-				
-			#sign stuff
-			if count == 0:
-				sign = ''
-			elif count > 0:
-				sign = '+'
-			elif count < 0:
-				sign = '-'
-				
-			#update count and sign
-			deal.vote_count = count
-			deal.vote_sign = sign
+				logging.debug('Flag already upvoted')
 			
+			#store
 			deal.put()
+			
+			response = {'deal':api_utils.package_deal(deal)}
+			api_utils.send_response(self,response,user)
+			
+		except:
+			levr.log_error(self.request.body)
+			api_utils.send_error(self,'Server Error')
+
+class DownvoteHandler(webapp2.RequestHandler):
+	@authorize
+	@api_utils.private
+	def get(self,dealID,*args,**kwargs):
+		try:
+
+			user 	= kwargs.get('user')
+			uid 	= user.key()
+			deal 	= kwargs.get('deal')
+			dealID 	= deal.key()
+			
+			#GET ENTITIES
+			deal = db.get(dealID)
+			if not deal or deal.kind() != 'Deal':
+				api_utils.send_error(self,'Invalid dealID: '+dealID)
+				return
+			
+			
+			
+			#favorite
+			logging.debug(levr.log_model_props(user))
+			
+			#only do things if they haven't yet downvoted this deal
+			if dealID not in user.downvotes:
+				logging.debug('Flag not yet downvoted')
+				#downvote
+				deal.downvotes += 1
+				
+				#if in their favorites, remove
+				if dealID in user.favorites:
+					#generate new favorites list without requested dealID
+					new_favorites	= [fav for fav in user.favorites if fav != dealID]
+					logging.debug(new_favorites)
+					
+					#reassign user favorites to new list
+					user.favorites	= new_favorites
+				
+				#add to downvotes
+				user.downvotes.append(dealID)
+				logging.debug(user.downvotes)
+				
+				#put user
+				user.put()		
+					
+			else:
+				logging.debug('Flag already downvoted')
+			
+			#store
+			deal.put()
+			
 			response = {'deal':api_utils.package_deal(deal)}
 			api_utils.send_response(self,response,user)
 			
@@ -387,7 +447,8 @@ class DealInfoHandler(webapp2.RequestHandler):
 
 app = webapp2.WSGIApplication([('/api/deal/(.*)/redeem.*', RedeemHandler),
 								('/api/deal/(.*)/favorite.*', AddFavoriteHandler),
-								('/api/deal/(.*)/upvote.*', UpvoteHandler),
+								('/api/deal/(.*)/upvote', UpvoteHandler),
+								('/api/deal/(.*)/downvote', DownvoteHandler),
 								('/api/deal/(.*)/deleteFavorite.*', DeleteFavoriteHandler),
 								('/api/deal/(.*)/report.*', ReportHandler),
 								('/api/deal/(.*)/img.*', DealImgHandler),

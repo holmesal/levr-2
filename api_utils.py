@@ -113,7 +113,7 @@ def package_deal(deal,private=False):
 			'shareURL'		: create_share_url(deal),
 			'tags'			: deal.tags,
 			'dateEnd'		: str(deal.date_end)[:19],
-			'vote'			: deal.vote_sign + str(deal.vote_count)
+			'vote'			: deal.upvotes - deal.downvotes
 			}
 			
 	if deal.is_exclusive == False:
