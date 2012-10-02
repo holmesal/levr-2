@@ -160,18 +160,12 @@ class UpvoteHandler(webapp2.RequestHandler):
 			deal 	= kwargs.get('deal')
 			dealID 	= deal.key()
 			
-			#GET ENTITIES
-			deal = db.get(dealID)
-			if not deal or deal.kind() != 'Deal':
-				api_utils.send_error(self,'Invalid dealID: '+dealID)
-				return
-			
-			
 			
 			#favorite
 			logging.debug(levr.log_model_props(user))
 			#only add to favorites if not already in favorites
 			if dealID not in user.favorites:
+			#if True:
 				logging.debug('Flag not yet upvoted')
 				#append dealID to favorites property
 				user.favorites.append(dealID)
@@ -187,12 +181,12 @@ class UpvoteHandler(webapp2.RequestHandler):
 				deal.upvotes += 1
 				
 				#go increment that user's upvotes
-				ninja = levr.Deal.get(deal.key().parent())
+				ninja = levr.Customer.get(deal.key().parent())
 				ninja.karma += 1
 				#level check!
 				ninja = api_utils.level_check(ninja)
 				#put that ninja back!
-				ninja.put
+				ninja.put()
 			else:
 				logging.debug('Flag already upvoted')
 			

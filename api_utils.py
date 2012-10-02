@@ -565,7 +565,7 @@ def level_check(user):
 	'''square root for the win'''
 	old_level = user.level
 	
-	user.level = math.floor(math.sqrt(user.karma))
+	user.level = int(floor(sqrt(user.karma)))
 	
 	if user.level != old_level:
 		#level up notification
