@@ -114,7 +114,8 @@ def package_deal(deal,private=False):
 			'tags'			: deal.tags,
 			'dateEnd'		: str(deal.date_end)[:19],
 			'vote'			: deal.upvotes - deal.downvotes,
-			'pinColor'		: deal.pin_color
+			'pinColor'		: deal.pin_color,
+			'karma'			: deal.karma
 			}
 			
 	if deal.is_exclusive == False:
@@ -131,11 +132,13 @@ def package_user(user,private=False,followers=True,**kwargs):
 	
 	packaged_user = {
 		'uid'			: enc.encrypt_key(str(user.key())),
-		'alias'			: user.alias,
+		'alias'			: user.display_name,
 		'dateCreated'	: user.date_created.__str__()[:19],
 		'firstName'		: user.first_name,
 		'lastName'		: user.last_name,
 		'photoURL'		: user.photo,
+		'level'			: user.level,
+		'karma'			: user.karma
 		}
 	if followers == True:
 		followers_list = levr.Customer.get(user.followers)
@@ -174,12 +177,16 @@ def package_business(business):
 		'businessID'	: enc.encrypt_key(str(business.key())),
 		'businessName'	: business.business_name,
 		'vicinity'		: business.vicinity,
-		'owner'			: package_user(levr.Customer.get(deal.key().parent())),
 		'foursquareID'	: business.foursquare_id,
 		'foursquareName': business.foursquare_name,
 		'geoPoint'		: str(business.geo_point),
 		'geoHash'		: business.geo_hash
 						}
+						
+		if business.owner:
+			packaged_business.update({
+				'owner':	levr_utils.package_user(business.owner)
+			})
 	return packaged_business
 	
 def send_response(self,response,user=None):

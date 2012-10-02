@@ -753,6 +753,8 @@ class Customer(db.Model):
 	date_last_notified = db.DateTimeProperty(auto_now_add=True)
 	last_notified	= db.IntegerProperty(default=0)
 	display_name	= db.StringProperty()
+	level			= db.IntegerProperty(default=1)
+	karma			= db.IntegerProperty(default=0)
 	
 	@property
 	def following(self):
@@ -912,6 +914,7 @@ class Deal(polymodel.PolyModel):
 	downvotes		= db.IntegerProperty(default=0)
 	pin_color		= db.StringProperty(default='D21231')
 	origin			= db.OriginProperty(default='levr')
+	karma			= db.IntegerProperty(default=0)
 
 
 class CustomerDeal(Deal):
