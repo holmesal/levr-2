@@ -73,7 +73,7 @@ def authorize(handler_method):
 		
 
 class RedeemHandler(webapp2.RequestHandler):
-	@authorize
+	@api_utils.validate('deal','param',user=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		'''
@@ -87,8 +87,9 @@ class RedeemHandler(webapp2.RequestHandler):
 		#RESTRICTED
 		try:
 			user 	= kwargs.get('user')
-			uid 	= user.key()
 			deal 	= kwargs.get('deal')
+			
+			uid 	= user.key()
 			dealID 	= deal.key()
 			
 			
@@ -108,7 +109,7 @@ class RedeemHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 
 class AddFavoriteHandler(webapp2.RequestHandler):
-	@authorize
+	@api_utils.validate('deal','param',user=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		'''
@@ -122,8 +123,9 @@ class AddFavoriteHandler(webapp2.RequestHandler):
 		#RESTRICTED
 		try:
 			user 	= kwargs.get('user')
-			uid 	= user.key()
 			deal 	= kwargs.get('deal')
+			
+			uid 	= user.key()
 			dealID 	= deal.key()
 			
 			
@@ -150,7 +152,7 @@ class AddFavoriteHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 
 class DeleteFavoriteHandler(webapp2.RequestHandler):
-	@authorize
+	@api_utils.validate('deal','param',user=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		'''
@@ -162,9 +164,12 @@ class DeleteFavoriteHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
+			logging.debug()
+			
 			user 	= kwargs.get('user')
-			uid 	= user.key()
 			deal 	= kwargs.get('deal')
+			
+			uid 	= user.key()
 			dealID 	= deal.key()
 			
 			
@@ -195,7 +200,7 @@ class DeleteFavoriteHandler(webapp2.RequestHandler):
 		
 
 class ReportHandler(webapp2.RequestHandler):
-	@authorize
+	@api_utils.validate('deal','param',user=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		'''
@@ -207,29 +212,15 @@ class ReportHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
-			#CHECK PARAMS
-			if not api_utils.check_param(self,dealID,'dealID','key',True):
-				return
-			else:
-				dealID = db.Key(enc.decrypt_key(dealID))
-				logging.debug(dealID)
-				
-			uid = self.request.get('uid')
-			if not api_utils.check_param(self,uid,'uid','key',True):
-				return
-			else:
-				uid = db.Key(enc.decrypt_key(uid))
+			logging.debug("REPORT\n\n\n")
+			logging.debug(kwargs)
 			
 			
-			#GET ENTITIES
-			[user,deal] = db.get([uid,dealID])
-			if not user or user.kind() != 'Customer':
-				api_utils.send_error(self,'Invalid uid: '+uid)
-				return
-			if not deal or deal.kind() != 'Deal':
-				api_utils.send_error(self,'Invalid dealID: '+str(dealID))
-				return
+			user	= kwargs.get('user')
+			deal	= kwargs.get('deal')
 			
+			uid		= user.key()
+			dealID	= deal.key()
 			
 			#create report Entity
 			report = levr.ReportedDeal(
@@ -258,31 +249,18 @@ class ReportHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 
 class DealImgHandler(webapp2.RequestHandler):
-	def get(self,dealID):
+	@api_utils.validate('deal',None,size=True)
+	def get(self,*args,**kwargs):
 		'''Returns ONLY an image for a deal specified by dealID
 		Gets the image from the blobstoreReferenceProperty deal.img'''
 		try:
-			logging.info('\n\n\nIMAGE')
+			logging.info('IMAGE\n\n\n')
+			logging.debug(kwargs)
 			
+			deal	= kwargs.get('deal')
+			size	= kwargs.get('size')
+			private	= kwargs.get('private')
 			
-			#CHECK PARAMS
-			if not api_utils.check_param(self,dealID,'dealID','key',True):
-				api_utils.send_error(self,'Invalid parameter, dealID: '+str(dealID))
-				return
-			else:
-				dealID = db.Key(enc.decrypt_key(dealID))
-				logging.debug(dealID)
-			
-			size = self.request.get('size')
-			if not api_utils.check_param(self,size,'size','str',True):
-				api_utils.send_error(self,'Invalid parameter, size: '+str(size))
-				return
-			
-			#GET ENTITIES
-			deal = db.get(dealID)
-			if not deal or deal.kind() != 'Deal':
-				api_utils.send_error(self,'Invalid parameter, dealID: '+str(dealID))
-				return
 			
 			#get the blob
 			blob_key = deal.img
@@ -298,7 +276,8 @@ class DealImgHandler(webapp2.RequestHandler):
 			
 
 class DealInfoHandler(webapp2.RequestHandler):
-	def get(self,dealID):
+	@api_utils.validate('deal',None)
+	def get(self,*args,**kwargs):
 		'''
 		Get information about a deal.
 		
@@ -314,21 +293,10 @@ class DealInfoHandler(webapp2.RequestHandler):
 			}
 		'''
 		try:
-			#CHECK PARAMS
-			if not api_utils.check_param(self,dealID,'dealID','key',True):
-				return
-			else:
-				dealID = db.Key(enc.decrypt_key(dealID))
-				logging.debug(dealID)
-				
-			
-			
-			#GET ENTITIES
-			deal = db.get(dealID)
-			if not deal or deal.kind() != 'Deal':
-				api_utils.send_error(self,'Invalid dealID: '+dealID)
-				return
-			
+			logging.debug('DEAL INFO\n\n\n')
+			logging.debug(kwargs)
+			deal	= kwargs.get('deal')
+			private	= kwargs.get('private')
 			
 			response = {
 				'deal'	: api_utils.package_deal(deal)

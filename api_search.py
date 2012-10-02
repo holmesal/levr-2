@@ -64,7 +64,7 @@ def validate(handler_method):
 
 
 class SearchQueryHandler(webapp2.RequestHandler):
-	@api_utils.validate('query',geoPoint=True,limit=False,radius=False,user=False)
+	@api_utils.validate('query',None,geoPoint=True,limit=False,radius=False,user=False)
 	def get(self,*args,**kwargs):
 		'''
 		inputs: lat,lon,limit, query
@@ -124,7 +124,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			levr.log_error(self.request.params)
 			api_utils.send_error(self,'Server Error')
 class LoadTestHandler(webapp2.RequestHandler):
-	@validate
+	@api_utils.validate('query',None,geoPoint=True,limit=False,radius=False,user=False)
 	def get(self,**kwargs):
 		'''
 		inputs: lat,lon,limit, query
@@ -198,7 +198,7 @@ class LoadTestHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 
 class SearchNewHandler(webapp2.RequestHandler):
-	@validate
+	@api_utils.validate(None,None,geoPoint=True,limit=False,radius=False,user=False)
 	def get(self,**kwargs):
 		'''
 		inputs: lat,lon,limit,radius
@@ -220,7 +220,7 @@ class SearchNewHandler(webapp2.RequestHandler):
 			api_utils.send_error('Server Error')
 
 class SearchHotHandler(webapp2.RequestHandler):
-	@validate
+	@api_utils.validate(None,None,geoPoint=True,limit=False,radius=False,user=False)
 	def get(self,query,geo_point,radius,limit):
 		'''
 		inputs: lat,lon,limit
@@ -239,7 +239,7 @@ class SearchHotHandler(webapp2.RequestHandler):
 			levr.log_error(self.request.params)
 			api_utils.send_error(self,'Server Error')
 class SearchPopularHandler(webapp2.RequestHandler):
-	@validate
+	@api_utils.validate(None,None,geoPoint=True,limit=False,radius=False,user=False)
 	def get(self,**kwargs):
 		'''
 		inputs: lat,lon,limit

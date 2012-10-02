@@ -256,7 +256,7 @@ def private(handler_method):
 	
 	return check
 
-def validate(url_param,authentication_source=None,*a,**to_validate):
+def validate(url_param,authentication_source,*a,**to_validate):
 	'''
 	General function for validating the inputs that are passed as arguments
 	to use, pass kwargs in form of key:bool,
@@ -291,7 +291,7 @@ def validate(url_param,authentication_source=None,*a,**to_validate):
 				
 				logging.debug("url_param: "+url_param)
 				
-				if url_param == 'dealID':
+				if url_param == 'dealID' or url_param == 'deal':
 					try: dealID = args[0]
 					except: KeyError('dealID')
 						
@@ -301,7 +301,7 @@ def validate(url_param,authentication_source=None,*a,**to_validate):
 						kwargs.update({'deal':deal})
 					except:
 						raise TypeError('dealID: '+dealID)
-				elif url_param == 'uid':
+				elif url_param == 'uid' or url_param == 'user':
 					try: uid = args[0]
 					except: KeyError('uid')
 					
@@ -313,7 +313,12 @@ def validate(url_param,authentication_source=None,*a,**to_validate):
 						logging.debug(e)
 						raise TypeError('uid: '+uid)
 				elif url_param == 'query':
-					pass
+					try:
+						query = args[0]
+						kwargs.update({'query':query})
+					except:
+						levr.log_error('Check validator call. "query" should not be set if there is no variable regex in the url declaration')
+						TypeError('query: None')
 				elif url_param == None:
 					pass
 				else:
@@ -361,8 +366,8 @@ def validate(url_param,authentication_source=None,*a,**to_validate):
 					if levr_token == user.levr_token	: private = True
 					else								: private = False
 					
-					logging.debug(private)
-					
+				logging.debug(private)
+				
 				
 				#update kwargs to include privacy level
 				kwargs.update({'private':private})
@@ -380,7 +385,8 @@ def validate(url_param,authentication_source=None,*a,**to_validate):
 						'radius': float,
 						'since'	: int,
 						'user'	: levr.Customer,
-						'deal': levr.Deal,
+						'deal'	: levr.Deal,
+						'size'	: 'size'
 						}
 				defaults = {
 						'limit'	: 50,
@@ -390,7 +396,8 @@ def validate(url_param,authentication_source=None,*a,**to_validate):
 						'radius': 2,
 						'since'	: None,
 						'user'	: None,
-						'deal': None
+						'deal'	: None,
+						'size'	: 'large'
 						
 						}
 				#for each input=Bool where Bool is required or not
@@ -399,6 +406,9 @@ def validate(url_param,authentication_source=None,*a,**to_validate):
 					if key == 'geoPoint':
 						val = str(self.request.get('lat'))+","+str(self.request.get('lon'))
 						msg = "lat,lon: "+val
+					#common mistakes. Youre welcome, debugger.
+					elif key == 'uid'		: raise Exception('In validation declaration, "uid" should be "user".')
+					elif key == 'dealID'	: raise Exception('In validation declaration, "dealID" should be "deal"')
 					else:
 						val = self.request.get(key)
 						msg = key+": "+val
@@ -429,8 +439,9 @@ def validate(url_param,authentication_source=None,*a,**to_validate):
 						#float input
 						try:
 							val = float(val)
-						except ValueError,e:
-							raise KeyError(msg)
+						except Exception,e:
+							logging.debug(e)
+							raise TypeError(msg)
 					elif data_type == db.GeoPt:
 						try:
 							logging.debug(val)
