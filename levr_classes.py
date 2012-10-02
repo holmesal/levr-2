@@ -32,7 +32,7 @@ else:
 # FUNCTIONS
 def create_notification(notification_type,to_be_notified,actor,deal=None):
 	'''
-	notification_type	= choices: 'redemption', 'thanks','favorite', 'followerUpload', 'newFollower'
+	notification_type	= choices: 'redemption', 'thanks','favorite', 'followerUpload', 'newFollower', 'levelup'
 						The action being performed
 	to_be_notified		= [db.Key,db.Key,db.Key,...]
 						The people or entities to be notified of this action
@@ -105,6 +105,16 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 			
 			#replace users
 			db.put([user,actor_entity])
+			
+		elif notification_type == 'levelup':
+			#get user,actor
+			[user,actor_entity] = db.get([to_be_notified[0],actor])
+			
+			#increment notification count
+			user.new_notifications += 1
+			
+			#replace user
+			user.put()
 			
 		else:
 			#users = the people to be notified

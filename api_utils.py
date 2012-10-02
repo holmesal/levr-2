@@ -8,7 +8,7 @@ from datetime import datetime
 
 from google.appengine.ext import db
 from google.appengine.api import images
-from math import sin, cos, asin, sqrt, degrees, radians
+from math import sin, cos, asin, sqrt, degrees, radians, floor, sqrt
 
 
 #creates a url for remote or local server
@@ -558,6 +558,19 @@ def build_display_name(user):
 	else:
 		user.display_name = 'Clint Eastwood'
 	
+	return user
+	
+def level_check(user):
+	'''updates the level of a user. this function should be run after someone upvotes a user or anything else happens.'''
+	'''square root for the win'''
+	old_level = user.level
+	
+	user.level = math.floor(math.sqrt(user.karma))
+	
+	if user.level != old_level:
+		#level up notification
+		levr.create_notification('levelup',user.key(),user.key())
+		
 	return user
 
 

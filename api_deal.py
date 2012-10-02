@@ -185,6 +185,14 @@ class UpvoteHandler(webapp2.RequestHandler):
 				
 				#increment
 				deal.upvotes += 1
+				
+				#go increment that user's upvotes
+				ninja = levr.Deal.get(deal.key().parent())
+				ninja.karma += 1
+				#level check!
+				ninja = api_utils.level_check(ninja)
+				#put that ninja back!
+				ninja.put
 			else:
 				logging.debug('Flag already upvoted')
 			
@@ -446,10 +454,10 @@ class DealInfoHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 
 app = webapp2.WSGIApplication([('/api/deal/(.*)/redeem.*', RedeemHandler),
-								('/api/deal/(.*)/favorite.*', AddFavoriteHandler),
+								#('/api/deal/(.*)/favorite.*', AddFavoriteHandler),
 								('/api/deal/(.*)/upvote', UpvoteHandler),
 								('/api/deal/(.*)/downvote', DownvoteHandler),
-								('/api/deal/(.*)/deleteFavorite.*', DeleteFavoriteHandler),
+								#('/api/deal/(.*)/deleteFavorite.*', DeleteFavoriteHandler),
 								('/api/deal/(.*)/report.*', ReportHandler),
 								('/api/deal/(.*)/img.*', DealImgHandler),
 								('/api/deal/(.*)', DealInfoHandler)
