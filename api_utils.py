@@ -183,10 +183,10 @@ def package_business(business):
 		'geoHash'		: business.geo_hash
 						}
 						
-		if business.owner:
-			packaged_business.update({
-				'owner':	levr_utils.package_user(business.owner)
-			})
+	if business.owner:
+		packaged_business.update({
+			'owner':	levr_utils.package_user(business.owner)
+		})
 	return packaged_business
 	
 def send_response(self,response,user=None):
