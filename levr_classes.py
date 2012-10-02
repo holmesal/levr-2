@@ -910,6 +910,7 @@ class Deal(polymodel.PolyModel):
 	date_last_edited= db.DateTimeProperty(auto_now=True)
 	upvotes			= db.IntegerProperty(default=0)
 	downvotes		= db.IntegerProperty(default=0)
+	pin_color		= db.StringProperty(default='D21231')
 
 
 class CustomerDeal(Deal):

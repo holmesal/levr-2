@@ -30,9 +30,14 @@ class SignupFacebookHandler(webapp2.RequestHandler):
 			#user does not exist, create new and populate via facebook API
 			user = levr.Customer()
 			user.facebook_token = token
-#			#
-#			#populate with facebook stuff here
-#			#
+			logging.info(token)
+			
+			#grab foursquare deets
+			user = social.facebook_deets(user,token)
+			
+			#create or refresh the alias
+			user = api_utils.build_display_name(user)
+			
 			user.put()
 			response = {'user':api_utils.package_user(user,True,send_token=True)}
 			api_utils.send_response(self,response,user)
