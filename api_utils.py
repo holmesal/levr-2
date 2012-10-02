@@ -282,7 +282,27 @@ def validate(url_param,authentication_source,*a,**to_validate):
 #			logging.debug(name)
 			logging.debug("auth_source: "+str(authentication_source))
 			
-			
+			type_cast = {
+						'limit'	: int,
+						'lat'	: float,
+						'lon'	: float,
+						'geoPoint' : db.GeoPt,
+						'radius': float,
+						'since'	: int,
+						'user'	: levr.Customer,
+						'deal'	: levr.Deal,
+						'size'	: 'size'
+						}
+			defaults = {
+						'limit'	: 50,
+						'geoPoint': levr.geo_converter('42.349798,-71.120000'),
+						'radius': 2,
+						'since'	: None,
+						'user'	: None,
+						'deal'	: None,
+						'size'	: 'large'
+						
+						}
 			
 			try:
 				####################################################
@@ -291,35 +311,63 @@ def validate(url_param,authentication_source,*a,**to_validate):
 				
 				logging.debug("url_param: "+url_param)
 				
-				if url_param == 'dealID' or url_param == 'deal':
+				if url_param == 'deal':
+					#A dealID is passed as part of the url
+					
+					#if no dealID is passed, report it missing
 					try: dealID = args[0]
 					except: KeyError('dealID')
-						
+					
+					#assure the validitity of the dealID
 					try:
 						dealID = enc.decrypt_key(dealID)
 						deal = levr.Deal.get(dealID)
+						
+						#pass the deal object, not the id, to the handler
 						kwargs.update({'deal':deal})
 					except:
+						levr.log_error()
 						raise TypeError('dealID: '+dealID)
-				elif url_param == 'uid' or url_param == 'user':
+					
+					
+				elif url_param == 'user':
+					#A uid is passed as part of the url
+					
+					#if no uid is passed, report it missing
 					try: uid = args[0]
 					except: KeyError('uid')
 					
+					
+					#assure the validity of the uid
 					try:
 						uid = enc.decrypt_key(uid)
 						user = levr.Customer.get(uid)
+						#pass the user OBJECT, not the id, to the handler
 						kwargs.update({'user':user})
 					except Exception,e:
-						logging.debug(e)
+						levr.log_error()
 						raise TypeError('uid: '+uid)
+				
+				
 				elif url_param == 'query':
+					#a query is passed as part of the url
+					
+					#check that there is a query there
 					try:
 						query = args[0]
+						
+						#if query is empty, set to default query
+						if not query:
+							query = defaults['query']
+							
+						#pass query to the handler
 						kwargs.update({'query':query})
 					except:
-						levr.log_error('Check validator call. "query" should not be set if there is no variable regex in the url declaration')
+						levr.log_error('Check validator call. "query" should not be passed as a param if there is no variable regex in the url declaration')
 						TypeError('query: None')
+				
 				elif url_param == None:
+					#nothing is passed to the handler as part of the url
 					pass
 				else:
 					raise Exception('Invalid url_param')
@@ -341,30 +389,67 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						#the user that needs to be validated is passed as part of the url, i.e. /api/user/<uid>/action
 						#the user has already been fetched by the above block of code
 						if url_param != 'uid': raise Exception('Doh! Check validation decorator decoration')
+						
+#						#required means this is a required parameter
+#						#this is kind of hacky.. but necessary because of how this func was set up
+#						required = True
+#						
+#						#assure that the token was passed
+#						levr_token = self.request.get('levrToken')
+#						
+#						#assume levrToken is passed
+#						if not levr_token: raise TypeError('levrToken')
+#						
+#						#check token against stored token
+#						if levr_token == user.levr_token	: private = True
+#						else								: private = False
+						
 					elif authentication_source == 'param':
 						#the user that needs to be validated is passed as a param i.e. /api/deal/<dealID>/upvote?uid=UID
-						try:
-							uid = self.request.get('uid')
+						logging.debug('parameter')
+						#get the uid, and the kwarg that tells us if it is required
+						uid = self.request.get('uid')
+						required = to_validate.get('user')
+						
+						logging.debug(uid)
+						logging.debug(required)
+						
+						if not uid and required: raise KeyError('uid')
+						if not uid and not required: 
+							#handle this elsewhere
+							user = None
+						else:
+							#uid was passed, so validate it!
+							try:
+								logging.debug('hi')
+								#translate uid into a db.Key type
+								uid = db.Key(enc.decrypt_key(uid))
+								#get the user - constrains to user kind
+								user = levr.Customer.get(uid)
+							except:
+								raise TypeError('uid: '+ uid)
 							
-							#translate uid into a db.Key type
-							uid = db.Key(enc.decrypt_key(uid))
-							#get the user
-							user = levr.Customer.get(uid)
-						except:
-							raise TypeError('uid: '+ uid)
+						
 					else:
 						raise Exception('Invalid validation source')
 					
 					
+					#check token validity
 					#assure that the token was passed
 					levr_token = self.request.get('levrToken')
-					if not levr_token: raise TypeError('levrToken')
+					logging.debug(levr_token)
+					#check token against stored token
+					if user:
+						if levr_token == user.levr_token	: private = True
+						else								: private = False
+					else:
+						private = False
+					
 					
 					
 					#compare the passed token to the db token
 					#if token checks out, the private is True
-					if levr_token == user.levr_token	: private = True
-					else								: private = False
+					
 					
 				logging.debug(private)
 				
@@ -377,29 +462,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 				#start parameter validation steps#
 				##################################
 				
-				type_cast = {
-						'limit'	: int,
-						'lat'	: float,
-						'lon'	: float,
-						'geoPoint' : db.GeoPt,
-						'radius': float,
-						'since'	: int,
-						'user'	: levr.Customer,
-						'deal'	: levr.Deal,
-						'size'	: 'size'
-						}
-				defaults = {
-						'limit'	: 50,
-						'lat'	: 42.349798,
-						'lon'	: -71.120000,
-						'geoPoint': levr.geo_converter('42.349798,-71.120000'),
-						'radius': 2,
-						'since'	: None,
-						'user'	: None,
-						'deal'	: None,
-						'size'	: 'large'
-						
-						}
+				
 				#for each input=Bool where Bool is required or not
 				for (key,required) in to_validate.iteritems():
 					#special case, geopoint is complex
@@ -409,6 +472,12 @@ def validate(url_param,authentication_source,*a,**to_validate):
 					#common mistakes. Youre welcome, debugger.
 					elif key == 'uid'		: raise Exception('In validation declaration, "uid" should be "user".')
 					elif key == 'dealID'	: raise Exception('In validation declaration, "dealID" should be "deal"')
+					elif key == 'user':
+						val = self.request.get('uid')
+						msg = 'uid: '+ val
+					elif key == 'deal':
+						val = self.request.get('dealID')
+						msg = 'dealID: '+ val
 					else:
 						val = self.request.get(key)
 						msg = key+": "+val

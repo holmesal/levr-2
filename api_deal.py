@@ -78,11 +78,7 @@ class RedeemHandler(webapp2.RequestHandler):
 	def get(self,*args,**kwargs):
 		'''
 		inputs: uid
-		Output:{
-			meta:{
-				success
-				errorMsg
-				}
+		Response: none
 		'''
 		#RESTRICTED
 		try:
@@ -114,11 +110,7 @@ class AddFavoriteHandler(webapp2.RequestHandler):
 	def get(self,*args,**kwargs):
 		'''
 		Input: uid
-		Output:{
-			meta:{
-				success
-				errorMsg
-				}
+		Response: None
 		'''
 		#RESTRICTED
 		try:
@@ -164,7 +156,7 @@ class DeleteFavoriteHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
-			logging.debug()
+			logging.debug('DELETE FAVORITE\n\n\n')
 			
 			user 	= kwargs.get('user')
 			deal 	= kwargs.get('deal')

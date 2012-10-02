@@ -90,9 +90,9 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 			
 		elif notification_type == 'redemption':
 			#get user,actor
-			[user,actor_entity] = db.get([to_be_notified[0],actor])
+			[user,actor_entity,d] = db.get([to_be_notified[0],actor,deal])
 			#check actor has not redeemed yet
-			if deal.is_exclusive:
+			if d.is_exclusive:
 				#deal can only be redeemed once
 				if deal not in actor_entity.redemptions:
 					actor.redemptions.append(deal)
