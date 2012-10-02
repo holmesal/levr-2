@@ -923,7 +923,7 @@ class Deal(polymodel.PolyModel):
 	upvotes			= db.IntegerProperty(default=0)
 	downvotes		= db.IntegerProperty(default=0)
 	pin_color		= db.StringProperty(default='D21231')
-	origin			= db.OriginProperty(default='levr')
+	origin			= db.StringProperty(default='levr')
 	karma			= db.IntegerProperty(default=0)
 
 
