@@ -82,7 +82,7 @@ class RedeemHandler(webapp2.RequestHandler):
 		'''
 		#RESTRICTED
 		try:
-			user 	= kwargs.get('user')
+			user 	= kwargs.get('actor')
 			deal 	= kwargs.get('deal')
 			
 			uid 	= user.key()
@@ -114,7 +114,7 @@ class AddFavoriteHandler(webapp2.RequestHandler):
 		'''
 		#RESTRICTED
 		try:
-			user 	= kwargs.get('user')
+			user 	= kwargs.get('actor')
 			deal 	= kwargs.get('deal')
 			
 			uid 	= user.key()
@@ -148,8 +148,11 @@ class UpvoteHandler(webapp2.RequestHandler):
 	@api_utils.private
 	def get(self,dealID,*args,**kwargs):
 		try:
-
-			user 	= kwargs.get('user')
+			logging.debug('UPVOTE\n\n\n')
+			logging.debug(kwargs)
+			
+			
+			user 	= kwargs.get('actor')
 			uid 	= user.key()
 			deal 	= kwargs.get('deal')
 			dealID 	= deal.key()
@@ -198,8 +201,11 @@ class DownvoteHandler(webapp2.RequestHandler):
 	@api_utils.private
 	def get(self,dealID,*args,**kwargs):
 		try:
-
-			user 	= kwargs.get('user')
+			logging.debug('DOWNVOTE\n\n\n')
+			logging.debug(kwargs)
+			
+			
+			user 	= kwargs.get('actor')
 			uid 	= user.key()
 			deal 	= kwargs.get('deal')
 			dealID 	= deal.key()
@@ -265,8 +271,9 @@ class DeleteFavoriteHandler(webapp2.RequestHandler):
 		'''
 		try:
 			logging.debug('DELETE FAVORITE\n\n\n')
+			logging.debug(kwargs)
 			
-			user 	= kwargs.get('user')
+			user 	= kwargs.get('actor')
 			deal 	= kwargs.get('deal')
 			
 			uid 	= user.key()
@@ -316,7 +323,7 @@ class ReportHandler(webapp2.RequestHandler):
 			logging.debug(kwargs)
 			
 			
-			user	= kwargs.get('user')
+			user	= kwargs.get('actor')
 			deal	= kwargs.get('deal')
 			
 			uid		= user.key()
