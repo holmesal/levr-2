@@ -118,7 +118,7 @@ def package_deal(deal,private=False):
 			
 	if deal.is_exclusive == False:
 		packaged_deal.update({
-			'user'			: package_user(levr.Customer.get(deal.key().parent()))
+			'owner'			: package_user(levr.Customer.get(deal.key().parent()))
 		})
 	
 	if private == True:
@@ -173,7 +173,7 @@ def package_business(business):
 		'businessID'	: enc.encrypt_key(str(business.key())),
 		'businessName'	: business.business_name,
 		'vicinity'		: business.vicinity,
-		'owner'			: business.owner,
+		'owner'			: package_user(levr.Customer.get(deal.key().parent())),
 		'foursquareID'	: business.foursquare_id,
 		'foursquareName': business.foursquare_name,
 		'geoPoint'		: str(business.geo_point),
