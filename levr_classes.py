@@ -741,6 +741,7 @@ class Customer(db.Model):
 	date_last_login = db.DateTimeProperty(auto_now_add=True)
 	levr_token		= db.StringProperty(default=create_levr_token())
 	facebook_token	= db.StringProperty()
+	facebook_id		= db.StringProperty()
 	foursquare_token= db.StringProperty()
 	twitter_token	= db.StringProperty()
 	twitter_screen_name = db.StringProperty()

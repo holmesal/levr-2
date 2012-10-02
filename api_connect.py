@@ -3,15 +3,16 @@ import logging
 import api_utils
 import levr_classes as levr
 import levr_encrypt as enc
-import api_social as social
+import api_utils_social as social
 from google.appengine.ext import db
 
 class ConnectFacebookHandler(webapp2.RequestHandler):
-	def post(self):
+	def get(self):
 		#RESTRICTED
 		
 		token = self.request.get('token')
 		uid	= self.request.get('uid')
+		facebook_id = self.request.get('facebookID')
 		#check token and uid and decrypt
 		if token == '':
 			api_utils.send_error(self,'Required parameter not passed: token')
@@ -30,11 +31,15 @@ class ConnectFacebookHandler(webapp2.RequestHandler):
 		user = levr.Customer.get(uid)
 		#add facebook token
 		user.facebook_token = token
+		#fetch user info from facebook graph api
+		user = social.facebook_deets(user,facebook_id,token)
+		
+		
 		#update
 		user.put()
 		
 		#return the user
-		response = {'user':api_utils.package_user(user,'private')}
+		response = {'user':api_utils.package_user(user,True)}
 		api_utils.send_response(self,response,user)
 
 

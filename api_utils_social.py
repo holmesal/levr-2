@@ -1,5 +1,6 @@
 import json
 import levr_encrypt as enc
+import levr_classes as levr
 import logging
 import time
 from google.appengine.ext import db
@@ -102,12 +103,36 @@ def sort_and_encode_params(params):
 		raise Exception('Invalid twitter response: '+result.content)'''
 
 
-def facebook_deets(user,token,*args,**kwargs):
+def facebook_deets(user,facebook_id,token,*args,**kwargs):
 	try:
 		#goto facebook
-		url = ''+token
+		url =  'https://graph.facebook.com'
+		url += '/'+facebook_id
+		url += '?access_token='+token
+		url += '&fields=id,name,picture.type(normal),first_name,last_name'
 		result = urlfetch.fetch(url=url)
+		facebook_user = json.loads(result.content)
+		logging.debug(facebook_user)
+		logging.debug(levr.log_dict(facebook_user))
+		
+		if 'error' not in facebook_user:
+			#successfull query
+			user.facebook_id = facebook_user['id']
+			name = facebook_user['name']
+			user.first_name = facebook_user['first_name']
+			user.last_name = facebook_user['last_name']
+			#get picture
+			pic_data = facebook_user['picture']['data']
+			if not pic_data['is_silhouette']:
+				#picture is not a silhouette
+				#grab photo url
+				user.photo = pic_data['url']
+			
+			
+		else:
+			raise Exception('Invalid facebook response: '+result.content)
 		
 		return user
-	except:
-		raise Exception('Invalid facebook response: '+result.content)
+	except Exception,e:
+		levr.log_error(e)
+		
