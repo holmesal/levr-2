@@ -184,9 +184,9 @@ def package_business(business):
 						}
 						
 	if business.owner:
-			packaged_business.update({
-				'owner':	levr_utils.package_user(business.owner)
-			})
+		packaged_business.update({
+			'owner':	levr_utils.package_user(business.owner)
+		})
 	return packaged_business
 	
 def send_response(self,response,user=None):
@@ -868,12 +868,13 @@ def level_check(user):
 	'''updates the level of a user. this function should be run after someone upvotes a user or anything else happens.'''
 	'''square root for the win'''
 	old_level = user.level
+	new_level = int(floor(sqrt(user.karma)))
 	
-	user.level = math.floor(math.sqrt(user.karma))
-	
-	if user.level != old_level:
+	if new_level != old_level:
 		#level up notification
 		levr.create_notification('levelup',user.key(),user.key())
+		
+	user.level = new_level
 		
 	return user
 

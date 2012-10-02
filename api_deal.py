@@ -161,7 +161,8 @@ class UpvoteHandler(webapp2.RequestHandler):
 			#favorite
 			logging.debug(levr.log_model_props(user))
 			#only add to favorites if not already in favorites
-			if dealID not in user.favorites:
+			#if dealID not in user.favorites:
+			if True:
 				logging.debug('Flag not yet upvoted')
 				#append dealID to favorites property
 				user.favorites.append(dealID)
@@ -182,7 +183,7 @@ class UpvoteHandler(webapp2.RequestHandler):
 				#level check!
 				ninja = api_utils.level_check(ninja)
 				#put that ninja back!
-				ninja.put
+				ninja.put()
 			else:
 				logging.debug('Flag already upvoted')
 			

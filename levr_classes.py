@@ -969,7 +969,7 @@ class CustomerDeal(Deal):
 class Notification(db.Model):
 	date			= db.DateTimeProperty(auto_now_add=True)
 	date_in_seconds	= db.IntegerProperty(default=long(unix_time(datetime.now())))
-	notification_type = db.StringProperty(required=True,choices=set(['redemption','thanks','favorite','followerUpload','newFollower']))
+	notification_type = db.StringProperty(required=True,choices=set(['redemption','thanks','favorite','followerUpload','newFollower','levelup']))
 #	owner			= db.ReferenceProperty(Customer,collection_name='notifications',required=True)
 	to_be_notified	= db.ListProperty(db.Key)
 	deal			= db.ReferenceProperty(Deal,collection_name='notifications')
