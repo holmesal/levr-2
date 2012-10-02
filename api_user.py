@@ -8,55 +8,7 @@ from datetime import datetime
 from google.appengine.ext import db
 #from google.appengine.api import mail
 
-def authorize(handler_method):
-	'''
-	Decorator checks the privacy level of the request.
-	If the uid is valid and the user exists, it checks the levr_token to  privacy level
-	
-	'''
-	def check(self,*args,**kwargs):
-		try:
-			logging.debug('PUBLIC OR PRIVATE DECORATOR\n\n\n')
-#			logging.debug(levr.log_dir(self.request))
-			logging.debug(args)
-			logging.debug(kwargs)
-			
-			#CHECK USER
-			uid = args[0]
-			if not api_utils.check_param(self,uid,'uid','key',True):
-				raise Exception('uid: '+str(uid))
-			else:
-				uid = db.Key(enc.decrypt_key(uid))
-			
-			
-			#GET ENTITIES
-			user = db.get(uid)
-			if not user or user.kind() != 'Customer':
-				raise Exception('uid: '+str(uid))
-			
-			levr_token = self.request.get('levrToken')
-			
-			#if the levr_token matches up, then private request, otherwise public
-			if user.levr_token == levr_token:
-				private = True
-			else:
-				private = False
-			
-			logging.debug(private)
-			
-			
-			kwargs.update({
-						'user'	: user,
-						'private': private
-						})
-		except Exception,e:
-			api_utils.send_error(self,'Invalid uid, '+str(e))
-		else:
-			handler_method(self,*args,**kwargs)
-	
-	return check
 
-	
 class UserFavoritesHandler(webapp2.RequestHandler):
 	@api_utils.validate('user','url',limit=False,offset=False,levrToken=True)
 	@api_utils.private
@@ -132,7 +84,7 @@ class UserUploadsHandler(webapp2.RequestHandler):
 		'''
 		try:
 			logging.info("\n\nGET USER UPLOADS")
-			
+			logging.debug(kwargs)
 			user 	= kwargs.get('user')
 			uid 	= user.key()
 			private = kwargs.get('private')
@@ -207,7 +159,7 @@ class UserGetFollowersHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 		
 class UserAddFollowHandler(webapp2.RequestHandler):
-	@api_utils.validate('user','param',user=True,limit=False,offset=False,levrToken=True)
+	@api_utils.validate('user','param',user=True,levrToken=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		'''
@@ -244,7 +196,7 @@ class UserAddFollowHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 
 class UserUnfollowHandler(webapp2.RequestHandler):
-	@api_utils.validate('user','param',user=True,limit=False,offset=False,levrToken=True)
+	@api_utils.validate('user','param',user=True,levrToken=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		'''
@@ -260,6 +212,7 @@ class UserUnfollowHandler(webapp2.RequestHandler):
 		'''
 		try:
 			logging.info('\n\nUSER REMOVE FOLLOWER')
+			logging.debug(kwargs)
 			user = kwargs.get('user')
 			uid = user.key()
 			actor = kwargs.get('actor')
@@ -318,25 +271,6 @@ class UserImgHandler(webapp2.RequestHandler):
 			self.response.out.write(None)
 
 
-class UserCashOutHandler(webapp2.RequestHandler):
-	@authorize
-	@api_utils.private
-	def get(self,*args,**kwargs):
-		'''
-		#RESTRICTED
-		inputs:
-		Output:{
-			meta:{
-				success
-				errorMsg
-				}
-		'''
-		try:
-			pass
-		except:
-			levr.log_error(self.request)
-			api_utils.send_error(self,'Server Error')
-		
 class UserNotificationsHandler(webapp2.RequestHandler):
 	@api_utils.validate('user','url',limit=False,offset=False,since=False,levrToken=True)
 	@api_utils.private
@@ -428,7 +362,6 @@ app = webapp2.WSGIApplication([('/api/user/(.*)/favorites', UserFavoritesHandler
 								('/api/user/(.*)/follow', UserAddFollowHandler),
 								('/api/user/(.*)/unfollow', UserUnfollowHandler),
 								('/api/user/(.*)/img', UserImgHandler),
-								('/api/user/(.*)/cashout', UserCashOutHandler),
 								('/api/user/(.*)/notifications', UserNotificationsHandler),
 								('/api/user/(.*)', UserInfoHandler)
 								],debug=True)

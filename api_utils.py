@@ -398,7 +398,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 					if authentication_source == 'url':
 						#the user that needs to be validated is passed as part of the url, i.e. /api/user/<uid>/action
 						#the user has already been fetched by the above block of code
-						if url_param != 'uid': raise Exception('Doh! Check validation decorator decoration')
+						if url_param != 'user': raise Exception('Doh! Check validation decorator decoration')
 						
 					elif authentication_source == 'param':
 						#the user that needs to be validated is passed as a param i.e. /api/deal/<dealID>/upvote?uid=UID
