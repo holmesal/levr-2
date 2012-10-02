@@ -183,7 +183,7 @@ def package_business(business):
 		'geoHash'		: business.geo_hash
 						}
 						
-		if business.owner:
+	if business.owner:
 			packaged_business.update({
 				'owner':	levr_utils.package_user(business.owner)
 			})
@@ -292,25 +292,26 @@ def validate(url_param,authentication_source,*a,**to_validate):
 			logging.debug("auth_source: "+str(authentication_source))
 			
 			type_cast = {
-						'limit'	: int,
-						'lat'	: float,
-						'lon'	: float,
-						'geoPoint' : db.GeoPt,
-						'radius': float,
-						'since'	: int,
-						'user'	: levr.Customer,
-						'deal'	: levr.Deal,
-						'size'	: 'size'
+						'limit'		: int,
+						'offset'	: int,
+						'geoPoint'	: db.GeoPt,
+						'radius'	: float,
+						'since'		: int,
+						'user'		: levr.Customer,
+						'deal'		: levr.Deal,
+						'size'		: 'str',
+						'levrToken'	: 'str'
 						}
 			defaults = {
-						'limit'	: 50,
-						'geoPoint': levr.geo_converter('42.349798,-71.120000'),
-						'radius': 2,
-						'since'	: None,
-						'user'	: None,
-						'deal'	: None,
-						'size'	: 'large'
-						
+						'limit'		: 50,
+						'offset'	: 0,
+						'geoPoint'	: levr.geo_converter('42.349798,-71.120000'),
+						'radius'	: 2,
+						'since'		: None,
+						'user'		: None,
+						'deal'		: None,
+						'size'		: 'large',
+						'levrToken'	: ''
 						}
 			
 			try:
@@ -398,20 +399,6 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						#the user that needs to be validated is passed as part of the url, i.e. /api/user/<uid>/action
 						#the user has already been fetched by the above block of code
 						if url_param != 'uid': raise Exception('Doh! Check validation decorator decoration')
-						
-#						#required means this is a required parameter
-#						#this is kind of hacky.. but necessary because of how this func was set up
-#						required = True
-#						
-#						#assure that the token was passed
-#						levr_token = self.request.get('levrToken')
-#						
-#						#assume levrToken is passed
-#						if not levr_token: raise TypeError('levrToken')
-#						
-#						#check token against stored token
-#						if levr_token == user.levr_token	: private = True
-#						else								: private = False
 						
 					elif authentication_source == 'param':
 						#the user that needs to be validated is passed as a param i.e. /api/deal/<dealID>/upvote?uid=UID
@@ -539,7 +526,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 							user = levr.Customer.get(val)
 							
 							val = user
-							
+							key = 'actor'
 						except Exception,e:
 							logging.debug(e)
 							raise TypeError(msg)
@@ -554,6 +541,9 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						except Exception,e:
 							logging.debug(e)
 							raise TypeError(msg)
+					elif data_type == 'str':
+						pass
+						
 					#update the dictionary that is passed to the handler function with the key:val pair
 					kwargs.update({key:val})
 				

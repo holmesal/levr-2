@@ -144,7 +144,7 @@ class AddFavoriteHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 			
 class UpvoteHandler(webapp2.RequestHandler):
-	@authorize
+	@api_utils.validate('deal','param',user=True)
 	@api_utils.private
 	def get(self,dealID,*args,**kwargs):
 		try:
@@ -153,13 +153,6 @@ class UpvoteHandler(webapp2.RequestHandler):
 			uid 	= user.key()
 			deal 	= kwargs.get('deal')
 			dealID 	= deal.key()
-			
-			#GET ENTITIES
-			deal = db.get(dealID)
-			if not deal or deal.kind() != 'Deal':
-				api_utils.send_error(self,'Invalid dealID: '+dealID)
-				return
-			
 			
 			
 			#favorite
@@ -181,7 +174,7 @@ class UpvoteHandler(webapp2.RequestHandler):
 				deal.upvotes += 1
 				
 				#go increment that user's upvotes
-				ninja = levr.Deal.get(deal.key().parent())
+				ninja = levr.Customer.get(deal.key().parent())
 				ninja.karma += 1
 				#level check!
 				ninja = api_utils.level_check(ninja)
@@ -201,7 +194,7 @@ class UpvoteHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 
 class DownvoteHandler(webapp2.RequestHandler):
-	@authorize
+	@api_utils.validate('deal','param',user=True)
 	@api_utils.private
 	def get(self,dealID,*args,**kwargs):
 		try:
@@ -307,7 +300,7 @@ class DeleteFavoriteHandler(webapp2.RequestHandler):
 		
 
 class ReportHandler(webapp2.RequestHandler):
-	@api_utils.validate('deal','param',user=True)
+	@api_utils.validate('deal','param',user=True,levrToken=False)
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		'''
@@ -413,7 +406,7 @@ class DealInfoHandler(webapp2.RequestHandler):
 			levr.log_error(self.request.body)
 			api_utils.send_error(self,'Server Error')
 
-app = webapp2.WSGIApplication([('/api/deal/(.*)/redeem.*', RedeemHandler),
+app = webapp2.WSGIApplication([ #('/api/deal/(.*)/redeem.*', RedeemHandler),
 								#('/api/deal/(.*)/favorite.*', AddFavoriteHandler),
 								('/api/deal/(.*)/upvote', UpvoteHandler),
 								('/api/deal/(.*)/downvote', DownvoteHandler),

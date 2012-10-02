@@ -58,7 +58,7 @@ def authorize(handler_method):
 
 	
 class UserFavoritesHandler(webapp2.RequestHandler):
-	@authorize
+	@api_utils.validate('user','url',limit=False,offset=False,levrToken=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		'''
@@ -79,22 +79,11 @@ class UserFavoritesHandler(webapp2.RequestHandler):
 			logging.info(kwargs)
 			logging.info(args)
 			
-			LIMIT_DEFAULT = 20
-			OFFSET_DEFAULT = 0
-			
-			user = kwargs.get('user')
-			uid = user.key()
+			user 	= kwargs.get('user')
+			uid 	= user.key()
 			private = kwargs.get('private')
-			limit = self.request.get('limit')
-			if not api_utils.check_param(self,limit,'limit','int',False):
-				#limit not passed
-				limit = LIMIT_DEFAULT
-				
-			offset = self.request.get('offset')
-			if not api_utils.check_param(self,offset,'offset','int',False):
-				#limit not passed
-				offset = OFFSET_DEFAULT
-			
+			limit 	= kwargs.get('limit')
+			offset 	= kwargs.get('offset')
 			
 			#grab all favorites
 			favorites = user.favorites
@@ -131,42 +120,24 @@ class UserFavoritesHandler(webapp2.RequestHandler):
 		
 
 class UserUploadsHandler(webapp2.RequestHandler):
-	@authorize
+	@api_utils.validate('user','url',limit=False,offset=False,levrToken=False)
 	def get(self,*args,**kwargs):
 		'''
 		Get all of a users uploaded deals
 		
 		inputs: limit(optional), offset(optional)
-		Output:{
-			meta:{
-				success
-				errorMsg
-				}
-			response:{
-				deal: <DEAL OBJECT>
-				}
+		response:{
+			deal: <DEAL OBJECT>
+			}
 		'''
 		try:
 			logging.info("\n\nGET USER UPLOADS")
 			
-			user = kwargs.get('user')
-			uid = user.key()
+			user 	= kwargs.get('user')
+			uid 	= user.key()
 			private = kwargs.get('private')
-			
-			
-			LIMIT_DEFAULT = 10
-			OFFSET_DEFAULT = 0
-			
-			
-			limit = self.request.get('limit')
-			if not api_utils.check_param(self,limit,'limit','int',False):
-				#limit not passed
-				limit = LIMIT_DEFAULT
-				
-			offset = self.request.get('offset')
-			if not api_utils.check_param(self,offset,'offset','int',False):
-				#limit not passed
-				offset = OFFSET_DEFAULT
+			limit 	= kwargs.get('limit')
+			offset 	= kwargs.get('offset')
 			
 			#grab all deals that are owned by the specified customer
 			deals = levr.Deal.all().ancestor(uid).fetch(limit,offset=offset)
@@ -191,7 +162,7 @@ class UserUploadsHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 		
 class UserGetFollowersHandler(webapp2.RequestHandler):
-	@authorize
+	@api_utils.validate('user','url',limit=False,offset=False,levrToken=False)
 	def get(self,*args,**kwargs):
 		'''
 		Get all of a users followers
@@ -211,24 +182,12 @@ class UserGetFollowersHandler(webapp2.RequestHandler):
 		'''
 		try:
 			logging.info('GET USER FOLLOWERS\n\n\n')
-			
-			user = kwargs.get('user')
-			uid = user.key()
+			logging.debug(kwargs)
+			user 	= kwargs.get('user')
+			uid 	= user.key()
 			private = kwargs.get('private')
-			
-			LIMIT_DEFAULT = 20
-			OFFSET_DEFAULT = 0
-			#CHECK PARAMS
-			limit = self.request.get('limit')
-			if not api_utils.check_param(self,limit,'limit','int',False):
-				#limit not passed
-				limit = LIMIT_DEFAULT
-			
-			offset = self.request.get('offset')
-			if not api_utils.check_param(self,offset,'offset','int',False):
-				#limit not passed
-				offset = OFFSET_DEFAULT
-			
+			limit 	= kwargs.get('limit')
+			offset 	= kwargs.get('offset')
 			
 			
 			#PERFORM ACTIONS
@@ -248,7 +207,7 @@ class UserGetFollowersHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 		
 class UserAddFollowHandler(webapp2.RequestHandler):
-	@authorize
+	@api_utils.validate('user','param',user=True,limit=False,offset=False,levrToken=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		'''
@@ -264,20 +223,9 @@ class UserAddFollowHandler(webapp2.RequestHandler):
 			logging.info('USER ADD FOLLOWER\n\n\n')
 			user 	= kwargs.get('user')
 			uid 	= user.key()
+			actor	= kwargs.get('actor')
+			actorID = actor.key()
 			private = kwargs.get('private')
-			
-			actorID = self.request.get('uid')
-			if not api_utils.check_param(self,actorID,'uid','key',True):
-				return
-			else:
-				actorID = db.Key(enc.decrypt_key(actorID))
-			
-			
-			#GET ENTITIES
-			actor = db.get(actorID)
-			if not actor or actor.kind() != 'Customer':
-				api_utils.send_error(self,'Invalid follower uid: '+str(actorID))
-				return
 			
 			
 			#PERFORM ACTIONS
@@ -296,7 +244,7 @@ class UserAddFollowHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 
 class UserUnfollowHandler(webapp2.RequestHandler):
-	@authorize
+	@api_utils.validate('user','param',user=True,limit=False,offset=False,levrToken=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		'''
@@ -314,20 +262,9 @@ class UserUnfollowHandler(webapp2.RequestHandler):
 			logging.info('\n\nUSER REMOVE FOLLOWER')
 			user = kwargs.get('user')
 			uid = user.key()
+			actor = kwargs.get('actor')
+			actorID = actor.key()
 			private = kwargs.get('private')
-			
-			#CHECK PARAMS
-			actorID = self.request.get('uid')
-			if not api_utils.check_param(self,actorID,'uid','key',True):
-				return
-			else:
-				actorID = db.Key(enc.decrypt_key(actorID))
-			
-			#GET ENTITIES
-			actor = db.get(actorID)
-			if not actor or actor.kind() != 'Customer':
-				api_utils.send_error(self,'Invalid follower uid: '+str(actorID))
-				return
 			
 			
 			#PERFORM ACTIONS
@@ -357,21 +294,16 @@ class UserUnfollowHandler(webapp2.RequestHandler):
 			levr.log_error(self.request)
 			api_utils.send_error(self,'Server Error')
 class UserImgHandler(webapp2.RequestHandler):
-	@authorize
+	@api_utils.validate('user',None,size=True)
 	def get(self,*args,**kwargs):
 		'''Returns ONLY an image for a deal specified by uid
 		Gets the image from the blobstoreReferenceProperty deal.img'''
 		try:
 			logging.info('IMAGE\n\n\n')
-			user = kwargs.get('user')
-			uid = user.key()
-			private = kwargs.get('private')
-			
-			
-			size = self.request.get('size')
-			if not api_utils.check_param(self,size,'size','str',True):
-				return
-			
+			user	= kwargs.get('user')
+			uid		= user.key()
+			private	= kwargs.get('private')
+			size	= kwargs.get('size')
 			
 			#get the blob
 			blob_key = user.img
@@ -406,36 +338,30 @@ class UserCashOutHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 		
 class UserNotificationsHandler(webapp2.RequestHandler):
-	@authorize
-	@private
+	@api_utils.validate('user','url',limit=False,offset=False,since=False,levrToken=True)
+	@api_utils.private
 	def get(self,*args,**kwargs):
 		'''
 		#RESTRICTED
-		inputs: since(required)
-		
-		Output:{
-			meta:{
-				success :<bool>
-				errorMsg : <str>
-				}
-			response:{
-					numResults : <int>
-					notifications:[
-						<NOTIFICATION OBJECT>
-						]
-				}
+		inputs: limit,offset,since
+		response:{
+				numResults : <int>
+				notifications:[
+					<NOTIFICATION OBJECT>
+					]
+			}
 		'''
 		try:
-			user = kwargs.get('user')
-			uid = user.key()
-			private = kwargs.get('private')
+			logging.debug('NOTIFICATIONS\n\n\n')
+			logging.debug(kwargs)
 			
 			
-			#sinceDate is the date of how far back you want notifications
-			sinceDate = kwargs.get('since')
-			if not api_utils.check_param(self,sinceDate,'sinceDate','int',False):
-				sinceDate = None
-			
+			user		= kwargs.get('user')
+			uid			= user.key()
+			private		= kwargs.get('private')
+			sinceDate	= kwargs.get('since')
+			limit		= kwargs.get('limit')
+			offset		= kwargs.get('offset')
 			
 			logging.debug('sinceDate: '+str(sinceDate))
 			logging.debug('last notified: '+str(user.last_notified))
@@ -465,7 +391,7 @@ class UserNotificationsHandler(webapp2.RequestHandler):
 		
 		
 class UserInfoHandler(webapp2.RequestHandler):
-	@authorize
+	@api_utils.validate('user','url',levrToken=False)
 	def get(self,*args,**kwargs):
 		'''
 		#PARTIALLY RESTRICTED
