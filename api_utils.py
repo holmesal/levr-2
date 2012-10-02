@@ -8,7 +8,7 @@ from datetime import datetime
 
 from google.appengine.ext import db
 from google.appengine.api import images
-from math import sin, cos, asin, sqrt, degrees, radians
+from math import sin, cos, asin, sqrt, degrees, radians, floor, sqrt
 
 
 #creates a url for remote or local server
@@ -112,7 +112,10 @@ def package_deal(deal,private=False):
 			'status'		: deal.deal_status,
 			'shareURL'		: create_share_url(deal),
 			'tags'			: deal.tags,
-			'dateEnd'		: str(deal.date_end)[:19]
+			'dateEnd'		: str(deal.date_end)[:19],
+			'vote'			: deal.upvotes - deal.downvotes,
+			'pinColor'		: deal.pin_color,
+			'karma'			: deal.karma
 			}
 			
 	if deal.is_exclusive == False:
@@ -129,11 +132,13 @@ def package_user(user,private=False,followers=True,**kwargs):
 	
 	packaged_user = {
 		'uid'			: enc.encrypt_key(str(user.key())),
-		'alias'			: user.alias,
+		'alias'			: user.display_name,
 		'dateCreated'	: user.date_created.__str__()[:19],
 		'firstName'		: user.first_name,
 		'lastName'		: user.last_name,
 		'photoURL'		: user.photo,
+		'level'			: user.level,
+		'karma'			: user.karma
 		}
 	if followers == True:
 		followers_list = levr.Customer.get(user.followers)
@@ -172,12 +177,16 @@ def package_business(business):
 		'businessID'	: enc.encrypt_key(str(business.key())),
 		'businessName'	: business.business_name,
 		'vicinity'		: business.vicinity,
-		'owner'			: business.owner,
 		'foursquareID'	: business.foursquare_id,
 		'foursquareName': business.foursquare_name,
 		'geoPoint'		: str(business.geo_point),
 		'geoHash'		: business.geo_hash
 						}
+						
+		if business.owner:
+			packaged_business.update({
+				'owner':	levr_utils.package_user(business.owner)
+			})
 	return packaged_business
 	
 def send_response(self,response,user=None):
@@ -746,14 +755,17 @@ def get_deals_in_area(tags,request_point,radius=2,limit=None,precision=5,verbose
 	else:
 		logging.debug('unflag')
 	logging.debug(filtered_deals.__len__())
-	logging.debug(filtered_deals.__len__() >= int(limit))
 	
 	
-	if limit and filtered_deals.__len__() >= int(limit):
-		logging.debug('FLAG LIMITED')
-		filtered_deals = filtered_deals[:int(limit)]
-	else:
-		logging.debug('FLAG UNLIMITED')
+	try:
+		logging.debug(filtered_deals.__len__() >= int(limit))
+		if limit and filtered_deals.__len__() >= int(limit):
+			logging.debug('FLAG LIMITED')
+			filtered_deals = filtered_deals[:int(limit)]
+		else:
+			logging.debug('FLAG UNLIMITED')
+	except:
+		pass
 	
 	t4 = datetime.now()
 	
@@ -860,6 +872,19 @@ def build_display_name(user):
 	else:
 		user.display_name = 'Clint Eastwood'
 	
+	return user
+	
+def level_check(user):
+	'''updates the level of a user. this function should be run after someone upvotes a user or anything else happens.'''
+	'''square root for the win'''
+	old_level = user.level
+	
+	user.level = math.floor(math.sqrt(user.karma))
+	
+	if user.level != old_level:
+		#level up notification
+		levr.create_notification('levelup',user.key(),user.key())
+		
 	return user
 
 

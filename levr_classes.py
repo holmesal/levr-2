@@ -32,7 +32,7 @@ else:
 # FUNCTIONS
 def create_notification(notification_type,to_be_notified,actor,deal=None):
 	'''
-	notification_type	= choices: 'redemption', 'thanks','favorite', 'followerUpload', 'newFollower'
+	notification_type	= choices: 'redemption', 'thanks','favorite', 'followerUpload', 'newFollower', 'levelup'
 						The action being performed
 	to_be_notified		= [db.Key,db.Key,db.Key,...]
 						The people or entities to be notified of this action
@@ -105,6 +105,16 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 			
 			#replace users
 			db.put([user,actor_entity])
+			
+		elif notification_type == 'levelup':
+			#get user,actor
+			[user,actor_entity] = db.get([to_be_notified[0],actor])
+			
+			#increment notification count
+			user.new_notifications += 1
+			
+			#replace user
+			user.put()
 			
 		else:
 			#users = the people to be notified
@@ -736,6 +746,7 @@ class Customer(db.Model):
 	new_redeem_count= db.IntegerProperty(default = 0) #number of unseen redemptions
 	vicinity		= db.StringProperty(default='') #the area of the user, probably a college campus
 	favorites		= db.ListProperty(db.Key,default=[])
+	downvotes		= db.ListProperty(db.Key,default=[])
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	date_last_edited= db.DateTimeProperty(auto_now=True)
 	date_last_login = db.DateTimeProperty(auto_now_add=True)
@@ -753,6 +764,8 @@ class Customer(db.Model):
 	date_last_notified = db.DateTimeProperty(auto_now_add=True)
 	last_notified	= db.IntegerProperty(default=0)
 	display_name	= db.StringProperty()
+	level			= db.IntegerProperty(default=1)
+	karma			= db.IntegerProperty(default=0)
 	
 	@property
 	def following(self):
@@ -908,6 +921,11 @@ class Deal(polymodel.PolyModel):
 	date_uploaded	= db.DateTimeProperty(auto_now_add=True)
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	date_last_edited= db.DateTimeProperty(auto_now=True)
+	upvotes			= db.IntegerProperty(default=0)
+	downvotes		= db.IntegerProperty(default=0)
+	pin_color		= db.StringProperty(default='D21231')
+	origin			= db.StringProperty(default='levr')
+	karma			= db.IntegerProperty(default=0)
 
 
 class CustomerDeal(Deal):

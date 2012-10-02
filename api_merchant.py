@@ -18,8 +18,8 @@ class InitializeMerchantHandler(webapp2.RequestHandler):
 		#curl --data 'businessName=alonsostestbusiness&vicinity=testVicinity&phone=%2B16052610083&geoPoint=-71.234,43.2345' http://www.levr.com/api/merchant/initialize | python -mjson.tool
 		
 		'''REMEMBER PHONE NUMBER FORMATTING STUFF'''
-		#api_utils.send_error(self,'Hey ethan. Ask alonso about the formatting of the phone number.')
-		#return
+		api_utils.send_error(self,'Hey ethan. Ask alonso about the formatting of the phone number.')
+		return
 		
 		#Grab incoming merchant data
 		business_name = self.request.get('businessName')
