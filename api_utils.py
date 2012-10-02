@@ -256,6 +256,240 @@ def private(handler_method):
 	
 	return check
 
+def validate(url_param,authentication_source=None,*a,**to_validate):
+	'''
+	General function for validating the inputs that are passed as arguments
+	to use, pass kwargs in form of key:bool,
+	where key is the input name and bool is true if input is required and false if input is optional
+	
+	WARNING: will not authenticate
+	'''
+	
+	def wrapper(handler_method):
+		'''
+		This is the decorator that operates on the function being decorated
+		I dont understand this. Gah!
+		'''
+		def validator(self,*args,**kwargs):
+			logging.debug('Validator')
+			logging.debug(args)
+			if args: logging.debug('yes')
+			logging.debug(kwargs)
+			logging.debug(a)
+			if a: logging.debug('WWOOO')
+			else: logging.debug('NOOO')
+			logging.debug("to_validate: "+str(to_validate))
+#			logging.debug(name)
+			logging.debug("auth_source: "+str(authentication_source))
+			
+			
+			
+			try:
+				####################################################
+				#Validate the input passed in the url, not as param#
+				####################################################
+				
+				logging.debug("url_param: "+url_param)
+				
+				if url_param == 'dealID':
+					try: dealID = args[0]
+					except: KeyError('dealID')
+						
+					try:
+						dealID = enc.decrypt_key(dealID)
+						deal = levr.Deal.get(dealID)
+						kwargs.update({'deal':deal})
+					except:
+						raise TypeError('dealID: '+dealID)
+				elif url_param == 'uid':
+					try: uid = args[0]
+					except: KeyError('uid')
+					
+					try:
+						uid = enc.decrypt_key(uid)
+						user = levr.Customer.get(uid)
+						kwargs.update({'user':user})
+					except Exception,e:
+						logging.debug(e)
+						raise TypeError('uid: '+uid)
+				elif url_param == 'query':
+					pass
+				elif url_param == None:
+					pass
+				else:
+					raise Exception('Invalid url_param')
+				
+				
+				
+				
+				###########################
+				#Start user authentication#
+				###########################
+				
+				#If the user needs to be validated, validation source will be passed to the decorator
+				if not authentication_source:
+					#No validation is required, and privacy is automatically set to public
+					private = False
+				else:
+					#validation is required
+					if authentication_source == 'url':
+						#the user that needs to be validated is passed as part of the url, i.e. /api/user/<uid>/action
+						#the user has already been fetched by the above block of code
+						if url_param != 'uid': raise Exception('Doh! Check validation decorator decoration')
+					elif authentication_source == 'param':
+						#the user that needs to be validated is passed as a param i.e. /api/deal/<dealID>/upvote?uid=UID
+						try:
+							uid = self.request.get('uid')
+							
+							#translate uid into a db.Key type
+							uid = db.Key(enc.decrypt_key(uid))
+							#get the user
+							user = levr.Customer.get(uid)
+						except:
+							raise TypeError('uid: '+ uid)
+					else:
+						raise Exception('Invalid validation source')
+					
+					
+					#assure that the token was passed
+					levr_token = self.request.get('levrToken')
+					if not levr_token: raise TypeError('levrToken')
+					
+					
+					#compare the passed token to the db token
+					#if token checks out, the private is True
+					if levr_token == user.levr_token	: private = True
+					else								: private = False
+					
+					logging.debug(private)
+					
+				
+				#update kwargs to include privacy level
+				kwargs.update({'private':private})
+					
+				
+				##################################
+				#start parameter validation steps#
+				##################################
+				
+				type_cast = {
+						'limit'	: int,
+						'lat'	: float,
+						'lon'	: float,
+						'geoPoint' : db.GeoPt,
+						'radius': float,
+						'since'	: int,
+						'user'	: levr.Customer,
+						'deal': levr.Deal,
+						}
+				defaults = {
+						'limit'	: 50,
+						'lat'	: 42.349798,
+						'lon'	: -71.120000,
+						'geoPoint': levr.geo_converter('42.349798,-71.120000'),
+						'radius': 2,
+						'since'	: None,
+						'user'	: None,
+						'deal': None
+						
+						}
+				#for each input=Bool where Bool is required or not
+				for (key,required) in to_validate.iteritems():
+					#special case, geopoint is complex
+					if key == 'geoPoint':
+						val = str(self.request.get('lat'))+","+str(self.request.get('lon'))
+						msg = "lat,lon: "+val
+					else:
+						val = self.request.get(key)
+						msg = key+": "+val
+					logging.debug(val)
+					#requires is whether or not it is required
+					required	= to_validate.get(key)
+					#date_type pulls the type that the passed input should be
+					data_type	= type_cast[key]
+					#msg is passed to the exception handler if val fails validation
+					
+					
+					logging.debug(val)
+#					logging.debug(data_type)
+#					logging.debug(msg)
+					logging.debug(required)
+					
+					#handle case where input is not passed
+					
+					if 		not val and required				: raise KeyError(msg)
+					elif 	not val and not required			: val = defaults[key]
+					
+					#handle case where input should be an integer
+					elif data_type == int and not val.isdigit()	: raise TypeError(msg)
+					
+					
+					#handle case where input should be numerical 
+					elif data_type == float:
+						#float input
+						try:
+							val = float(val)
+						except ValueError,e:
+							raise KeyError(msg)
+					elif data_type == db.GeoPt:
+						try:
+							logging.debug(val)
+							val = levr.geo_converter(val
+													)
+							logging.debug(val)
+							logging.debug(type(val))
+						except Exception,e:
+							logging.debug(e)
+							raise TypeError(msg)
+					elif data_type == levr.Customer:
+						try:
+							#convert to key
+							val = db.Key(enc.decrypt_key(val))
+							
+							#get user entity
+							user = levr.Customer.get(val)
+							
+							val = user
+							
+						except Exception,e:
+							logging.debug(e)
+							raise TypeError(msg)
+					elif data_type == levr.Deal:
+						try:
+							val = db.Key(enc.decrypt_key(val))
+							
+							deal = levr.Deal.get(val)
+							
+							val = deal
+							
+						except Exception,e:
+							logging.debug(e)
+							raise TypeError(msg)
+					#update the dictionary that is passed to the handler function with the key:val pair
+					kwargs.update({key:val})
+				
+				logging.debug(kwargs)
+			
+			except AttributeError,e:
+				levr.log_error()
+				send_error(self,'Not Authorized, '+str(e))
+			except KeyError,e:
+				levr.log_error()
+				send_error(self,'Required paramter not passed, '+str(e))
+			except TypeError,e:
+				levr.log_error()
+				
+				send_error(self,'Invalid parameter, '+str(e))
+			except Exception,e:
+				levr.log_error()
+				send_error(self,'Server Error: '+str(e))
+			else:
+				return handler_method(self,*args,**kwargs)
+		
+		return validator
+	
+	return wrapper
+
 def send_img(self,blob_key,size):
 	try:
 		logging.debug(levr.log_dir(blob_key.properties))
