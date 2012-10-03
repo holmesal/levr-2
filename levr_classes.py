@@ -780,15 +780,19 @@ class Customer(db.Model):
 			#date was not specified, use the default
 			date = self.last_notified
 #			date = 0
-		logging.debug(date)
+		logging.debug('date: '+str(date))
 		
 		
 		notifications = Notification.all().filter('to_be_notified',self.key()).filter('date_in_seconds >=',date).fetch(None)
 		
-		dates = Notification.all(projection=['date_in_seconds']).fetch(None)
-		logging.debug(dates)
-		for date in dates:
-			logging.debug(date.date_in_seconds)
+#		#DEBUG
+#		logging.debug('start debug')
+#		dates = Notification.all(projection=['date_in_seconds']).filter('date_in_seconds <=',date).fetch(None)
+#		logging.debug(dates)
+#		for date in dates:
+#			logging.debug(date.date_in_seconds)
+#		logging.debug('end debug')
+#		#/DEBUG
 		
 		now = datetime.now()
 		#reset last notification time

@@ -8,28 +8,16 @@ import api_utils
 from google.appengine.ext import db
 
 class ConnectFacebookHandler(webapp2.RequestHandler):
-	def get(self):
+	@api_utils.validate(None,'param',user=True,token=True,facebookID=True,levrToken=True)
+	@api_utils.private
+	def get(self,*args,**kwargs):
 		#RESTRICTED
+		user		= kwargs.get('actor')
+		token		= kwargs.get('token')
+		facebook_id	= kwargs.get('facebookID')
 		
-		token = self.request.get('token')
-		uid	= self.request.get('uid')
-		facebook_id = self.request.get('facebookID')
-		#check token and uid and decrypt
-		if token == '':
-			api_utils.send_error(self,'Required parameter not passed: token')
-			return
-		if uid == '':
-			api_utils.send_error(self,'Required parameter not passed: uid')
-			return
-		#decrypt uid
-		try:
-			uid = db.Key(enc.decrypt_key(uid))
-		except:
-			api_utils.send_error(self,'Invalid parameter: uid')
-			return
 		
-		#grab user
-		user = levr.Customer.get(uid)
+		
 		#add facebook token
 		user.facebook_token = token
 		#fetch user info from facebook graph api
@@ -40,31 +28,25 @@ class ConnectFacebookHandler(webapp2.RequestHandler):
 		user.put()
 		
 		#return the user
-		response = {'user':api_utils.package_user(user,True)}
+		response = {
+				'user':api_utils.package_user(user,True)
+				}
 		api_utils.send_response(self,response,user)
 
 
 class ConnectFoursquareHandler(webapp2.RequestHandler):
-	def post(self):
+	@api_utils.validate(None,'param',user=True,token=True,levrToken=True)
+	@api_utils.private
+	def post(self,*args,**kwargs):
 		#RESTRICTED
+		logging.debug('CONNECT FOURSQUARE\n\n\n')
+		logging.debug(kwargs)
 		
-		token = self.request.get('token')
-		uid	= self.request.get('uid')
-		#check token and uid and decrypt
-		if token == '':
-			api_utils.send_error(self,'Required parameter not passed: token')
-			return
-		if uid == '':
-			api_utils.send_error(self,'Required parameter not passed: uid')
-			return
-		#decrypt uid
-		try:
-			uid = db.Key(enc.decrypt_key(uid))
-		except:
-			api_utils.send_error(self,'Invalid parameter: uid')
-			return
-		#grab user
-		user = levr.Customer.get(uid)
+		user		= kwargs.get('user')
+		token		= kwargs.get('token')
+		
+		
+		
 		#add foursquare token
 		user.foursquare_token = token
 		#query foursquare for user data
@@ -78,32 +60,19 @@ class ConnectFoursquareHandler(webapp2.RequestHandler):
 		api_utils.send_response(self,response,user)
 		
 class ConnectTwitterHandler(webapp2.RequestHandler):
+	@api_utils.validate(None,'param',user=True,token=True,screenName=True,levrToken=True)
+	@api_utils.private
 	def post(self):
 		#RESTRICTED
+		logging.debug('CONNECT TWITTER\n\n\n')
+		logging.debug(kwargs)
 		
-		token = self.request.get('token')
-		uid	= self.request.get('uid')
-		#check token and uid and decrypt
-		if token == '':
-			api_utils.send_error(self,'Required parameter not passed: token')
-			return
-		if uid == '':
-			api_utils.send_error(self,'Required parameter not passed: uid')
-			return
-		#check screen_name
-		screen_name = self.request.get('screenName')
-		if screen_name == '':
-			api_utils.send_error(self,'Required parameter not passed: screenName')
-			return
-		#decrypt uid
-		try:
-			uid = db.Key(enc.decrypt_key(uid))
-		except:
-			api_utils.send_error(self,'Invalid parameter: uid')
-			return
+		user		= kwargs.get('user')
+		token		= kwargs.get('token')
+		screen_name	= kwargs.get('screenName')
 		
-		#grab user
-		user = levr.Customer.get(uid)
+		
+		
 		#add twitter token
 		user.twitter_token = token
 		#add screen name

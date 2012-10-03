@@ -208,7 +208,7 @@ def send_response(self,response,user=None):
 				'response':response}
 				
 	#reply
-	logging.debug(levr.log_dict(reply))
+#	logging.debug(levr.log_dict(reply))
 	self.response.out.write(json.dumps(reply))
 	
 
@@ -299,8 +299,12 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						'since'		: int,
 						'user'		: levr.Customer,
 						'deal'		: levr.Deal,
-						'size'		: 'str',
-						'levrToken'	: 'str'
+						'size'		: str,
+						'levrToken'	: str,
+						'facebookID': str,
+						'token'		: str,
+						'screenName': str
+						
 						}
 			defaults = {
 						'limit'		: 50,
@@ -311,7 +315,10 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						'user'		: None,
 						'deal'		: None,
 						'size'		: 'large',
-						'levrToken'	: ''
+						'levrToken'	: '',
+						'facebookID': '',
+						'token'		: '',
+						'screenName': ''
 						}
 			
 			try:
@@ -496,9 +503,14 @@ def validate(url_param,authentication_source,*a,**to_validate):
 					elif 	not val and not required			: val = defaults[key]
 					
 					#handle case where input should be an integer
-					elif data_type == int and not val.isdigit()	: raise TypeError(msg)
-					
-					
+					elif data_type == int: 
+						if val.isdigit():
+							#translate input from unicode to int
+							val = int(val)
+							
+						else:
+							levr.log_error()
+							raise TypeError(msg)
 					#handle case where input should be numerical 
 					elif data_type == float:
 						#float input
@@ -541,7 +553,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						except Exception,e:
 							logging.debug(e)
 							raise TypeError(msg)
-					elif data_type == 'str':
+					elif data_type == str:
 						pass
 						
 					#update the dictionary that is passed to the handler function with the key:val pair
