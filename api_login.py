@@ -11,14 +11,11 @@ class LoginFacebookHandler(webapp2.RequestHandler):
 	def get(self,*args,**kwargs):
 		#RESTRICTED
 		try:
-			#check token
-			token = self.request.get('token')
-			if token == '':
-				api_utils.send_error(self,'Required parameter not passed: token')
-				return
-				
+			
+			token 		= kwargs.get('token')
+			facebook_id = kwargs.get('facebookID')
 			#check if token currently exists in datastore
-			existing_user = levr.Customer.all().filter('')
+			existing_user = levr.Customer.all().filter('facebook_id',facebook_id).get()
 	#		gql('WHERE facebook_token = :1',token).get()
 			
 			if existing_user:
