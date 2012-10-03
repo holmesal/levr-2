@@ -10,59 +10,6 @@ from google.appengine.ext import db
 
 
 
-def validate(handler_method):
-	'''
-	Validation decorator for all of the search methods
-	'''
-	def check_params(self,query=None):
-		try:
-			logging.debug('SEARCH DECORATOR\n\n\n\n')
-#			logging.debug(levr.log_dir(self.request))
-			logging.warning(query)
-			
-			DEFAULT_RADIUS = 2 #miles
-			DEFAULT_LIMIT = None
-			
-			lat		= self.request.get('lat')
-			lon		= self.request.get('lon')
-			radius	= self.request.get('radius')#optional
-			limit	= self.request.get('limit') #optional
-			
-			
-			#GRAB PARAMETERS
-			if not lat		: raise KeyError('lat: '+lat)
-			if not lon		: raise KeyError('lon: '+lon)
-			if not radius	: radius = DEFAULT_RADIUS
-			if not limit	: limit = DEFAULT_LIMIT
-			
-			#CHECK PARAMETERS
-			try: float(lat)
-			except: raise TypeError('lat: '+lat)
-			
-			try: float(lon)
-			except: raise TypeError('lon: '+lon)
-			
-			if limit and not limit.isdigit():
-				raise TypeError('limit: '+limit)
-			
-			#convert lat, lon to a single geo_point
-			geo_string = str(lat)+","+str(lon)
-			geo_point = levr.geo_converter(geo_string)
-			
-			
-			logging.debug(radius)
-			logging.debug(limit)
-			
-		except KeyError,e:
-			api_utils.send_error(self,'Required paramter not passed, '+str(e))
-		except TypeError,e:
-			api_utils.send_error(self,'Invalid parameter, '+str(e))
-		else:
-			handler_method(self,query=query,geo_point=geo_point,radius=radius,limit=limit)
-	
-	return check_params
-
-
 class SearchQueryHandler(webapp2.RequestHandler):
 	@api_utils.validate('query',None,geoPoint=True,limit=False,radius=False,user=False)
 	def get(self,*args,**kwargs):
@@ -199,7 +146,7 @@ class LoadTestHandler(webapp2.RequestHandler):
 
 class SearchNewHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,None,geoPoint=True,limit=False,radius=False,user=False)
-	def get(self,**kwargs):
+	def get(self,*args,**kwargs):
 		'''
 		inputs: lat,lon,limit,radius
 		Output:{
@@ -212,16 +159,15 @@ class SearchNewHandler(webapp2.RequestHandler):
 				}
 		'''
 		try:
-			logging.debug(query)
 			logging.info("\n\nSEARCH NEW")
 			
 		except:
-			levr.log_error(levr_utils.log_dir(self.request))
-			api_utils.send_error('Server Error')
+			levr.log_error(levr.log_dir(self.request))
+			api_utils.send_error(self,'Server Error')
 
 class SearchHotHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,None,geoPoint=True,limit=False,radius=False,user=False)
-	def get(self,query,geo_point,radius,limit):
+	def get(self,*args,**kwargs):
 		'''
 		inputs: lat,lon,limit
 		Output:{

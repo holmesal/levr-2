@@ -9,6 +9,7 @@ from datetime import datetime
 from google.appengine.ext import db
 from google.appengine.api import images
 from math import sin, cos, asin, sqrt, degrees, radians, floor, sqrt
+from fnmatch import filter
 
 
 #creates a url for remote or local server
@@ -326,7 +327,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 				#Validate the input passed in the url, not as param#
 				####################################################
 				
-				logging.debug("url_param: "+url_param)
+				logging.debug("url_param: "+str(url_param))
 				
 				if url_param == 'deal':
 					#A dealID is passed as part of the url
@@ -401,6 +402,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 					#No validation is required, and privacy is automatically set to public
 					private = False
 				else:
+					#This needs to be nested in t
 					#validation is required
 					if authentication_source == 'url':
 						#the user that needs to be validated is passed as part of the url, i.e. /api/user/<uid>/action
@@ -845,6 +847,7 @@ def filter_deals_by_radius(deals,center,radius):
 	#convert radius to float for comparison to work
 	if type(radius) != float:
 		radius = float(radius)
+	
 	
 	for deal in deals:
 		#parse geo_point into lat,lon

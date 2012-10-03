@@ -7,7 +7,8 @@ from google.appengine.ext import db
 
 
 class LoginFacebookHandler(webapp2.RequestHandler):
-	def get(self):
+	@api_utils.validate(None,None,facebookID=True,token=True)
+	def get(self,*args,**kwargs):
 		#RESTRICTED
 		
 		#check token
@@ -17,7 +18,8 @@ class LoginFacebookHandler(webapp2.RequestHandler):
 			return
 			
 		#check if token currently exists in datastore
-		existing_user = levr.Customer.gql('WHERE facebook_token = :1',token).get()
+		existing_user = levr.Customer.all().filter('')
+#		gql('WHERE facebook_token = :1',token).get()
 		
 		if existing_user:
 			#return the user
@@ -28,7 +30,7 @@ class LoginFacebookHandler(webapp2.RequestHandler):
 			return
 
 class LoginFoursquareHandler(webapp2.RequestHandler):
-	def get(self):
+	def get(self,*args,**kwargs):
 		#RESTRICTED
 		
 		#check token
@@ -49,7 +51,7 @@ class LoginFoursquareHandler(webapp2.RequestHandler):
 			return
 		
 class LoginTwitterHandler(webapp2.RequestHandler):
-	def get(self):
+	def get(self,*args,**kwargs):
 		#RESTRICTED
 		
 		#check token
@@ -70,7 +72,7 @@ class LoginTwitterHandler(webapp2.RequestHandler):
 			return
 		
 class LoginLevrHandler(webapp2.RequestHandler):
-	def get(self):
+	def get(self,*args,**kwargs):
 		#RESTRICTED
 		
 		#check email_or_owner
