@@ -293,33 +293,68 @@ def validate(url_param,authentication_source,*a,**to_validate):
 			logging.debug("auth_source: "+str(authentication_source))
 			
 			type_cast = {
+						'user'		: levr.Customer,
+						'deal'		: levr.Deal,
+						
+						#searching, user info, deal info stuff
 						'limit'		: int,
 						'offset'	: int,
 						'geoPoint'	: db.GeoPt,
 						'radius'	: float,
 						'since'		: int,
-						'user'		: levr.Customer,
-						'deal'		: levr.Deal,
 						'size'		: str,
-						'levrToken'	: str,
-						'facebookID': str,
-						'token'		: str,
-						'screenName': str
+						
+						#login stuff
+						'levrToken'		: str,
+						'facebookID'	: str,
+						'token'			: str,
+						'screenName'	: str,
+						'email_or_owner': str,
+						'pw'			: str,
+						
+						#deal upload stuff
+						'description'	: str,
+						'dealText'		: str,
+						'distance'		: float,
+						
+						#business upload stuff
+						'businessName'	: str,
+						#geoPoint ^^ see above
+						'vicinity'		: str,
+						'types'			: list,
 						
 						}
 			defaults = {
+						#entities
+						'user'		: None,
+						'deal'		: None,
+						
+						#searching, user info, deal info stuff
 						'limit'		: 50,
 						'offset'	: 0,
 						'geoPoint'	: levr.geo_converter('42.349798,-71.120000'),
 						'radius'	: 2,
 						'since'		: None,
-						'user'		: None,
-						'deal'		: None,
 						'size'		: 'large',
-						'levrToken'	: '',
-						'facebookID': '',
-						'token'		: '',
-						'screenName': ''
+						
+						#login stuff
+						'levrToken'			: '',
+						'facebookID'		: '',
+						'token'				: '',
+						'screenName'		: '',
+						'email_or_owner'	: '',
+						'pw'				: '',
+						
+						#deal upload stuff
+						'description'	: '',
+						'dealText'		: '',
+						'distance'		: -1,
+						
+						#business upload stuff
+						'businessName'	: '',
+						'vicinity'		: '',
+						'types'			: []
+						
 						}
 			
 			try:
@@ -474,15 +509,21 @@ def validate(url_param,authentication_source,*a,**to_validate):
 					if key == 'geoPoint':
 						val = str(self.request.get('lat'))+","+str(self.request.get('lon'))
 						msg = "lat,lon: "+val
-					#common mistakes. Youre welcome, debugger.
-					elif key == 'uid'		: raise Exception('In validation declaration, "uid" should be "user".')
-					elif key == 'dealID'	: raise Exception('In validation declaration, "dealID" should be "deal"')
+					
 					elif key == 'user':
 						val = self.request.get('uid')
 						msg = 'uid: '+ val
+					
 					elif key == 'deal':
 						val = self.request.get('dealID')
 						msg = 'dealID: '+ val
+					elif key == 'types':
+						val = self.request.get_all('types')
+						msg = 'types: '+ str(val)
+					#common mistakes. Youre welcome, debugger.
+					elif key == 'uid'		: raise Exception('In validation declaration, "uid" should be "user".')
+					elif key == 'dealID'	: raise Exception('In validation declaration, "dealID" should be "deal"')
+					#default case
 					else:
 						val = self.request.get(key)
 						msg = key+": "+val
@@ -490,7 +531,11 @@ def validate(url_param,authentication_source,*a,**to_validate):
 					#requires is whether or not it is required
 					required	= to_validate.get(key)
 					#date_type pulls the type that the passed input should be
-					data_type	= type_cast[key]
+					try:
+						data_type	= type_cast[key]
+					except:
+						levr.log_error('did not map type_cast dict correctly')
+						raise Exception()
 					#msg is passed to the exception handler if val fails validation
 					
 					
@@ -555,6 +600,8 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						except Exception,e:
 							logging.debug(e)
 							raise TypeError(msg)
+					elif data_type == list:
+						logging.error('CHECK OUT LIST!')
 					elif data_type == str:
 						pass
 						

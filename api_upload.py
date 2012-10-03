@@ -66,14 +66,18 @@ class UploadRequestHandler(webapp2.RequestHandler):
 		url: str
 	}
 	'''
-	@authorize
+	@api_utils.validate(None,'param',user=True,levrToken=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		try:
-			logging.info('fetchUploadURL')
+			logging.info('fetchUploadURL\n\n\n')
+			logging.debug(kwargs)
 			user = kwargs.get('user')
+			
+			#create blobstore user
 			upload_url = blobstore.create_upload_url('/api/upload/post')
 			logging.debug(upload_url)
+			
 			response = {
 					'url' : upload_url
 					}
@@ -85,13 +89,22 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 	'''
 	Post a deal - does not need special permissions because the upload url expires
 	'''
-	def post(self):
+	@api_utils.validate(None,None,
+					user			= True,
+					businessName	= True,
+					geoPoint		= True,
+					vicinity		= True,
+					types			= True,
+					description		= True,
+					dealText		= True,
+					distance		= True,
+					)
+	def post(self,*args,**kwargs):
 		try:
-			logging.info('uploadDeal')
-			uid	= enc.decrypt_key(self.request.get('uid'))
-			user = levr.Customer.get(uid)
-			logging.debug(levr_utils.log_model_props(user,['alias','email']))
-			logging.debug(self.request.params)
+			logging.info('uploadDeal\n\n\n')
+			logging.debug(kwargs)
+			user = kwargs.get('actor')
+			uid = user.key()
 			#make sure than an image is uploaded
 			logging.debug(self.get_uploads())
 			if self.get_uploads(): #will this work?
@@ -102,39 +115,21 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 				raise Exception('Image was not uploaded')
 			
 			
-			#screen for businessID to determine which mode of upload we are receiving
-			if self.request.get('businessID'):
-				logging.debug('targeted business')
-				#we are on iphone
-				origin = 'phone_existing_business'
-				params = {
-					'uid'				: self.request.get('uid'),
-					'business'			: self.request.get('businessID'),
-					'deal_description'	: self.request.get('deal_description'),
-					'deal_line1'		: self.request.get('deal_line1'),
-					'distance'			: self.request.get('distance'), #is -1 if unknown = double
-					'img_key'			: img_key
-					}
-				
-#				(share_url,deal_entity) = levr_utils.dealCreate(params,'phone_existing_business')
-			else:
-				logging.debug('untargeted business')
-				#we are on android
-				origin = 'phone_new_business'
-				params = {
-					'uid'				: self.request.get('uid'),
-					'business_name'		: self.request.get('businessName'),
-					'geo_point'			: self.request.get('geoPoint'),
-					'vicinity'			: self.request.get('vicinity'),
-					'types'				: self.request.get('types'),
-					'deal_description'	: self.request.get('deal_description'),
-					'deal_line1'		: self.request.get('deal_line1'),
-					'distance'			: self.request.get('distance'), #is -1 if unknown = double
-					'img_key'			: img_key
-					}
 			
+			params = {
+				'uid'				: uid,
+				'business_name'		: kwargs.get('businessName'),
+				'geo_point'			: kwargs.get('geoPoint'),
+				'vicinity'			: kwargs.get('vicinity'),
+				'types'				: kwargs.get('types'),
+				'deal_description'	: kwargs.get('description'),
+				'deal_line1'		: kwargs.get('dealText'),
+				'distance'			: kwargs.get('distance'), #is -1 if unknown = double
+				'img_key'			: img_key
+				}
+		
 			#create the deal using the origin specified
-			deal_entity = levr.dealCreate(params,origin,False)
+			deal_entity = levr.dealCreate(params,'phone_new_business',False)
 			
 			#grab deal information for sending back to phone
 			deal = api_utils.package_deal(deal_entity,True)
