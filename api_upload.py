@@ -79,7 +79,8 @@ class UploadRequestHandler(webapp2.RequestHandler):
 			logging.debug(upload_url)
 			
 			response = {
-					'url' : upload_url
+					'uploadURL'		: upload_url,
+					'shareURL'		: levr.create_unique_id()
 					}
 			api_utils.send_response(self,response,user)
 		except:
