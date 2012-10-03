@@ -321,7 +321,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						'businessName'	: str,
 						#geoPoint ^^ see above
 						'vicinity'		: str,
-						'types'			: list,
+						'types'			: str#list
 						
 						}
 			defaults = {
@@ -353,7 +353,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						#business upload stuff
 						'businessName'	: '',
 						'vicinity'		: '',
-						'types'			: []
+						'types'			: ''#[]
 						
 						}
 			
@@ -517,9 +517,9 @@ def validate(url_param,authentication_source,*a,**to_validate):
 					elif key == 'deal':
 						val = self.request.get('dealID')
 						msg = 'dealID: '+ val
-					elif key == 'types':
-						val = self.request.get_all('types')
-						msg = 'types: '+ str(val)
+#					elif key == 'types':
+#						val = self.request.get_all('types')
+#						msg = 'types: '+ str(val)
 					#common mistakes. Youre welcome, debugger.
 					elif key == 'uid'		: raise Exception('In validation declaration, "uid" should be "user".')
 					elif key == 'dealID'	: raise Exception('In validation declaration, "dealID" should be "deal"')

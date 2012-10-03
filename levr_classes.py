@@ -477,7 +477,6 @@ def dealCreate(params,origin,upload_flag=True):
 		
 		if 'geo_point' in params:
 			geo_point = params['geo_point']
-			geo_point = geo_converter(geo_point)
 			logging.debug("geo point: "+str(geo_point))
 			#create geohash from geopoint
 			geo_hash = geohash.encode(geo_point.lat,geo_point.lon)
@@ -628,9 +627,9 @@ def dealCreate(params,origin,upload_flag=True):
 	elif origin	=='phone_existing_business' or origin == 'phone_new_business':
 		#phone deals are the child of a ninja
 		logging.debug('STOP!')
-		uid = enc.decrypt_key(params['uid'])
+		uid = params['uid']
 
-		deal = CustomerDeal(parent = db.Key(uid))
+		deal = CustomerDeal(parent = uid)
 		deal.is_exclusive		= False
 		
 		

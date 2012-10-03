@@ -112,7 +112,7 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 				blob_key= upload.key()
 				img_key = blob_key
 			else:
-				raise Exception('Image was not uploaded')
+				pass#raise Exception('Image was not uploaded')
 			
 			
 			
@@ -125,7 +125,7 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 				'deal_description'	: kwargs.get('description'),
 				'deal_line1'		: kwargs.get('dealText'),
 				'distance'			: kwargs.get('distance'), #is -1 if unknown = double
-				'img_key'			: img_key
+#				'img_key'			: img_key
 				}
 		
 			#create the deal using the origin specified
@@ -141,7 +141,7 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 			api_utils.send_response(self,response)
 		
 		except:
-			levr.log_error(self.request.body)
+			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 		
 		
