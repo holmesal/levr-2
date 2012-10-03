@@ -161,8 +161,8 @@ class UpvoteHandler(webapp2.RequestHandler):
 			#favorite
 			logging.debug(levr.log_model_props(user))
 			#only add to favorites if not already in favorites
-			#if dealID not in user.favorites:
-			if True:
+			if dealID not in user.favorites:
+			#if True:
 				logging.debug('Flag not yet upvoted')
 				#append dealID to favorites property
 				user.favorites.append(dealID)
