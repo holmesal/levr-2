@@ -24,6 +24,8 @@ blacklist = [
 'avenue',
 'purchase',
 'free',
+'technology',
+'inc',
 
 ##Roadway words
 'ave',
