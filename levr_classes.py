@@ -494,6 +494,7 @@ def dealCreate(params,origin,upload_flag=True):
 			shareURL = params['shareURL']
 			logging.debug("shareURL: "+str(shareURL))
 			share_id = shareURL.split('/')[-1] #grab share id
+			logging.debug("share_id: "+str(share_id))
 		else:
 			raise Exception('shareURL not in params')
 		#types
@@ -640,7 +641,8 @@ def dealCreate(params,origin,upload_flag=True):
 						is_exclusive	= False,
 						share_id		= share_id
 						)
-		
+		logging.debug(deal.share_id)
+		logging.debug(deal.share_id == share_id)
 		
 		deal.date_end = datetime.now() + timedelta(days=7)
 
@@ -699,6 +701,8 @@ def dealCreate(params,origin,upload_flag=True):
 	
 	#put the deal
 	deal.put()
+	logging.debug(deal.share_id == share_id)
+	
 	
 	#dealput is the deal key i.e. dealID
 	logging.debug(log_model_props(deal))

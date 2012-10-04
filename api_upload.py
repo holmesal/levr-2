@@ -101,7 +101,7 @@ class UploadRequestHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 	'''
-	Post a deal - does not need special permissions because the upload url expires
+	Post a deal
 	'''
 	@api_utils.validate(None,'param',
 					user			= True,
@@ -131,7 +131,7 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 				upload_flag = True
 			else:
 				upload_flag = False
-				raise Exception('Image was not uploaded')
+#				raise KeyError('Image was not uploaded')
 			
 			
 			
@@ -144,8 +144,8 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 				'deal_description'	: kwargs.get('description'),
 				'deal_line1'		: kwargs.get('dealText'),
 				'distance'			: kwargs.get('distance'), #is -1 if unknown = double
-				'shareURL'			: kwargs.get('shareURL'),
-				'img_key'			: img_key
+				'shareURL'			: kwargs.get('shareURL')
+#				'img_key'			: img_key
 				}
 			
 			#create the deal using the origin specified
@@ -160,6 +160,9 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 			
 			api_utils.send_response(self,response)
 		
+		except KeyError,e:
+			levr.log_error()
+			api_utils.send_error(self,str(e))
 		except:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
