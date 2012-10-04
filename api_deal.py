@@ -41,6 +41,7 @@ from google.appengine.api import mail
 #			levr.log_error(self.request)
 #			api_utils.send_error(self,'Server Error')
 #
+
 #class AddFavoriteHandler(webapp2.RequestHandler):
 #	@api_utils.validate('deal','param',user=True)
 #	@api_utils.private
@@ -80,6 +81,7 @@ from google.appengine.api import mail
 #			levr.log_error(self.request)
 #			api_utils.send_error(self,'Server Error')
 #			
+
 class UpvoteHandler(webapp2.RequestHandler):
 	@api_utils.validate('deal','param',user=False,levrToken=False)
 	@api_utils.private
@@ -97,37 +99,78 @@ class UpvoteHandler(webapp2.RequestHandler):
 			
 			#favorite
 			logging.debug(levr.log_model_props(user))
-			#only add to favorites if not already in favorites
-			if dealID not in user.favorites:
-			#if True:
-				logging.debug('Flag not yet upvoted')
-				#append dealID to favorites property
-				user.favorites.append(dealID)
-				logging.debug(user.favorites)
+			
 				
-				#create favorite notification
-				levr.create_notification('favorite',dealID.parent(),uid,dealID)
 				
-				#put user
-				user.put()
 				
-				#increment
+			if dealID in user.upvotes:
+				logging.debug('flag deal in upvotes')
+				#user is removing the upvote
+				
+				#remove the offending deal from the user upvotes
+				user.upvotes.remove(dealID)
+				
+				#decrement the deal upvotes
+				deal.upvotes -= 1
+				
+				#do not change the karma of the user who uploaded it
+				#do not remove from favorites
+				#do not remove notification
+				
+				db.put([user,deal])
+				
+			elif dealID in user.downvotes:
+				logging.debug('flag deal is in downvotes')
+				
+				#remove deal from downvotes
+				user.downvotes.remove(dealID)
+				#decrement the deals downvotes
+				deal.downvotes -= 1
+				
+				#add deal to upvotes
+				user.upvotes.append(dealID)
+				#increment the number of upvotes
 				deal.upvotes += 1
 				
-				#go increment that user's upvotes
+				#add deal to favorites
+				if dealID not in user.favorites:
+					user.favorites.append(dealID)
+				
+				#do not change the karma of the user who uploaded
+				#do not add notification for the ninja
+				
+				db.put([user,deal])
+			
+			else:
+				logging.debug('flag deal not in upvotes or downvotes')
+				
+				#add to upvote list
+				user.upvotes.append(dealID)
+				
+				#increase the deal upvotes
+				deal.upvotes += 1
+				
+				
+				#increase the karma of the ninja who uploaded it
 				ninja = levr.Customer.get(deal.key().parent())
 				ninja.karma += 1
 				#level check!
 				ninja = api_utils.level_check(ninja)
-				#put that ninja back!
-				ninja.put()
-			else:
-				logging.debug('Flag already upvoted')
+				
+				#add to users favorites list if not there already
+				if dealID not in user.favorites:
+					user.favorites.append(dealID)
+					#create favorite notification for the ninja that uploaded
+					levr.create_notification('favorite',dealID.parent(),uid,dealID)
+				
+				
+				#put actor and ninja and deal back
+				db.put([user,ninja,deal])
 			
-			#store
-			deal.put()
-			
-			response = {'deal':api_utils.package_deal(deal)}
+				
+			response = {
+					'deal':api_utils.package_deal(deal)
+					}
 			api_utils.send_response(self,response,user)
 			
 		except:
@@ -148,46 +191,49 @@ class DownvoteHandler(webapp2.RequestHandler):
 			deal 	= kwargs.get('deal')
 			dealID 	= deal.key()
 			
-			#GET ENTITIES
-			deal = db.get(dealID)
-			if not deal or deal.kind() != 'Deal':
-				api_utils.send_error(self,'Invalid dealID: '+dealID)
-				return
-			
-			
 			
 			#favorite
 			logging.debug(levr.log_model_props(user))
 			
-			#only do things if they haven't yet downvoted this deal
-			if dealID not in user.downvotes:
-				logging.debug('Flag not yet downvoted')
-				#downvote
+			if dealID in user.downvotes:
+				logging.debug('flag deal is in downvotes')
+				logging.debug('DO NOTHING WOOO!!!')
+				pass
+			
+			elif dealID in user.upvotes:
+				logging.debug('flag deal is in downvotes')
+				
+				#remove from user upvotes
+				user.upvotes.remove(dealID)
+				#decrement deal upvotes
+				deal.upvotes -= 1
+				
+				#add to user downvotes
+				user.downvotes.append(dealID)
+				#increment deal downvotes
 				deal.downvotes += 1
 				
-				#if in their favorites, remove
-				if dealID in user.favorites:
-					#generate new favorites list without requested dealID
-					new_favorites	= [fav for fav in user.favorites if fav != dealID]
-					logging.debug(new_favorites)
-					
-					#reassign user favorites to new list
-					user.favorites	= new_favorites
+				#replace entities
+				db.put([user,deal])
 				
-				#add to downvotes
-				user.downvotes.append(dealID)
-				logging.debug(user.downvotes)
-				
-				#put user
-				user.put()		
-					
 			else:
-				logging.debug('Flag already downvoted')
+				logging.debug('Flag deal not in upvotes or downvotes')
+				
+				#add to user downvotes
+				user.downvotes.append(dealID)
+				
+				#downvote deal
+				deal.downvotes += 1
+				
+				#replace entities
+				db.put([user,deal])
+				
+				
 			
-			#store
-			deal.put()
 			
-			response = {'deal':api_utils.package_deal(deal)}
+			response = {
+					'deal':api_utils.package_deal(deal)
+					}
 			api_utils.send_response(self,response,user)
 			
 		except:

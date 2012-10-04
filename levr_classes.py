@@ -32,7 +32,15 @@ else:
 # FUNCTIONS
 def create_notification(notification_type,to_be_notified,actor,deal=None):
 	'''
-	notification_type	= choices: 'redemption', 'thanks','favorite', 'followerUpload', 'newFollower', 'levelup'
+	notification_type	= choices: 
+	'thanks',
+	'favorite', 
+	'followerUpload', 
+	'newFollower', 
+	'levelup'
+	
+	deprecated: redemption
+	
 						The action being performed
 	to_be_notified		= [db.Key,db.Key,db.Key,...]
 						The people or entities to be notified of this action
@@ -658,39 +666,57 @@ def dealCreate(params,origin,upload_flag=True):
 
 class Customer(db.Model):
 #root class
+	#user meta info
 	tester			= db.BooleanProperty(default=False)
 	email 			= db.EmailProperty()
-	payment_email	= db.EmailProperty()
 	pw 				= db.StringProperty()
 	alias			= db.StringProperty(default='')
-	group			= db.StringProperty(choices=set(["paid","unpaid"]),default="unpaid")
-	money_earned	= db.FloatProperty(default = 0.0) #new earning for all deals
-	money_available = db.FloatProperty(default = 0.0) #aka payment pending
-	money_paid		= db.FloatProperty(default = 0.0) #amount we have transfered
-	redemptions		= db.StringListProperty(default = [])	#id's of all of their redeemed deals
-	new_redeem_count= db.IntegerProperty(default = 0) #number of unseen redemptions
-	vicinity		= db.StringProperty(default='') #the area of the user, probably a college campus
+	first_name		= db.StringProperty(default='')
+	last_name		= db.StringProperty(default='')
+	display_name	= db.StringProperty()
+	photo			= db.StringProperty(default='')
+	
+	#user status stuff
+	level			= db.IntegerProperty(default=1)
+	karma			= db.IntegerProperty(default=0)
+	new_notifications = db.IntegerProperty(default=0)
+	
+	#notifications, favorites, upvotes, etc...
+	followers		= db.ListProperty(db.Key)
 	favorites		= db.ListProperty(db.Key,default=[])
+	upvotes			= db.ListProperty(db.Key,default=[])
 	downvotes		= db.ListProperty(db.Key,default=[])
-	date_created	= db.DateTimeProperty(auto_now_add=True)
-	date_last_edited= db.DateTimeProperty(auto_now=True)
-	date_last_login = db.DateTimeProperty(auto_now_add=True)
+	
+	#tokens and ids, internal and external
 	levr_token		= db.StringProperty(default=create_levr_token())
 	facebook_token	= db.StringProperty()
 	facebook_id		= db.StringProperty()
 	foursquare_token= db.StringProperty()
 	twitter_token	= db.StringProperty()
 	twitter_screen_name = db.StringProperty()
-	new_notifications = db.IntegerProperty(default=0)
-	first_name		= db.StringProperty(default='')
-	last_name		= db.StringProperty(default='')
-	photo			= db.StringProperty(default='')
-	followers		= db.ListProperty(db.Key)
+	
+	#date stuff
+	date_created	= db.DateTimeProperty(auto_now_add=True)
+	date_last_edited= db.DateTimeProperty(auto_now=True)
+	date_last_login = db.DateTimeProperty(auto_now_add=True)
 	date_last_notified = db.DateTimeProperty(auto_now_add=True)
 	last_notified	= db.IntegerProperty(default=0)
-	display_name	= db.StringProperty()
-	level			= db.IntegerProperty(default=1)
-	karma			= db.IntegerProperty(default=0)
+	
+	#deprecated stuff
+	group			= db.StringProperty(choices=set(["paid","unpaid"]),default="unpaid")
+	payment_email	= db.EmailProperty()
+	money_earned	= db.FloatProperty(default = 0.0) #new earning for all deals
+	money_available = db.FloatProperty(default = 0.0) #aka payment pending
+	money_paid		= db.FloatProperty(default = 0.0) #amount we have transfered
+	redemptions		= db.StringListProperty(default = [])	#id's of all of their redeemed deals
+	new_redeem_count= db.IntegerProperty(default = 0) #number of unseen redemptions
+	vicinity		= db.StringProperty() #the area of the user, probably a college campus
+	
+	
+	
+	
+	
+	
 	
 	@property
 	def following(self):
@@ -804,6 +830,7 @@ class Business(db.Model):
 	phone			= db.StringProperty()
 	activation_code = db.StringProperty()
 	locu_id			= db.StringProperty()
+	karma			= db.IntegerProperty(default=0)
 
 
 	def create_tags(self):
@@ -824,40 +851,56 @@ class Business(db.Model):
 
 class Deal(polymodel.PolyModel):
 #Child of business owner OR customer ninja
-	#deal information
-	img				= blobstore.BlobReferenceProperty()
-	barcode			= blobstore.BlobReferenceProperty()
-	businessID 		= db.StringProperty() #CHANGE TO REFERENCEPROPERTY
-	business_name 	= db.StringProperty(default='') #name of business
-	secondary_name 	= db.StringProperty(default='') #== with purchase of
-	deal_type 		= db.StringProperty(choices=set(["single","bundle"])) #two items or one item
-	deal_text		= db.StringProperty(default='')
-	is_exclusive	= db.BooleanProperty(default=False)
-	share_id		= db.StringProperty(default=create_unique_id())
-	description 	= db.StringProperty(multiline=True,default='') #description of deal
-	date_start 		= db.DateTimeProperty(auto_now_add=False) #start date
-	date_end 		= db.DateTimeProperty(auto_now_add=False)
-	count_redeemed 	= db.IntegerProperty(default = 0) 	#total redemptions
-	count_seen 		= db.IntegerProperty(default = 0)  #number seen
-	geo_point		= db.GeoPtProperty() #latitude the longitude
-	geo_hash		= db.StringProperty()
+	#deal meta information
 	deal_status		= db.StringProperty(choices=set(["pending","active","rejected","expired","test"]),default="active")
 	been_reviewed	= db.BooleanProperty(default=False)
 	reject_message	= db.StringProperty()
-	vicinity		= db.StringProperty()
+	is_exclusive	= db.BooleanProperty(default=False)
 	tags			= db.ListProperty(str)
-	rank			= db.IntegerProperty(default = 0)
-	has_been_shared	= db.BooleanProperty(default = False)
+	businessID 		= db.StringProperty() #CHANGE TO REFERENCEPROPERTY
+	origin			= db.StringProperty(default='levr')
+	external_url	= db.StringProperty()
+	locu_id			= db.StringProperty()
+	
+	#deal display info
+	deal_text		= db.StringProperty(default='')
+	geo_point		= db.GeoPtProperty() #latitude the longitude
+	geo_hash		= db.StringProperty()
+	description 	= db.StringProperty(multiline=True,default='') #description of deal
+	img				= blobstore.BlobReferenceProperty()
+	share_id		= db.StringProperty(default=create_unique_id())
+	pin_color		= db.StringProperty(default='255,0,0')
+	
+	
+	#deal interactions
+	upvotes			= db.IntegerProperty(default=0)
+	downvotes		= db.IntegerProperty(default=0)
+	karma			= db.IntegerProperty(default=0)
+	
+	#date stuff
 	date_uploaded	= db.DateTimeProperty(auto_now_add=True)
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	date_last_edited= db.DateTimeProperty(auto_now=True)
-	upvotes			= db.IntegerProperty(default=0)
-	downvotes		= db.IntegerProperty(default=0)
-	pin_color		= db.StringProperty(default='255,0,0')
-	origin			= db.StringProperty(default='levr')
-	karma			= db.IntegerProperty(default=0)
-	external_url	= db.StringProperty()
-	locu_id			= db.StringProperty()
+	date_start 		= db.DateTimeProperty(auto_now_add=False) #start date
+	date_end 		= db.DateTimeProperty(auto_now_add=False)
+	
+	#may be deprecated.. in limbo
+	rank			= db.IntegerProperty(default = 0)
+	has_been_shared	= db.BooleanProperty(default = False)
+	count_seen 		= db.IntegerProperty(default = 0)  #number seen
+	
+	#deprecated stuff
+	barcode			= blobstore.BlobReferenceProperty()
+	secondary_name 	= db.StringProperty(default='') #== with purchase of
+	deal_type 		= db.StringProperty(choices=set(["single","bundle"])) #two items or one item
+	count_redeemed 	= db.IntegerProperty(default = 0) 	#total redemptions
+	vicinity		= db.StringProperty()
+	business_name 	= db.StringProperty(default='') #name of business
+	
+	
+	
+	
+	
 
 
 class CustomerDeal(Deal):
