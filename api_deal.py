@@ -248,11 +248,7 @@ class DeleteFavoriteHandler(webapp2.RequestHandler):
 	def get(self,*args,**kwargs):
 		'''
 		Input: uid
-		Output:{
-			meta:{
-				success
-				errorMsg
-				}
+		response: {}
 		'''
 		try:
 			logging.debug('DELETE FAVORITE\n\n\n')
@@ -265,23 +261,13 @@ class DeleteFavoriteHandler(webapp2.RequestHandler):
 			dealID 	= deal.key()
 			
 			
-			#PERFORM ACTIONS
-			#grab favorites list
-			favorites	= user.favorites
-			logging.debug(favorites)
-			
-			#only go through the motions if the dealID is in the favorites list
+			#if the deal is in the users favorites, remove it. else do nothing
 			if dealID in user.favorites:
-				#generate new favorites list without requested dealID
-				new_favorites	= [deal for deal in favorites if deal != dealID]
-				logging.debug(new_favorites)
-				
-				#reassign user favorites to new list
-				user.favorites	= new_favorites
-				logging.debug(user.favorites)
-				
-				#close entity
-				user.put()
+				user.favorites.remove(dealID)
+			
+			#replace entities
+			db.put(user)
+			
 			
 			
 			api_utils.send_response(self,{},user)
