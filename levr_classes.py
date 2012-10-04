@@ -534,7 +534,7 @@ def dealCreate(params,origin,upload_flag=True):
 		
 			
 		
-		logging.debug("share_id: "+share_id)
+		
 		
 		
 		deal = CustomerDeal(
@@ -556,8 +556,6 @@ def dealCreate(params,origin,upload_flag=True):
 		development = params.get('development',False)
 		if development:
 			deal.deal_status = 'test'
-		logging.debug(deal.share_id)
-		logging.debug(deal.share_id == share_id)
 		
 		deal.date_end = datetime.now() + timedelta(days=7)
 
@@ -616,7 +614,6 @@ def dealCreate(params,origin,upload_flag=True):
 	
 	#put the deal
 	deal.put()
-	logging.debug(deal.share_id == share_id)
 	
 	
 	#dealput is the deal key i.e. dealID

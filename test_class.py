@@ -275,7 +275,7 @@ class PullFromLocuHandler(webapp2.RequestHandler):
 			url+='&region=MA'
 			url+='&locality=Boston'
 			url+='&name=pizza'
-			url+='&price_lte=3'
+			url+='&price__lte=3'
 			
 			menu_items = urlfetch.fetch(url=url)
 			
@@ -283,40 +283,48 @@ class PullFromLocuHandler(webapp2.RequestHandler):
 			content_json = menu_items.content
 			
 			logging.debug(content_json)
-			content = json.load(content_json)
+			content = json.loads(content_json)
 			logging.debug(content)
 			
 			#grab the meat of the response
 			objects = content.get('objects')
 			
+			logging.debug(objects)
+			logging.debug(type(objects))
+			
 			self.response.out.write('<br/>parsing...')
+			
+			user = levr.Customer.all().filter('email =','ethan@levr.com').get()
+			uid = user.key()
+			
 			for x in objects:
 				
 				#deal info
-				deal.description = x.get('description')
+				description = x.get('description')
 				name = x.get('name')
 				price = x.get('price')
 				
 				deal_text = ''
 				if price:
-					deal_text += "$"+price
+					deal_text += "$"+str(price)
 				
-				deal_text += name
+				deal_text += " "+name
 				
 				
 				#business info
 				venue = x.get('venue')
 				lat = venue.get('lat')
-				lon = venue.get('lon')
+				lon = venue.get('long')
 				
-				geo_string = lat+","+lon
+				geo_string = str(lat)+","+str(lon)
 				
 				geo_point = levr.geo_converter(geo_string)
 				
 				business_name = venue.get('name')
+				
 				types = venue.get('categories')
-				
-				
+				#convert list of types to comma delimted string
+				types = reduce(lambda x,y: str(x)+","+str(y),types)
 				
 				#vicinity parsing
 				address = venue.get('street_address')
@@ -324,6 +332,8 @@ class PullFromLocuHandler(webapp2.RequestHandler):
 				state = venue.get('region')
 				postal_code = venue.get('postal_code')
 				vicinity = address+" "+city+", "+state
+				
+				
 				
 				params = {
 					'uid'				: uid,
@@ -342,7 +352,7 @@ class PullFromLocuHandler(webapp2.RequestHandler):
 				#create deal and business entities
 				deal_entity = levr.dealCreate(params,'phone_new_business',False)
 				
-				business_entity = levr.Business.get(deal.businessID)
+				business_entity = levr.Business.get(deal_entity.businessID)
 				
 				#update business with the locu id
 				venue_id = venue.get('id')
@@ -355,7 +365,7 @@ class PullFromLocuHandler(webapp2.RequestHandler):
 				db.put([deal_entity,business_entity])
 				
 				logging.debug(levr.log_model_props(business_entity))
-				logging.debug(levr.log_model_props(deal_enitity))
+				logging.debug(levr.log_model_props(deal_entity))
 				
 				
 			self.response.out.write('<br/>Done!')
