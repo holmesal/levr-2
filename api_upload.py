@@ -10,55 +10,6 @@ from google.appengine.ext import db
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
 
-
-def authorize(handler_method):
-	'''
-	Decorator checks the privacy level of the request.
-	If the uid is valid and the user exists, it checks the levr_token to  privacy level
-	
-	'''
-	def check(self,*args,**kwargs):
-		try:
-			logging.debug('AUTHORIZE DECORATOR\n\n\n')
-#			logging.debug(levr.log_dir(self.request))
-			logging.debug(args)
-			logging.debug(kwargs)
-			
-			#CHECK USER
-			uid = self.request.get('uid')
-			if not api_utils.check_param(self,uid,'uid','key',True):
-				raise Exception('uid: '+str(uid))
-			else:
-				uid = db.Key(enc.decrypt_key(uid))
-			
-			
-			#GET ENTITIES
-			user = db.get(uid)
-			if not user or user.kind() != 'Customer':
-				raise Exception('uid: '+str(uid))
-			
-			levr_token = self.request.get('levrToken')
-			
-			#if the levr_token matches up, then private request, otherwise public
-			if user.levr_token == levr_token:
-				private = True
-			else:
-				private = False
-			
-			logging.debug(private)
-			
-			
-			kwargs.update({
-						'user'	: user,
-						'private': private
-						})
-		except Exception,e:
-			api_utils.send_error(self,'Invalid uid, '+str(e))
-		else:
-			handler_method(self,*args,**kwargs)
-	
-	return check
-
 class UploadRequestHandler(webapp2.RequestHandler):
 	'''
 	Requests an upload url
@@ -131,7 +82,7 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 				upload_flag = True
 			else:
 				upload_flag = False
-#				raise KeyError('Image was not uploaded')
+				raise KeyError('Image was not uploaded')
 			
 			
 			
@@ -145,6 +96,7 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 				'deal_line1'		: kwargs.get('dealText'),
 				'distance'			: kwargs.get('distance'), #is -1 if unknown = double
 				'shareURL'			: kwargs.get('shareURL'),
+				'development'		: kwargs.get('development'),
 				'img_key'			: img_key
 				}
 			

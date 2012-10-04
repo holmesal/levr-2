@@ -536,11 +536,17 @@ def dealCreate(params,origin,upload_flag=True):
 		logging.debug('STOP!')
 		uid = params['uid']
 		logging.debug("share_id: "+share_id)
+		
+		
 		deal = CustomerDeal(
 						parent			= uid,
 						is_exclusive	= False,
 						share_id		= share_id
 						)
+		
+		development = params.get('development',False)
+		if development:
+			deal.deal_status = 'test'
 		logging.debug(deal.share_id)
 		logging.debug(deal.share_id == share_id)
 		
@@ -646,6 +652,7 @@ def dealCreate(params,origin,upload_flag=True):
 
 class Customer(db.Model):
 #root class
+	tester			= db.BooleanProperty(default=False)
 	email 			= db.EmailProperty()
 	payment_email	= db.EmailProperty()
 	pw 				= db.StringProperty()
@@ -827,7 +834,7 @@ class Deal(polymodel.PolyModel):
 	count_seen 		= db.IntegerProperty(default = 0)  #number seen
 	geo_point		= db.GeoPtProperty() #latitude the longitude
 	geo_hash		= db.StringProperty()
-	deal_status		= db.StringProperty(choices=set(["pending","active","rejected","expired"]),default="active")
+	deal_status		= db.StringProperty(choices=set(["pending","active","rejected","expired","test"]),default="active")
 	been_reviewed	= db.BooleanProperty(default=False)
 	reject_message	= db.StringProperty()
 	vicinity		= db.StringProperty()
@@ -839,9 +846,10 @@ class Deal(polymodel.PolyModel):
 	date_last_edited= db.DateTimeProperty(auto_now=True)
 	upvotes			= db.IntegerProperty(default=0)
 	downvotes		= db.IntegerProperty(default=0)
-	pin_color		= db.StringProperty(default='D21231')
+	pin_color		= db.StringProperty(default='255,0,0')
 	origin			= db.StringProperty(default='levr')
 	karma			= db.IntegerProperty(default=0)
+	external_url	= db.StringProperty(default='')
 
 
 class CustomerDeal(Deal):

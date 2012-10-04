@@ -583,6 +583,11 @@ def validate(url_param,authentication_source,*a,**to_validate):
 							
 							val = user
 							key = 'actor'
+							
+							#send test flag
+							if user.tester: kwargs.update({'development':True})
+							else: kwargs.update({'development':False})
+							
 						except Exception,e:
 							logging.debug(e)
 							raise TypeError(msg)
@@ -730,12 +735,14 @@ def send_img(self,blob_key,size):
 		send_error(self,'Server Error')
 	
 	
-def get_deals_in_area(tags,request_point,radius=2,limit=None,precision=5,verbose=False):
+def get_deals_in_area(tags,request_point,radius=2,limit=None,precision=5,verbose=False,*args,**kwargs):
 	'''
 	tags = list of tags that are strings
 	request point is db.GeoPt format
 	radius is miles
 	'''
+	
+	development = kwargs.get('development',False)
 	
 	#hash the reuqested geo_point
 	center_hash = geohash.encode(request_point.lat,request_point.lon,precision=precision)
@@ -764,7 +771,15 @@ def get_deals_in_area(tags,request_point,radius=2,limit=None,precision=5,verbose
 	deal_keys = []
 	for query_hash in hash_set:
 		#only grab keys for deals that have active status
-		q = levr.Deal.all(keys_only=True).filter('deal_status =','active')
+		q = levr.Deal.all(keys_only=True)
+		
+		#if a real deal, status is active
+		if not development:
+			q.filter('deal_status =','active')
+			logging.debug('flag active')
+		else:
+			q.filter('deal_status =','test')
+			logging.debug('flag development')
 		
 		logging.debug('FLAG')
 		logging.debug("tags: "+str(tags))
@@ -782,7 +797,7 @@ def get_deals_in_area(tags,request_point,radius=2,limit=None,precision=5,verbose
 		#FILTER BY GEOHASH
 		q.filter('geo_hash >=',query_hash).filter('geo_hash <=',query_hash+"{") #max bound
 #					logging.debug(q)
-#					logging.debug(levr.log_dict(q.__dict__))
+		logging.debug(levr.log_dict(q.__dict__))
 		
 		
 		#FETCH DEAL KEYS
