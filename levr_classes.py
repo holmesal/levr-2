@@ -755,49 +755,6 @@ class Customer(db.Model):
 		#return all notifications
 		return notifications
 	
-#	def increment_new_redeem_count(self):
-#		logging.info('incrementing!')
-#		self.new_redeem_count += 1
-#		return
-#	
-#	def flush_new_redeem_count(self):
-#		self.new_redeem_count = 0
-#		return
-		
-#	def get_notifications(self):
-#		#grab new notifications
-#		new_redemption = self.new_redeem_count
-#		#flush notifications
-#		self.flush_new_redeem_count()
-#		#return new notification information
-#		return {
-#			"newRedemption"	: new_redemption
-#		}
-		
-	def get_stats(self):
-		data = {
-			"alias"				: self.alias,
-			"numUploads"		: self.get_num_uploads(),
-			"numRedemptions"	: self.redemptions.__len__(),
-			"moneyAvailable"	: self.money_available,
-			"moneyEarned"		: self.money_earned,
-			"new_redeem_count"	: self.new_redeem_count
-		}
-		return data
-
-	def update_money_earned(self,difference):
-		self.money_earned += difference
-		
-	
-	def update_money_available(self,difference):
-		self.money_available += difference
-		
-#		
-#	def get_num_uploads(self):
-#		'''Returns the number of deal children of user i.e. num they have uploaded'''
-#		uploads = CustomerDeal.gql("WHERE ANCESTOR IS :1",self.key())
-#		count = uploads.count()
-#		return count
 
 
 

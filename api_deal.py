@@ -269,8 +269,9 @@ class DeleteFavoriteHandler(webapp2.RequestHandler):
 			db.put(user)
 			
 			
+			response = {}
 			
-			api_utils.send_response(self,{},user)
+			api_utils.send_response(self,reponse,user)
 		except:
 			levr.log_error(self.request)
 			api_utils.send_error(self,'Server Error')
@@ -315,6 +316,7 @@ class ReportHandler(webapp2.RequestHandler):
 			
 			logging.debug(message)
 			body = 'New Reported Deal\n\n'
+			body += str(user.email) +' is reporting '+str(deal.deal_text)
 			message.body = body
 			logging.debug(message.body)
 			message.send()
