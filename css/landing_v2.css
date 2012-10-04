@@ -191,6 +191,11 @@ body{
 	color: #333335;
 	font-size: 15pt;
 }
+
+#appStore{
+	display: block;
+	text-align: center;
+}
 /*
 #footer{
 	width: 100%;
