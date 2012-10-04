@@ -6,7 +6,8 @@ import time
 from google.appengine.ext import db
 from google.appengine.api import urlfetch
 import urllib
-
+import hmac
+import hashlib
 #for twitter api
 import uuid
 
@@ -41,66 +42,78 @@ def sort_and_encode_params(params):
 		output+='='
 		output+=urllib.quote(params[item])
 		output+='&'
-		logging.info(output)
+#		logging.info(output)
 		
-	#remove final '&' and return
+	#remove final '&' and return string
 	
 	return output[:len(output)-1]
 	
-'''def twitter_deets(user,token,screen_name):
-	#grab token
-	oauth_token = token
+def twitter_deets(user,oauth_token,screen_name):
 	#DEV - SPOOF TOKEN AND SCREEN NAME
 	oauth_token='819972614-2HoAwfJcHCOePogonjPbNNxuQQsvHeYeJ3U2KasI'
 	screen_name = 'LevrDevr'
 	#build the request
-	logging.info(urllib.quote('well,hi,there'))
-	
+	logging.info(urllib.quote('well,hi, there'))
+	logging.info(str(int(time.time())))
 	
 	base_url = 'https://api.twitter.com/1.1/users/show.json'
+	
+	#this is our id
+	oauth_consumer_key = 'JAu03A5jqlYddohoXI8Ng'
+	
+	
+	
 	params = {
-		'oauth_consumer_key'		:		'JAu03A5jqlYddohoXI8Ng',
-		'oauth_nonce'				:		uuid.uuid4().hex,
-		'oauth_signature_method'	:		'HMAC-SHA1',
-		'oauth_timestamp'			:		str(int(time.time())),
-		'oauth_token'				:		oauth_token,
-		'oauth_version'				:		'1.0',
-		'screen_name'				:		screen_name
+		'oauth_consumer_key'		:	oauth_consumer_key,
+		'oauth_nonce'				:	uuid.uuid4().hex,
+		'oauth_signature_method'	:	'HMAC-SHA1',
+		'oauth_timestamp'			:	str(int(time.time())),
+		'oauth_token'				:	oauth_token,
+		'oauth_version'				:	'1.0',
+		'screen_name'				:	screen_name
 		}
 	
+	
+	#e.g. screen_name=SCREEN_NAME&etc..
 	parameter_string = sort_and_encode_params(params)
 	
-	assembled = 'GET&'urllib.quote(base_url)+'&'+urllib.quote(parameter_string)
+	assembled = 'GET&'+urllib.quote(base_url)+'&'+urllib.quote(parameter_string)
 	
 	
-	signing_key = urllib.quote(consumer_secret)+'&'+urllib.quote(token_secret)
 	
 	#parameter_string = urllib.quote('oauth_consumer_key')+'='+urllib.quote('JAu03A5jqlYddohoXI8Ng')+'&'+urllib.quote('oauth_nonce')+'='+urllib.quote(uuid.uuid4().hex)+'&'+urllib.quote('oauth_signature_method')+'='+urllib.quote('HMAC-SHA1')+'&'+'oauth_timestamp'+'='+urllib.quote(str(int(time.time())))+'&'+'oauth_token'+'='urllib.quote(oauth_token)+'&'+'oauth_version='		+		urllib.quote('1.0')+ '&screen_name='			+		urllib.quote(screen_name) #passed by user
 	
 	#parameter_string = urllib.quote('oauth_consumer_key='+ 'JAu03A5jqlYddohoXI8Ng'+'&oauth_nonce='+uuid.uuid4().hex+'&oauth_signature_method='+		'HMAC-SHA1'+ '&oauth_timestamp='		+		str(int(time.time()))+ '&oauth_token='			+		oauth_token+ '&oauth_version='		+		'1.0'+ '&screen_name='			+		screen_name)
-	return False
 	
 	#generate the signature
 	
 	
 	#dev spoof
-	
+	oauth_consumer_secret = 'h6Zh3T3PZphUg3Bu3UVdtK2AjHrDUWU6wJ4LDd5ec'
 	oauth_token_secret='f0Rzdx8iiL58ebiyvokcf4JW2C9oSKbfJ81rwhsg'
+	
+	signing_key		= urllib.quote(oauth_consumer_secret)+'='+urllib.quote(oauth_token_secret)
+	
+	oauth_signature = hmac.new(signing_key,assembled,hashlib.sha1)
+	logging.debug(oauth_signature)
+	
 	user_id='819972614'
 	oauth_verifier='1514942'
 	
 	
-	
+	auth_string = ''
 	
 
 	try:
 		#goto twitter
 		url = 'https://api.twitter.com/1.1/users/show.json?screen_name=LevrDevr'
-		result = urlfetch.fetch(url=url)
+		result = urlfetch.fetch(url=url,headers={'Authorization':auth_string})
+		logging.debug(result)
 		twitter_user = json.loads(result.content)['user']
 		return user
 	except:
-		raise Exception('Invalid twitter response: '+result.content)'''
+		levr.log_error()
+		raise Exception('Invalid twitter response: '+result.content)
 
 
 def facebook_deets(user,facebook_id,token,*args,**kwargs):

@@ -321,8 +321,8 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						'businessName'	: str,
 						#geoPoint ^^ see above
 						'vicinity'		: str,
-						'types'			: str#list
-						
+						'types'			: str,#list
+						'shareURL'		: str
 						}
 			defaults = {
 						#entities
@@ -353,8 +353,8 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						#business upload stuff
 						'businessName'	: '',
 						'vicinity'		: '',
-						'types'			: ''#[]
-						
+						'types'			: '',#[]
+						'shareURL'		: ''
 						}
 			
 			try:
@@ -380,7 +380,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						kwargs.update({'deal':deal})
 					except:
 						levr.log_error()
-						raise TypeError('dealID: '+dealID)
+						raise TypeError('dealID: '+str(dealID))
 					
 					
 				elif url_param == 'user':
@@ -399,7 +399,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						kwargs.update({'user':user})
 					except Exception,e:
 						levr.log_error()
-						raise TypeError('uid: '+uid)
+						raise TypeError('uid: '+str(uid))
 				
 				
 				elif url_param == 'query':
@@ -440,13 +440,14 @@ def validate(url_param,authentication_source,*a,**to_validate):
 					#This needs to be nested in t
 					#validation is required
 					if authentication_source == 'url':
+						logging.debug('authenticate in url')
 						#the user that needs to be validated is passed as part of the url, i.e. /api/user/<uid>/action
 						#the user has already been fetched by the above block of code
 						if url_param != 'user': raise Exception('Doh! Check validation decorator decoration')
 						
 					elif authentication_source == 'param':
 						#the user that needs to be validated is passed as a param i.e. /api/deal/<dealID>/upvote?uid=UID
-						logging.debug('parameter')
+						logging.debug('authenticate in parameter')
 						#get the uid, and the kwarg that tells us if it is required
 						uid = self.request.get('uid')
 						required = to_validate.get('user')
@@ -467,7 +468,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 								#get the user - constrains to user kind
 								user = levr.Customer.get(uid)
 							except:
-								raise TypeError('uid: '+ uid)
+								raise TypeError('uid: '+ str(uid))
 							
 						
 					else:

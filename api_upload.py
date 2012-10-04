@@ -1,3 +1,4 @@
+import os
 import webapp2
 import logging
 import levr_encrypt as enc
@@ -78,9 +79,21 @@ class UploadRequestHandler(webapp2.RequestHandler):
 			upload_url = blobstore.create_upload_url('/api/upload/post')
 			logging.debug(upload_url)
 			
+			
+			
+			if os.environ['SERVER_SOFTWARE'].startswith('Development') == True:
+				#we are on the development environment
+				URL = 'http://0.0.0.0:8080/'
+			else:
+				#we are deployed on the server
+				URL = 'levr.com/'
+			
+			#create share url
+			share_url = URL+levr.create_unique_id()
+			
 			response = {
 					'uploadURL'		: upload_url,
-					'shareURL'		: levr.create_unique_id()
+					'shareURL'		: share_url
 					}
 			api_utils.send_response(self,response,user)
 		except:
@@ -90,8 +103,9 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 	'''
 	Post a deal - does not need special permissions because the upload url expires
 	'''
-	@api_utils.validate(None,None,
+	@api_utils.validate(None,'param',
 					user			= True,
+					levrToken		= True,
 					businessName	= True,
 					geoPoint		= True,
 					vicinity		= True,
@@ -99,7 +113,9 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 					description		= True,
 					dealText		= True,
 					distance		= True,
+					shareURL		= True
 					)
+	@api_utils.private
 	def post(self,*args,**kwargs):
 		try:
 			logging.info('uploadDeal\n\n\n')
@@ -112,8 +128,10 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 				upload	= self.get_uploads()[0]
 				blob_key= upload.key()
 				img_key = blob_key
+				upload_flag = True
 			else:
-				pass#raise Exception('Image was not uploaded')
+				upload_flag = False
+				raise Exception('Image was not uploaded')
 			
 			
 			
@@ -126,11 +144,12 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 				'deal_description'	: kwargs.get('description'),
 				'deal_line1'		: kwargs.get('dealText'),
 				'distance'			: kwargs.get('distance'), #is -1 if unknown = double
-#				'img_key'			: img_key
+				'shareURL'			: kwargs.get('shareURL'),
+				'img_key'			: img_key
 				}
-		
+			
 			#create the deal using the origin specified
-			deal_entity = levr.dealCreate(params,'phone_new_business',False)
+			deal_entity = levr.dealCreate(params,'phone_new_business',upload_flag)
 			
 			#grab deal information for sending back to phone
 			deal = api_utils.package_deal(deal_entity,True)

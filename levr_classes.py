@@ -472,7 +472,7 @@ def dealCreate(params,origin,upload_flag=True):
 			business_name = params['business_name']
 			logging.debug("business name: "+str(business_name))
 		else:
-			raise KeyError('business_name not in params')
+			raise Exception('business_name not in params')
 		#geo point
 		
 		if 'geo_point' in params:
@@ -481,15 +481,21 @@ def dealCreate(params,origin,upload_flag=True):
 			#create geohash from geopoint
 			geo_hash = geohash.encode(geo_point.lat,geo_point.lon)
 		else:
-			raise KeyError('geo_point not in params')
+			raise Exception('geo_point not in params')
 		
 		#vicinity
 		if 'vicinity' in params:
 			vicinity = params['vicinity']
 			logging.debug("vicinity: "+str(vicinity))
 		else:
-			raise KeyError('vicinity not in params')
+			raise Exception('vicinity not in params')
 		
+		if 'shareURL' in params:
+			shareURL = params['shareURL']
+			logging.debug("shareURL: "+str(shareURL))
+			share_id = shareURL.split('/')[-1] #grab share id
+		else:
+			raise Exception('shareURL not in params')
 		#types
 		if 'types' in params:
 			types = params['types']
@@ -628,12 +634,15 @@ def dealCreate(params,origin,upload_flag=True):
 		#phone deals are the child of a ninja
 		logging.debug('STOP!')
 		uid = params['uid']
-
-		deal = CustomerDeal(parent = uid)
-		deal.is_exclusive		= False
+		logging.debug("share_id: "+share_id)
+		deal = CustomerDeal(
+						parent			= uid,
+						is_exclusive	= False,
+						share_id		= share_id
+						)
 		
 		
-		deal.date_end			= datetime.now() + timedelta(days=7)
+		deal.date_end = datetime.now() + timedelta(days=7)
 
 	elif origin == 'admin_review':
 		#deal has already been uploaded by ninja - rewriting info that has been reviewed

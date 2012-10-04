@@ -11,7 +11,6 @@ class LoginFacebookHandler(webapp2.RequestHandler):
 	def get(self,*args,**kwargs):
 		#RESTRICTED
 		try:
-			
 			token 		= kwargs.get('token')
 			facebook_id = kwargs.get('facebookID')
 			#check if token currently exists in datastore
@@ -77,6 +76,8 @@ class LoginTwitterHandler(webapp2.RequestHandler):
 		except:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
+			
+			
 class LoginLevrHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,None,email_or_owner=True,pw=True)
 	def get(self,*args,**kwargs):

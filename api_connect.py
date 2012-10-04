@@ -42,7 +42,7 @@ class ConnectFoursquareHandler(webapp2.RequestHandler):
 		logging.debug('CONNECT FOURSQUARE\n\n\n')
 		logging.debug(kwargs)
 		
-		user		= kwargs.get('user')
+		user		= kwargs.get('actor')
 		token		= kwargs.get('token')
 		
 		
@@ -62,27 +62,34 @@ class ConnectFoursquareHandler(webapp2.RequestHandler):
 class ConnectTwitterHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,'param',user=True,token=True,screenName=True,levrToken=True)
 	@api_utils.private
-	def post(self):
-		#RESTRICTED
-		logging.debug('CONNECT TWITTER\n\n\n')
-		logging.debug(kwargs)
-		
-		user		= kwargs.get('user')
-		token		= kwargs.get('token')
-		screen_name	= kwargs.get('screenName')
-		
-		
-		
-		#add twitter token
-		user.twitter_token = token
-		#add screen name
-		user.twitter_screen_name = screen_name
-		#update
-		user.put()
-		
-		#return the user
-		response = {'user':api_utils.package_user(user,'private')}
-		api_utils.send_response(self,response,user)
+	def get(self,*args,**kwargs):
+		try:
+			#RESTRICTED
+			logging.debug('CONNECT TWITTER\n\n\n')
+			logging.debug(kwargs)
+			
+			user		= kwargs.get('actor')
+			
+			token		= kwargs.get('token')
+			screen_name	= kwargs.get('screenName')
+			
+			
+			
+			#add twitter token
+			user.twitter_token = token
+			#add screen name
+			user.twitter_screen_name = screen_name
+			
+			social.twitter_deets(user,token,screen_name)
+			#update
+	# 		user.put()
+			
+			#return the user
+			response = {'user':api_utils.package_user(user,'private')}
+			api_utils.send_response(self,response,user)
+		except:
+			levr.log_error()
+			api_utils.send_error(self,'Server Error')
 
 
 app = webapp2.WSGIApplication([('/api/connect/facebook', ConnectFacebookHandler),
