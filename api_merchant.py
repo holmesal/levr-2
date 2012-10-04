@@ -42,6 +42,7 @@ class InitializeMerchantHandler(webapp2.RequestHandler):
 		#check if business entity already exists based on phone number
 		business = levr.Business.gql('WHERE business_name = :1 AND phone = :2',business_name,phone).get()
 		
+		
 		if business:
 			#if a business has been created and an owner has been set, return an error
 			if business.owner:
