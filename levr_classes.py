@@ -390,13 +390,7 @@ def dealCreate(params,origin,upload_flag=True):
 		else:
 			raise Exception('vicinity not in params')
 		
-		if 'shareURL' in params:
-			shareURL = params['shareURL']
-			logging.debug("shareURL: "+str(shareURL))
-			share_id = shareURL.split('/')[-1] #grab share id
-			logging.debug("share_id: "+str(share_id))
-		else:
-			raise Exception('shareURL not in params')
+		
 		#types
 		if 'types' in params:
 			types = params['types']
@@ -535,14 +529,29 @@ def dealCreate(params,origin,upload_flag=True):
 		#phone deals are the child of a ninja
 		logging.debug('STOP!')
 		uid = params['uid']
+		
+		
+		
+			
+		
 		logging.debug("share_id: "+share_id)
 		
 		
 		deal = CustomerDeal(
 						parent			= uid,
-						is_exclusive	= False,
-						share_id		= share_id
+						is_exclusive	= False
 						)
+		
+		if 'shareURL' in params:
+			shareURL = params['shareURL']
+			if shareURL:
+				#shareURL was passed and is not empty
+				logging.debug("shareURL: "+str(shareURL))
+				share_id = shareURL.split('/')[-1] #grab share id
+				logging.debug("share_id: "+str(share_id))
+				deal.share_id = share_id
+		
+		
 		
 		development = params.get('development',False)
 		if development:
@@ -797,6 +806,7 @@ class Business(db.Model):
 	foursquare_name	= db.StringProperty(default="undefined")
 	phone			= db.StringProperty()
 	activation_code = db.StringProperty()
+	locu_id			= db.StringProperty()
 
 
 	def create_tags(self):
@@ -849,7 +859,8 @@ class Deal(polymodel.PolyModel):
 	pin_color		= db.StringProperty(default='255,0,0')
 	origin			= db.StringProperty(default='levr')
 	karma			= db.IntegerProperty(default=0)
-	external_url	= db.StringProperty(default='')
+	external_url	= db.StringProperty()
+	locu_id			= db.StringProperty()
 
 
 class CustomerDeal(Deal):

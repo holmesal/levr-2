@@ -10,6 +10,8 @@ import geo.geohash as geohash
 from google.appengine.ext import db
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
+from google.appengine.api import urlfetch
+import json
 from datetime import datetime
 from random import randint
 
@@ -91,9 +93,6 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		logging.debug(dealID)
 		self.redirect('/new/test')
 
-class TestModel(db.Model):
-	date = db.IntegerProperty()
-	
 class TestHandler(webapp2.RequestHandler):
 	def get(self):
 		
@@ -245,28 +244,134 @@ class UpdateUsersHandler(webapp2.RequestHandler):
 	def get(self):
 		try:
 			logging.warning('!!!!!!!\n\n\n\n')
+			self.response.out.write('WARNING!')
 #			users = levr.Customer.all().fetch(None)
 #			for user in users:
 #				
-##				user.levr_token = levr.create_levr_token()
-#				user.favorites = []
-#				user.redemptions = []
-#				user.downvotes = []
-#				user.followers = []
+#				user.tester = False
 #			db.put(users)
 #			
 #			for user in users:
-#				self.response.out.write(user.levr_token)
+#				self.response.out.write(user.tester)
 #				self.response.out.write('<br/>')
+			
+#			deals = levr.Deal.all().fetch(None)
+#			for deal in deals:
+#				deal.deal_status = 'test'
+#			db.put(deals)
 		except:
 			levr.log_error()
+
+class PullFromLocuHandler(webapp2.RequestHandler):
+	def get(self):
+		try:
+			self.response.out.write('Starting...')
+			logging.debug('\n\n\n\n\n\n\n\n\n\n\n\n\n')
+			
+			api_key = '8649e31244ed249923df84b3aa7855bd87ae6ac7'
+			
+			url='http://api.locu.com/v1_0/menu_item/search/?api_key='+ api_key
+			url+='&category=restaurant'
+			url+='&region=MA'
+			url+='&locality=Boston'
+			url+='&name=pizza'
+			url+='&price_lte=3'
+			
+			menu_items = urlfetch.fetch(url=url)
+			
+			logging.debug(dir(menu_items))
+			content_json = menu_items.content
+			
+			logging.debug(content_json)
+			content = json.load(content_json)
+			logging.debug(content)
+			
+			#grab the meat of the response
+			objects = content.get('objects')
+			
+			self.response.out.write('<br/>parsing...')
+			for x in objects:
+				
+				#deal info
+				deal.description = x.get('description')
+				name = x.get('name')
+				price = x.get('price')
+				
+				deal_text = ''
+				if price:
+					deal_text += "$"+price
+				
+				deal_text += name
+				
+				
+				#business info
+				venue = x.get('venue')
+				lat = venue.get('lat')
+				lon = venue.get('lon')
+				
+				geo_string = lat+","+lon
+				
+				geo_point = levr.geo_converter(geo_string)
+				
+				business_name = venue.get('name')
+				types = venue.get('categories')
+				
+				
+				
+				#vicinity parsing
+				address = venue.get('street_address')
+				city = venue.get('locality')
+				state = venue.get('region')
+				postal_code = venue.get('postal_code')
+				vicinity = address+" "+city+", "+state
+				
+				params = {
+					'uid'				: uid,
+					'business_name'		: business_name,
+					'geo_point'			: geo_point,
+					'vicinity'			: vicinity,
+					'types'				: types,
+					'deal_description'	: description,
+					'deal_line1'		: deal_text,
+					'distance'			: 0, #is -1 if unknown = double
+					'development'		: True
+					}
+				
+				logging.debug(levr.log_dict(params))
+				
+				#create deal and business entities
+				deal_entity = levr.dealCreate(params,'phone_new_business',False)
+				
+				business_entity = levr.Business.get(deal.businessID)
+				
+				#update business with the locu id
+				venue_id = venue.get('id')
+				business_entity.locu_id = venue_id
+				
+				#update the deal with the locu id
+				deal_id = x.get('id')
+				deal_entity.locu_id = deal_id
+				
+				db.put([deal_entity,business_entity])
+				
+				logging.debug(levr.log_model_props(business_entity))
+				logging.debug(levr.log_model_props(deal_enitity))
+				
+				
+			self.response.out.write('<br/>Done!')
+		except:
+			self.response.out.write('<br/>Error...')
+			levr.log_error()
+			
+		
 		
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload.*', DatabaseUploadHandler),
 								('/new/find', FilterGeohashHandler),
 								('/new/test', TestHandler),
 								('/new/inundate', AddDealsHandler),
-								('/new/updateUser', UpdateUsersHandler)
+								('/new/updateUser', UpdateUsersHandler),
+								('/new/locu', PullFromLocuHandler)
 #								('/new/update' , UpdateUsersHandler)
 								],debug=True)
 
