@@ -244,17 +244,20 @@ class FilterGeohashHandler(webapp2.RequestHandler):
 class UpdateUsersHandler(webapp2.RequestHandler):
 	def get(self):
 		try:
-#			logging.warning('!!!!!!!\n\n\n\n')
+			logging.warning('!!!!!!!\n\n\n\n')
 #			users = levr.Customer.all().fetch(None)
 #			for user in users:
-#				user.levr_token = levr.create_levr_token()
-#			
+#				
+##				user.levr_token = levr.create_levr_token()
+#				user.favorites = []
+#				user.redemptions = []
+#				user.downvotes = []
+#				user.followers = []
 #			db.put(users)
 #			
 #			for user in users:
 #				self.response.out.write(user.levr_token)
 #				self.response.out.write('<br/>')
-			pass
 		except:
 			levr.log_error()
 		

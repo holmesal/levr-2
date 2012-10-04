@@ -31,7 +31,7 @@ def send_error(self,error):
 			'alerts':{},
 			'response':{}
 	}
-	
+	logging.debug(levr.log_dict(reply))
 	self.response.out.write(json.dumps(reply))
 	
 	
@@ -209,7 +209,7 @@ def send_response(self,response,user=None):
 				'response':response}
 				
 	#reply
-#	logging.debug(levr.log_dict(reply))
+	logging.debug(levr.log_dict(reply))
 	self.response.out.write(json.dumps(reply))
 	
 
@@ -321,7 +321,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						'businessName'	: str,
 						#geoPoint ^^ see above
 						'vicinity'		: str,
-						'types'			: str,#list
+						'types'			: str,
 						'shareURL'		: str
 						}
 			defaults = {
@@ -353,7 +353,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						#business upload stuff
 						'businessName'	: '',
 						'vicinity'		: '',
-						'types'			: '',#[]
+						'types'			: '',
 						'shareURL'		: ''
 						}
 			
@@ -380,7 +380,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						kwargs.update({'deal':deal})
 					except:
 						levr.log_error()
-						raise TypeError('dealID: '+str(dealID))
+						raise TypeError('dealID: '+str(enc.encrypt_key(dealID)))
 					
 					
 				elif url_param == 'user':
@@ -399,7 +399,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						kwargs.update({'user':user})
 					except Exception,e:
 						levr.log_error()
-						raise TypeError('uid: '+str(uid))
+						raise TypeError('uid: '+str(enc.encrypt_key(uid)))
 				
 				
 				elif url_param == 'query':
@@ -468,7 +468,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 								#get the user - constrains to user kind
 								user = levr.Customer.get(uid)
 							except:
-								raise TypeError('uid: '+ str(uid))
+								raise TypeError('uid: '+ str(enc.encrypt_key(uid)))
 							
 						
 					else:
@@ -518,9 +518,6 @@ def validate(url_param,authentication_source,*a,**to_validate):
 					elif key == 'deal':
 						val = self.request.get('dealID')
 						msg = 'dealID: '+ val
-#					elif key == 'types':
-#						val = self.request.get_all('types')
-#						msg = 'types: '+ str(val)
 					#common mistakes. Youre welcome, debugger.
 					elif key == 'uid'		: raise Exception('In validation declaration, "uid" should be "user".')
 					elif key == 'dealID'	: raise Exception('In validation declaration, "dealID" should be "deal"')
@@ -539,10 +536,10 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						raise Exception()
 					#msg is passed to the exception handler if val fails validation
 					
-					
-					logging.debug(val)
-#					logging.debug(data_type)
-#					logging.debug(msg)
+#					logging.debug(key)
+#					logging.debug(val)
+					logging.debug(msg)
+					logging.debug(data_type)
 					logging.debug(required)
 					
 					#handle case where input is not passed
@@ -570,8 +567,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 					elif data_type == db.GeoPt:
 						try:
 							logging.debug(val)
-							val = levr.geo_converter(val
-													)
+							val = levr.geo_converter(val)
 							logging.debug(val)
 							logging.debug(type(val))
 						except Exception,e:
@@ -602,7 +598,12 @@ def validate(url_param,authentication_source,*a,**to_validate):
 							logging.debug(e)
 							raise TypeError(msg)
 					elif data_type == list:
-						logging.error('CHECK OUT LIST!')
+						try:
+							val = val.split(',')
+							logging.debug(val)
+						except Exception,e:
+							logging.debug(e)
+							raise TypeError(msg+"... must be a comma delimited string")
 					elif data_type == str:
 						pass
 						

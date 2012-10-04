@@ -146,108 +146,6 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 		return True
 
 
-#functions!
-'''def phoneFormat(deal,use,primary_cat=None):
-	#dealID is used in a number of places
-	dealID = enc.encrypt_key(str(deal.key()))
-#	logging.info(deal.key())
-#	logging.info(dealID)
-	#dealText
-	dealText = deal.deal_text
-		
-	#dealTextExtra
-	if deal.deal_type == 'bundle':
-		logging.debug('flag bundle')
-		dealTextExtra = '(with purchase of ' + deal.secondary_name + ')'
-	else:
-		logging.debug('flag single')
-		dealTextExtra = ''
-		
-	if use == 'list' or use == 'myDeals' or use == 'widget':
-		#list is search results
-		#mydeals is for the list of a users uploaded deals
-		#widget is for the html iframe for merchants
-		data = {"dealID"		: dealID,
-				"imgURL"		: URL+'/phone/img?dealID='+dealID+'&size=list',
-				"imgURLlarge"	: URL+'/phone/img?dealID='+dealID+'&size=dealDetail',
-				"geoPoint"		: deal.geo_point,
-				"vicinity"		: deal.vicinity,
-				"dealText"  	: dealText,
-				"dealTextExtra" : dealTextExtra,
-				"description"	: deal.description,
-				"businessName"	: deal.business_name,
-				"primaryCat"	: primary_cat,
-				"isExclusive"	: deal.is_exclusive}
-		if use == 'myDeals':
-			#shows list deal information AND statistics
-			deal_parent = db.get(deal.key().parent())
-			logging.debug(deal_parent)
-			data.update({
-				"gateRequirement"	: deal.gate_requirement,						#The number of redemptions needed to earn a dollar on this deal
-				"gatePaymentPer"	: deal.gate_payment_per,						#The dollar amount we pay for each gate
-				"earnedTotal"		: deal.earned_total, 							#The amount of money that this deal has earned so far
-				"paymentMax"		: deal.gate_max*deal.gate_payment_per,			#The most money we will pay them for this deal
-				"paidOut"			: deal.paid_out,								#The amount of money that this deal has earned to date
-				"dealStatus"		: deal.deal_status,								#active,pending,rejected,expired
-				"dateEnd"			: deal.date_end.__str__()[:10],					#The date this deal becomes inactive
-				"moneyAvailable"	: deal_parent.money_available,					#The amount of money that the NINJA has available for redemption
-				"ninjaMoneyEarned"	: deal_parent.money_paid,						#The amount of money that the ninja has earned to date
-				"weightedRedeems"	: deal.count_redeemed % deal.gate_requirement,	#The number of redemptions they need to earn another dollar
-				"dealCountRedeemed"	: deal.count_redeemed,							#The number of times that the deal has been redeemed
-				"shareURL"			: create_share_url(deal)				#The URL for them to share
-			})
-		if use == 'widget':
-			data.update({
-				"description"	: deal.description,
-			})
-	elif use == 'deal':
-		#view deal information screen
-		#grab business 
-#		logging.info(deal.businessID)
-#		b = db.get(deal.businessID)
-		#uploaded by a user
-		data = {"dealID"		: dealID,
-				"imgURL"	  	: URL+'/phone/img?dealID='+dealID+'&size=dealDetail',
-				"dealText"  	: dealText,
-				"dealTextExtra" : dealTextExtra,
-				"businessName"	: deal.business_name,
-				"vicinity"		: deal.vicinity,
-				"description"	: deal.description,
-				"isExclusive"	: deal.is_exclusive}
-				
-	elif use == 'dealsScreen':
-		deal_parent = db.get(deal.key().parent())
-		logging.debug(deal_parent.kind())
-		if deal_parent.kind() == 'Customer':
-			#deal has a ninja parent.
-			ninja = deal_parent
-			alias = ninja.alias
-			logging.debug(ninja)
-		else:
-#			business = deal_parent
-			alias = ''
-			
-		data = {"barcodeURL"	: URL+'/phone/img?dealID='+dealID+'&size=dealDetail',
-				"ninjaName"		: alias,
-				"isExclusive"	: deal.is_exclusive}
-	elif use == 'manage':
-		data = {
-			"dealID"		:dealID,
-			"dealText"		:dealText,
-			"dealTextExtra"	:dealTextExtra,
-			"secondaryName"	:deal.secondary_name,
-			"businessName"	:deal.business_name,
-			"vicinity"		:deal.vicinity,
-			"description"	:deal.description,
-			"isExclusive"	:deal.is_exclusive,
-			"imgURLLarge"	:URL+'/phone/img?dealID='+dealID+'&size=dealDetail',
-			"imgURLSmall"	:URL+'/phone/img?dealID='+dealID+'&size=list',
-
-			}
-	data.update({'geoPoint':str(deal.geo_point)})
-	logging.info(log_dict(data))
-	return data'''
-
 def geo_converter(geo_str):
 	try:
 		lat, lng = geo_str.split(',')
@@ -258,6 +156,8 @@ def geo_converter(geo_str):
 def tagger(text): 
 	# text is a string
 #	parsing function for creating tags from description, etc
+	#replace commas with spaces
+	text = text.replace(","," ")
 	#replace underscores with spaces
 	text = text.replace("_"," ")
 	#remove all non text characters
@@ -312,7 +212,7 @@ def log_dir(obj,props=None):
 	log_str = delimeter
 	try:
 		if type(props) is list:
-			logging.debug('log some keys')
+#			logging.debug('log some keys')
 			#only display certain keys
 			key_list = []
 			for key in props:
@@ -321,7 +221,7 @@ def log_dir(obj,props=None):
 			for key in key_list:
 				log_str += str(key)+": "+str(getattr(obj,key))+delimeter
 		else:
-			logging.debug('log all keys')
+#			logging.debug('log all keys')
 			#display all keys
 			for key in dir(obj):
 				log_str += str(key)+": "+str(getattr(obj,key))+delimeter

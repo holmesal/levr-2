@@ -201,10 +201,12 @@ class SearchPopularHandler(webapp2.RequestHandler):
 		try:
 			logging.info('SEARCH POPULAR\n\n\n')
 			#GET PARAMS
-			request_point 	= kwargs.get('geo_point')
+			request_point 	= kwargs.get('geoPoint')
 			radius 		= kwargs.get('radius')
 			limit 		= kwargs.get('limit')
 			
+			logging.debug("request_point type: "+str(type(request_point)))
+			logging.debug('')
 			deals = []
 			t1 = datetime.now()
 			#fetch deals
@@ -222,7 +224,7 @@ class SearchPopularHandler(webapp2.RequestHandler):
 				#FILTER BY GEOHASH
 				q.filter('geo_hash >=',query_hash).filter('geo_hash <=',query_hash+"{") #max bound
 				
-				logging.debug(levr.log_dir(q))
+#				logging.debug(levr.log_dir(q))
 				#FETCH DEAL KEYS
 				fetched_deals = q.fetch(None)
 				logging.info('From: '+query_hash+", fetched: "+str(fetched_deals.__len__()))
@@ -234,7 +236,7 @@ class SearchPopularHandler(webapp2.RequestHandler):
 			#FILTER
 			tags = []
 			for deal in deals:
-				logging.debug(dir(deals))
+#				logging.debug(dir(deals))
 				tags.extend(deal.tags)
 			logging.debug(tags)
 			

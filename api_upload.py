@@ -144,8 +144,8 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 				'deal_description'	: kwargs.get('description'),
 				'deal_line1'		: kwargs.get('dealText'),
 				'distance'			: kwargs.get('distance'), #is -1 if unknown = double
-				'shareURL'			: kwargs.get('shareURL')
-#				'img_key'			: img_key
+				'shareURL'			: kwargs.get('shareURL'),
+				'img_key'			: img_key
 				}
 			
 			#create the deal using the origin specified
