@@ -44,15 +44,23 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			tags = levr.tagger(query)
 			logging.debug("tags: "+str(tags))
 			
-			t1 = datetime.now()
-			#fetch deals
-			deals = api_utils.get_deal_keys(tags,geo_point,radius,limit,development=development)
 			
+			#hash the reuqested geo_point
+			center_hash = geohash.encode(request_point.lat,request_point.lon,precision=5)
+			logging.debug(center_hash)
+			
+			#get the hashes of the center geo_point and the 8 surrounding hashes
+			hash_set = geohash.expand(center_hash)
+			logging.debug(hash_set)
+			
+			#fetch deals
+			t1 = datetime.now()
+			deal_keys = api_utils.get_deal_keys(tags,hash_set,radius,limit,development=development)
 			t2 = datetime.now()
 			
-			#FILTER THE DEALS BY DISTANCE
-			filtered_deals = api_utils.filter_deals_by_radius(deals,request_point,radius)
-	
+			
+			#analyse deals
+			
 			
 			#package deals
 			packaged_deals = [api_utils.package_deal(deal) for deal in deals]

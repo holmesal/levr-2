@@ -734,22 +734,19 @@ def send_img(self,blob_key,size):
 		send_error(self,'Server Error')
 	
 	
-def get_deal_keys(tags,request_point,*args,**kwargs):
+def get_deal_keys_from_hash_set(tags,hash_set,*args,**kwargs):
 	'''
+	Returns a list of deal keys in the hash sets specified
+	
 	tags = list of tags that are strings
 	request point is db.GeoPt format
 	
 	optional parameters:
-	precision		default=5
-	verbose			default=False
 	development		default=False
-	minimum_deals	default=10
 	
 	'''
 	
 	#grab variables
-	precision		= kwargs.get('precision',5)
-	verbose			= kwargs.get('verbose',False)
 	development		= kwargs.get('development',False)
 	if development:
 		#developer is searching
@@ -757,36 +754,14 @@ def get_deal_keys(tags,request_point,*args,**kwargs):
 	else:
 		#a real person is searching!
 		deal_status = 'active'
-		
 	
-	
-	#hash the reuqested geo_point
-	center_hash = geohash.encode(request_point.lat,request_point.lon,precision=precision)
-	logging.debug(center_hash)
-	
-	#get the hashes of the center geo_point and the 8 surrounding hashes
-	hash_set = geohash.expand(center_hash)
-	logging.debug(hash_set)
-	
-	t0 = datetime.now()
-	#################DEBUG
-#	ref_query = levr.Deal.all().filter('deal_status =','active')
-#	for tag in tags:
-#		if tag != 'all':
-#			ref_query.filter('tags =',tag)
-#	ref_deals = ref_query.fetch(None)
-#	logging.info("total number of deals: "+str(ref_deals.__len__()))
-#	for d in ref_deals:
-#		logging.debug(d.geo_hash)
-	##################/DEBUG
-	
-	t1 = datetime.now()
 	SPECIAL_QUERIES = ['all','popular','new','hot']
+	
+	
 	####build search query
-	#only grabbing deal keys, then batch get array
 	deal_keys = []
 	for query_hash in hash_set:
-		#only grab keys for deals that have active status
+		#initialize query
 		q = levr.Deal.all(keys_only=True)
 		
 		#if a real deal, status is active
@@ -797,7 +772,6 @@ def get_deal_keys(tags,request_point,*args,**kwargs):
 			q.filter('deal_status =','test')
 			logging.debug('flag development')
 		
-		logging.debug('FLAG')
 		logging.debug("tags: "+str(tags))
 		#FILTER BY TAG
 		#do not filter by tags if the tag is one of the special key words
@@ -810,32 +784,20 @@ def get_deal_keys(tags,request_point,*args,**kwargs):
 			logging.debug('This is a special case. Not filtering by tags: '+str(tags))
 		
 		
-		#FILTER BY GEOHASH
+		#grab all deals in the geohash
 		q.filter('geo_hash >=',query_hash).filter('geo_hash <=',query_hash+"{") #max bound
 #					logging.debug(q)
-		logging.debug(levr.log_dict(q.__dict__))
+#		logging.debug(levr.log_dict(q.__dict__))
 		
 		
 		#FETCH DEAL KEYS
 		fetched_deals = q.fetch(None)
 		logging.info('From: '+query_hash+", fetched: "+str(fetched_deals.__len__()))
 		
+		#add to the list
 		deal_keys.extend(fetched_deals)
-#					logging.debug(deal_keys)
-	t2 = datetime.now()
 	
-	#BATCH GET RESULTS
-	deals = levr.Deal.get(deal_keys)
-	
-	t3 = datetime.now()
-	
-	####################### DEBUG
-
-	if verbose == True:
-		return (deals,t0,t1,t2,t3)
-	else:
-	######################### /DEBUG
-		return filtered_deals
+	return deal_keys
 
 def filter_deals_by_radius(deals,center,radius):
 	'''
