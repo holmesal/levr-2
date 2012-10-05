@@ -272,8 +272,6 @@ def validate(url_param,authentication_source,*a,**to_validate):
 	General function for validating the inputs that are passed as arguments
 	to use, pass kwargs in form of key:bool,
 	where key is the input name and bool is true if input is required and false if input is optional
-	
-	WARNING: will not authenticate
 	'''
 	
 	def wrapper(handler_method):
