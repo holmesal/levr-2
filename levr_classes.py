@@ -30,6 +30,20 @@ else:
 	development = False
 
 # FUNCTIONS
+
+def build_display_name(user):
+	'''Goes through cases of semi-populated user information from best to worst and updates display name.
+	To be used when the user is created, and every time an account is connected'''
+	
+	if user.first_name != '' and user.last_name != '':
+		user.display_name = user.first_name + ' ' + user.last_name[0] + '.'
+	elif user.alias != '':
+		user.display_name = user.alias
+	else:
+		user.display_name = 'Clint Eastwood'
+	
+	return user
+
 def create_notification(notification_type,to_be_notified,actor,deal=None):
 	'''
 	notification_type	= choices: 'redemption', 'thanks','favorite', 'followerUpload', 'newFollower', 'levelup'

@@ -23,6 +23,8 @@ class ConnectFacebookHandler(webapp2.RequestHandler):
 		#fetch user info from facebook graph api
 		user = social.facebook_deets(user,facebook_id,token)
 		
+		#create or refresh the alias
+		user = levr.build_display_name(user)
 		
 		#update
 		user.put()
@@ -45,6 +47,8 @@ class ConnectFoursquareHandler(webapp2.RequestHandler):
 		user		= kwargs.get('actor')
 		token		= kwargs.get('token')
 		
+		#create or refresh the alias
+		user = levr.build_display_name(user)
 		
 		
 		#add foursquare token
@@ -73,7 +77,8 @@ class ConnectTwitterHandler(webapp2.RequestHandler):
 			token		= kwargs.get('token')
 			screen_name	= kwargs.get('screenName')
 			
-			
+			#create or refresh the alias
+			user = levr.build_display_name(user)
 			
 			#add twitter token
 			user.twitter_token = token
