@@ -49,6 +49,11 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			deals = api_utils.get_deals_in_area(tags,geo_point,radius,limit,development=development)
 			
 			t2 = datetime.now()
+			
+			#FILTER THE DEALS BY DISTANCE
+			filtered_deals = api_utils.filter_deals_by_radius(deals,request_point,radius)
+	
+			
 			#package deals
 			packaged_deals = [api_utils.package_deal(deal) for deal in deals]
 			

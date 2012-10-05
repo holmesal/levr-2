@@ -272,8 +272,6 @@ def validate(url_param,authentication_source,*a,**to_validate):
 	General function for validating the inputs that are passed as arguments
 	to use, pass kwargs in form of key:bool,
 	where key is the input name and bool is true if input is required and false if input is optional
-	
-	WARNING: will not authenticate
 	'''
 	
 	def wrapper(handler_method):
@@ -736,14 +734,31 @@ def send_img(self,blob_key,size):
 		send_error(self,'Server Error')
 	
 	
-def get_deals_in_area(tags,request_point,radius=2,limit=None,precision=5,verbose=False,*args,**kwargs):
+def get_deals_in_area(tags,request_point,*args,**kwargs):
 	'''
 	tags = list of tags that are strings
 	request point is db.GeoPt format
-	radius is miles
+	
+	optional parameters:
+	precision		default=5
+	verbose			default=False
+	development		default=False
+	minimum_deals	default=10
+	
 	'''
 	
-	development = kwargs.get('development',False)
+	#grab variables
+	precision		= kwargs.get('precision',5)
+	verbose			= kwargs.get('verbose',False)
+	development		= kwargs.get('development',False)
+	if development:
+		#developer is searching
+		deal_status = 'test'
+	else:
+		#a real person is searching!
+		deal_status = 'active'
+		
+	
 	
 	#hash the reuqested geo_point
 	center_hash = geohash.encode(request_point.lat,request_point.lon,precision=precision)
@@ -814,49 +829,12 @@ def get_deals_in_area(tags,request_point,radius=2,limit=None,precision=5,verbose
 	
 	t3 = datetime.now()
 	
-	#FILTER THE DEALS BY DISTANCE
-	filtered_deals = filter_deals_by_radius(deals,request_point,radius)
-	
-	logging.debug(limit)
-	#LIMIT DEALS
-	if limit:
-		logging.debug('flag')
-	else:
-		logging.debug('unflag')
-	logging.debug(filtered_deals.__len__())
-	
-	
-	try:
-		logging.debug(filtered_deals.__len__() >= int(limit))
-		if limit and filtered_deals.__len__() >= int(limit):
-			logging.debug('FLAG LIMITED')
-			filtered_deals = filtered_deals[:int(limit)]
-		else:
-			logging.debug('FLAG UNLIMITED')
-	except:
-		pass
-	
-	t4 = datetime.now()
-	
-	
 	####################### DEBUG
-	logging.debug('Start')
-	logging.debug(deals.__len__())
-	logging.debug(filtered_deals.__len__())
-	logging.debug('End')
 
-	fetch_time = t2-t1
-	get_time = t3-t2
-	filter_time = t4-t3
-	unfiltered_count = deals.__len__()
-	filtered_count = filtered_deals.__len__()
 	if verbose == True:
-		return (filtered_deals,fetch_time,get_time,filter_time,unfiltered_count,filtered_count)
+		return (deals,t0,t1,t2,t3)
 	else:
 	######################### /DEBUG
-	
-	
-	
 		return filtered_deals
 
 def filter_deals_by_radius(deals,center,radius):
