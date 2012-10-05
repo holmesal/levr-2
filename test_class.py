@@ -175,9 +175,9 @@ class AddDealsHandler(webapp2.RequestHandler):
 #			for lon in lons:
 #				
 #				params = {
-#							'uid'				: enc.encrypt_key(ethan),
+#							'uid'				: ethan,
 #							'business_name'		: 'Als Sweatshop',
-#							'geo_point'			: str(lat)+','+str(lon),
+#							'geo_point'			: levr.geo_converter(str(lat)+','+str(lon)),
 #							'vicinity'			: '10 Buick St',
 #							'types'				: 'Establishment,Food',
 #							'deal_description'	: 'This is a description',

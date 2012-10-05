@@ -119,7 +119,8 @@ def package_deal(deal,private=False,*args,**kwargs):
 			'karma'			: deal.karma,
 			'rank'			: kwargs.get('rank',0)
 			}
-			
+	logging.debug('rank')
+	logging.debug(kwargs.get('rank'))
 	if deal.is_exclusive == False:
 		packaged_deal.update({
 			'owner'			: package_user(levr.Customer.get(deal.key().parent()))
@@ -752,9 +753,11 @@ def get_deal_keys_from_hash_set(tags,hash_set,*args,**kwargs):
 	if development:
 		#developer is searching
 		deal_status = 'test'
+		logging.debug('test deals')
 	else:
 		#a real person is searching!
 		deal_status = 'active'
+		logging.debug('active deals')
 	
 	SPECIAL_QUERIES = ['all','popular','new','hot']
 	
@@ -768,12 +771,12 @@ def get_deal_keys_from_hash_set(tags,hash_set,*args,**kwargs):
 		#if a real deal, status is active
 		if not development:
 			q.filter('deal_status =','active')
-			logging.debug('flag active')
+#			logging.debug('flag active')
 		else:
 			q.filter('deal_status =','test')
-			logging.debug('flag development')
+#			logging.debug('flag development')
 		
-		logging.debug("tags: "+str(tags))
+#		logging.debug("tags: "+str(tags))
 		#FILTER BY TAG
 		#do not filter by tags if the tag is one of the special key words
 		if tags and tags[0] not in SPECIAL_QUERIES:
@@ -782,7 +785,8 @@ def get_deal_keys_from_hash_set(tags,hash_set,*args,**kwargs):
 				logging.debug('tag: '+str(tag))
 				q.filter('tags =',tag)
 		else:
-			logging.debug('This is a special case. Not filtering by tags: '+str(tags))
+			pass
+#			logging.debug('This is a special case. Not filtering by tags: '+str(tags))
 		
 		
 		#grab all deals in the geohash
