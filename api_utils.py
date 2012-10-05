@@ -97,7 +97,7 @@ def check_param(self,parameter,parameter_name,param_type='str',required=True):
 	logging.info(parameter_name+": "+str(parameter))
 	return True
 
-def package_deal(deal,private=False):
+def package_deal(deal,private=False,*args,**kwargs):
 #	logging.debug(str(deal.geo_point))
 	packaged_deal = {
 			'barcodeImg'	: deal.barcode,
@@ -116,7 +116,8 @@ def package_deal(deal,private=False):
 			'dateEnd'		: str(deal.date_end)[:19],
 			'vote'			: deal.upvotes - deal.downvotes,
 			'pinColor'		: deal.pin_color,
-			'karma'			: deal.karma
+			'karma'			: deal.karma,
+			'rank'			: kwargs.get('rank',0)
 			}
 			
 	if deal.is_exclusive == False:
@@ -805,40 +806,9 @@ def filter_deals_by_radius(deals,center,radius):
 	'''
 	logging.debug('FILTER BY RADIUS')
 	#Only returns deals that are within a radius of the center
-	Earth_radius_km = 6371.0
-	RADIUS = Earth_radius_km
 	
-	def haversine(angle_radians):
-		return sin(angle_radians / 2.0) ** 2
 	
-	def inverse_haversine(h):
-		return 2 * asin(sqrt(h)) # radians
 	
-	def distance_between_points(lat1, lon1, lat2, lon2):
-		# all args are in degrees
-		# WARNING: loss of absolute precision when points are near-antipodal
-		lat1 = radians(lat1)
-		lat2 = radians(lat2)
-		dlat = lat2 - lat1
-		dlon = radians(lon2 - lon1)
-		h = haversine(dlat) + cos(lat1) * cos(lat2) * haversine(dlon)
-		return RADIUS * inverse_haversine(h)
-	
-	def bounding_box(lat, lon, distance):
-		# Input and output lats/longs are in degrees.
-		# Distance arg must be in same units as RADIUS.
-		# Returns (dlat, dlon) such that
-		# no points outside lat +/- dlat or outside lon +/- dlon
-		# are <= "distance" from the (lat, lon) point.
-		# Derived from: http://janmatuschek.de/LatitudeLongitudeBoundingCoordinates
-		# WARNING: problems if North/South Pole is in circle of interest
-		# WARNING: problems if longitude meridian +/-180 degrees intersects circle of interest
-		# See quoted article for how to detect and overcome the above problems.
-		# Note: the result is independent of the longitude of the central point, so the
-		# "lon" arg is not used.
-		dlat = distance / RADIUS
-		dlon = asin(sin(dlat) / cos(radians(lat)))
-		return degrees(dlat), degrees(dlon)
 	
 	#get the geopoints of all deals
 	
@@ -869,9 +839,44 @@ def filter_deals_by_radius(deals,center,radius):
 #			logging.debug(distance)
 	
 	return acceptable_deals
-		
 
-	
+#######GEO DISTANCES
+Earth_radius_km = 6371.0
+RADIUS = Earth_radius_km
+def haversine(angle_radians):
+	return sin(angle_radians / 2.0) ** 2
+
+def inverse_haversine(h):
+	return 2 * asin(sqrt(h)) # radians
+
+def distance_between_points(lat1, lon1, lat2, lon2):
+	# all args are in degrees
+	# WARNING: loss of absolute precision when points are near-antipodal
+	lat1 = radians(lat1)
+	lat2 = radians(lat2)
+	dlat = lat2 - lat1
+	dlon = radians(lon2 - lon1)
+	h = haversine(dlat) + cos(lat1) * cos(lat2) * haversine(dlon)
+	return RADIUS * inverse_haversine(h)
+
+def bounding_box(lat, lon, distance):
+	# Input and output lats/longs are in degrees.
+	# Distance arg must be in same units as RADIUS.
+	# Returns (dlat, dlon) such that
+	# no points outside lat +/- dlat or outside lon +/- dlon
+	# are <= "distance" from the (lat, lon) point.
+	# Derived from: http://janmatuschek.de/LatitudeLongitudeBoundingCoordinates
+	# WARNING: problems if North/South Pole is in circle of interest
+	# WARNING: problems if longitude meridian +/-180 degrees intersects circle of interest
+	# See quoted article for how to detect and overcome the above problems.
+	# Note: the result is independent of the longitude of the central point, so the
+	# "lon" arg is not used.
+	dlat = distance / RADIUS
+	dlon = asin(sin(dlat) / cos(radians(lat)))
+	return degrees(dlat), degrees(dlon)
+##########/GEO DISTANCES
+
+
 def level_check(user):
 	'''updates the level of a user. this function should be run after someone upvotes a user or anything else happens.'''
 	'''square root for the win'''

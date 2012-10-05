@@ -11,7 +11,7 @@ from google.appengine.ext import db
 
 
 class SearchQueryHandler(webapp2.RequestHandler):
-	@api_utils.validate('query',None,geoPoint=True,limit=False,radius=False,user=False)
+	@api_utils.validate('query',None,geoPoint=True,radius=False,user=False)
 	def get(self,*args,**kwargs):
 		'''
 		inputs: lat,lon,limit, query
@@ -33,55 +33,198 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			radius 		= kwargs.get('radius')
 			limit 		= kwargs.get('limit')
 			query 		= kwargs.get('query','all')
-			
 			development = kwargs.get('development',False)
-			
-			
-			
-			logging.debug("limit: "+str(limit))
 			
 			#create tags from the query
 			tags = levr.tagger(query)
 			logging.debug("tags: "+str(tags))
 			
+			#variables
+			precision		= 5
+			min_count		= 20
+			deal_keys		= []
+			iterations		= 3
+			query_times		= []
+			max_k			= 0.1 #max karma count
+			max_d			= 0.1 #max distance
+			k_coef			= 1
+			d_coef			= 1
+			k_list			= []
+			d_list			= []
+			lat1			= geo_point.lat
+			lon1			= geo_point.lon
+			tstart			= datetime.now()
+			tuple_list		= []
+			searched_hash_set = [] #hashes that have been searched
+			new_hash_set	= [] #hashes that havent been searched
 			
-			#hash the reuqested geo_point
-			center_hash = geohash.encode(request_point.lat,request_point.lon,precision=5)
-			logging.debug(center_hash)
 			
-			#get the hashes of the center geo_point and the 8 surrounding hashes
-			hash_set = geohash.expand(center_hash)
-			logging.debug(hash_set)
+			#center hash
+			new_hash_set = [geohash.encode(lat1,lon1,precision=precision)]
+			query_start = datetime.now()
+			#iterate searches the specified number of times
+			for i in range(1,iterations+1):
+				#if the deals fetches are less than the desired minimum, perform another search
+				if deal_keys.__len__() <= min_count:
+					
+					logging.debug('\n\n\n\n\n\n begin new hashings\n\n\n\n\n\n\n')
+					logging.debug(searched_hash_set)
+					logging.debug(new_hash_set)
+					
+					#expand range by one ring
+					hashes = new_hash_set
+					n = 0
+					for hash in hashes:
+						if n<50:
+							logging.debug(hash)
+							#get hash neighbors
+							#extend the hashes list with the new hashes
+							new_hash_set.extend(geohash.expand(hash))
+							n+=1
+					
+					logging.debug(new_hash_set)
+					#remove duplicated
+					new_hash_set = list(set(new_hash_set))
+					logging.debug(new_hash_set)
+					#filter out the hashes that have already been searched
+					new_hash_set = filter(lambda h: h not in searched_hash_set,new_hash_set)
+					logging.debug(new_hash_set)
+					
+					logging.debug('result: '+str(new_hash_set))
+					
+					
+					#fetch deals from hash set, and extend the list of deal keys
+					t1 = datetime.now()
+					deal_keys.extend(api_utils.get_deal_keys_from_hash_set(tags,new_hash_set,development=development))
+					t2 = datetime.now()
+					
+					#add new_hash_set to searched_hash_set
+					searched_hash_set.extend(new_hash_set)
+					#reset new_hash_set
+					new_hash_set = []
+					
+					logging.debug('searched_hash_set: '+str(searached_hash_set))
+					logging.debug('\n\n\n\n\n\n end new hashings\n\n\n\n\n\n\n')
+					#keep track of the times
+					query_times.append((t1,t2))
+			query_end = datetime.now()
 			
-			#fetch deals
+			total_query_time = query_end-query_start
+			
+			logging.debug('total deals fetched: '+str((deal_keys.__len__())))
+			#batch get all of the deals
 			t1 = datetime.now()
-			deal_keys = api_utils.get_deal_keys(tags,hash_set,radius,limit,development=development)
+			deals = db.get(deal_keys)
 			t2 = datetime.now()
 			
+			fetch_time = t2-t1
 			
-			#analyse deals
 			
+			t1 = datetime.now()
+			#find the max k and max d out of the deals that have been found
+			for deal in deals:
+				#get deal karma points = upvotes for now
+				k		= deal.upvotes
+				k_list.append(k)
+				logging.debug('deal karma: '+str(k))
+				
+				#calculate the distance between the request point and the deal
+				lat2	= deal.geo_point.lat
+				lon2	= deal.geo_point.lon
+				d		= api_utils.distance_between_points(lat1,lon1,lat2,lon2)
+				d_list.append(d)
+				logging.debug('distance: '+str(d))
+				
+				#if this deal has a greater karma, then set it as the max k
+				if k > max_k: max_k = k
+				#if this deal is farther away than the farthest one so far, set it as the max d
+				if d > max_d: max_d = d
+				
+				#compile into tuple
+				#toop = (rank,karma,distance,deal)
+				toop = (0.0,k,d,deal)
+				tuple_list.append(toop)
+			t2 = datetime.now()
+			
+			calc_maxes_time = t2-t1
+			
+			logging.debug('Tuple list:')
+			logging.debug(tuple_list)
+			
+			t1 = datetime.now()
+			#calculate the rank of all of the deals that have been found
+			for toop in tuple_list:
+				#rank = (1+kf)/df
+				k = toop[1]
+				d = toop[2]
+				deal = toop[3]
+				
+				logging.debug('k:'+str(k)+', d: '+str(d)+', max_k: '+str(max_k)+', max_d: '+str(max_d))
+				
+				#calculate scaled karma and distance
+				kf = k_coef*k/max_k
+				df = d_coef*d/max_d
+				
+				#set minimum d... especially to eliminate division by zero
+				if df < 0.1: df = 0.1
+				
+				logging.debug('kf: '+str(kf)+', df: '+str(df))
+				#calculate rank
+				rank = (1+kf)/df
+				
+				#add the rank to the deal toop
+				toop = list(toop)
+				toop[0] = rank
+				toop = tuple(toop)
+			t2 = datetime.now()
+			
+			calc_rank_time = t2-t1
+			
+			logging.debug('Tuple list:')
+			logging.debug(tuple_list)
 			
 			#package deals
-			packaged_deals = [api_utils.package_deal(deal) for deal in deals]
+			t1 = datetime.now()
+			#toop[3] is the deal
+			#toop[0] is the rank
+			packaged_deals = [api_utils.package_deal(toop[3],rank=toop[0]) for toop in tuple_list]
+			t2 = datetime.now()
 			
-			t3 = datetime.now()
+			package_time = t2-t1
 			
-			geo_hash = geohash.encode(geo_point.lat,geo_point.lon)
+#			####DEBUG
+#			geo_hash = geohash.encode(geo_point.lat,geo_point.lon)
+#			
+#			logging.debug(geo_hash)
+#			deals = levr.Deal.all().fetch(None)
+#			for deal in deals:
+#				logging.debug(levr.log_model_props(deal,['geo_hash']))
+#			####/DEBUG
 			
-			logging.debug(geo_hash)
-			deals = levr.Deal.all().fetch(None)
-			for deal in deals:
-				logging.debug(levr.log_model_props(deal,['geo_hash']))
+			tend = datetime.now()
 			
-	#		packaged_deals.append(api_utils.package_deal(deal))
-			#create response dict
+			total_time = tend-tstart
+			
+			
+			
+			logging.debug('total_query_time: '+str(total_query_time))
+			logging.debug('fetch_time: '+str(fetch_time))
+			logging.debug('calc_maxes_time: '+str(calc_maxes_time))
+			logging.debug('calc_rank_time: '+str(calc_rank_time))
+			logging.debug('package_time: '+str(package_time))
+			logging.debug('total_time: '+str(total_time))
+			
+			
 			response = {
-					'numResults': packaged_deals.__len__(),
-					'fetching'	: str(t2-t1),
-					'packaging'	: str(t3-t2),
-					'total'		: str(t3-t1),
-					'deals'		: packaged_deals
+					'numResults'		: packaged_deals.__len__(),
+					'total_query_time'	: str(total_query_time),
+					'fetch_time'		: str(fetch_time),
+					'calc_maxes_time'	: str(calc_maxes_time),
+					'package_time'		: str(package_time),
+					'total_time'		: str(total_time),
+					'iterations'		: str(i),
+					'ending_hashes'		: list(hash_set)
+#					'deals'				: packaged_deals
 					}
 			api_utils.send_response(self,response)
 		except:
