@@ -113,6 +113,23 @@ class LoginLevrHandler(webapp2.RequestHandler):
 		except:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
+			
+class LoginValidateHandler(webapp2.RequestHandler):
+	@api_utils.validate(None,'param',user=True,levrToken=True)
+	@api_utils.private
+	def get(self,*args,**kwargs):
+		try:
+			#grabthe user from the input
+			user = kwargs.get('actor')
+			
+			response = {'user':api_utils.package_user(user,True)}
+			
+			api_utils.send_response(self,response,user)
+			
+			
+		except:
+			levr.log_error()
+			api_utils.send_error(self,'Server Error')
 app = webapp2.WSGIApplication([('/api/login/facebook', LoginFacebookHandler),
 								('/api/login/foursquare', LoginFoursquareHandler),
 								('/api/login/twitter', LoginTwitterHandler),

@@ -76,9 +76,9 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		
 		
 		params = {
-					'uid'				: enc.encrypt_key(ethan),
+					'uid'				: ethan,
 					'business_name'		: 'Als Sweatshop',
-					'geo_point'			: '42.5,-72.5',
+					'geo_point'			: levr.geo_converter('42.5,-72.5'),
 					'vicinity'			: '10 Buick St',
 					'types'				: 'Establishment,Food',
 					'deal_description'	: 'This is a description gut guts who why when you buy a shoe with feet',
