@@ -46,7 +46,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			
 			t1 = datetime.now()
 			#fetch deals
-			deals = api_utils.get_deals_in_area(tags,geo_point,radius,limit,development=development)
+			deals = api_utils.get_deal_keys(tags,geo_point,radius,limit,development=development)
 			
 			t2 = datetime.now()
 			

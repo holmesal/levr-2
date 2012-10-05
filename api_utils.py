@@ -734,7 +734,7 @@ def send_img(self,blob_key,size):
 		send_error(self,'Server Error')
 	
 	
-def get_deals_in_area(tags,request_point,*args,**kwargs):
+def get_deal_keys(tags,request_point,*args,**kwargs):
 	'''
 	tags = list of tags that are strings
 	request point is db.GeoPt format
