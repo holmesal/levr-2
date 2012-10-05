@@ -674,7 +674,7 @@ class Customer(db.Model):
 	first_name		= db.StringProperty(default='')
 	last_name		= db.StringProperty(default='')
 	display_name	= db.StringProperty()
-	photo			= db.StringProperty(default='')
+	photo			= db.StringProperty(default='http://www.levr.com/img/levr.png')
 	
 	#user status stuff
 	level			= db.IntegerProperty(default=1)

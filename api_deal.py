@@ -98,21 +98,19 @@ class UpvoteHandler(webapp2.RequestHandler):
 			
 			
 			#favorite
-			logging.debug(levr.log_model_props(user))
-			
+			logging.debug(levr.log_model_props(user,['upvotes','downvotes','favorites']))
+			logging.debug(levr.log_model_props(deal,['upvotes','downvotes']))
 				
 				
 				
 			if dealID in user.upvotes:
 				logging.debug('flag deal in upvotes')
 				#user is removing the upvote
-				
 				#remove the offending deal from the user upvotes
 				user.upvotes.remove(dealID)
 				
 				#decrement the deal upvotes
 				deal.upvotes -= 1
-				
 				#do not change the karma of the user who uploaded it
 				#do not remove from favorites
 				#do not remove notification
@@ -121,7 +119,6 @@ class UpvoteHandler(webapp2.RequestHandler):
 				
 			elif dealID in user.downvotes:
 				logging.debug('flag deal is in downvotes')
-				
 				#remove deal from downvotes
 				user.downvotes.remove(dealID)
 				#decrement the deals downvotes
@@ -131,43 +128,54 @@ class UpvoteHandler(webapp2.RequestHandler):
 				user.upvotes.append(dealID)
 				#increment the number of upvotes
 				deal.upvotes += 1
-				
 				#add deal to favorites
 				if dealID not in user.favorites:
 					user.favorites.append(dealID)
 				
 				#do not change the karma of the user who uploaded
 				#do not add notification for the ninja
-				
 				db.put([user,deal])
-			
 			else:
 				logging.debug('flag deal not in upvotes or downvotes')
+				
+				#get owner of the deal
+				ninja = levr.Customer.get(deal.key().parent())
+				#compare owner to user doing the voting
+				if ninja.key() == user.key():
+					#ninja is upvoting his own deal
+					#increase that users karma! reward for uploading a deal!
+					user.karma += 1
+					#level check!
+					api_utils.level_check(user)
+				else:
+					#increase the ninjas karma
+					ninja.karma += 1
+					#level check!
+					api_utils.level_check(ninja)
+					#replace ninja. we dont want him anymore
+					ninja.put()
+				
 				
 				#add to upvote list
 				user.upvotes.append(dealID)
 				
-				#increase the deal upvotes
+#				#increase the deal upvotes
 				deal.upvotes += 1
 				
 				
-				#increase the karma of the ninja who uploaded it
-				ninja = levr.Customer.get(deal.key().parent())
-				ninja.karma += 1
-				#level check!
-				ninja = api_utils.level_check(ninja)
+				
 				
 				#add to users favorites list if not there already
 				if dealID not in user.favorites:
 					user.favorites.append(dealID)
 					#create favorite notification for the ninja that uploaded
-					levr.create_notification('favorite',dealID.parent(),uid,dealID)
+					levr.create_notification('favorite',ninja.key(),uid,dealID)
 				
 				
+				db.put([user,deal])
 				#put actor and ninja and deal back
-				db.put([user,ninja,deal])
 			
-				
+			
 			response = {
 					'deal':api_utils.package_deal(deal)
 					}

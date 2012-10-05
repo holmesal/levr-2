@@ -102,14 +102,14 @@ class TestHandler(webapp2.RequestHandler):
 		ninja = enc.encrypt_key(levr.Customer.all().filter('email','santa@levr.com').get().key())
 		deal = enc.encrypt_key(levr.Deal.all().ancestor(db.Key(enc.decrypt_key(ethan))).get().key())
 		
-		url = 'http://0.0.0.0:8080/api'
+		url = '\'http://0.0.0.0:8080/api'
 		
 		
-		ethan_url = url+'/user/'+ethan
-		pat_url = url+'/user/'+pat
-		alonso_url = url+'/user/'+alonso
-		ninja_url = url+'/user/'+ninja
-		deal_url = url+'/deal/'+deal
+		ethan_url = url+'/user/'+ethan+'\' | python -mjson.tool'
+		pat_url = url+'/user/'+pat+'\' | python -mjson.tool'
+		alonso_url = url+'/user/'+alonso+'\' | python -mjson.tool'
+		ninja_url = url+'/user/'+ninja+'\' | python -mjson.tool'
+		deal_url = url+'/deal/'+deal+'\' | python -mjson.tool'
 		
 		token = db.get(enc.decrypt_key(ethan)).levr_token
 		
@@ -158,26 +158,6 @@ class TestHandler(webapp2.RequestHandler):
 		self.response.out.write('| python -mjson.tool')
 		self.response.out.write('<br/><br/>')
 		self.response.out.write('<br/><br/>')
-		
-		t1 = TestModel(
-					date = long(levr.unix_time(datetime.now()))
-					).put()
-		t2 = TestModel(
-					date = long(levr.unix_time(datetime.now()))
-					).put()
-		
-		mod1 = db.get(t1)
-		mod2 = db.get(t2)
-		self.response.out.write(levr.unix_time(datetime.now()))
-		self.response.out.write(long(levr.unix_time(datetime.now())))
-		self.response.out.write('<br/><br/>')
-		self.response.out.write(mod1.date)
-		self.response.out.write('<br/><br/>')
-		self.response.out.write(mod2.date)
-		
-		
-		follow = '/follow?followerID='
-		redeem = '/redeem?uid='
 		
 	
 		

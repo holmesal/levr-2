@@ -139,7 +139,8 @@ def package_user(user,private=False,followers=True,**kwargs):
 		'lastName'		: user.last_name,
 		'photoURL'		: user.photo,
 		'level'			: user.level,
-		'karma'			: user.karma
+		'karma'			: user.karma,
+		'twitterScreenName'	: user.twitter_screen_name
 		}
 	if followers == True:
 		followers_list = levr.Customer.get(user.followers)
