@@ -36,7 +36,7 @@ class SignupFacebookHandler(webapp2.RequestHandler):
 			user = social.facebook_deets(user,token)
 			
 			#create or refresh the alias
-			user = api_utils.build_display_name(user)
+			user = levr.build_display_name(user)
 			
 			user.put()
 			response = {'user':api_utils.package_user(user,True,send_token=True)}
@@ -75,7 +75,7 @@ class SignupFoursquareHandler(webapp2.RequestHandler):
 			user = social.foursquare_deets(user,token)
 			
 			#create or refresh the alias
-			user = api_utils.build_display_name(user)
+			user = levr.build_display_name(user)
 			
 			#store user
 			user.put()
@@ -105,10 +105,13 @@ class SignupTwitterHandler(webapp2.RequestHandler):
 			user = levr.Customer()
 			user.twitter_token = token
 			user.twitter_screen_name = screen_name
-			user.alias = screen_name
+			#user.alias = screen_name
 			
 			'''#grab twitter deets
 			user = social.twitter_deets(user,token,screen_name)'''
+			
+			#create or refresh the alias
+			user = levr.build_display_name(user)
 			
 			user.put()
 			response = {'user':api_utils.package_user(user,True,send_token=True)}
@@ -166,6 +169,9 @@ class SignupLevrHandler(webapp2.RequestHandler):
 		
 		#set a/b test group to customer entity
 		user.group = group
+		
+		#create or refresh the alias
+		user = levr.build_display_name(user)
 		
 		#put and reply
 		user.put()
