@@ -969,11 +969,7 @@ def search_yipit(query,geo_point):
 				deal.largeImg = yipit_deal['images']['image_big']
 				deal.smallImg = yipit_deal['images']['image_small']
 				deal.status = 'active'
-<<<<<<< HEAD
-#				deal.
-=======
->>>>>>> d37c0ef60269e2bee46fe22615dac8491cb81c1b
-				
+
 				
 				packaged_deal = api_utils.package_deal(deal,False,business,yipit_deal['id'])
 			
