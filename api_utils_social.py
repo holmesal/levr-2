@@ -116,6 +116,9 @@ def twitter_deets(user,*args,**kwargs):
 	content = json.loads(result.content)
 	status = result.status_code
 	heads = result.headers.data
+	logging.debug(heads)
+	logging.debug(status)
+	logging.debug(content)
 	
 	if status == 200:
 		#successful
@@ -123,23 +126,26 @@ def twitter_deets(user,*args,**kwargs):
 		
 		if not user.twitter_id:
 			user.twitter_id	= content.get('id_str')
-		if not user.photo:
+		if user.photo == 'http://www.levr.com/img/levr.png':
 			user.photo		= content.get('profile_image_url')
 		
 		#create users name
 		name	= content.get('name')
+		name = name.split(' ')
+		logging.debug(name)
 		if not user.first_name:
 			user.first_name	= name[0]
 		if not user.last_name:
 			user.last_name	= name[-1]
-		if not user.alias:
-			user.alias = build_display_name(user)
-		
+		if not user.display_name:
+			user = levr.build_display_name(user)
+		logging.debug(levr.log_model_props(user))
 		
 	elif status == 401:
 		logging.error('NOT AUTHORIZED')
 		
-	
+	else:
+		logging.debug('OTHER')
 	
 #	logging.debug(levr.log_dir(heads))
 	return user

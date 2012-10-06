@@ -64,9 +64,9 @@ class ConnectFoursquareHandler(webapp2.RequestHandler):
 		api_utils.send_response(self,response,user)
 		
 class ConnectTwitterHandler(webapp2.RequestHandler):
-#	@api_utils.validate(None,'param',user=True,token=True,screenName=True,levrToken=True)
-	@api_utils.validate(None,None,user=False,token=False,screenName=False,levrToken=False)
-#	@api_utils.private
+	@api_utils.validate(None,'param',user=True,token=True,screenName=True,levrToken=True)
+#	@api_utils.validate(None,None,user=False,token=False,screenName=False,levrToken=False)
+	@api_utils.private
 	def get(self,*args,**kwargs):
 		try:
 			#RESTRICTED
@@ -76,6 +76,7 @@ class ConnectTwitterHandler(webapp2.RequestHandler):
 			user		= kwargs.get('actor')
 			oauth_token	= kwargs.get('token')
 			screen_name	= kwargs.get('screenName')
+			development = kwargs.get('development')
 			
 #			#create or refresh the alias
 #			user = levr.build_display_name(user)
@@ -85,12 +86,19 @@ class ConnectTwitterHandler(webapp2.RequestHandler):
 #			#add screen name
 			user.twitter_screen_name = screen_name
 #			
-			user = social.twitter_deets(user)
+			user = social.twitter_deets(user,development=development)
+			
+			logging.debug(levr.log_model_props(user))
+			
 			#update
 	 		user.put()
 			#return the user
 			response = {'user':api_utils.package_user(user,'private')}
 			api_utils.send_response(self,response,user)
+			
+			logging.debug(levr.log_dir(levr.Customer()))
+			
+			
 		except:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
