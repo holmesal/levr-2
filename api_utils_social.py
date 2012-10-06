@@ -37,7 +37,53 @@ def foursquare_deets(user,token):
 	
 	return user
 
-
+def authorize_twitter(url,oauth_token,*args,**kwargs):
+	'''
+	kwargs is reserved for params
+	'''
+	#These are values that identify our app
+	oauth_token_secret='f0Rzdx8iiL58ebiyvokcf4JW2C9oSKbfJ81rwhsg'
+	oauth_consumer_key = 'JAu03A5jqlYddohoXI8Ng'
+	oauth_consumer_secret = 'h6Zh3T3PZphUg3Bu3UVdtK2AjHrDUWU6wJ4LDd5ec'
+	
+	
+	params = {
+		#required oauth params
+		'oauth_nonce'				:	oauth.generate_nonce(),
+		'oauth_timestamp'			:	int(time.time()),
+		'oauth_version'				:	'1.0',
+		}
+	#extend the params dict with request specific info
+	for key in kwargs:
+		params[key] = kwargs.get(key)
+	
+	
+	# Set up instances of our Token and Consumer. The Consumer.key and 
+	# Consumer.secret are given to you by the API provider. The Token.key and
+	# Token.secret is given to you after a three-legged authentication.
+	token = oauth.Token(key=oauth_token, secret=oauth_token_secret) #this is the user
+	consumer = oauth.Consumer(key=oauth_consumer_key, secret=oauth_consumer_secret) #this is us
+	
+	# Set our token/key parameters
+	params['oauth_token'] = token.key
+	params['oauth_consumer_key'] = consumer.key
+	
+	#the url to which the twitter api call is being made
+	url = url
+	
+	# Create our request. Change method, etc. accordingly.
+	req = oauth.Request(method="GET", url=url, parameters=params)
+	
+	# Sign the request.
+	signature_method = oauth.SignatureMethod_HMAC_SHA1()
+	req.sign_request(signature_method, consumer, token)
+	
+	#create the url and the header
+	req_url = req.to_url()
+	logging.debug(req_url)
+	header = req.to_header()
+	
+	return req_url, header
 	
 def twitter_deets(user,*args,**kwargs):
 	
@@ -53,46 +99,10 @@ def twitter_deets(user,*args,**kwargs):
 		oauth_token = user.twitter_token
 		screen_name = user.twitter_screen_name
 	
-	#These are values that identify our app
-	oauth_consumer_key = 'JAu03A5jqlYddohoXI8Ng'
-	oauth_consumer_secret = 'h6Zh3T3PZphUg3Bu3UVdtK2AjHrDUWU6wJ4LDd5ec'
-	oauth_token_secret='f0Rzdx8iiL58ebiyvokcf4JW2C9oSKbfJ81rwhsg'
-	
-	params = {
-		#required oauth params
-		'oauth_nonce'				:	oauth.generate_nonce(),
-		'oauth_timestamp'			:	int(time.time()),
-		'oauth_version'				:	'1.0',
-		#params specified by us
-		'screen_name'				:	screen_name
-		}
-	
-	
-	
-	# Set up instances of our Token and Consumer. The Consumer.key and 
-	# Consumer.secret are given to you by the API provider. The Token.key and
-	# Token.secret is given to you after a three-legged authentication.
-	token = oauth.Token(key=oauth_token, secret=oauth_token_secret) #this is the user
-	consumer = oauth.Consumer(key=oauth_consumer_key, secret=oauth_consumer_secret) #this is us
-	
-	# Set our token/key parameters
-	params['oauth_token'] = token.key
-	params['oauth_consumer_key'] = consumer.key
-	
 	#the url to which the twitter api call is being made
 	url = 'https://api.twitter.com/1.1/users/show.json'
 	
-	# Create our request. Change method, etc. accordingly.
-	req = oauth.Request(method="GET", url=url, parameters=params)
-	
-	# Sign the request.
-	signature_method = oauth.SignatureMethod_HMAC_SHA1()
-	req.sign_request(signature_method, consumer, token)
-	
-	#create the url and the header
-	req_url = req.to_url()
-	logging.debug(req_url)
-	header = req.to_header()
+	req_url, header = authorize_twitter(url,oauth_token,screen_name=screen_name)
 	
 	
 	
@@ -114,7 +124,7 @@ def twitter_deets(user,*args,**kwargs):
 		logging.debug('Authorized')
 		
 		if not user.twitter_id:
-			user.twitter_id	= content.get('id_str')
+			user.twitter_id	= content.get('id')
 		
 		
 		#check if user has connected facebook

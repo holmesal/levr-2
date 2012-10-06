@@ -488,6 +488,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 								#get the user - constrains to user kind
 								user = levr.Customer.get(uid)
 							except:
+								levr.log_error()
 								raise TypeError('uid: '+ str(enc.encrypt_key(uid)))
 							
 						

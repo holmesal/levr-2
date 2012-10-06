@@ -728,9 +728,13 @@ class Customer(db.Model):
 	
 	#tokens and ids, internal and external
 	levr_token		= db.StringProperty(default=create_levr_token())
+	#facebook
 	facebook_token	= db.StringProperty()
 	facebook_id		= db.StringProperty()
+	#foursquare
+	foursquare_id	= db.StringProperty()
 	foursquare_token= db.StringProperty()
+	#twitter
 	twitter_token	= db.StringProperty()
 	twitter_id		= db.IntegerProperty()
 	twitter_screen_name = db.StringProperty()

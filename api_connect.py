@@ -71,7 +71,7 @@ class ConnectFoursquareHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 		
 class ConnectTwitterHandler(webapp2.RequestHandler):
-	@api_utils.validate(None,'param',user=True,token=True,screenName=True,levrToken=True)
+	@api_utils.validate(None,'param',user=True,token=False,screenName=True,levrToken=True)
 #	@api_utils.validate(None,None,user=False,token=False,screenName=False,levrToken=False)
 	@api_utils.private
 	def get(self,*args,**kwargs):
