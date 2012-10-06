@@ -6,7 +6,7 @@ import time
 from google.appengine.ext import db
 from google.appengine.api import urlfetch
 import oauth2 as oauth
-#import urllib
+import urllib
 #import hmac
 #import hashlib
 #import binascii
@@ -64,7 +64,7 @@ def twitter_deets(user,oauth_token,screen_name):
 	
 	params = {
 		#required oauth params
-		'oauth_nonce'				:	oauth.generate_nonce,
+		'oauth_nonce'				:	oauth.generate_nonce(),
 		'oauth_timestamp'			:	int(time.time()),
 		'oauth_version'				:	'1.0',
 		#params specified by us
@@ -95,40 +95,49 @@ def twitter_deets(user,oauth_token,screen_name):
 	req.sign_request(signature_method, consumer, token)
 	
 	
+	req_url = req.to_url()
+	header = req.to_header()
+	
+#	logging.debug(levr.log_dir(req))
+#	logging.debug(levr.log_dir(header))
+#	logging.debug(levr.log_dir(url))
+	
+	
 	logging.debug(req)
 	logging.debug(type(req))
-	logging.debug(levr.log_dir(req))
+	logging.debug('\n\n')
+	logging.debug(url)
+	logging.debug(type(url))
+	logging.debug('\n\n')
+	logging.debug(header)
+	logging.debug(type(header))
 	
-	
-	data = req.to_url()
-	
-	logging.debug(data)
-	logging.debug(type(data))
-	logging.debug(levr.log_dir(data))
 	
 	
 	# Create our client.
 	client = oauth.Client(consumer)
 	
 	# The OAuth Client request works just like httplib2 for the most part.
-	resp, content = client.request(data, "GET")
-	logging.debug(resp)
-	logging.debug(content)
+#	resp, content = client.request(url, method="GET",headers=header)
+#	logging.debug(resp)
+#	logging.debug(content)
 	
-	return resp, json.loads(content)
+	result = urlfetch.fetch(
+				url=url+"?screen_name=LevrDevr",
+#				payload=urllib.urlencode({
+#						'screen_name':screen_name
+#						}),
+				method=urlfetch.GET,
+				headers=header)
 	
-#	try:
-#		#goto twitter
-#		url = 'https://api.twitter.com/1.1/users/show.json?screen_name=LevrDevr'
-#		result = urlfetch.fetch(url=url,headers={'Authorization':auth_string})
-#		logging.debug(result)
-#		twitter_user = json.loads(result.content)['user']
-#		logging.debug('twitter user: ')
-#		logging.debug(twitter_user)
-#		return user
-#	except:
-#		levr.log_error()
-#		raise Exception('Invalid twitter response: '+result.content)
+	resp = json.loads(result.content)
+	
+	
+	return resp, {}#json.loads(content)
+	
+
+
+
 
 
 def facebook_deets(user,facebook_id,token,*args,**kwargs):

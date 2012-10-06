@@ -83,7 +83,7 @@ from google.appengine.api import mail
 #			
 
 class UpvoteHandler(webapp2.RequestHandler):
-	@api_utils.validate('deal','param',user=False,levrToken=False)
+	@api_utils.validate('deal','param',user=True,levrToken=True)
 	@api_utils.private
 	def get(self,dealID,*args,**kwargs):
 		try:
@@ -187,7 +187,7 @@ class UpvoteHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 
 class DownvoteHandler(webapp2.RequestHandler):
-	@api_utils.validate('deal','param',user=False,levrToken=False)
+	@api_utils.validate('deal','param',user=True,levrToken=True)
 	@api_utils.private
 	def get(self,dealID,*args,**kwargs):
 		try:
@@ -261,7 +261,7 @@ class DownvoteHandler(webapp2.RequestHandler):
 
 
 class DeleteFavoriteHandler(webapp2.RequestHandler):
-	@api_utils.validate('deal','param',user=False,levrToken=False)
+	@api_utils.validate('deal','param',user=True,levrToken=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		'''
@@ -297,7 +297,7 @@ class DeleteFavoriteHandler(webapp2.RequestHandler):
 		
 
 class ReportHandler(webapp2.RequestHandler):
-	@api_utils.validate('deal','param',user=False,levrToken=False)
+	@api_utils.validate('deal','param',user=True,levrToken=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		'''
