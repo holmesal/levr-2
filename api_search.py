@@ -81,20 +81,16 @@ class SearchQueryHandler(webapp2.RequestHandler):
 					hashes = new_hash_set
 					new_hash_set = []
 					for hash in hashes:
-#						logging.debug(hash)
 						#get hash neighbors
 						#extend the hashes list with the new hashes
 						new_hash_set.extend(geohash.expand(hash))
 					
-#					logging.debug(new_hash_set)
 					#remove duplicated
 					new_hash_set = list(set(new_hash_set))
-#					logging.debug(new_hash_set)
 					#filter out the hashes that have already been searched
 					new_hash_set = filter(lambda h: h not in searched_hash_set,new_hash_set)
-#					logging.debug(new_hash_set)
 					
-#					logging.debug('result: '+str(new_hash_set))
+					#new_hash_set is now a ring of geohashes around the last ring that was searched
 					
 					
 					#fetch deals from hash set, and extend the list of deal keys
@@ -112,6 +108,27 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			query_end = datetime.now()
 			
 			total_query_time = query_end-query_start
+			
+			#create bounding box from resulting new_hash_set
+			points = [geohash.decode(hash) for hash in new_hash_set]
+			logging.debug(points)
+			#unzip lat,lons into two separate lists
+			lat,lon = zip(*points)
+			
+			#find max lat, long
+			max_lat = max(lat)
+			max_lon = max(lon)
+			#find min lat, long
+			min_lat = min(lat)
+			min_lon = min(lon)
+			
+			#create bounding box
+			bounding_box = {
+						'bottom_left'	: (min_lat,min_lon),
+						'top_right'		: (max_lat,max_lon)
+						}
+			logging.debug(bounding_box)
+			
 			
 			logging.info('total deals fetched: '+str((deal_keys.__len__())))
 			#batch get all of the deals
@@ -270,6 +287,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 					'package_time'		: str(package_time),
 					'total_time'		: str(total_time),
 					'iterations'		: str(iterations),
+					'boundingBox'		: bounding_box,
 #					'ending_hashes'		: list(searched_hash_set),
 					'ending_hash_length': list(searched_hash_set).__len__(),
 					'deals'				: packaged_deals
