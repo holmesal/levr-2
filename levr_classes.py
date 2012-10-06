@@ -553,12 +553,6 @@ def dealCreate(params,origin,upload_flag=True):
 		uid = params['uid']
 		
 		
-		
-			
-		
-		
-		
-		
 		deal = CustomerDeal(
 						parent			= uid,
 						is_exclusive	= False

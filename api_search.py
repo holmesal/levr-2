@@ -233,80 +233,8 @@ class SearchQueryHandler(webapp2.RequestHandler):
 		except:
 			levr.log_error(self.request.params)
 			api_utils.send_error(self,'Server Error')
-class LoadTestHandler(webapp2.RequestHandler):
-	@api_utils.validate('query',None,geoPoint=True,limit=False,radius=False,user=False)
-	def get(self,**kwargs):
-		'''
-		inputs: lat,lon,limit, query
-		Output:{
-			meta:{
-				success
-				errorMsg
-				}
-			response:{
-				[string,string]
-				}
-		'''
-		try:
-			logging.info("\n\nSEARCH")
-#			logging.debug(query)
-#			logging.debug(geo_point)
-#			logging.debug(limit)
-#			logging.debug(self.request.params)
-#			
-			#create search tags
-			tags = levr.tagger(query.lower())
-			p = [6,5,4]
-			r = [1,2,3,4,5,6,7,8,9,10]
 			
-			response = {
-					'results': []
-					}
-			start = datetime.now()
 			
-			for radius in r:
-				for precision in p:
-			
-					t1 = datetime.now()
-					#fetch all deals from within radius
-					(deals,fetch_time,get_time,filter_time,unfiltered_count,filtered_count) = api_utils.get_deals_in_area(tags,geo_point,radius,limit,precision)
-					
-					t2 = datetime.now()
-					
-					packaged_deals = [api_utils.package_deal(deal) for deal in deals]
-					
-					t3 = datetime.now()
-					response['results'].append({
-											'precision' : str(precision),
-											'radius'	: str(radius),
-											'unfiltered_count': str(unfiltered_count),
-											'filtered_count'  : str(filtered_count),
-											'getting'	: {
-															'fetching'	: str(fetch_time),
-															'getting'	: str(get_time),
-															'filtering' : str(filter_time),
-															'total'		: str(t2-t1)
-															},
-											'packaging'	: str(t3-t2),
-											'total'		: str(t3-t1)
-											})
-#					response = {
-#							'numResults': packaged_deals.__len__(),
-#							'fetching'	: str(t2-t1),
-#							'packaging'	: str(t3-t2),
-#							'total'		: str(t3-t1)
-#		#					'deals'		: packaged_deals
-#							}
-			
-			end = datetime.now()
-			response['time'] = str(end-start)
-			
-			api_utils.send_response(self,response)
-			
-		except:
-			levr.log_error(self.request.params)
-			api_utils.send_error(self,'Server Error')
-
 class SearchNewHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,None,geoPoint=True,limit=False,radius=False,user=False)
 	def get(self,*args,**kwargs):
@@ -383,7 +311,7 @@ class SearchPopularHandler(webapp2.RequestHandler):
 			
 			for query_hash in hash_set:
 				#only grab keys for deals that have active status
-				q = levr.Deal.all(projection=['tags']).filter('deal_status =','active')
+				q = levr.Deal.all(projection=['tags']).filter('deal_status =','test')
 				#FILTER BY GEOHASH
 				q.filter('geo_hash >=',query_hash).filter('geo_hash <=',query_hash+"{") #max bound
 				
@@ -395,6 +323,7 @@ class SearchPopularHandler(webapp2.RequestHandler):
 				deals.extend(fetched_deals)
 		#					logging.debug(deal_keys)
 			t2 = datetime.now()
+			
 			
 			#FILTER
 			tags = []

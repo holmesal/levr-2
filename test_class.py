@@ -44,6 +44,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			ethan.pw 	= enc.encrypt_password('ethan')
 			ethan.alias	= 'Deal Owner'
 			ethan.favorites	= []
+			ethan.tester = True
 			ethan = ethan.put()
 		
 		pat = levr.Customer.all(keys_only=True).filter('email','patrick@levr.com').get()
@@ -53,6 +54,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			pat.pw 	= enc.encrypt_password('patrick')
 			pat.alias	= 'Redeemer'
 			pat.favorites	= []
+			pat.tester = True
 			pat = pat.put()
 		
 		alonso = levr.Customer.all(keys_only=True).filter('email','alonso@levr.com').get()
@@ -62,6 +64,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			alonso.pw 	= enc.encrypt_password('alonso')
 			alonso.alias	= 'Follows patrick and ethan'
 			alonso.favorites	= []
+			alonso.tester = True
 			alonso = alonso.put()
 		
 		ninja = levr.Customer.all(keys_only=True).filter('email','santa@levr.com').get()
@@ -71,6 +74,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			ninja.pw 	= enc.encrypt_password('santa')
 			ninja.alias	= 'Followed'
 			ninja.favorites = []
+			ninja.tester = True
 			ninja = ninja.put()
 		
 		
@@ -84,6 +88,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 					'deal_description'	: 'This is a description gut guts who why when you buy a shoe with feet',
 					'deal_line1'		: 'I am a deal',
 					'distance'			: '10', #is -1 if unknown = double
+					'development'		: True,
 					'img_key'			: img_key
 					}
 
