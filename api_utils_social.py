@@ -19,36 +19,25 @@ def foursquare_deets(user,token):
 		url = 'https://api.foursquare.com/v2/users/self?v=20120920&oauth_token='+token
 		result = urlfetch.fetch(url=url)
 		foursquare_user = json.loads(result.content)['response']['user']
-		#grab stuff
-		user.first_name = foursquare_user['firstName']
-		user.last_name = foursquare_user['lastName']
-		user.alias = user.first_name+user.last_name[0]+'.'
-		user.photo = foursquare_user['photo']['prefix']+'500x500'+foursquare_user['photo']['suffix']
-		user.email = foursquare_user['contact']['email']
-		logging.info(user.__dict__)
 		
+		#give preference to facebook and twitter info over foursquare info
+		if not user.facebook_id and not user.twitter_id:
+			#grab stuff
+			user.first_name = foursquare_user['firstName']
+			user.last_name = foursquare_user['lastName']
+			user.alias = user.first_name+user.last_name[0]+'.'
+			user.photo = foursquare_user['photo']['prefix']+'500x500'+foursquare_user['photo']['suffix']
+			user.email = foursquare_user['contact']['email']
+			logging.info(user.__dict__)
+		else:
+			logging.debug('user has already connected with facebook or twitter')
 		return user
 	except:
 		raise Exception('Invalid foursquare response: '+result.content)
 	
 	return user
 
-def sort_and_encode_params(params):
-	#params must be a dictionary
-	order = sorted(params)
-	#output string
-	output = ''
-	
-	for item in order:
-		output+=urllib.quote(item)
-		output+='='
-		output+=params[item]
-		output+='&'
-#		logging.info(output)
-		
-	#remove final '&' and return string
-	
-	return output[:len(output)-1]
+
 	
 def twitter_deets(user,*args,**kwargs):
 	
@@ -126,20 +115,29 @@ def twitter_deets(user,*args,**kwargs):
 		
 		if not user.twitter_id:
 			user.twitter_id	= content.get('id_str')
-		if user.photo == 'http://www.levr.com/img/levr.png':
-			user.photo		= content.get('profile_image_url')
 		
-		#create users name
-		name	= content.get('name')
-		name = name.split(' ')
-		logging.debug(name)
-		if not user.first_name:
-			user.first_name	= name[0]
-		if not user.last_name:
-			user.last_name	= name[-1]
-		if not user.display_name:
-			user = levr.build_display_name(user)
-		logging.debug(levr.log_model_props(user))
+		
+		#check if user has connected facebook
+		#defer to facebook info
+		if not user.facebook_id:
+			
+			if user.photo == 'http://www.levr.com/img/levr.png':
+				user.photo		= content.get('profile_image_url')
+			
+			#create users name
+			name	= content.get('name')
+			name = name.split(' ')
+			logging.debug(name)
+			if not user.first_name:
+				user.first_name	= name[0]
+			if not user.last_name:
+				user.last_name	= name[-1]
+			if not user.display_name:
+				user = levr.build_display_name(user)
+			logging.debug(levr.log_model_props(user))
+		else:
+			logging.debug('user has already connected with facebook')
+		
 		
 	elif status == 401:
 		logging.error('NOT AUTHORIZED')
@@ -150,9 +148,6 @@ def twitter_deets(user,*args,**kwargs):
 #	logging.debug(levr.log_dir(heads))
 	return user
 	
-
-
-
 
 
 def facebook_deets(user,facebook_id,token,*args,**kwargs):

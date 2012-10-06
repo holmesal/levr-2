@@ -11,57 +11,64 @@ class ConnectFacebookHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,'param',user=True,token=True,facebookID=True,levrToken=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
-		#RESTRICTED
-		user		= kwargs.get('actor')
-		token		= kwargs.get('token')
-		facebook_id	= kwargs.get('facebookID')
-		
-		
-		
-		#add facebook token
-		user.facebook_token = token
-		#fetch user info from facebook graph api
-		user = social.facebook_deets(user,facebook_id,token)
-		
-		#create or refresh the alias
-		user = levr.build_display_name(user)
-		
-		#update
-		user.put()
-		
-		#return the user
-		response = {
-				'user':api_utils.package_user(user,True)
-				}
-		api_utils.send_response(self,response,user)
-
+		try:
+			#RESTRICTED
+			user		= kwargs.get('actor')
+			token		= kwargs.get('token')
+			facebook_id	= kwargs.get('facebookID')
+			
+			
+			
+			#add facebook token
+			user.facebook_token = token
+			#fetch user info from facebook graph api
+			user = social.facebook_deets(user,facebook_id,token)
+			
+			#create or refresh the alias
+			user = levr.build_display_name(user)
+			
+			#update
+			user.put()
+			
+			#return the user
+			response = {
+					'user':api_utils.package_user(user,True)
+					}
+			api_utils.send_response(self,response,user)
+		except:
+			levr.log_error()
+			api_utils.send_error(self,'Server Error')
 
 class ConnectFoursquareHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,'param',user=True,token=True,levrToken=True)
 	@api_utils.private
 	def post(self,*args,**kwargs):
-		#RESTRICTED
-		logging.debug('CONNECT FOURSQUARE\n\n\n')
-		logging.debug(kwargs)
-		
-		user		= kwargs.get('actor')
-		token		= kwargs.get('token')
-		
-		#create or refresh the alias
-		user = levr.build_display_name(user)
-		
-		
-		#add foursquare token
-		user.foursquare_token = token
-		#query foursquare for user data
-		user = social.foursquare_deets(user,token)
-
-		#update
-		user.put()
-		
-		#return the user
-		response = {'user':api_utils.package_user(user,'private')}
-		api_utils.send_response(self,response,user)
+		try:
+			#RESTRICTED
+			logging.debug('CONNECT FOURSQUARE\n\n\n')
+			logging.debug(kwargs)
+			
+			user		= kwargs.get('actor')
+			token		= kwargs.get('token')
+			
+			#create or refresh the alias
+			user = levr.build_display_name(user)
+			
+			
+			#add foursquare token
+			user.foursquare_token = token
+			#query foursquare for user data
+			user = social.foursquare_deets(user,token)
+	
+			#update
+			user.put()
+			
+			#return the user
+			response = {'user':api_utils.package_user(user,'private')}
+			api_utils.send_response(self,response,user)
+		except:
+			levr.log_error()
+			api_utils.send_error(self,'Server Error')
 		
 class ConnectTwitterHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,'param',user=True,token=True,screenName=True,levrToken=True)
@@ -78,9 +85,6 @@ class ConnectTwitterHandler(webapp2.RequestHandler):
 			screen_name	= kwargs.get('screenName')
 			development = kwargs.get('development')
 			
-#			#create or refresh the alias
-#			user = levr.build_display_name(user)
-#			
 #			#add twitter token
 			user.twitter_token = oauth_token
 #			#add screen name
@@ -88,16 +92,12 @@ class ConnectTwitterHandler(webapp2.RequestHandler):
 #			
 			user = social.twitter_deets(user,development=development)
 			
-			logging.debug(levr.log_model_props(user))
 			
 			#update
 	 		user.put()
 			#return the user
 			response = {'user':api_utils.package_user(user,'private')}
 			api_utils.send_response(self,response,user)
-			
-			logging.debug(levr.log_dir(levr.Customer()))
-			
 			
 		except:
 			levr.log_error()

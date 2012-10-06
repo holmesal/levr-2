@@ -15,7 +15,6 @@ class LoginFacebookHandler(webapp2.RequestHandler):
 			facebook_id = kwargs.get('facebookID')
 			#check if token currently exists in datastore
 			existing_user = levr.Customer.all().filter('facebook_id',facebook_id).get()
-	#		gql('WHERE facebook_token = :1',token).get()
 			
 			if existing_user:
 				#return the user
@@ -52,7 +51,7 @@ class LoginFoursquareHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 			
 class LoginTwitterHandler(webapp2.RequestHandler):
-	@api_utils.validate(None,None,token=True)
+	@api_utils.validate(None,None,externalID=True,token=True)
 	def get(self,*args,**kwargs):
 		try:
 			#RESTRICTED
