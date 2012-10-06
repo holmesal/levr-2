@@ -298,7 +298,7 @@ class UserNotificationsHandler(webapp2.RequestHandler):
 			sinceDate	= kwargs.get('since')
 			limit		= kwargs.get('limit')
 			offset		= kwargs.get('offset')
-			
+
 			logging.debug('sinceDate: '+str(sinceDate))
 			logging.debug('last notified: '+str(user.last_notified))
 			
