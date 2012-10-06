@@ -131,9 +131,12 @@ def package_deal(deal,private=False,externalBusiness=None,externalID=None,*args,
 			'vote'			: deal.upvotes - deal.downvotes,
 			'pinColor'		: deal.pin_color,
 			'karma'			: deal.karma,
-			'rank'			: kwargs.get('rank',0),
 			'origin'		: deal.origin
 			}
+	
+	rank = kwargs.get('rank')
+	if rank: packaged_deal['rank'] = rank
+	
 	logging.debug('rank')
 	logging.debug(kwargs.get('rank'))
 	if deal.is_exclusive == False:
@@ -964,7 +967,7 @@ def search_yipit(query,geo_point):
 				deal.largeImg = yipit_deal['images']['image_big']
 				deal.smallImg = yipit_deal['images']['image_small']
 				deal.status = 'active'
-				deal.
+#				deal.
 				
 				
 				packaged_deal = api_utils.package_deal(deal,private=False,business,yipit_deal['id'])
