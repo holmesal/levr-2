@@ -308,14 +308,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 		'''
 		def validator(self,*args,**kwargs):
 			logging.debug('Validator')
-			logging.debug(args)
-			if args: logging.debug('yes')
-			logging.debug(kwargs)
-			logging.debug(a)
-			if a: logging.debug('WWOOO')
-			else: logging.debug('NOOO')
 			logging.debug("to_validate: "+str(to_validate))
-#			logging.debug(name)
 			logging.debug("auth_source: "+str(authentication_source))
 			
 			type_cast = {
@@ -505,7 +498,6 @@ def validate(url_param,authentication_source,*a,**to_validate):
 					#check token validity
 					#assure that the token was passed
 					levr_token = self.request.get('levrToken')
-					logging.debug(levr_token)
 					#check token against stored token
 					if user:
 						if levr_token == user.levr_token	: private = True
@@ -519,8 +511,6 @@ def validate(url_param,authentication_source,*a,**to_validate):
 					#if token checks out, the private is True
 					
 					
-				logging.debug(private)
-				
 				
 				#update kwargs to include privacy level
 				kwargs.update({'private':private})
@@ -552,7 +542,6 @@ def validate(url_param,authentication_source,*a,**to_validate):
 					else:
 						val = self.request.get(key)
 						msg = key+": "+val
-					logging.debug(val)
 					#requires is whether or not it is required
 					required	= to_validate.get(key)
 					#date_type pulls the type that the passed input should be
@@ -563,8 +552,6 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						raise Exception()
 					#msg is passed to the exception handler if val fails validation
 					
-#					logging.debug(key)
-#					logging.debug(val)
 					logging.debug(msg)
 					logging.debug(data_type)
 					logging.debug(required)
@@ -577,7 +564,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 					#handle case where input should be an integer
 					elif data_type == int: 
 						if val.isdigit():
-							#translate input from unicode to int
+							#convert to int
 							val = int(val)
 							
 						else:
@@ -587,16 +574,15 @@ def validate(url_param,authentication_source,*a,**to_validate):
 					elif data_type == float:
 						#float input
 						try:
+							#convert to float
 							val = float(val)
 						except Exception,e:
 							logging.debug(e)
 							raise TypeError(msg)
 					elif data_type == db.GeoPt:
 						try:
-							logging.debug(val)
+							#convert to geopoint
 							val = levr.geo_converter(val)
-							logging.debug(val)
-							logging.debug(type(val))
 						except Exception,e:
 							logging.debug(e)
 							raise TypeError(msg)
@@ -640,12 +626,13 @@ def validate(url_param,authentication_source,*a,**to_validate):
 							raise TypeError(msg)
 					elif data_type == list:
 						try:
+							#convert to list
 							val = val.split(',')
-							logging.debug(val)
 						except Exception,e:
 							logging.debug(e)
 							raise TypeError(msg+"... must be a comma delimited string")
 					elif data_type == str:
+						#nothing!
 						pass
 						
 					#update the dictionary that is passed to the handler function with the key:val pair
