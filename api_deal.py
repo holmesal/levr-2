@@ -205,8 +205,17 @@ class DownvoteHandler(webapp2.RequestHandler):
 			
 			if dealID in user.downvotes:
 				logging.debug('flag deal is in downvotes')
-				logging.debug('DO NOTHING WOOO!!!')
-				pass
+				
+				user.downvotes.remove(dealID)
+				
+				#decrement the deal downvotes
+				deal.downvotes -= 1
+				#do not change the karma of the user who uploaded it
+				#do not add to favorites
+				#do not create notification
+				
+				db.put([user,deal])
+				
 			
 			elif dealID in user.upvotes:
 				logging.debug('flag deal is in downvotes')
