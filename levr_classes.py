@@ -732,7 +732,7 @@ class Customer(db.Model):
 	facebook_id		= db.StringProperty()
 	foursquare_token= db.StringProperty()
 	twitter_token	= db.StringProperty()
-	twitter_id		= db.StringProperty()
+	twitter_id		= db.IntegerProperty()
 	twitter_screen_name = db.StringProperty()
 	
 	#date stuff
