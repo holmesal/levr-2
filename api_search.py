@@ -59,6 +59,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			tuple_list		= []
 			searched_hash_set = [] #hashes that have been searched
 			new_hash_set	= [] #hashes that havent been searched
+			foursquare_ids = []
 			
 			
 			
@@ -143,6 +144,11 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				#toop = (rank,karma,distance,deal)
 				toop = (0.0,k,d,deal)
 				tuple_list.append(toop)
+				
+				#append foursquare id
+				logging.info(deal.foursquare_id)
+				if deal.foursquare_id:
+					foursquare_ids.append(deal.foursquare_id)
 			t2 = datetime.now()
 			
 			calc_maxes_time = t2-t1
@@ -217,11 +223,21 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			logging.debug('package_time: '+str(package_time))
 			logging.debug('total_time: '+str(total_time))
 			
-
-	# 		if user:
-# 				if user.foursquare_token:
-# 					logging.debug('searching foursquare!')
-# 					api_utils.search_foursquare(self,geo_point,user)
+			
+			if user:
+				if user.foursquare_token:
+					ft1 = datetime.now()
+					logging.info('FOURSQUARE IDS::::')
+					logging.info(foursquare_ids)
+					logging.debug('searching foursquare!')
+					foursquare_deals = api_utils.search_foursquare(self,geo_point,user,foursquare_ids)
+					logging.info('Levr results found: '+str(len(packaged_deals)))
+					logging.info('Foursquare results found: '+str(len(foursquare_deals)))
+					packaged_deals = packaged_deals + foursquare_deals
+					logging.info('Total results found: '+str(len(packaged_deals)))
+					logging.info(foursquare_ids)
+					ft2 = datetime.now()
+					logging.info('Foursquare fetch time: ' + str(ft2-ft1))
 
 			#add yipit call if no deals are returned
 # 			 if len(packaged_deals) == 0:
@@ -241,7 +257,6 @@ class SearchQueryHandler(webapp2.RequestHandler):
 #					'ending_hashes'		: list(searched_hash_set),
 					'ending_hash_length': list(searched_hash_set).__len__(),
 					'deals'				: packaged_deals
-
 					}
 			api_utils.send_response(self,response)
 		except:

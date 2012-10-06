@@ -114,6 +114,11 @@ def package_deal(deal,private=False,externalBusiness=None,externalID=None,*args,
 	else:
 		dealID = enc.encrypt_key(deal.key())
 
+	logging.debug(levr.log_model_props(deal))
+	logging.debug(deal.key().parent())
+	logging.debug(levr.Customer.get(deal.key().parent()))
+	
+
 #	logging.debug(str(deal.geo_point))
 	packaged_deal = {
 # 			'barcodeImg'	: deal.barcode,
@@ -151,6 +156,8 @@ def package_deal(deal,private=False,externalBusiness=None,externalID=None,*args,
 		
 	return packaged_deal
 def package_user(user,private=False,followers=True,**kwargs):
+
+	logging.debug(levr.log_model_props(user))
 	
 	packaged_user = {
 		'uid'			: enc.encrypt_key(str(user.key())),
@@ -253,22 +260,25 @@ def create_share_url(deal_entity):
 	
 def create_img_url(entity,size):
 	#creates a url that will serve the deals image
-#	logging.debug(levr.log_dir(entity))
-#	logging.debug(entity.class_name())
-#	logging.debug(type(entity.kind()))
+	logging.debug(levr.log_dir(entity))
+	logging.debug(entity.class_name())
+	logging.debug(type(entity.kind()))
 	
-#	logging.debug(entity.kind())
-#	logging.debug(entity.kind() == 'Deal')
-	if entity.kind() == 'Customer':
-		hook = 'api/user/'
-	elif entity.kind() == 'Deal':
-		hook = 'api/deal/'
+	logging.debug(entity.kind())
+# 	logging.debug(entity.kind() == 'Deal')
+ 	# if entity.kind() == 'Customer':
+#  		hook = 'api/user/'
+ 	if entity.kind() == 'Deal':
+ 		hook = 'api/deal/'
+ 	# else:
+#  		raise KeyError('entity does not have an image: '+entity.kind())
+
+	if entity.img:	
+		#create one glorious url
+		img_url = host_url+hook+enc.encrypt_key(entity.key())+'/img?size='+size
+		return img_url
 	else:
-		raise KeyError('entity does not have an image: '+entity.kind())
-	
-	#create one glorious url
-	img_url = host_url+hook+enc.encrypt_key(entity.key())+'/img?size='+size
-	return img_url
+		return ''
 
 def private(handler_method):
 	'''
@@ -1045,7 +1055,7 @@ def search_yipit(query,geo_point):
 	else:
 		return False
 
-def search_foursquare(self,geo_point,user):
+def search_foursquare(self,geo_point,user,already_found=[]):
 # 	try:
 	#user must be connected with foursquare to be able to access these specials
 	#go get the user's foursquare token
@@ -1060,13 +1070,16 @@ def search_foursquare(self,geo_point,user):
 	
 	allowed_types = ['count','regular','flash','swarm','other','frequency','mayor']
 	
+	#initialize return array
+	response_deals = []
+	
 	for foursquare_deal in foursquare_deals:
 		logging.info('woo a deal!')
 		#logging.info(foursquare_deal['venue']['categories'][0]['name'])
-		if foursquare_deal['venue']['categories'][0]['name'] in allowed_categories and foursquare_deal['type'] in allowed_types:
-			logging.info(foursquare_deal['type'])
-			logging.info(foursquare_deal['message'])
-			logging.info(foursquare_deal['venue']['categories'][0]['name'])
+		if foursquare_deal['venue']['categories'][0]['name'] in allowed_categories and foursquare_deal['type'] in allowed_types and foursquare_deal['id'] not in already_found:
+			logging.debug(foursquare_deal['type'])
+			logging.debug(foursquare_deal['message'])
+			logging.debug(foursquare_deal['venue']['categories'][0]['name'])
 			
 			#does business already exist?
 			existing_business = levr.Business.gql('WHERE foursquare_id=:1',foursquare_deal['venue']['id']).get()
@@ -1082,7 +1095,7 @@ def search_foursquare(self,geo_point,user):
 					types				=	[venue['categories'][0]['name']]
 				)
 				business.put()
-				logging.info(business.__dict__)
+				logging.debug(business.__dict__)
 			else:
 				logging.info('business already exists')
 				business = existing_business
@@ -1092,42 +1105,63 @@ def search_foursquare(self,geo_point,user):
 			#does deal already exist?
 			existing_deal = levr.Deal.gql('WHERE foursquare_id=:1',foursquare_deal['id']).get()
 			if not existing_deal:
-				logging.info(foursquare_deal['message'])
+				
+				#set parent to foursquare user, or create if does not exist
+				foursquare_user = levr.Customer.gql('WHERE alias=:1 AND email=:2','Foursquare, Inc.','fake_foursquare_email').get()
+				if not foursquare_user:
+					#well create one then
+					foursquare_user = levr.Customer(
+							email			=	'fake_foursquare_email',
+							pw				=	enc.encrypt_password('Carl123!'),
+							alias			=	'Foursquare, Inc.',
+							display_name	=	'Foursquare, Inc.',
+							photo			=	'http://playfoursquare.s3.amazonaws.com/press/logo/icon-512x512.png'
+					)
+				
+				foursquare_user.put()
+				
+				#silly multiline strings in foursquare api
+				message = foursquare_deal['message']
+				if message.find('\r\n') != -1:
+					message = message[0:message.find('\r\n')]
+				elif message.find('\r') != -1:
+					message = message[0:message.find('\r')]
+				elif message.find('\n') != -1:
+					message = message[0:message.find('\n')]
+				else:
+					logging.debug('NO FUCKERY IN THIS HERE STRING')
+				
+				#logging.debug(json.dumps(foursquare_deal['message'].rstrip('\r\n')))
 				deal = levr.Deal(
 					businessID		=	str(business.key()),
 					deal_status		=	'active',
 					tags			=	levr.tagger(foursquare_deal['message']+' '+foursquare_deal['description']+' '+foursquare_deal['venue']['name']+' '+foursquare_deal['venue']['categories'][0]['name']),
 					origin			=	'foursquare',
-					external_url	=	'THISISAFAKEURL',
+					external_url	=	'foursquare://venues/'+foursquare_deal['venue']['id'],
 					foursquare_id	=	foursquare_deal['id'],
 					foursquare_type	=	foursquare_deal['venue']['categories'][0]['name'],
-					deal_text		=	foursquare_deal['message'].rstrip('\n'),
+					deal_text		=	message,
 					description		=	foursquare_deal['description'],
 					geo_point		=	business.geo_point,
-					geo_hash		=	business.geo_hash
+					geo_hash		=	business.geo_hash,
+					pin_color		=	'0,255,0',
+					parent			=	foursquare_user.key()
 				)
-				
-				logging.info(deal.__dict__)
+
+
+				deal.put()
+				logging.info('this is a new deal')
+				logging.debug(levr.log_model_props(deal))
 			else:
 				logging.info('deal already exists')
-			
-			
-			
-			
-			
-			#logging.info(foursquare_deal[''])
-			
-		#logging.info(foursquare_deal['state'])
-			
-# 			#is the deal already in the database?
-# 			existing_deal = levr.Deal.gql('WHERE foursquare_id=:1',foursquare_deal['id']).get()
-# 			
-# 			if existing_deal:
-# 				#this deal already exists, check if the status is different
-# 				if existing_deal.status
+				deal = existing_deal
+				logging.debug(levr.log_model_props(deal))
 				
-		#self.response.out.write(result.content['response'])
-		#result = json.loads(result.content)
-#	except:
-		#raise Exception('Error parsing foursquare response')
-		#ask pat about error handling here
+			
+			#package deal
+			packaged_deal = package_deal(deal)
+			response_deals.append(packaged_deal)
+			
+		#end valid deal level
+	#end for loop
+	return response_deals
