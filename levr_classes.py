@@ -8,9 +8,9 @@ import base_62_converter as converter
 from random import randint 
 import geo.geohash as geohash
 import uuid
-
 import levr_encrypt as enc
 from common_word_list import blacklist
+from random import randint
 
 
 from google.appengine.ext import db
@@ -72,19 +72,20 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 		
 		
 		
-		
 		if notification_type == 'newFollower':
 			#user is the person that is being followed
 			user = Customer.get(to_be_notified[0])
 			
 			
 			#add the actor to the list of followers
-			if actor not in user.followers:
-				user.followers.append(actor)
-			else:
-				#do nothing
-				return True
+			# if actor not in user.followers:
+# 				user.followers.append(actor)
+# 			else:
+# 				#do nothing
+# 				return True
 			
+			#set the phrase
+			line2 = 'Has subscribed to your offers.'
 			
 			#increment the number of notifications
 			user.new_notifications += 1
@@ -92,48 +93,76 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 			#replace user
 			db.put(user)
 			
+		elif notification_type == "followedUpload":
+			#user is the person being notified
+			user = Customer.get(to_be_notified[0])
+			
+			#set the phrase
+			line2 = 'Has uploaded a new offer.'
+			
+			#increment the number of notifications
+			user.new_notifications += 1
+			
+			#replace user
+			db.put(user)
 			
 		elif notification_type == 'favorite':
 			#get actor
-			[user,actor_entity] = db.get([to_be_notified[0],actor])
+			user = db.get(to_be_notified[0])
 			#check deal is not already favorited
-			if deal not in actor_entity.favorites:
-				actor_entity.favorites.append(deal)
-			else:
-				#do nothing
-				return True
+			# if deal not in actor_entity.favorites:
+# 				actor_entity.favorites.append(deal)
+# 			else:
+# 				#do nothing
+# 				return True
+			
+			a = 'Has liked your deal. Hooray!'
+			b = 'Is rushing to redeem your deal at this very moment.'
+			c = 'Thinks that your deal is just grand!'
+			
+			phrases = [a,b,c]
+			
+			rando = randint(0,len(phrases)-1)
+			
+			#select a random phrase
+			line2 = phrases[rando]
 			
 			#update notification count
 			user.new_notifications += 1
 			
 			#replace users
-			db.put([user,actor_entity])
+			db.put(user)
 			
 			
-		elif notification_type == 'redemption':
-			#get user,actor
-			[user,actor_entity,d] = db.get([to_be_notified[0],actor,deal])
-			#check actor has not redeemed yet
-			if d.is_exclusive:
-				#deal can only be redeemed once
-				if deal not in actor_entity.redemptions:
-					actor.redemptions.append(deal)
-				else:
-					#do nothing
-					return True
-			
-			#update notification count
-			user.new_notifications += 1
-			
-			#replace users
-			db.put([user,actor_entity])
+# 		elif notification_type == 'upvote':
+# 			#get user,actor
+# 			[user,actor_entity,d] = db.get([to_be_notified[0],actor,deal])
+# 			#make sure not already in upvotes
+# 			if deal not in actor_entity.upvotes:
+# 				
+# 			#check actor has not redeemed yet
+# 			# if d.is_exclusive:
+# # 				#deal can only be redeemed once
+# # 				if deal not in actor_entity.upvotes:
+# # 					#actor.upvotes.append(deal)
+# # 				else:
+# # 					#do nothing
+# # 					return True
+# 			#update notification count
+# 			user.new_notifications += 1
+# 			
+# 			#replace users
+# 			db.put([user,actor_entity])
 			
 		elif notification_type == 'levelup':
 			#get user,actor
-			[user,actor_entity] = db.get([to_be_notified[0],actor])
+			user = db.get(to_be_notified[0])
 			
 			#increment notification count
 			user.new_notifications += 1
+			
+			#write line2
+			line2 = 'You are now level 99. Woohoo!'
 			
 			#replace user
 			user.put()
@@ -154,6 +183,7 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 		#create and put the notification
 		notification = Notification(
 										notification_type	= notification_type,
+										line2				= line2,
 										to_be_notified		= to_be_notified,
 										actor				= actor,
 										deal				= deal #default to None
@@ -820,7 +850,6 @@ class Deal(polymodel.PolyModel):
 	deal_status		= db.StringProperty(choices=set(["pending","active","rejected","expired","test"]),default="active")
 	been_reviewed	= db.BooleanProperty(default=False)
 	reject_message	= db.StringProperty()
-	is_exclusive	= db.BooleanProperty(default=False)
 	tags			= db.ListProperty(str)
 	businessID 		= db.StringProperty() #CHANGE TO REFERENCEPROPERTY
 	origin			= db.StringProperty(default='levr')
@@ -861,7 +890,7 @@ class Deal(polymodel.PolyModel):
 	count_redeemed 	= db.IntegerProperty(default = 0) 	#total redemptions
 	vicinity		= db.StringProperty()
 	business_name 	= db.StringProperty(default='') #name of business
-	
+	is_exclusive	= db.BooleanProperty(default=False)
 	
 	
 	
@@ -909,7 +938,8 @@ class CustomerDeal(Deal):
 class Notification(db.Model):
 	date			= db.DateTimeProperty(auto_now_add=True)
 	date_in_seconds	= db.IntegerProperty(default=long(unix_time(datetime.now())))
-	notification_type = db.StringProperty(required=True,choices=set(['redemption','thanks','favorite','followerUpload','newFollower','levelup']))
+	notification_type = db.StringProperty(required=True,choices=set(['redemption','thanks','favorite','followedUpload','newFollower','levelup']))
+	line2			= db.StringProperty(default='')
 #	owner			= db.ReferenceProperty(Customer,collection_name='notifications',required=True)
 	to_be_notified	= db.ListProperty(db.Key)
 	deal			= db.ReferenceProperty(Deal,collection_name='notifications')

@@ -215,6 +215,12 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			logging.debug('package_time: '+str(package_time))
 			logging.debug('total_time: '+str(total_time))
 			
+
+			#add yipit call if no deals are returned
+			if len(packaged_deals) == 0:
+				packaged_deals = api_utils.search_yipit(query,geo_point)
+			#!!!
+			
 			
 			response = {
 					'numResults'		: packaged_deals.__len__(),
@@ -228,6 +234,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 #					'ending_hashes'		: list(searched_hash_set),
 					'ending_hash_length': list(searched_hash_set).__len__(),
 					'deals'				: packaged_deals
+
 					}
 			api_utils.send_response(self,response)
 		except:

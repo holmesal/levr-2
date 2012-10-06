@@ -15,6 +15,8 @@ import json
 from datetime import datetime
 from random import randint
 
+import api_utils
+
 class MainPage(webapp2.RequestHandler):
 	def get(self):
 		logging.info('!!!')
@@ -358,6 +360,37 @@ class PullFromLocuHandler(webapp2.RequestHandler):
 			self.response.out.write('<br/>Error...')
 			levr.log_error()
 			
+class TestNotificationHandler(webapp2.RequestHandler):
+	def get(self):
+		
+		logging.info('WTFFFF')
+		logging.debug('HOLY SHIT NEW NOTIFICATIONS OMG OMG OMG')
+		
+		#go get the ninja
+		user = levr.Customer.gql('WHERE email=:1','q').get()
+		#go get the user
+		actor = levr.Customer.gql('WHERE email=:1','alonso@levr.com').get()
+		#go get the deal
+		deal = levr.Deal.get('ahFzfmxldnItcHJvZHVjdGlvbnIcCxIIQ3VzdG9tZXIYsuQDDAsSBERlYWwYwbsBDA')
+		
+		#new follower notification
+		levr.create_notification('newFollower',user.key(),actor)
+		
+		#followed upload notification
+		levr.create_notification('followedUpload',user.key(),actor,deal)
+		
+		#favorite notification
+		levr.create_notification('favorite',user.key(),actor,deal)
+		
+		#levelup notification
+		levr.create_notification('levelup',user.key(),actor)
+		
+		self.response.out.write('HOLY SHIT NEW NOTIFICATIONS OMG OMG OMG')
+		
+class TestYipitHandler(webapp2.RequestHandler):
+	def get(self):
+		api_utils.search_yipit('sugar')
+		
 		
 		
 app = webapp2.WSGIApplication([('/new', MainPage),
@@ -366,7 +399,9 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/test', TestHandler),
 								('/new/inundate', AddDealsHandler),
 								('/new/updateUser', UpdateUsersHandler),
-								('/new/locu', PullFromLocuHandler)
+								('/new/locu', PullFromLocuHandler),
+								('/new/notification', TestNotificationHandler),
+								('/new/yipit', TestYipitHandler)
 #								('/new/update' , UpdateUsersHandler)
 								],debug=True)
 

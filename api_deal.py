@@ -125,12 +125,13 @@ class UpvoteHandler(webapp2.RequestHandler):
 				deal.downvotes -= 1
 				
 				#add deal to upvotes
-				user.upvotes.append(dealID)
+ 				user.upvotes.append(dealID)
 				#increment the number of upvotes
 				deal.upvotes += 1
 				#add deal to favorites
 				if dealID not in user.favorites:
-					user.favorites.append(dealID)
+ 					user.favorites.append(dealID)
+					pass
 				
 				#do not change the karma of the user who uploaded
 				#do not add notification for the ninja
@@ -157,7 +158,7 @@ class UpvoteHandler(webapp2.RequestHandler):
 				
 				
 				#add to upvote list
-				user.upvotes.append(dealID)
+ 				user.upvotes.append(dealID)
 				
 #				#increase the deal upvotes
 				deal.upvotes += 1
