@@ -868,7 +868,8 @@ class Deal(polymodel.PolyModel):
 	description 	= db.StringProperty(multiline=True,default='') #description of deal
 	img				= blobstore.BlobReferenceProperty()
 	share_id		= db.StringProperty(default=create_unique_id())
-	pin_color		= db.StringProperty(default='255,0,0')
+	#pin_color		= db.StringProperty(choices=set(['red','blue','green','pink','orange']),default='red')
+	pin_color		= db.StringProperty(default='red')
 	
 	
 	#deal interactions

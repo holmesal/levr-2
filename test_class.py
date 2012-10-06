@@ -411,6 +411,20 @@ class TestCategoryHandler(webapp2.RequestHandler):
 		
 		self.response.out.write(json.dumps(tags))
 		
+class UpdatePinsHandler(webapp2.RequestHandler):
+	def get(self):
+		#update all entities
+		deals = levr.Deal.all()
+		
+		for deal in deals:
+			if deal.origin == 'foursquare':
+				deal.pin_color = 'blue'
+			else:
+				deal.pin_color = 'red'
+				
+			logging.info(deal.pin_color)
+			deal.put
+		
 		
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload.*', DatabaseUploadHandler),
@@ -421,7 +435,8 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/locu', PullFromLocuHandler),
 								('/new/notification', TestNotificationHandler),
 								('/new/yipit', TestYipitHandler),
-								('/new/category', TestCategoryHandler)
+								('/new/category', TestCategoryHandler),
+								('/new/pins', UpdatePinsHandler)
 #								('/new/update' , UpdateUsersHandler)
 								],debug=True)
 
