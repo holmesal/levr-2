@@ -122,7 +122,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			#find the max k and max d out of the deals that have been found
 			for deal in deals:
 				#get deal karma points = upvotes for now
-				k		= deal.upvotes
+				k		= deal.upvotes - deal.downvotes
 				k_list.append(k)
 #				logging.debug('deal karma: '+str(k))
 				
@@ -153,11 +153,12 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			#calculate the rank of all of the deals that have been found
 			for idx,toop in enumerate(tuple_list):
 				#rank = (1+kf)/df
+				#toop = (rank,karma,distance,deal)
 				k = toop[1]
 				d = toop[2]
 				deal = toop[3]
 				
-#				logging.debug('k:'+str(k)+', d: '+str(d)+', max_k: '+str(max_k)+', max_d: '+str(max_d))
+				logging.debug('k:'+str(k)+', d: '+str(d)+', max_k: '+str(max_k)+', max_d: '+str(max_d))
 				
 				#calculate scaled karma and distance
 				kf = k_coef*k/max_k
@@ -166,10 +167,10 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				#set minimum d... especially to eliminate division by zero
 				if df < 0.1: df = 0.1
 				
-#				logging.debug('kf: '+str(kf)+', df: '+str(df))
+				logging.debug('kf: '+str(kf)+', df: '+str(df))
 				#calculate rank
 				rank = (1+kf)/df
-#				logging.debug('rank: '+str(rank))
+				logging.debug('rank: '+str(rank))
 				#add the rank to the deal toop
 #				logging.debug(toop)
 				toop = list(toop)
