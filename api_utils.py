@@ -98,6 +98,17 @@ def check_param(self,parameter,parameter_name,param_type='str',required=True):
 	logging.info(parameter_name+": "+str(parameter))
 	return True
 
+def create_pin_color(deal):
+	if deal.origin == 'levr':
+		pin_color = 'red'
+	elif deal.origin == 'foursquare':
+		pin_color = 'blue'
+	else:
+		pin_color = 'red'
+		
+	return pin_color
+
+
 def package_deal(deal,private=False,*args,**kwargs):
 	
 
@@ -116,7 +127,7 @@ def package_deal(deal,private=False,*args,**kwargs):
 			'tags'			: deal.tags,
 # 			'dateEnd'		: str(deal.date_end)[:19],
 			'vote'			: deal.upvotes - deal.downvotes,
-			'pinColor'		: deal.pin_color,
+			'pinColor'		: create_pin_color(deal),
 			'karma'			: deal.karma,
 			'origin'		: deal.origin,
 			'owner'			: package_user(levr.Customer.get(deal.key().parent()))
@@ -135,7 +146,7 @@ def package_deal(deal,private=False,*args,**kwargs):
 		
 	return packaged_deal
 	
-def package_deal_external(externalDeal,externalBusiness):
+def package_deal_external(externalDeal,externalBusiness,fake_owner):
 	
 	packaged_deal = {
 # 			'barcodeImg'	: deal.barcode,
@@ -145,10 +156,13 @@ def package_deal_external(externalDeal,externalBusiness):
 			'description'	: externalDeal.description,
 			'largeImg'		: externalDeal.large_img,
 			'smallImg'		: externalDeal.small_img,
-			'pinColor'		: deal.pin_color,
-			'origin'		: deal.origin
+			'pinColor'		: externalDeal.pin_color,
+			'origin'		: externalDeal.origin,
+			'externalURL'	: externalDeal.externalURL,
+			'owner'			: fake_owner
 			}
-
+	
+	return packaged_deal
 
 def package_user(user,private=False,followers=True,**kwargs):
 
@@ -927,126 +941,67 @@ def level_check(user):
 def search_yipit(query,geo_point):
 	#words = ["a la carte","a la mode","appetizer","beef","beverage","bill","bistro","boiled","bowl","braised","bread","breakfast","brunch","butter","cafe","cafeteria","cake","candle","cashier","centerpiece","chair","charge","chef","chicken","coffee","cola","cold","condiments","cook","cooked","course","cream","credit card","cutlery","deli","delicatessen","delicious","dessert","dine","diner","dining","dinner","dish","dishwasher","doggie bag","dressing","eat","eggs","entree","fish","food","fork","French fries","fries","fruit","glass","gourmand","gourmet","grilled","hamburger","head waiter","high tea","hors d'oeuvre","hostess","hot","ice","ice cubes","iced","ingredients","ketchup","kitchen","knife","lemonade","lettuce","lunch","main course","maitre d'","manager","meal","meat","medium","menu","milk","mug","mustard","napkin","noodles","onion","order","party","pasta","pepper","plate","platter","pop","rare","reservation","restaurant","roasted","roll","salad","salt","sandwich","sauce","saucer","seafood","seared","server","side order","silverware","soda","soup","special","spices","spicy","spill","spoon","starters","steak","sugar","supper","table","tablecloth","tasty","tax","tea","tip","toast","to go","tomato","utensils","vegetables","waiter","waitress","water","well-done"]
 	
-	#if query in words:
-	if True:
-		#search for restaurants
-		logging.info(str(geo_point))
-		#search_lat, search_lng = geo_point.split(',')
-		search_lat = geo_point.lat
-		search_lon = geo_point.lon
-		#url = 'http://api.yipit.com/v1/deals/?key=d9qcYtHgkKcPTAGD&tag=restaurants&lat='+lat+'&lon='+lon
-		url = 'http://api.yipit.com/v1/deals/?key=d9qcYtHgkKcPTAGD&tag=restaurants&lat='+str(search_lat)+'&lon='+str(search_lon)
-		logging.info(url)
-		result = urlfetch.fetch(url=url)
-		result = json.loads(result.content)['response']
-		deals = result['deals']
+	#(if query in words used to be here)
+	
+	#search for restaurants
+# 	logging.info(str(geo_point))
+	#search_lat, search_lng = geo_point.split(',')
+	search_lat = geo_point.lat
+	search_lon = geo_point.lon
+	#url = 'http://api.yipit.com/v1/deals/?key=d9qcYtHgkKcPTAGD&tag=restaurants&lat='+lat+'&lon='+lon
+	url = 'http://api.yipit.com/v1/deals/?key=d9qcYtHgkKcPTAGD&tag=restaurants&lat='+str(search_lat)+'&lon='+str(search_lon)
+	logging.debug(url)
+	result = urlfetch.fetch(url=url)
+	result = json.loads(result.content)['response']
+	deals = result['deals']
+# 	logging.info(deals)
+	
+	packaged_deals = []
+	
+	for yipit_deal in deals:
 		
-		packaged_deals = []
+# 			logging.info(yipit_deal)
 		
-		for yipit_deal in deals:
+		yipit_business = yipit_deal['business']
+		
+		lat = yipit_business['locations'][0]['lat']
+		lon = yipit_business['locations'][0]['lon']
+		
+		if lat==None or lon==None:
+			pass
+		else:
+		
+			packaged_business = {
+				'businessID'	: 'yipitdoesnotuseidsforbusinesses',
+				'businessName'	: yipit_business['name'],
+				'vicinity'		: yipit_business['locations'][0]['address'] + ', ' + yipit_business['locations'][0]['locality'],
+				'geoPoint'		: str(db.GeoPt(lat,lon)),
+				'geoHash'		: geohash.encode(lat,lon)
+					}
 			
-			yipit_business = yipit_deal['business']
-			
-			lat = yipit_business['locations'][0]['lat']
-			lon = yipit_business['locations'][0]['lon']
-			
-			if lat==None or lon==None:
-				pass
-			else:
-			
-				business = levr.Business()
-				business.business_name = yipit_business['name']
-				business.vicinity = yipit_business['locations'][0]['address'] + ', ' + yipit_business['locations'][0]['locality']
-				business.geo_point = levr.geo_converter(str(lat)+','+str(lon))
-				business.geo_hash = geohash.encode(lat,lon)
-				
-				packaged_business = package_business(business,'yipitdoesnotuseidsforbusinesses')
-				
-				deal = levr.Deal()
-				deal.externalID = yipit_deal['id']
-				deal.deal_text = yipit_deal['yipit_title']
-				deal.description = ''
-				deal.large_img = yipit_deal['images']['image_big']
-				deal.small_img = yipit_deal['images']['image_small']
-				deal.deal_status = 'active'
-				deal.date_uploaded = datetime.now()
-				deal.tags = []
-				deal.pin_color = 'pink'
+			deal = levr.Deal()
+			deal.externalID = yipit_deal['id']
+			deal.deal_text = yipit_deal['yipit_title']
+			deal.description = ''
+			deal.large_img = yipit_deal['images']['image_big']
+			deal.small_img = yipit_deal['images']['image_small']
+			deal.pin_color = 'orange'
+			deal.origin = 'yipit'
+			deal.externalURL = yipit_deal['mobile_url']
 
-				
-				packaged_deal = package_deal(deal,False,business,)
+			#make fake owner
+			fake_owner = {
+				'alias'		: 'Powered by Yipit.',
+				'photoURL'	: 'http://farm6.static.flickr.com/5205/5281647796_c42d9b6a15.jpg',
+				'karma'		: 42,
+				'levelText'	: 'Click to see more deals and coupons on Yipit.'
+			}
 			
-				# packaged_business = {
-# 				'businessName'		:	business['name'],
-# 				'vicinity'			:	business['locations'][0]['address'] + ', ' + business['locations'][0]['locality'],
-# 				'geoPoint'			:	str(lat)+','+str(lon),
-# 				'geoHash'			:	geohash.encode(lat,lon)
-# 				}
+			packaged_deal = package_deal_external(deal,packaged_business,fake_owner)
 			
-# 				logging.info(packaged_business)
-				
-				packaged_deal = {
-				#barcode image
-				'business'			: packaged_business,
-				#date uploaded
-				#dealID
-				'dealText'			: deal['yipit_title'],
-				#description
-				#isExclusive
-				'largeImg'			: deal['images']['image_big'],
-				'smallImg'			: deal['images']['image_small'],
-				'shareURL'			: deal['yipit_url'],
-				'tags'				: 'restaurants',
-				'pinColor'			: '255,255,255',
-				'externalLink'		: deal['mobile_url'],
-				'attributionText'	: 'Powered by:',
-				'attributionImage'	: 'http://farm6.static.flickr.com/5205/5281647796_c42d9b6a15.jpg',
-				'attributionLink'	: 'http://www.yipit.com'
-				}
-				
-				
-				packaged_deals.append(packaged_deal)
-				
-		logging.info(packaged_deals)
-		return packaged_deals
-# 			
-# 				#build a deal
-# 				deal = levr.Deal()
-# 			
-# 		def package_business(business):
-# 	packaged_business = {
-# 		'businessID'	: enc.encrypt_key(str(business.key())),
-# 		'businessName'	: business.business_name,
-# 		'vicinity'		: business.vicinity,
-# 		'foursquareID'	: business.foursquare_id,
-# 		'foursquareName': business.foursquare_name,
-# 		'geoPoint'		: str(business.geo_point),
-# 		'geoHash'		: business.geo_hash
-# 						}
-# 		
-# 		packaged_deal = {
-# 			'barcodeImg'	: deal.barcode,
-# 			'business'		: package_business(levr.Business.get(deal.businessID)),
-# 			'dateUploaded'	: str(deal.date_end)[:19],
-# 			'dealID'		: enc.encrypt_key(deal.key()),
-# 			'dealText'		: deal.deal_text,
-# 			'description'	: deal.description,
-# 			'isExclusive'	: deal.is_exclusive,
-# 			'largeImg'		: create_img_url(deal,'large'),
-# 			'redemptions'	: deal.count_redeemed,
-# 			'smallImg'		: create_img_url(deal,'small'),
-# 			'status'		: deal.deal_status,
-# 			'shareURL'		: create_share_url(deal),
-# 			'tags'			: deal.tags,
-# 			'dateEnd'		: str(deal.date_end)[:19],
-# 			'vote'			: deal.upvotes - deal.downvotes,
-# 			'pinColor'		: deal.pin_color,
-# 			'karma'			: deal.karma
-# 			}
-# 			
-# 			
-	else:
-		return False
+			packaged_deals.append(packaged_deal)
+			
+	return packaged_deals	
 
 def search_foursquare(geo_point,user,already_found=[]):
 # 	try:
@@ -1138,7 +1093,7 @@ def search_foursquare(geo_point,user,already_found=[]):
 					description		=	foursquare_deal['description'],
 					geo_point		=	business.geo_point,
 					geo_hash		=	business.geo_hash,
-					pin_color		=	'blue',
+					pin_color		=	'0,255,0',
 					parent			=	foursquare_user.key()
 				)
 

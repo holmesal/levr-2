@@ -414,7 +414,7 @@ class TestCategoryHandler(webapp2.RequestHandler):
 class UpdatePinsHandler(webapp2.RequestHandler):
 	def get(self):
 		#update all entities
-		deals = levr.Deal.all()
+		deals = levr.Deal.all().get()
 		
 		for deal in deals:
 			if deal.origin == 'foursquare':
