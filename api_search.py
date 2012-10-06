@@ -166,7 +166,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				df = d_coef*d/max_d
 				
 				#set minimum d... especially to eliminate division by zero
-				if df < 0.1: df = 0.1
+				if df < 0.05: df = 0.05
 				
 				logging.debug('kf: '+str(kf)+', df: '+str(df))
 				#calculate rank
