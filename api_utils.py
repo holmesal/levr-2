@@ -1083,6 +1083,7 @@ def search_foursquare(geo_point,user,already_found=[]):
 				##logging.debug(json.dumps(foursquare_deal['message'].rstrip('\r\n')))
 				deal = levr.Deal(
 					businessID		=	str(business.key()),
+					business_name	=	foursquare_deal['venue']['name'],
 					deal_status		=	'active',
 					tags			=	levr.tagger(foursquare_deal['message']+' '+foursquare_deal['description']+' '+foursquare_deal['venue']['name']+' '+foursquare_deal['venue']['categories'][0]['name']),
 					origin			=	'foursquare',

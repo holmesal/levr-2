@@ -423,7 +423,7 @@ class UpdatePinsHandler(webapp2.RequestHandler):
 				deal.pin_color = 'red'
 				
 			logging.info(deal.pin_color)
-			deal.put
+			deal.put()
 		
 		
 app = webapp2.WSGIApplication([('/new', MainPage),
