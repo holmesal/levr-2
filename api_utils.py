@@ -98,22 +98,36 @@ def check_param(self,parameter,parameter_name,param_type='str',required=True):
 	logging.info(parameter_name+": "+str(parameter))
 	return True
 
-def package_deal(deal,private=False,*args,**kwargs):
+def package_deal(deal,private=False,externalBusiness=None,externalID=None,*args,**kwargs):
+	
+	#if externalBusiness, business came from an external source, use that instead of a datastore-fetched deal
+	if externalBusiness:
+		packaged_business = externalBusiness
+	#otherwise, business came from an internal source, go grab it from the datastore
+	else:
+		packaged_business = package_business(levr.Business.get(deal.businessID))
+	
+	#if externalID, deal came from an external source, use that ID to identify it
+	if externalID:
+		dealID = externalID
+	#otherwise, the deal came from the datastore, use the key as the ID
+	else:
+		dealID = enc.encrypt_key(deal.key())
+
 #	logging.debug(str(deal.geo_point))
 	packaged_deal = {
 # 			'barcodeImg'	: deal.barcode,
-			'business'		: package_business(levr.Business.get(deal.businessID)),
-			'dateUploaded'	: str(deal.date_end)[:19],
-			'dealID'		: enc.encrypt_key(deal.key()),
+			'business'		: packaged_business,
+ 			'dateUploaded'	: str(deal.date_uploaded)[:19],
+			'dealID'		: dealID,
 			'dealText'		: deal.deal_text,
 			'description'	: deal.description,
 			'largeImg'		: create_img_url(deal,'large'),
-			'redemptions'	: deal.count_redeemed,
 			'smallImg'		: create_img_url(deal,'small'),
 			'status'		: deal.deal_status,
 			'shareURL'		: create_share_url(deal),
 			'tags'			: deal.tags,
-			'dateEnd'		: str(deal.date_end)[:19],
+# 			'dateEnd'		: str(deal.date_end)[:19],
 			'vote'			: deal.upvotes - deal.downvotes,
 			'pinColor'		: deal.pin_color,
 			'karma'			: deal.karma,
@@ -925,31 +939,42 @@ def search_yipit(query,geo_point):
 		
 		packaged_deals = []
 		
-		for deal in deals:
+		for yipit_deal in deals:
 			
-			business = deal['business']
+			yipit_business = yipit_deal['business']
 			
-			lat = business['locations'][0]['lat']
-			lon = business['locations'][0]['lon']
+			lat = yipit_business['locations'][0]['lat']
+			lon = yipit_business['locations'][0]['lon']
 			
 			if lat==None or lon==None:
 				pass
 			else:
 			
 				business = levr.Business()
-				business.business_name = business['name']
-				business.vicinity = business['locations'][0]['address'] + ', ' + business['locations'][0]['locality']
+				business.business_name = yipit_business['name']
+				business.vicinity = yipit_business['locations'][0]['address'] + ', ' + yipit_business['locations'][0]['locality']
 				business.geo_point = levr.geo_converter(str(lat)+','+str(lon))
 				business.geo_hash = geohash.encode(lat,lon)
 				
-				packaged_business = api_utils.package_business(business,=yipit_business)
+				packaged_business = api_utils.package_business(business,'yipitdoesnotuseidsforbusinesses')
+				
+				deal = levr.Deal()
+				deal.deal_text = yipit_deal['yipit_title']
+				deal.description = ''
+				deal.largeImg = yipit_deal['images']['image_big']
+				deal.smallImg = yipit_deal['images']['image_small']
+				deal.status = 'active'
+				deal.
+				
+				
+				packaged_deal = api_utils.package_deal(deal,private=False,business,yipit_deal['id'])
 			
-				packaged_business = {
-				'businessName'		:	business['name'],
-				'vicinity'			:	business['locations'][0]['address'] + ', ' + business['locations'][0]['locality'],
-				'geoPoint'			:	str(lat)+','+str(lon),
-				'geoHash'			:	geohash.encode(lat,lon)
-				}
+				# packaged_business = {
+# 				'businessName'		:	business['name'],
+# 				'vicinity'			:	business['locations'][0]['address'] + ', ' + business['locations'][0]['locality'],
+# 				'geoPoint'			:	str(lat)+','+str(lon),
+# 				'geoHash'			:	geohash.encode(lat,lon)
+# 				}
 			
 # 				logging.info(packaged_business)
 				
