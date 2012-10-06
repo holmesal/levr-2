@@ -971,7 +971,7 @@ def search_yipit(query,geo_point):
 				deal.deal_status = 'active'
 				deal.date_uploaded = datetime.now()
 				deal.tags = []
-				deal.pin_color
+				deal.pin_color = 'pink'
 
 				
 				packaged_deal = package_deal(deal,False,business,)
@@ -1138,7 +1138,7 @@ def search_foursquare(geo_point,user,already_found=[]):
 					description		=	foursquare_deal['description'],
 					geo_point		=	business.geo_point,
 					geo_hash		=	business.geo_hash,
-					pin_color		=	'0,255,0',
+					pin_color		=	'blue',
 					parent			=	foursquare_user.key()
 				)
 
