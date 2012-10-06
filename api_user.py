@@ -287,6 +287,7 @@ class UserNotificationsHandler(webapp2.RequestHandler):
 			}
 		'''
 		try:
+			logging.info('NOTIFICATIONS\n\n\n')
 			logging.debug('NOTIFICATIONS\n\n\n')
 			logging.debug(kwargs)
 			
