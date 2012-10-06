@@ -34,6 +34,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			limit 		= kwargs.get('limit')
 			query 		= kwargs.get('query','all')
 			development = kwargs.get('development',False)
+			user 		= kwargs.get('actor')
 			
 			#create tags from the query
 			tags = levr.tagger(query)
@@ -217,9 +218,14 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			logging.debug('total_time: '+str(total_time))
 			
 
+	# 		if user:
+# 				if user.foursquare_token:
+# 					logging.debug('searching foursquare!')
+# 					api_utils.search_foursquare(self,geo_point,user)
+
 			#add yipit call if no deals are returned
-			if len(packaged_deals) == 0:
-				packaged_deals = api_utils.search_yipit(query,geo_point)
+# 			 if len(packaged_deals) == 0:
+# 				packaged_deals = api_utils.search_yipit(query,geo_point)
 			#!!!
 			
 			

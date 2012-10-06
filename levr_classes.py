@@ -186,7 +186,8 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 										line2				= line2,
 										to_be_notified		= to_be_notified,
 										actor				= actor,
-										deal				= deal #default to None
+										deal				= deal, #default to None,
+										date_in_seconds		= long(unix_time(datetime.now()))
 										)
 		notification.put()
 		logging.debug(log_model_props(notification))
@@ -784,6 +785,7 @@ class Customer(db.Model):
 #		#/DEBUG
 		
 		now = datetime.now()
+		logging.debug('now'+str(long(unix_time(now))))
 		#reset last notification time
 		self.last_notified = long(unix_time(now))
 		self.date_last_notified = now
@@ -855,6 +857,8 @@ class Deal(polymodel.PolyModel):
 	origin			= db.StringProperty(default='levr')
 	external_url	= db.StringProperty()
 	locu_id			= db.StringProperty()
+	foursquare_id	= db.StringProperty()
+	foursquare_type	= db.StringProperty()
 	
 	#deal display info
 	deal_text		= db.StringProperty(default='')
@@ -937,7 +941,7 @@ class CustomerDeal(Deal):
 
 class Notification(db.Model):
 	date			= db.DateTimeProperty(auto_now_add=True)
-	date_in_seconds	= db.IntegerProperty(default=long(unix_time(datetime.now())))
+	date_in_seconds	= db.IntegerProperty()
 	notification_type = db.StringProperty(required=True,choices=set(['redemption','thanks','favorite','followedUpload','newFollower','levelup']))
 	line2			= db.StringProperty(default='')
 #	owner			= db.ReferenceProperty(Customer,collection_name='notifications',required=True)

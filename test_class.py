@@ -66,6 +66,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			alonso.pw 	= enc.encrypt_password('alonso')
 			alonso.alias	= 'Follows patrick and ethan'
 			alonso.favorites	= []
+			alonso.foursquare_token = '4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0'
 			alonso.tester = True
 			alonso = alonso.put()
 		
@@ -373,6 +374,7 @@ class TestNotificationHandler(webapp2.RequestHandler):
 		#go get the deal
 		deal = levr.Deal.get('ahFzfmxldnItcHJvZHVjdGlvbnIcCxIIQ3VzdG9tZXIYsuQDDAsSBERlYWwYwbsBDA')
 		
+		
 		#new follower notification
 		levr.create_notification('newFollower',user.key(),actor)
 		
@@ -391,6 +393,23 @@ class TestYipitHandler(webapp2.RequestHandler):
 	def get(self):
 		api_utils.search_yipit('sugar')
 		
+class TestCategoryHandler(webapp2.RequestHandler):
+	def get(self):
+		url = 'https://api.foursquare.com/v2/venues/categories?oauth_token=4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0'
+		result = urlfetch.fetch(url=url)
+		#logging.info(str(result))
+		result = json.loads(result.content)
+		
+		tags = []
+		
+		for category in result['response']['categories']:
+			logging.info(category['name'])
+			if category['name'] == 'Food' or category['name'] == 'Nightlife Spot':
+				for subcat in category['categories']:
+					logging.info(subcat['name'])
+					tags.append(subcat['name'])
+		
+		self.response.out.write(json.dumps(tags))
 		
 		
 app = webapp2.WSGIApplication([('/new', MainPage),
@@ -401,7 +420,8 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/updateUser', UpdateUsersHandler),
 								('/new/locu', PullFromLocuHandler),
 								('/new/notification', TestNotificationHandler),
-								('/new/yipit', TestYipitHandler)
+								('/new/yipit', TestYipitHandler),
+								('/new/category', TestCategoryHandler)
 #								('/new/update' , UpdateUsersHandler)
 								],debug=True)
 

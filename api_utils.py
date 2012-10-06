@@ -365,6 +365,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						'radius'	: 2,
 						'since'		: None,
 						'size'		: 'large',
+						'query'		: 'all',
 						
 						#login stuff
 						'levrToken'			: '',
@@ -967,10 +968,9 @@ def search_yipit(query,geo_point):
 				deal.largeImg = yipit_deal['images']['image_big']
 				deal.smallImg = yipit_deal['images']['image_small']
 				deal.status = 'active'
-#				deal.
 				
 				
-				packaged_deal = api_utils.package_deal(deal,private=False,business,yipit_deal['id'])
+				packaged_deal = api_utils.package_deal(deal,False,business,yipit_deal['id'])
 			
 				# packaged_business = {
 # 				'businessName'		:	business['name'],
@@ -1044,7 +1044,89 @@ def search_yipit(query,geo_point):
 	else:
 		return False
 
-def search_foursquare(geo_point,user):
-	logging.debug('searching foursquare')
+def search_foursquare(self,geo_point,user):
+# 	try:
 	#user must be connected with foursquare to be able to access these specials
-	#go get the user's 
+	#go get the user's foursquare token
+	token = user.foursquare_token
+	#form the url
+	url = 'https://api.foursquare.com/v2/specials/search?v=20120920&ll='+str(geo_point)+'&limit=50&oauth_token='+token
+	result = urlfetch.fetch(url=url)
+	result = json.loads(result.content)
+	foursquare_deals = result['response']['specials']['items']
+	
+	allowed_categories = ["Afghan Restaurant", "African Restaurant", "American Restaurant", "Arepa Restaurant", "Argentinian Restaurant", "Asian Restaurant", "Australian Restaurant", "BBQ Joint", "Bagel Shop", "Bakery", "Brazilian Restaurant", "Breakfast Spot", "Brewery", "Burger Joint", "Burrito Place", "Caf\u00e9", "Cajun / Creole Restaurant", "Caribbean Restaurant", "Chinese Restaurant", "Coffee Shop", "Cuban Restaurant", "Cupcake Shop", "Deli / Bodega", "Dessert Shop", "Dim Sum Restaurant", "Diner", "Distillery", "Donut Shop", "Dumpling Restaurant", "Eastern European Restaurant", "Ethiopian Restaurant", "Falafel Restaurant", "Fast Food Restaurant", "Filipino Restaurant", "Fish & Chips Shop", "Food Truck", "French Restaurant", "Fried Chicken Joint", "Gastropub", "German Restaurant", "Gluten-free Restaurant", "Greek Restaurant", "Hot Dog Joint", "Ice Cream Shop", "Indian Restaurant", "Indonesian Restaurant", "Italian Restaurant", "Japanese Restaurant", "Juice Bar", "Korean Restaurant", "Latin American Restaurant", "Mac & Cheese Joint", "Malaysian Restaurant", "Mediterranean Restaurant", "Mexican Restaurant", "Middle Eastern Restaurant", "Molecular Gastronomy Restaurant", "Mongolian Restaurant", "Moroccan Restaurant", "New American Restaurant", "Peruvian Restaurant", "Pizza Place", "Portuguese Restaurant", "Ramen / Noodle House", "Restaurant", "Salad Place", "Sandwich Place", "Scandinavian Restaurant", "Seafood Restaurant", "Snack Place", "Soup Place", "South American Restaurant", "Southern / Soul Food Restaurant", "Spanish Restaurant", "Steakhouse", "Sushi Restaurant", "Swiss Restaurant", "Taco Place", "Tapas Restaurant", "Tea Room", "Thai Restaurant", "Turkish Restaurant", "Vegetarian / Vegan Restaurant", "Vietnamese Restaurant", "Winery", "Wings Joint", "Bar", "Beer Garden", "Cocktail Bar", "Dive Bar", "Gay Bar", "Hookah Bar", "Hotel Bar", "Karaoke Bar", "Lounge", "Nightclub", "Other Nightlife", "Pub", "Sake Bar", "Speakeasy", "Sports Bar", "Strip Club", "Whisky Bar", "Wine Bar"]
+	
+	allowed_types = ['count','regular','flash','swarm','other','frequency','mayor']
+	
+	for foursquare_deal in foursquare_deals:
+		logging.info('woo a deal!')
+		#logging.info(foursquare_deal['venue']['categories'][0]['name'])
+		if foursquare_deal['venue']['categories'][0]['name'] in allowed_categories and foursquare_deal['type'] in allowed_types:
+			logging.info(foursquare_deal['type'])
+			logging.info(foursquare_deal['message'])
+			logging.info(foursquare_deal['venue']['categories'][0]['name'])
+			
+			#does business already exist?
+			existing_business = levr.Business.gql('WHERE foursquare_id=:1',foursquare_deal['venue']['id']).get()
+			if not existing_business:
+				venue = foursquare_deal['venue']
+				business = levr.Business(
+					business_name 		= 	venue['name'],
+					foursquare_name		=	venue['name'],
+					foursquare_id		=	venue['id'],
+					vicinity			=	venue['location']['address'] + ', ' + venue['location']['city'],
+					geo_point			=	db.GeoPt(venue['location']['lat'],venue['location']['lng']),
+					geo_hash			=	geohash.encode(venue['location']['lat'],venue['location']['lng']),
+					types				=	[venue['categories'][0]['name']]
+				)
+				business.put()
+				logging.info(business.__dict__)
+			else:
+				logging.info('business already exists')
+				business = existing_business
+			
+			
+			
+			#does deal already exist?
+			existing_deal = levr.Deal.gql('WHERE foursquare_id=:1',foursquare_deal['id']).get()
+			if not existing_deal:
+				logging.info(foursquare_deal['message'])
+				deal = levr.Deal(
+					businessID		=	str(business.key()),
+					deal_status		=	'active',
+					tags			=	levr.tagger(foursquare_deal['message']+' '+foursquare_deal['description']+' '+foursquare_deal['venue']['name']+' '+foursquare_deal['venue']['categories'][0]['name']),
+					origin			=	'foursquare',
+					external_url	=	'THISISAFAKEURL',
+					foursquare_id	=	foursquare_deal['id'],
+					foursquare_type	=	foursquare_deal['venue']['categories'][0]['name'],
+					deal_text		=	foursquare_deal['message'].rstrip('\n'),
+					description		=	foursquare_deal['description'],
+					geo_point		=	business.geo_point,
+					geo_hash		=	business.geo_hash
+				)
+				
+				logging.info(deal.__dict__)
+			else:
+				logging.info('deal already exists')
+			
+			
+			
+			
+			
+			#logging.info(foursquare_deal[''])
+			
+		#logging.info(foursquare_deal['state'])
+			
+# 			#is the deal already in the database?
+# 			existing_deal = levr.Deal.gql('WHERE foursquare_id=:1',foursquare_deal['id']).get()
+# 			
+# 			if existing_deal:
+# 				#this deal already exists, check if the status is different
+# 				if existing_deal.status
+				
+		#self.response.out.write(result.content['response'])
+		#result = json.loads(result.content)
+#	except:
+		#raise Exception('Error parsing foursquare response')
+		#ask pat about error handling here
