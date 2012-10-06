@@ -67,6 +67,9 @@ class LoginTwitterHandler(webapp2.RequestHandler):
 			existing_user = levr.Customer.gql('WHERE twitter_token = :1',token).get()
 			
 			if existing_user:
+				#create or refresh the alias
+				user = levr.build_display_name(existing_user)
+				
 				#return the user
 				response = {'user':api_utils.package_user(existing_user,True,send_token=True)}
 				api_utils.send_response(self,response,existing_user)
@@ -102,6 +105,9 @@ class LoginLevrHandler(webapp2.RequestHandler):
 			else:
 				api_utils.send_error(self,'Authentication failed.')
 				return
+			
+			#create or refresh the alias
+			existing_user = levr.build_display_name(existing_user)
 			
 			#still here? update last login by putting
 			existing_user.put()

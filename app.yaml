@@ -53,6 +53,11 @@ handlers:
   script: foursquare.app
   secure: always
   
+#tasks
+- url: /tasks.*
+  script: tasks.app
+  #login: admin
+  
   
 #begin API scripts
 - url: /api/deal.*

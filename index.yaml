@@ -65,6 +65,12 @@ indexes:
 - kind: Deal
   properties:
   - name: deal_status
+  - name: origin
+  - name: geo_hash
+
+- kind: Deal
+  properties:
+  - name: deal_status
   - name: rank
     direction: desc
 

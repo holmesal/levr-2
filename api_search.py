@@ -4,7 +4,8 @@ import levr_encrypt as enc
 import levr_classes as levr
 import api_utils
 import geo.geohash as geohash
-
+from google.appengine.api import taskqueue
+import json
 from datetime import datetime
 from google.appengine.ext import db
 
@@ -28,12 +29,13 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			logging.debug('SEARCH BY QUERY\n\n\n')
 	#		logging.debug(kwargs)
 			#GET PARAMS
-			logging.debug(kwargs)
+			logging.info(kwargs)
 			geo_point 	= kwargs.get('geoPoint')
 			radius 		= kwargs.get('radius')
 			limit 		= kwargs.get('limit')
 			query 		= kwargs.get('query','all')
 			development = kwargs.get('development',False)
+			foursquare	= kwargs.get('foursquare',False)
 			user 		= kwargs.get('actor')
 			
 			#create tags from the query
@@ -97,7 +99,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 					
 					#fetch deals from hash set, and extend the list of deal keys
 					t1 = datetime.now()
-					deal_keys.extend(api_utils.get_deal_keys_from_hash_set(tags,new_hash_set,development=development))
+					deal_keys.extend(api_utils.get_deal_keys_from_hash_set(tags,new_hash_set,development=development,foursquare=foursquare))
 					t2 = datetime.now()
 					
 					#add new_hash_set to searched_hash_set
@@ -146,7 +148,6 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				tuple_list.append(toop)
 				
 				#append foursquare id
-				logging.info(deal.foursquare_id)
 				if deal.foursquare_id:
 					foursquare_ids.append(deal.foursquare_id)
 			t2 = datetime.now()
@@ -223,26 +224,41 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			logging.debug('package_time: '+str(package_time))
 			logging.debug('total_time: '+str(total_time))
 			
-			
+			#search foursquare for more results
 			if user:
 				if user.foursquare_token:
-					ft1 = datetime.now()
-					logging.info('FOURSQUARE IDS::::')
-					logging.info(foursquare_ids)
-					logging.debug('searching foursquare!')
-					foursquare_deals = api_utils.search_foursquare(self,geo_point,user,foursquare_ids)
-					logging.info('Levr results found: '+str(len(packaged_deals)))
-					logging.info('Foursquare results found: '+str(len(foursquare_deals)))
-					packaged_deals = packaged_deals + foursquare_deals
-					logging.info('Total results found: '+str(len(packaged_deals)))
-					logging.info(foursquare_ids)
-					ft2 = datetime.now()
-					logging.info('Foursquare fetch time: ' + str(ft2-ft1))
+					#if len(results) < 5:
+					if False:
+						#not a lot of results, do the foursquare search in real-time
+						ft1 = datetime.now()
+						logging.info('FOURSQUARE IDS::::')
+						logging.info(foursquare_ids)
+						logging.debug('searching foursquare!')
+						foursquare_deals = api_utils.search_foursquare(geo_point,user,foursquare_ids)
+						logging.info('Levr results found: '+str(len(packaged_deals)))
+						logging.info('Foursquare results found: '+str(len(foursquare_deals)))
+						packaged_deals = packaged_deals + foursquare_deals
+						logging.info('Total results found: '+str(len(packaged_deals)))
+						ft2 = datetime.now()
+						logging.info('Foursquare fetch time: ' + str(ft2-ft1))
+					else:
+						#lots of results, do the foursquare search inside a task
+						params = {
+							'lat'			:	geo_point.lat,
+							'lon'			:	geo_point.lon,
+							'userID'		:	str(user.key()),
+							'foursquare_ids':	foursquare_ids
+						}
+						
+						logging.debug('Sending this to the task: ' + json.dumps(params))
+						
+						#start the task
+						t = taskqueue.add(url='/tasks/searchFoursquareTask',payload=json.dumps(params))
+
 
 			#add yipit call if no deals are returned
-# 			 if len(packaged_deals) == 0:
-# 				packaged_deals = api_utils.search_yipit(query,geo_point)
-			#!!!
+			#if len(packaged_deals) == 0:
+				#packaged_deals = packaged_deals + api_utils.search_yipit(query,geo_point)
 			
 			
 			response = {
@@ -259,6 +275,8 @@ class SearchQueryHandler(webapp2.RequestHandler):
 					'deals'				: packaged_deals
 					}
 			api_utils.send_response(self,response)
+					
+					
 		except:
 			levr.log_error(self.request.params)
 			api_utils.send_error(self,'Server Error')

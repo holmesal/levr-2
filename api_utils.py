@@ -98,33 +98,15 @@ def check_param(self,parameter,parameter_name,param_type='str',required=True):
 	logging.info(parameter_name+": "+str(parameter))
 	return True
 
-def package_deal(deal,private=False,externalBusiness=None,externalID=None,*args,**kwargs):
-	
-	#if externalBusiness, business came from an external source, use that instead of a datastore-fetched deal
-	if externalBusiness:
-		packaged_business = externalBusiness
-	#otherwise, business came from an internal source, go grab it from the datastore
-	else:
-		packaged_business = package_business(levr.Business.get(deal.businessID))
-	
-	#if externalID, deal came from an external source, use that ID to identify it
-	if externalID:
-		dealID = externalID
-	#otherwise, the deal came from the datastore, use the key as the ID
-	else:
-		dealID = enc.encrypt_key(deal.key())
-
-	logging.debug(levr.log_model_props(deal))
-	logging.debug(deal.key().parent())
-	logging.debug(levr.Customer.get(deal.key().parent()))
+def package_deal(deal,private=False,*args,**kwargs):
 	
 
 #	logging.debug(str(deal.geo_point))
 	packaged_deal = {
 # 			'barcodeImg'	: deal.barcode,
-			'business'		: packaged_business,
+			'business'		: package_business(levr.Business.get(deal.businessID)),
  			'dateUploaded'	: str(deal.date_uploaded)[:19],
-			'dealID'		: dealID,
+			'dealID'		: enc.encrypt_key(deal.key()),
 			'dealText'		: deal.deal_text,
 			'description'	: deal.description,
 			'largeImg'		: create_img_url(deal,'large'),
@@ -136,7 +118,8 @@ def package_deal(deal,private=False,externalBusiness=None,externalID=None,*args,
 			'vote'			: deal.upvotes - deal.downvotes,
 			'pinColor'		: deal.pin_color,
 			'karma'			: deal.karma,
-			'origin'		: deal.origin
+			'origin'		: deal.origin,
+			'owner'			: package_user(levr.Customer.get(deal.key().parent()))
 			}
 	
 	rank = kwargs.get('rank')
@@ -145,19 +128,31 @@ def package_deal(deal,private=False,externalBusiness=None,externalID=None,*args,
 	
 	logging.debug('rank')
 	logging.debug(kwargs.get('rank'))
-	if deal.is_exclusive == False:
-		packaged_deal.update({
-			'owner'			: package_user(levr.Customer.get(deal.key().parent()))
-		})
 	
 	if private == True:
 		packaged_deal.update({
 							})
 		
 	return packaged_deal
+	
+def package_deal_external(externalDeal,externalBusiness):
+	
+	packaged_deal = {
+# 			'barcodeImg'	: deal.barcode,
+			'business'		: externalBusiness,
+			'dealID'		: externalDeal.externalID,
+			'dealText'		: externalDeal.deal_text,
+			'description'	: externalDeal.description,
+			'largeImg'		: externalDeal.large_img,
+			'smallImg'		: externalDeal.small_img,
+			'pinColor'		: deal.pin_color,
+			'origin'		: deal.origin
+			}
+
+
 def package_user(user,private=False,followers=True,**kwargs):
 
-	logging.debug(levr.log_model_props(user))
+	# logging.debug(levr.log_model_props(user))
 	
 	packaged_user = {
 		'uid'			: enc.encrypt_key(str(user.key())),
@@ -204,19 +199,10 @@ def package_notification(notification):
 	
 	return packaged_notification
 	
-def package_business(business,externalID=None):
-	#if this deal came from an external service, give it the ID that the external service gave it
-	if externalID:
-		businessID = externalID
-	#otherwise this deal comes from the datastore (has a key) - encrypt it	
-	else:	
-		businessID = enc.encrypt_key(str(business.key()))
-	
-	
-		
+def package_business(business):
 
 	packaged_business = {
-		'businessID'	: businessID,
+		'businessID'	: enc.encrypt_key(str(business.key())),
 		'businessName'	: business.business_name,
 		'vicinity'		: business.vicinity,
 		'geoPoint'		: str(business.geo_point),
@@ -260,9 +246,9 @@ def create_share_url(deal_entity):
 	
 def create_img_url(entity,size):
 	#creates a url that will serve the deals image
-	logging.debug(levr.log_dir(entity))
-	logging.debug(entity.class_name())
-	logging.debug(type(entity.kind()))
+	# logging.debug(levr.log_dir(entity))
+# 	logging.debug(entity.class_name())
+# 	logging.debug(type(entity.kind()))
 	
 	logging.debug(entity.kind())
 # 	logging.debug(entity.kind() == 'Deal')
@@ -629,6 +615,15 @@ def validate(url_param,authentication_source,*a,**to_validate):
 							if user.tester: kwargs.update({'development':True})
 							else: kwargs.update({'development':False})
 							
+							#send foursquare flag
+							logging.info(user.foursquare_token)
+							if user.foursquare_token:
+								kwargs.update({'foursquare':True})
+								logging.info('this is a registered foursquare user')
+							else:
+								logging.info('this is NOT a registered foursquare user')
+								kwargs.update({'foursquare':False})
+							
 						except Exception,e:
 							logging.debug(e)
 							raise TypeError(msg)
@@ -787,9 +782,10 @@ def get_deal_keys_from_hash_set(tags,hash_set,*args,**kwargs):
 	development		default=False
 	
 	'''
-	
+	logging.info(kwargs)
 	#grab variables
 	development		= kwargs.get('development',False)
+	foursquare		= kwargs.get('foursquare',False)
 	if development:
 		#developer is searching
 		deal_status = 'test'
@@ -815,6 +811,12 @@ def get_deal_keys_from_hash_set(tags,hash_set,*args,**kwargs):
 		else:
 			q.filter('deal_status =','test')
 #			logging.debug('flag development')
+		
+		if not foursquare:
+			q.filter('origin =','levr')
+			logging.info('only including Levr deals (no foursquare)')
+		else:
+			logging.info('including both levr and foursquare deals')
 		
 #		logging.debug("tags: "+str(tags))
 		#FILTER BY TAG
@@ -936,7 +938,7 @@ def level_check(user):
 	return user
 
 def search_yipit(query,geo_point):
-	words = ["a la carte","a la mode","appetizer","beef","beverage","bill","bistro","boiled","bowl","braised","bread","breakfast","brunch","butter","cafe","cafeteria","cake","candle","cashier","centerpiece","chair","charge","chef","chicken","coffee","cola","cold","condiments","cook","cooked","course","cream","credit card","cutlery","deli","delicatessen","delicious","dessert","dine","diner","dining","dinner","dish","dishwasher","doggie bag","dressing","eat","eggs","entree","fish","food","fork","French fries","fries","fruit","glass","gourmand","gourmet","grilled","hamburger","head waiter","high tea","hors d'oeuvre","hostess","hot","ice","ice cubes","iced","ingredients","ketchup","kitchen","knife","lemonade","lettuce","lunch","main course","maitre d'","manager","meal","meat","medium","menu","milk","mug","mustard","napkin","noodles","onion","order","party","pasta","pepper","plate","platter","pop","rare","reservation","restaurant","roasted","roll","salad","salt","sandwich","sauce","saucer","seafood","seared","server","side order","silverware","soda","soup","special","spices","spicy","spill","spoon","starters","steak","sugar","supper","table","tablecloth","tasty","tax","tea","tip","toast","to go","tomato","utensils","vegetables","waiter","waitress","water","well-done"]
+	#words = ["a la carte","a la mode","appetizer","beef","beverage","bill","bistro","boiled","bowl","braised","bread","breakfast","brunch","butter","cafe","cafeteria","cake","candle","cashier","centerpiece","chair","charge","chef","chicken","coffee","cola","cold","condiments","cook","cooked","course","cream","credit card","cutlery","deli","delicatessen","delicious","dessert","dine","diner","dining","dinner","dish","dishwasher","doggie bag","dressing","eat","eggs","entree","fish","food","fork","French fries","fries","fruit","glass","gourmand","gourmet","grilled","hamburger","head waiter","high tea","hors d'oeuvre","hostess","hot","ice","ice cubes","iced","ingredients","ketchup","kitchen","knife","lemonade","lettuce","lunch","main course","maitre d'","manager","meal","meat","medium","menu","milk","mug","mustard","napkin","noodles","onion","order","party","pasta","pepper","plate","platter","pop","rare","reservation","restaurant","roasted","roll","salad","salt","sandwich","sauce","saucer","seafood","seared","server","side order","silverware","soda","soup","special","spices","spicy","spill","spoon","starters","steak","sugar","supper","table","tablecloth","tasty","tax","tea","tip","toast","to go","tomato","utensils","vegetables","waiter","waitress","water","well-done"]
 	
 	#if query in words:
 	if True:
@@ -971,17 +973,21 @@ def search_yipit(query,geo_point):
 				business.geo_point = levr.geo_converter(str(lat)+','+str(lon))
 				business.geo_hash = geohash.encode(lat,lon)
 				
-				packaged_business = api_utils.package_business(business,'yipitdoesnotuseidsforbusinesses')
+				packaged_business = package_business(business,'yipitdoesnotuseidsforbusinesses')
 				
 				deal = levr.Deal()
+				deal.externalID = yipit_deal['id']
 				deal.deal_text = yipit_deal['yipit_title']
 				deal.description = ''
-				deal.largeImg = yipit_deal['images']['image_big']
-				deal.smallImg = yipit_deal['images']['image_small']
-				deal.status = 'active'
+				deal.large_img = yipit_deal['images']['image_big']
+				deal.small_img = yipit_deal['images']['image_small']
+				deal.deal_status = 'active'
+				deal.date_uploaded = datetime.now()
+				deal.tags = []
+				deal.pin_color
 
 				
-				packaged_deal = api_utils.package_deal(deal,False,business,yipit_deal['id'])
+				packaged_deal = package_deal(deal,False,business,)
 			
 				# packaged_business = {
 # 				'businessName'		:	business['name'],
@@ -1055,7 +1061,7 @@ def search_yipit(query,geo_point):
 	else:
 		return False
 
-def search_foursquare(self,geo_point,user,already_found=[]):
+def search_foursquare(geo_point,user,already_found=[]):
 # 	try:
 	#user must be connected with foursquare to be able to access these specials
 	#go get the user's foursquare token
@@ -1077,10 +1083,10 @@ def search_foursquare(self,geo_point,user,already_found=[]):
 		logging.info('woo a deal!')
 		#logging.info(foursquare_deal['venue']['categories'][0]['name'])
 		if foursquare_deal['venue']['categories'][0]['name'] in allowed_categories and foursquare_deal['type'] in allowed_types and foursquare_deal['id'] not in already_found:
-			logging.debug(foursquare_deal['type'])
-			logging.debug(foursquare_deal['message'])
-			logging.debug(foursquare_deal['venue']['categories'][0]['name'])
-			
+			#logging.debug(foursquare_deal['type'])
+			#logging.debug(foursquare_deal['message'])
+			#logging.debug(foursquare_deal['venue']['categories'][0]['name'])
+			logging.info(foursquare_deal['id'])
 			#does business already exist?
 			existing_business = levr.Business.gql('WHERE foursquare_id=:1',foursquare_deal['venue']['id']).get()
 			if not existing_business:
@@ -1095,7 +1101,7 @@ def search_foursquare(self,geo_point,user,already_found=[]):
 					types				=	[venue['categories'][0]['name']]
 				)
 				business.put()
-				logging.debug(business.__dict__)
+				#logging.debug(business.__dict__)
 			else:
 				logging.info('business already exists')
 				business = existing_business
@@ -1129,9 +1135,10 @@ def search_foursquare(self,geo_point,user,already_found=[]):
 				elif message.find('\n') != -1:
 					message = message[0:message.find('\n')]
 				else:
-					logging.debug('NO FUCKERY IN THIS HERE STRING')
+					#logging.debug('NO FUCKERY IN THIS HERE STRING')
+					pass
 				
-				#logging.debug(json.dumps(foursquare_deal['message'].rstrip('\r\n')))
+				##logging.debug(json.dumps(foursquare_deal['message'].rstrip('\r\n')))
 				deal = levr.Deal(
 					businessID		=	str(business.key()),
 					deal_status		=	'active',
@@ -1151,11 +1158,11 @@ def search_foursquare(self,geo_point,user,already_found=[]):
 
 				deal.put()
 				logging.info('this is a new deal')
-				logging.debug(levr.log_model_props(deal))
+				#logging.debug(levr.log_model_props(deal))
 			else:
 				logging.info('deal already exists')
 				deal = existing_deal
-				logging.debug(levr.log_model_props(deal))
+				#logging.debug(levr.log_model_props(deal))
 				
 			
 			#package deal
