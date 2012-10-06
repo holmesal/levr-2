@@ -74,28 +74,22 @@ class ConnectTwitterHandler(webapp2.RequestHandler):
 			logging.debug(kwargs)
 			
 			user		= kwargs.get('actor')
-			
-			token		= kwargs.get('token')
+			oauth_token	= kwargs.get('token')
 			screen_name	= kwargs.get('screenName')
 			
 #			#create or refresh the alias
 #			user = levr.build_display_name(user)
 #			
 #			#add twitter token
-#			user.twitter_token = token
+			user.twitter_token = oauth_token
 #			#add screen name
-#			user.twitter_screen_name = screen_name
+			user.twitter_screen_name = screen_name
 #			
-			resp,content = social.twitter_deets(user,token,screen_name)
+			user = social.twitter_deets(user)
 			#update
-	# 		user.put()
+	 		user.put()
 			#return the user
-#			response = {'user':api_utils.package_user(user,'private')}
-			response = {
-					'resp' : resp,
-					'content'	: content
-					
-					}
+			response = {'user':api_utils.package_user(user,'private')}
 			api_utils.send_response(self,response,user)
 		except:
 			levr.log_error()

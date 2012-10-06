@@ -50,17 +50,24 @@ def sort_and_encode_params(params):
 	
 	return output[:len(output)-1]
 	
-def twitter_deets(user,oauth_token,screen_name):
-	#### DEBUG
-	#this is the twitter_token that is fetched from the phone
-	oauth_token = '819972614-2HoAwfJcHCOePogonjPbNNxuQQsvHeYeJ3U2KasI'
-	#the users twitter handler/screen name
-	screen_name = 'LevrDevr'
-	#### /DEBUG
+def twitter_deets(user,*args,**kwargs):
 	
-	#this is our apps id
+	development = kwargs.get('development',False)
+	if development:
+		#### DEBUG
+		#this is the twitter_token that is fetched from the phone
+		oauth_token = '819972614-2HoAwfJcHCOePogonjPbNNxuQQsvHeYeJ3U2KasI'
+		#the users twitter handler/screen name
+		screen_name = 'LevrDevr'
+		#### /DEBUG
+	else:
+		oauth_token = user.twitter_token
+		screen_name = user.twitter_screen_name
+	
+	#These are values that identify our app
 	oauth_consumer_key = 'JAu03A5jqlYddohoXI8Ng'
-
+	oauth_consumer_secret = 'h6Zh3T3PZphUg3Bu3UVdtK2AjHrDUWU6wJ4LDd5ec'
+	oauth_token_secret='f0Rzdx8iiL58ebiyvokcf4JW2C9oSKbfJ81rwhsg'
 	
 	params = {
 		#required oauth params
@@ -70,9 +77,8 @@ def twitter_deets(user,oauth_token,screen_name):
 		#params specified by us
 		'screen_name'				:	screen_name
 		}
-	#These are values that identify our app
-	oauth_consumer_secret = 'h6Zh3T3PZphUg3Bu3UVdtK2AjHrDUWU6wJ4LDd5ec'
-	oauth_token_secret='f0Rzdx8iiL58ebiyvokcf4JW2C9oSKbfJ81rwhsg'
+	
+	
 	
 	# Set up instances of our Token and Consumer. The Consumer.key and 
 	# Consumer.secret are given to you by the API provider. The Token.key and
@@ -94,46 +100,49 @@ def twitter_deets(user,oauth_token,screen_name):
 	signature_method = oauth.SignatureMethod_HMAC_SHA1()
 	req.sign_request(signature_method, consumer, token)
 	
-	
+	#create the url and the header
 	req_url = req.to_url()
+	logging.debug(req_url)
 	header = req.to_header()
 	
-#	logging.debug(levr.log_dir(req))
-#	logging.debug(levr.log_dir(header))
-#	logging.debug(levr.log_dir(url))
 	
 	
-	logging.debug(req)
-	logging.debug(type(req))
-	logging.debug('\n\n')
-	logging.debug(url)
-	logging.debug(type(url))
-	logging.debug('\n\n')
-	logging.debug(header)
-	logging.debug(type(header))
-	
-	
-	
-	# Create our client.
-	client = oauth.Client(consumer)
-	
-	# The OAuth Client request works just like httplib2 for the most part.
-#	resp, content = client.request(url, method="GET",headers=header)
-#	logging.debug(resp)
-#	logging.debug(content)
 	
 	result = urlfetch.fetch(
-				url=url+"?screen_name=LevrDevr",
-#				payload=urllib.urlencode({
-#						'screen_name':screen_name
-#						}),
+				url=req_url,#+"?screen_name=LevrDevr",
 				method=urlfetch.GET,
 				headers=header)
+#	logging.debug(levr.log_dir(result))
+	content = json.loads(result.content)
+	status = result.status_code
+	heads = result.headers.data
 	
-	resp = json.loads(result.content)
+	if status == 200:
+		#successful
+		logging.debug('Authorized')
+		
+		if not user.twitter_id:
+			user.twitter_id	= content.get('id_str')
+		if not user.photo:
+			user.photo		= content.get('profile_image_url')
+		
+		#create users name
+		name	= content.get('name')
+		if not user.first_name:
+			user.first_name	= name[0]
+		if not user.last_name:
+			user.last_name	= name[-1]
+		if not user.alias:
+			user.alias = build_display_name(user)
+		
+		
+	elif status == 401:
+		logging.error('NOT AUTHORIZED')
+		
 	
 	
-	return resp, {}#json.loads(content)
+#	logging.debug(levr.log_dir(heads))
+	return user
 	
 
 
