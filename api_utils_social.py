@@ -82,9 +82,114 @@ def authorize_twitter(url,oauth_token,*args,**kwargs):
 	req_url = req.to_url()
 	logging.debug(req_url)
 	header = req.to_header()
+	logging.debug(header)
 	
 	return req_url, header
+def find_twitter_friends(user,*args,**kwargs):
+	development = kwargs.get('development',False)
+	if development:
+		#### DEBUG
+		#this is the twitter_token that is fetched from the phone
+		oauth_token = '819972614-2HoAwfJcHCOePogonjPbNNxuQQsvHeYeJ3U2KasI'
+		#the users twitter handler/screen name
+		screen_name = 'LevrDevr'
+		#### /DEBUG
+	else:
+		oauth_token = user.twitter_token
+		screen_name = user.twitter_screen_name
 	
+	#the url to which the twitter api call is being made
+	url = 'https://api.twitter.com/1.1/users/show.json'
+#		'https://api.twitter.com/1.1/friends/ids.json',		#get the ids of friends who the user is following
+
+	
+	req_url, header = authorize_twitter(url,oauth_token,screen_name=screen_name)
+	
+	result = urlfetch.fetch(
+				url=req_url,#+"?screen_name=LevrDevr",
+				method=urlfetch.GET,
+				headers=header)
+#	logging.debug(levr.log_dir(result))
+	content = json.loads(result.content)
+	status = result.status_code
+	heads = result.headers.data
+	logging.debug(heads)
+	logging.debug(status)
+	logging.debug(content)
+	
+	
+"""
+development = kwargs.get('development',False)
+	if development:
+		#### DEBUG
+		#this is the twitter_token that is fetched from the phone
+		oauth_token = '819972614-2HoAwfJcHCOePogonjPbNNxuQQsvHeYeJ3U2KasI'
+		#the users twitter handler/screen name
+		screen_name = 'LevrDevr'
+		#### /DEBUG
+	else:
+		raise Exception('not running development')
+		oauth_token = user.twitter_token
+		screen_name = user.twitter_screen_name
+	
+	#the urls to which the twitter api call is being made
+	urls = {
+#		'user_info'	:'https://api.twitter.com/1.1/users/show.json',
+		'friends'	:'https://api.twitter.com/1.1/friends/ids.json'		#get the ids of friends who the user is following
+#		'followers'	:'https://api.twitter.com/1.1/followers/ids.json'
+		}
+	results = {
+#			'user_info'	:{},
+			'friends'	:{}
+#			'followers'	:{}
+			}
+	
+	'''
+	OAuth oauth_consumer_key="JAu03A5jqlYddohoXI8Ng", 
+	oauth_nonce="928a0b9333f96e098b8e323af864c025", 
+	oauth_signature="jCjfMIKPmcBlU%2BqZAVr5Z6V2poA%3D", 
+#	oauth_signature_method="HMAC-SHA1", 
+	oauth_timestamp="1349554039", 
+	oauth_token="819972614-2HoAwfJcHCOePogonjPbNNxuQQsvHeYeJ3U2KasI", 
+	oauth_version="1.0"
+	'''
+	oauth_version="1.0", 
+	oauth_token="819972614-2HoAwfJcHCOePogonjPbNNxuQQsvHeYeJ3U2KasI", 
+	oauth_nonce="84632083", 
+	oauth_timestamp="1349554749", 
+	oauth_signature="HsH1txawiQK62QIEuUNMQn6BU6w%3D", 
+	oauth_consumer_key="JAu03A5jqlYddohoXI8Ng", 
+#	oauth_signature_method="HMAC-SHA1"
+	
+	
+	for key in urls:
+		
+		req_url, headers = authorize_twitter(urls[key],oauth_token,screen_name=screen_name)
+		logging.debug("\n\n\n\n\n\n\n")
+		logging.debug(headers)
+		logging.debug("\n\n\n\n\n\n\n")
+		logging.debug(req_url)
+		logging.debug("\n\n\n\n\n\n\n")
+		result = urlfetch.fetch(
+					url=req_url+"?screen_name=LevrDevr",
+					method=urlfetch.GET,
+					headers=headers)
+	#	logging.debug(levr.log_dir(result))
+		content = json.loads(result.content)
+		status = result.status_code
+		heads = result.headers.data
+		logging.debug(heads)
+		logging.debug(status)
+		logging.debug(content)
+		
+		
+		results[key]['content']	= content
+		results[key]['status']	= status
+		results[key]['headers']	= heads
+	logging.debug('!!!!!!!')
+	logging.debug(levr.log_dict(results))
+
+"""
 def twitter_deets(user,*args,**kwargs):
 	
 	development = kwargs.get('development',False)
@@ -100,15 +205,15 @@ def twitter_deets(user,*args,**kwargs):
 		screen_name = user.twitter_screen_name
 	
 	#the url to which the twitter api call is being made
-	url = 'https://api.twitter.com/1.1/users/show.json'
-	
+#	url = 'https://api.twitter.com/1.1/users/show.json'
+	url = 'https://api.twitter.com/1.1/friends/ids.json'
 	req_url, header = authorize_twitter(url,oauth_token,screen_name=screen_name)
-	
-	
-	
+	###
+	#UPDATE USER DATA
+	###
 	
 	result = urlfetch.fetch(
-				url=req_url,#+"?screen_name=LevrDevr",
+				url=req_url+"?screen_name=LevrDevr",
 				method=urlfetch.GET,
 				headers=header)
 #	logging.debug(levr.log_dir(result))
