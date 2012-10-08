@@ -11,25 +11,23 @@ from datetime import datetime
 class SearchFoursquareTaskHandler(webapp2.RequestHandler):
 	def post(self):
 		try:
-			logging.info('THE TASK IS RUNNING')
-			logging.info('THE TASK IS RUNNING')
-			logging.info('THE TASK IS RUNNING')
-			logging.info('THE TASK IS RUNNING')
-			logging.info('THE TASK IS RUNNING')
-			logging.info('THE TASK IS RUNNING')
+			logging.info('''
+				
+				THE FOURSQUARE DEAL SEARCH TASK IS RUNNING
+				
+				''')
 			
 # 			logging.info(self.request.body)
 			payload = json.loads(self.request.body)
 # 			logging.info(payload)
 			geo_point = db.GeoPt(payload['lat'],payload['lon'])
 # 			logging.info(geo_point)
-			userID = payload['userID']
-# 			logging.info(userID)
 			foursquare_ids = payload['foursquare_ids']
 # 			logging.info(foursquare_ids)
+			#grab the token from the payload
+			token = payload['token']
+			logging.info(token)
 			
-			#grab user
-			user = levr.Customer.get(userID)
 # 			logging.info(levr.log_model_props(user))
 			
 			#foursquare stuff!
@@ -37,7 +35,7 @@ class SearchFoursquareTaskHandler(webapp2.RequestHandler):
 			logging.info('FOURSQUARE IDS::::')
 			logging.info(foursquare_ids)
 			logging.debug('searching foursquare () from a task!')
-			foursquare_deals = api_utils.search_foursquare(geo_point,user,foursquare_ids)
+			foursquare_deals = api_utils.search_foursquare(geo_point,token,foursquare_ids)
 			logging.info('Foursquare results found: '+str(len(foursquare_deals)))
 			logging.info('Duplicates not put in database: '+str(len(foursquare_ids)))
 			ft2 = datetime.now()
@@ -51,8 +49,9 @@ class SearchFoursquareTaskHandler(webapp2.RequestHandler):
 class BusinessHarmonizationTaskHandler(webapp2.RequestHandler):
 		def post(self):
 			try:
-				logging.info('''THE FOURSQUARE BUSINESS TASK IS RUNNING
+				logging.info('''
 				
+				THE FOURSQUARE BUSINESS TASK IS RUNNING
 				
 				''')
 				
@@ -64,18 +63,24 @@ class BusinessHarmonizationTaskHandler(webapp2.RequestHandler):
 				
 				key = payload['key']
 				
-				match = api_utils.match_foursquare_business(db.GeoPt(42.16617,-72.54514982),'no_match')
+				match = api_utils.match_foursquare_business(db.GeoPt(42.16617,-72.54514982),query)
 		
 				logging.info(match)
+				
+				business = levr.Business.get(key)
 				
 				if match:
 					logging.info('Foursquare ID found: '+match)
 					#update business entity
-					business = levr.Business.get(key)
-					business.foursquare_id = match
-					business.put
+					business.foursquare_id = match['foursquare_id']
+					business.foursquare_name = match['foursquare_name']
+					business.put()
 				else:
+					#update to show notfound
 					logging.info('No foursquare match found.')
+					business.foursquare_id = 'not_harmonized'
+					business.foursquare_name = 'not_harmonized'
+					business.put()
 				
 			except:
 				levr.log_error()

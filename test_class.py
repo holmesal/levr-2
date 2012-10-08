@@ -446,16 +446,19 @@ class Create100DeadNinjasHandler(webapp2.RequestHandler):
 		#how to get a random dead ninja
 		#ninja = api_utils.get_random_dead_ninja()
 		
-		business = levr.Business.gql('WHERE business_name=:1','Fifties Diner').get()
+class HarmonizeVenuesHandler(webapp2.RequestHandler):
+	def get(self):
+		all_businesses = levr.Business.gql('WHERE foursquare_name = :1','notfound')
 		
-		#fire off a task to check the foursquare similarity
-		task_params = {
-			'geo_str'		:	str(business.geo_point),
-			'query'			:	business.business_name,
-			'key'			:	str(business.key())
-		}
-		
-		t = taskqueue.add(url='/tasks/businessHarmonizationTask',payload=json.dumps(task_params))
+		# for business in all_businesses:
+# 			logging.info('launching task for business: ' + business.business_name)
+# 			task_params = {
+# 			'geo_str'		:	str(business.geo_point),
+# 			'query'			:	business.business_name,
+# 			'key'			:	str(business.key())
+# 			}
+# 			
+# 			t = taskqueue.add(url='/tasks/businessHarmonizationTask',payload=json.dumps(task_params))
 		
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload.*', DatabaseUploadHandler),
@@ -468,7 +471,8 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/yipit', TestYipitHandler),
 								('/new/category', TestCategoryHandler),
 								('/new/pins', UpdatePinsHandler),
-								('/new/deadNinjas', Create100DeadNinjasHandler)
+								('/new/deadNinjas', Create100DeadNinjasHandler),
+								('/new/harmonizeVenues',HarmonizeVenuesHandler)
 #								('/new/update' , UpdateUsersHandler)
 								],debug=True)
 

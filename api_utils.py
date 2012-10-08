@@ -219,6 +219,7 @@ def package_business(business):
 
 	packaged_business = {
 		'businessID'	: enc.encrypt_key(str(business.key())),
+		'foursquare_id'	: business.foursquare_id,
 		'businessName'	: business.business_name,
 		'vicinity'		: business.vicinity,
 		'geoPoint'		: str(business.geo_point),
@@ -619,15 +620,6 @@ def validate(url_param,authentication_source,*a,**to_validate):
 							if user.tester: kwargs.update({'development':True})
 							else: kwargs.update({'development':False})
 							
-							#send foursquare flag
-							logging.info(user.foursquare_token)
-							if user.foursquare_token:
-								kwargs.update({'foursquare':True})
-								logging.info('this is a registered foursquare user')
-							else:
-								logging.info('this is NOT a registered foursquare user')
-								kwargs.update({'foursquare':False})
-							
 						except Exception,e:
 							logging.debug(e)
 							raise TypeError(msg)
@@ -790,7 +782,6 @@ def get_deal_keys_from_hash_set(tags,hash_set,*args,**kwargs):
 	logging.info(kwargs)
 	#grab variables
 	development		= kwargs.get('development',False)
-	foursquare		= kwargs.get('foursquare',False)
 	if development:
 		#developer is searching
 		deal_status = 'test'
@@ -817,11 +808,6 @@ def get_deal_keys_from_hash_set(tags,hash_set,*args,**kwargs):
 			q.filter('deal_status =','test')
 #			logging.debug('flag development')
 		
-		if not foursquare:
-			q.filter('origin =','levr')
-			logging.info('only including Levr deals (no foursquare)')
-		else:
-			logging.info('including both levr and foursquare deals')
 		
 #		logging.debug("tags: "+str(tags))
 		#FILTER BY TAG
@@ -1007,12 +993,15 @@ def search_yipit(query,geo_point):
 			
 	return packaged_deals	
 
-def search_foursquare(geo_point,user,already_found=[]):
-# 	try:
-	#user must be connected with foursquare to be able to access these specials
-	#go get the user's foursquare token
-	token = user.foursquare_token
-	#form the url
+def search_foursquare(geo_point,token,already_found=[]):
+
+	#if token is passes as 'random', use a hardcoded token
+	if token == 'random':
+		hardcoded = ['IDMTODCAKR34GOI5MSLEQ1IWDJA5SYU0PGHT4F5CAIMPR4CR','ML4L1LW3SO0SKUXLKWMMBTSOWIUZ34NOTWTWRW41D0ANDBAX','RGTMFLSGVHNMZMYKSMW4HYFNEE0ZRA5PTD4NJE34RHUOQ5LZ']
+		token = random.choice(hardcoded)
+		logging.info('Using token: '+token)
+		
+
 	url = 'https://api.foursquare.com/v2/specials/search?v=20120920&ll='+str(geo_point)+'&limit=50&oauth_token='+token
 	result = urlfetch.fetch(url=url)
 	result = json.loads(result.content)
@@ -1101,7 +1090,7 @@ def search_foursquare(geo_point,user,already_found=[]):
 					description		=	foursquare_deal['description'],
 					geo_point		=	business.geo_point,
 					geo_hash		=	business.geo_hash,
-					pin_color		=	'0,255,0',
+					pin_color		=	'blue',
 					parent			=	random_dead_ninja.key(),
 					smallImg		=	'http://playfoursquare.s3.amazonaws.com/press/logo/icon-512x512.png'
 				)
@@ -1175,12 +1164,13 @@ def filter_foursquare_deal(foursquare_deal,already_found):
 		
 def get_random_dead_ninja():
 	#go grab all the ninjas
-	deadNinjas = levr.Customer.gql('WHERE email=','deadninja@levr.com')
+	deadNinjas = levr.Customer.gql('WHERE email=:1','deadninja@levr.com')
 	#count them
 	count = deadNinjas.count()
 	#generate a random int
 	rando = random.randint(0,count)
 	#grab the ninja based on that number
+	#this is sometimes crashing... last name is not a good way to do this
 	dead_ninja = levr.Customer.gql('WHERE last_name =:1',str(rando)).get()
 	#send out the dead ninja
 	
@@ -1211,6 +1201,12 @@ def match_foursquare_business(geo_point,query):
 	if venues:
 		match = venues[0]
 		logging.info('Matching Foursquare businesses found. Mapping "'+query+'" to "'+match['name']+'".')
-		return match['id']
+		
+		response = {
+			'foursquare_name'		:	match['name'],
+			'foursquare_id'		:	match['id']
+		}
+		
+		return response
 	else:
 		return False
