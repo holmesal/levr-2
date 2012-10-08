@@ -48,7 +48,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			ethan.alias	= 'ethan owns the deals'
 			ethan.favorites	= []
 			ethan.tester = True
-			ethan.foursquare_id = 37756769
+#			ethan.foursquare_id = 37756769
 			ethan.foursquare_token = 'IDMTODCAKR34GOI5MSLEQ1IWDJA5SYU0PGHT4F5CAIMPR4CR'
 			ethan = ethan.put()
 		
@@ -61,7 +61,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			pat.favorites	= []
 			pat.tester = True
 			pat.levr_token = 'tlvXNw9F5Qgnqm_uKxYUx9xeyJHSRDnfBbVmUwvDWzQ'
-			pat.foursquare_id = 22161113
+#			pat.foursquare_id = 22161113
 			pat.foursquare_token = 'ML4L1LW3SO0SKUXLKWMMBTSOWIUZ34NOTWTWRW41D0ANDBAX'
 			pat = pat.put()
 		
@@ -77,7 +77,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			alonso.tester = True
 			
 			alonso.levr_token = 'tlvXNw9F5Qgnqm_uKxYUx9xeyJHSRDnfBbVmUwvDWzQ'
-			alonso.foursquare_id = 32773785
+#			alonso.foursquare_id = 32773785
 			alonso.foursquare_token = 'RGTMFLSGVHNMZMYKSMW4HYFNEE0ZRA5PTD4NJE34RHUOQ5LZ'
 			alonso = alonso.put()
 		

@@ -53,8 +53,8 @@ class ConnectFoursquareHandler(webapp2.RequestHandler):
 			foursquare_id			= kwargs.get('id')
 			
 			
-			fs = social.Foursquare(user,foursquare_id,foursquare_token)
-			response = fs.first_time_connect()
+			fs = social.Foursquare(user)
+			response = fs.first_time_connect(foursquare_id,foursquare_token)
 			
 #			response = fs.get_friends()
 #			response = fs.get_details()
@@ -126,10 +126,14 @@ class TestConnectionHandler(webapp2.RequestHandler):
 			
 			fs_id = user.foursquare_id
 			fs_token = user.foursquare_token
-			u = social.Foursquare(user,fs_id,fs_token)
-			u.first_time_connect()
+			u = social.Foursquare(user)
+			user, new_user_details, new_friends = u.first_time_connect(foursquare_token=fs_token)
 			
-			response = {'user':api_utils.package_user(user,'private')}
+			response = {
+					'user':api_utils.package_user(user,True),
+					'new_user_details'	: new_user_details,
+					'new_friends'		: [str(x) for x in new_friends]
+					}
 			api_utils.send_response(self,response,user)
 		except:
 			levr.log_error()
