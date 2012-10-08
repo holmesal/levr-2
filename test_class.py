@@ -50,6 +50,8 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			ethan.tester = True
 #			ethan.foursquare_id = 37756769
 			ethan.foursquare_token = 'IDMTODCAKR34GOI5MSLEQ1IWDJA5SYU0PGHT4F5CAIMPR4CR'
+			ethan.twitter_token = '819972614-2HoAwfJcHCOePogonjPbNNxuQQsvHeYeJ3U2KasI'
+			ethan.twitter_screen_name = 'LevrDevr'
 			ethan = ethan.put()
 		
 		pat = levr.Customer.all(keys_only=True).filter('email','patrick@levr.com').get()
@@ -180,9 +182,13 @@ class TestHandler(webapp2.RequestHandler):
 					'last_name',
 					'level',
 					'display_name',
-					'foursquare_id',
-					'foursquare_token',
-					'foursquare_connected',
+#					'foursquare_id',
+#					'foursquare_token',
+#					'foursquare_connected',
+					'twitter_id',
+					'twitter_token',
+					'twitter_screen_name',
+					'twitter_connected',
 					'followers',
 					'foursquare_friends',
 					'facebook_friends',

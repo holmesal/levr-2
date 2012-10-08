@@ -124,15 +124,35 @@ class TestConnectionHandler(webapp2.RequestHandler):
 			elif u == 'alonso':
 				user = levr.Customer.all().filter('email','alonso@levr.com').get()
 			
-			fs_id = user.foursquare_id
-			fs_token = user.foursquare_token
-			u = social.Foursquare(user)
-			user, new_user_details, new_friends = u.first_time_connect(foursquare_token=fs_token)
+#			fs_id = user.foursquare_id
+#			fs_token = user.foursquare_token
+#			u = social.Foursquare(user)
+#			user, new_user_details, new_friends = u.first_time_connect(foursquare_token=fs_token)
 			
+			twitter_id = user.twitter_id
+			twitter_screen_name = user.twitter_screen_name
+			twitter_token = user.twitter_token
+			
+			u = social.Twitter(user)
+			u.update_credentials(
+								twitter_token,
+								twitter_screen_name	=twitter_screen_name,
+								twitter_id			=twitter_id
+								)
+			to_fetch = 'user'
+			url,headers = u.create_url(to_fetch)
+			content = u.fetch(to_fetch)
+			logging.warning(u.user.email)
+			user = u.put()
+			
+#			logging.debug(u.user.)
 			response = {
 					'user':api_utils.package_user(user,True),
-					'new_user_details'	: new_user_details,
-					'new_friends'		: [str(x) for x in new_friends]
+					'url'		: url,
+					'headers'	: headers,
+					'content'	: content
+#					'new_user_details'	: new_user_details,
+#					'new_friends'		: [str(x) for x in new_friends]
 					}
 			api_utils.send_response(self,response,user)
 		except:

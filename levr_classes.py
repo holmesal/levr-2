@@ -746,7 +746,8 @@ class Customer(db.Model):
 	twitter_token		= db.StringProperty()
 	twitter_id			= db.IntegerProperty()
 	twitter_screen_name	= db.StringProperty()
-	twitter_friends		= db.ListProperty(str)
+	twitter_friends_by_id = db.ListProperty(int)
+	twitter_friends_by_sn = db.ListProperty(str)
 	
 	#list of friends emails so we can find them when they log in
 	email_friends		= db.ListProperty(str)
