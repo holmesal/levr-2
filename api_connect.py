@@ -123,38 +123,113 @@ class TestConnectionHandler(webapp2.RequestHandler):
 				user = levr.Customer.all().filter('email','patrick@levr.com').get()
 			elif u == 'alonso':
 				user = levr.Customer.all().filter('email','alonso@levr.com').get()
+			elif u == 'run':
+				ethan = levr.Customer.all().filter('email','ethan@levr.com').get()
+				alonso = levr.Customer.all().filter('email','alonso@levr.com').get()
+				pat = levr.Customer.all().filter('email','alonso@levr.com').get()
 			
-#			fs_id = user.foursquare_id
-#			fs_token = user.foursquare_token
-#			u = social.Foursquare(user)
-#			user, new_user_details, new_friends = u.first_time_connect(foursquare_token=fs_token)
 			
-			twitter_id = user.twitter_id
-			twitter_screen_name = user.twitter_screen_name
-			twitter_token = user.twitter_token
 			
-			u = social.Twitter(user)
-			u.update_credentials(
-								twitter_token,
-								twitter_screen_name	=twitter_screen_name,
-								twitter_id			=twitter_id
-								)
-			to_fetch = 'user'
-			url,headers = u.create_url(to_fetch)
-			content = u.fetch(to_fetch)
-			logging.warning(u.user.email)
-			user = u.put()
 			
-#			logging.debug(u.user.)
-			response = {
-					'user':api_utils.package_user(user,True),
-					'url'		: url,
-					'headers'	: headers,
-					'content'	: content
-#					'new_user_details'	: new_user_details,
-#					'new_friends'		: [str(x) for x in new_friends]
-					}
-			api_utils.send_response(self,response,user)
+				#pat connects with foursquare
+				p = social.Foursquare(pat)
+				a = social.Foursquare(alonso)
+				e = social.Twitter(ethan)
+				
+				logging.debug('\n\n\n\t\t\t PAT CONNECTS  \n\n\n')
+				#pat connects with foursquare
+				patch = p.first_time_connect(
+									foursquare_token = pat.foursquare_token
+									)
+				
+				logging.debug('\n\n\n\t\t\t ALONSO CONNECTS \n\n\n')
+				al = a.first_time_connect(
+									foursquare_token = alonso.foursquare_token
+									)
+				
+				logging.debug('\n\n\n\t\t\t ETHAN CONNECTS \n\n\n')
+				#ethan connects with twitter
+				eth = e.first_time_connect(
+									ethan.twitter_token,
+									twitter_screen_name = ethan.twitter_screen_name
+									)
+				
+				response = {
+						'pat' : {
+								'user':api_utils.package_user(patch[0],True),
+								'new_details': patch[1],
+								'new_friends': patch[2]
+								},
+						'alonso' : {
+								'user':api_utils.package_user(al[0],True),
+								'new_details': al[1],
+								'new_friends': al[2]
+								},
+						'ethan'	: {
+								'user':api_utils.package_user(eth[0],True),
+								'new_details': eth[1],
+								'new_friends': eth[2]
+								},
+						}
+				
+			method = self.request.get('method')
+			if method == 'foursquare':
+				fs_id = user.foursquare_id
+				fs_token = user.foursquare_token
+				u = social.Foursquare(user)
+				user, new_user_details, new_friends = u.first_time_connect(foursquare_token=fs_token)
+				response = {
+						'user':api_utils.package_user(user,True),
+						'new_details': new_user_details,
+						'new_friends': new_friends
+						}
+			
+			elif method == 'twitter':
+				user = levr.Customer.all().filter('email','ethan@levr.com').get()
+				u = social.Twitter(user)
+				
+				user, new_user_details, new_friends = u.first_time_connect(
+									twitter_token,
+									twitter_screen_name	=twitter_screen_name,
+									twitter_id			=twitter_id
+									)
+				response = {
+						'user':api_utils.package_user(user,True),
+						'new_details': new_user_details,
+						'new_friends': new_friends
+						}
+				
+				
+#				twitter_id = user.twitter_id
+#				twitter_screen_name = user.twitter_screen_name
+#				twitter_token = user.twitter_token
+#				
+#				u = social.Twitter(user)
+#				u.update_credentials(
+#									twitter_token,
+#									twitter_screen_name	=twitter_screen_name,
+#									twitter_id			=twitter_id
+#									)
+#				to_fetch = 'user'
+#				url,headers = u.create_url(to_fetch)
+#				content = u.fetch(to_fetch)
+#				updated = u.update_user_details()
+#				new_friends = u.update_friends()
+#	#			logging.warning(u.user.email)
+#				user = u.put()
+#			
+#	#			logging.debug(u.user.)
+#				response = {
+#						'user':api_utils.package_user(user,True),
+#						'url'		: url,
+#						'headers'	: headers,
+#						'content'	: content,
+#						'updated'	: updated,
+#						'new_friends': new_friends
+#	#					'new_user_details'	: new_user_details,
+#	#					'new_friends'		: [str(x) for x in new_friends]
+#						}
+			api_utils.send_response(self,response,None)
 		except:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')

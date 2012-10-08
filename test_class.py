@@ -19,8 +19,13 @@ import api_utils
 
 class MainPage(webapp2.RequestHandler):
 	def get(self):
+		refresh = self.request.get('refresh',False)
+		if refresh:
+			self.response.out.write('<b>THIS WILL RESET THE DB. SET REFRESH=FALSE</b><br/>')
+			upload_url = blobstore.create_upload_url('/new/upload?refresh=True')
+		else:
+			upload_url = blobstore.create_upload_url('/new/upload')
 		logging.info('!!!')
-		upload_url = blobstore.create_upload_url('/new/upload')
 		logging.info(upload_url)
 		# The method must be "POST" and enctype must be set to "multipart/form-data".
 		self.response.out.write('<html><body>')
@@ -37,6 +42,20 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		blob_key= upload.key()
 		img_key = blob_key
 		logging.info(upload)
+		
+		refresh = self.request.get('refresh',False)
+		if refresh:
+			entities = levr.Customer.all(keys_only=True).filter('tester',True).fetch(None)
+			notes = []
+			for e in entities:
+				notes += levr.Notification.all(keys_only=True).filter('actor',e).fetch(None)
+				
+			entities += notes
+			
+			entities += levr.Deal.all(keys_only=True).filter('deal_status','test').fetch(None)
+			
+			db.delete(entities)
+		
 #		ethan = pat = alonso = ninja = False
 		# new customer
 		ethan = levr.Customer.all(keys_only=True).filter('email','ethan@levr.com').get()
@@ -65,6 +84,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			pat.levr_token = 'tlvXNw9F5Qgnqm_uKxYUx9xeyJHSRDnfBbVmUwvDWzQ'
 #			pat.foursquare_id = 22161113
 			pat.foursquare_token = 'ML4L1LW3SO0SKUXLKWMMBTSOWIUZ34NOTWTWRW41D0ANDBAX'
+#			pat.twitter_friends_by_sn = ['LevrDevr']
 			pat = pat.put()
 		
 		
@@ -182,13 +202,15 @@ class TestHandler(webapp2.RequestHandler):
 					'last_name',
 					'level',
 					'display_name',
-#					'foursquare_id',
-#					'foursquare_token',
-#					'foursquare_connected',
+					'foursquare_id',
+					'foursquare_token',
+					'foursquare_connected',
 					'twitter_id',
 					'twitter_token',
 					'twitter_screen_name',
 					'twitter_connected',
+					'twitter_friends_by_sn',
+					'twitter_friends_by_id',
 					'followers',
 					'foursquare_friends',
 					'facebook_friends',

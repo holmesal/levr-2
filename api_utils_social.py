@@ -42,6 +42,7 @@ class SocialClass:
 				to_be_notified.append(u)
 		
 		if to_be_notified:
+			#place the list of user entities, and get a list of ids in return
 			to_be_notified = db.put(to_be_notified)
 #			to_be_notified = [friend.key() for friend in to_be_notified]
 			
@@ -62,7 +63,8 @@ class SocialClass:
 		return to_be_notified
 	def connect_friends(self):
 		'''
-		Finds every user that is friends with the user on other services, connect them
+		Finds every user that is friends with the user on other services, automatically connects them
+		Returns a list of new friends, returns their ids
 		'''
 		logging.debug('\n\n CONNECT FRIENDS \n\n')
 		logging.debug(self.user.foursquare_id)
@@ -70,6 +72,7 @@ class SocialClass:
 		##find the users friends and add them as connections
 		#only query for services that the user has provided an id for
 		
+		#FOURSQUARE
 		logging.debug('fs: '+str(self.user.foursquare_id))
 		if self.user.foursquare_id:
 #			q = levr.Customer.all(projection=['followers']).filter('foursquare_friends',self.user.foursquare_id)
@@ -79,6 +82,7 @@ class SocialClass:
 																).fetch(None)
 			levr_friends.extend(foursquare_friends)
 			logging.debug(foursquare_friends)
+		#FACEBOOK
 		logging.debug('fb: '+str(self.user.facebook_id))
 		if self.user.facebook_id:
 			facebook_friends	= levr.Customer.all(keys_only=True
@@ -86,13 +90,24 @@ class SocialClass:
 														).order('-facebook_friends'
 															).fetch(None)
 			levr_friends.extend(facebook_friends)
-		logging.debug('twitter: '+str(self.user.twitter_id))
+		#TWITTER BY ID
+		logging.debug('twitter_id: '+str(self.user.twitter_id))
 		if self.user.twitter_id:
 			twitter_friends		= levr.Customer.all(keys_only=True
-													).filter('twitter_friends',self.user.twitter_id
-															).order('-twitter_friends'
+													).filter('twitter_friends_by_id',self.user.twitter_id
+															).order('-twitter_friends_by_id'
 																).fetch(None)
 			levr_friends.extend(twitter_friends)
+		#TWITTER BY SCREEN NAME
+		logging.debug('twitter_screen_name: '+str(self.user.twitter_screen_name))
+		if self.user.twitter_screen_name:
+			twitter_friends		= levr.Customer.all(keys_only=True
+													).filter('twitter_friends_by_sn',self.user.twitter_screen_name
+															).order('-twitter_friends_by_sn'
+																).fetch(None)
+			levr_friends.extend(twitter_friends)
+			logging.debug(twitter_friends)
+		#EMAIL
 		logging.debug('email: '+str(self.user.email))
 		if self.user.email:
 			email_friends		= levr.Customer.all(keys_only=True
@@ -101,6 +116,7 @@ class SocialClass:
 																).fetch(None)
 			levr_friends.extend(email_friends)
 		
+		#levr friends is a list of keys of all friends who have indicated connections with the actor
 		logging.debug(levr_friends)
 		
 		#remove duplicate friends
@@ -109,7 +125,7 @@ class SocialClass:
 		#get the friend entities
 		levr_friends = db.get(levr_friends)
 		
-		#set friends that are connected through other services as followers
+		#set friends as levr followers
 		new_friends = self.add_followers(levr_friends)
 		
 		return new_friends
@@ -160,8 +176,10 @@ class Foursquare(SocialClass):
 		
 		if auto_put:
 			#put the user before returnsing
+			logging.debug('auto put: True')
 			user = self.put()
 		else: 
+			logging.debug('auto put: False')
 			user = self.return_user()
 		return user,new_user_details,new_friends
 	def update_credentials(self,*args,**kwargs):
@@ -181,32 +199,44 @@ class Foursquare(SocialClass):
 		logging.debug('\n\n UPDATE USER DETAILS \n\n')
 		#get foursquare details
 		foursquare_response = self.get_details()
-		foursquare_user = foursquare_response['user']
-		logging.debug(levr.log_dict(foursquare_user))
+		content = foursquare_response['user']
+		logging.debug(levr.log_dict(content))
 		#give preference to facebook and twitter info over foursquare info
 #		if not self.user.facebook_id and not self.user.twitter_id:
 		#grab stuff
 		updated = {}
 		if not self.user.facebook_connected and not self.user.twitter_connected:
+			
+			first_name = content['firstName']
+			last_name	= content['lastName']
+			display_name	= first_name+" "+last_name[0]+'.'
+			photo			= content['photo']['prefix']+'500x500'+content['photo']['suffix']
+			email			= content['contact']['email']
+			logging.debug(levr.log_dict(content['contact']))
+			logging.debug('^^^^^^^^^CONTACT')
+			foursquare_id	= int(content['id'])
+			
 			if not self.user.first_name:
-				self.user.first_name = foursquare_user['firstName']
-				updated['first_name'] = self.user.first_name
+				self.user.first_name	= first_name
+				updated['first_name']	= first_name
 			if not self.user.last_name:
-				self.user.last_name = foursquare_user['lastName']
-				updated['last_name'] = self.user.last_name
+				self.user.last_name		= last_name
+				updated['last_name']	= last_name
 			if not self.user.display_name:
-				self.user.display_name = self.user.first_name+" "+self.user.last_name[0]+'.'
-				updated['display_name'] = self.user.first_name+" "+self.user.last_name[0]+'.'
+				self.user.display_name	= display_name
+				updated['display_name']	= display_name
 			if not self.user.photo:
-				self.user.photo = foursquare_user['photo']['prefix']+'500x500'+foursquare_user['photo']['suffix']
-				updated['photo'] = foursquare_user['photo']['prefix']+'500x500'+foursquare_user['photo']['suffix']
+				self.user.photo			= photo
+				updated['photo']		= photo
 			if not self.user.email:
-				self.user.email = foursquare_user['contact']['email']
-				updated['email'] = foursquare_user['contact']['email']
+				self.user.email			= email
+				updated['email']		= email
 			if not self.user.foursquare_id:
-				self.user.foursquare_id = int(foursquare_user['id'])
-				self.foursquare_id = int(foursquare_user['id'])
-				updated['id'] = int(foursquare_user['id'])
+				self.user.foursquare_id	= foursquare_id
+				self.foursquare_id		= foursquare_id
+				updated['id']			= foursquare_id
+#			if not self.user.twitter_screen_name:
+#				self.user.twitter_screen_name = 
 			logging.debug(levr.log_model_props(self.user))
 		else:
 			raise Exception('user has already connected with facebook or twitter')
@@ -242,20 +272,20 @@ class Foursquare(SocialClass):
 				facebook_friends.append(int(contact['facebook']))
 			if 'email'		in contact:
 				email_friends.append(contact['email'])
-#		logging.debug(twitter_friends)
-#		logging.debug('\n\n')
-#		logging.debug(facebook_friends)
-#		logging.debug('\n\n')
-#		logging.debug(foursquare_friends)
-#		logging.debug('\n\n')
+		logging.debug(twitter_friends)
+		logging.debug('\n\n')
+		logging.debug(facebook_friends)
+		logging.debug('\n\n')
+		logging.debug(foursquare_friends)
+		logging.debug('\n\n')
 		logging.debug(foursquare_friends)
 		logging.debug(filter(lambda friend: friend not in self.user.foursquare_friends,foursquare_friends))
 		#update the user with their new friends if they are not already in there
 		self.user.foursquare_friends.extend(filter(lambda friend: friend not in self.user.foursquare_friends,foursquare_friends))
 		self.user.facebook_friends.extend(filter(lambda friend: friend not in self.user.facebook_friends,facebook_friends))
-		self.user.twitter_friends.extend(filter(lambda friend: friend not in self.user.twitter_friends,twitter_friends))
+		self.user.twitter_friends_by_sn.extend(filter(lambda friend: friend not in self.user.twitter_friends_by_sn,twitter_friends))
 		
-		logging.debug(self.user.foursquare_friends)
+#		logging.debug(self.user.foursquare_friends)
 #		
 #		self.user.foursquare_friends.extend(foursquare_friends)
 #		self.user.facebook_friends.extend(facebook_friends)
@@ -368,6 +398,8 @@ class Twitter(SocialClass):
 		
 		twitter_id 			= kwargs.get('twitter_id',False)
 		twitter_screen_name = kwargs.get('twitter_screen_name',False)
+		logging.debug(twitter_id)
+		logging.debug(twitter_screen_name)
 		if not twitter_id and not twitter_screen_name:
 			raise Exception('twitter_id or twitter_screen_name required in kwargs')
 		
@@ -382,19 +414,25 @@ class Twitter(SocialClass):
 		content = self.fetch('user')
 		if not self.user.facebook_connected:
 			twitter_id	= content.get('id')
+			logging.debug(twitter_id)
+			logging.debug(type(twitter_id))
 			photo		= content.get('profile_image_url_https')
 			screen_name	= content.get('screen_name')
 			name		= content.get('name')
-			first_name	= name[0]
-			last_name	= name[-1]
+			names		= name.split(' ')
+			first_name	= names[0]
+			last_name	= names[-1]
 			display_name= first_name + ' '+ last_name[0]+'.'
+			
+			#update user values if they are to be update
+			updated = {}
 			if not self.user.twitter_id:
 				self.user.twitter_id	= twitter_id
-				updated['twitter_id']	= twtitter_id
+				updated['twitter_id']	= twitter_id
 			if not self.user.photo:
 				self.user.photo			= photo
 				updated['photo']		= photo
-			if not self.user.screen_name:
+			if not self.user.twitter_screen_name:
 				self.user.twitter_screen_name	= screen_name
 				updated['twitter_screen_name']	= screen_name
 			if not self.user.first_name or not self.user.last_name:
@@ -414,9 +452,26 @@ class Twitter(SocialClass):
 		#parse details
 		return updated
 	def update_friends(self):
+		'''
+		Updates a users friends
+		Makes a request to twitter for all of the users friends on twitter
+		Pulls all of their friends ids, and adds them to the users 'twitter_friends_by_id' property
+		Creates levr friendships by searching for all users with the actors ids in one of their friend lists
+		'''
 		content = self.fetch('friends')
+		logging.debug('\n\n UPDATE FRIENDS \n\n')
+		#get the users friends
+		#friends is a list of twitter ids, type: int
+		twitter_friends = content['ids']
 		
-		return
+		#filter out existing friends
+		new_twitter_friends = filter(lambda friend: friend not in self.user.twitter_friends_by_id,twitter_friends)
+		#add new friends to the users list of twitter friends
+		self.user.twitter_friends_by_id.extend(new_twitter_friends)
+		
+		#Create levr the connection between the user and their friends
+		new_friends = self.connect_friends()
+		return new_friends
 	def create_url(self,action=None):
 		logging.debug('\n\n CREATE URL \n\n')
 		#base url
@@ -507,24 +562,29 @@ class Twitter(SocialClass):
 		logging.debug('\n\n GET DETAIL \n\n')
 		url, headers = self.create_url(action)
 		logging.debug('\n\n FETCH DATA \n\n')
-#		url += "?screen_name=LevrDevr"
-		logging.debug(url)
-		result = urlfetch.fetch(
-					url=url,
-					method=urlfetch.GET,
-					headers=headers)
+#		logging.debug(url)
+#		result = urlfetch.fetch(
+#					url=url,
+#					method=urlfetch.GET,
+#					headers=headers)
 #		logging.debug(levr.log_dir(result))
 #		logging.debug(result.status_code)
 #		logging.debug(result.headers.data)
 #		logging.debug(result.content)
-		
-		status = result.status_code
-		heads = result.headers.data
-		#handle response types
-		if result.status_code == 200:
-			content = json.loads(result.content)
-		else: content = heads
-
+#		
+#		status = result.status_code
+#		heads = result.headers.data
+#		#handle response types
+#		if result.status_code == 200:
+#			content = json.loads(result.content)
+#		else: 
+#			raise Exception('Could Not connect')
+#			content = heads
+		if action == 'user':
+			content = twitter_auth['example_user_info']['response']['content']
+		elif action == 'friends':
+			content = twitter_auth['example_friends']
+		logging.debug(content)
 		return content
 
 class Facebook(SocialClass):
