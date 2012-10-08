@@ -40,45 +40,59 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 #		ethan = pat = alonso = ninja = False
 		# new customer
 		ethan = levr.Customer.all(keys_only=True).filter('email','ethan@levr.com').get()
+		levr_token = 'tlvXNw9F5Qgnqm_uKxYUx9xeyJHSRDnfBbVmUwvDWzQ'
 		if not ethan:
-			ethan = levr.Customer()
+			ethan = levr.Customer(levr_token = levr_token)
 			ethan.email	= 'ethan@levr.com'
 			ethan.pw 	= enc.encrypt_password('ethan')
-			ethan.alias	= 'Deal Owner'
+			ethan.alias	= 'ethan owns the deals'
 			ethan.favorites	= []
 			ethan.tester = True
+			ethan.foursquare_id = 37756769
+			ethan.foursquare_token = 'IDMTODCAKR34GOI5MSLEQ1IWDJA5SYU0PGHT4F5CAIMPR4CR'
 			ethan = ethan.put()
 		
 		pat = levr.Customer.all(keys_only=True).filter('email','patrick@levr.com').get()
 		if not pat:
-			pat = levr.Customer()
+			pat = levr.Customer(levr_token = levr_token)
 			pat.email	= 'patrick@levr.com'
 			pat.pw 	= enc.encrypt_password('patrick')
-			pat.alias	= 'Redeemer'
+			pat.alias	= 'patrick'
 			pat.favorites	= []
 			pat.tester = True
+			pat.levr_token = 'tlvXNw9F5Qgnqm_uKxYUx9xeyJHSRDnfBbVmUwvDWzQ'
+			pat.foursquare_id = 22161113
+			pat.foursquare_token = 'ML4L1LW3SO0SKUXLKWMMBTSOWIUZ34NOTWTWRW41D0ANDBAX'
 			pat = pat.put()
+		
 		
 		alonso = levr.Customer.all(keys_only=True).filter('email','alonso@levr.com').get()
 		if not alonso:
-			alonso = levr.Customer()
+			alonso = levr.Customer(levr_token = levr_token)
 			alonso.email	= 'alonso@levr.com'
 			alonso.pw 	= enc.encrypt_password('alonso')
-			alonso.alias	= 'Follows patrick and ethan'
+			alonso.alias	= 'alonso'
 			alonso.favorites	= []
-			alonso.foursquare_token = '4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0'
+#			alonso.foursquare_token = '4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0'
 			alonso.tester = True
+			
+			alonso.levr_token = 'tlvXNw9F5Qgnqm_uKxYUx9xeyJHSRDnfBbVmUwvDWzQ'
+			alonso.foursquare_id = 32773785
+			alonso.foursquare_token = 'RGTMFLSGVHNMZMYKSMW4HYFNEE0ZRA5PTD4NJE34RHUOQ5LZ'
 			alonso = alonso.put()
 		
 		ninja = levr.Customer.all(keys_only=True).filter('email','santa@levr.com').get()
 		if not ninja:
-			ninja = levr.Customer()
+			ninja = levr.Customer(levr_token = levr_token)
 			ninja.email	= 'santa@levr.com'
 			ninja.pw 	= enc.encrypt_password('santa')
 			ninja.alias	= 'Followed'
 			ninja.favorites = []
 			ninja.tester = True
+			ninja.levr_token = 'tlvXNw9F5Qgnqm_uKxYUx9xeyJHSRDnfBbVmUwvDWzQ'
 			ninja = ninja.put()
+			
+			
 		
 		
 		
@@ -99,16 +113,25 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		dealID = levr.dealCreate(params,'phone_new_business')
 		dealID = levr.dealCreate(params,'phone_new_business')
 		logging.debug(dealID)
+		
+		
+		
+		
 		self.redirect('/new/test')
 
 class TestHandler(webapp2.RequestHandler):
 	def get(self):
 		
-		ethan = enc.encrypt_key(levr.Customer.all().filter('email','ethan@levr.com').get().key())
-		pat = enc.encrypt_key(levr.Customer.all().filter('email','patrick@levr.com').get().key())
-		alonso = enc.encrypt_key(levr.Customer.all().filter('email','alonso@levr.com').get().key())
-		ninja = enc.encrypt_key(levr.Customer.all().filter('email','santa@levr.com').get().key())
-		deal = enc.encrypt_key(levr.Deal.all().ancestor(db.Key(enc.decrypt_key(ethan))).get().key())
+		e = levr.Customer.all().filter('email','ethan@levr.com').get()
+		if e: ethan = enc.encrypt_key(e.key())
+		p = levr.Customer.all().filter('email','patrick@levr.com').get()
+		if p: pat = enc.encrypt_key(p.key())
+		a = levr.Customer.all().filter('email','alonso@levr.com').get()
+		if a: alonso = enc.encrypt_key(a.key())
+		n = levr.Customer.all().filter('email','santa@levr.com').get()
+		if n: ninja = enc.encrypt_key(n.key())
+		d = levr.Deal.all().ancestor(db.Key(enc.decrypt_key(ethan))).get()
+		if d: deal = enc.encrypt_key(d.key())
 		
 		url = '\'http://0.0.0.0:8080/api'
 		
@@ -119,53 +142,74 @@ class TestHandler(webapp2.RequestHandler):
 		ninja_url = url+'/user/'+ninja+'\' | python -mjson.tool'
 		deal_url = url+'/deal/'+deal+'\' | python -mjson.tool'
 		
-		token = db.get(enc.decrypt_key(ethan)).levr_token
-		
-		self.response.out.write('<b>For ethan: </b><br/><br/>')
+		levr_token = db.get(enc.decrypt_key(ethan)).levr_token
+		self.response.out.headers['Content-Type'] = 'text/plain'
+		self.response.out.write('LEVR TOKEN:\n\n')
+		self.response.out.write(levr_token)
+		self.response.out.write('\n\n\nFor ethan:\n\n')
 		self.response.out.write(ethan)
-		self.response.out.write('<br/><br/>')
-		self.response.out.write(db.get(enc.decrypt_key(ethan)).levr_token)
-		self.response.out.write('<br/><br/>')
+		self.response.out.write('\n\n')
 		self.response.out.write('curl '+ethan_url)
 		
-		self.response.out.write('<br/><br/><br/><b>For pat: </b><br/><br/>')
+		self.response.out.write('\n\n\nFor pat:\n\n')
 		self.response.out.write(pat)
-		self.response.out.write('<br/><br/>')
-		self.response.out.write(db.get(enc.decrypt_key(pat)).levr_token)
-		self.response.out.write('<br/><br/>')
+		self.response.out.write('\n\n')
 		self.response.out.write('curl '+pat_url)
 		
-		self.response.out.write('<br/><br/><br/><b>For alonso: </b><br/><br/>')
+		self.response.out.write('\n\n\n<b>For alonso: </b>\n\n')
 		self.response.out.write(alonso)
-		self.response.out.write('<br/><br/>')
-		self.response.out.write(db.get(enc.decrypt_key(alonso)).levr_token)
-		self.response.out.write('<br/><br/>')
+		self.response.out.write('\n\n')
 		self.response.out.write('curl '+alonso_url)
 		
-		self.response.out.write('<br/><br/><br/><b>For ninja: </b><br/><br/>')
+		self.response.out.write('\n\n\n<b>For ninja: </b>\n\n')
 		self.response.out.write(ninja)
-		self.response.out.write('<br/><br/>')
-		self.response.out.write(db.get(enc.decrypt_key(ninja)).levr_token)
-		self.response.out.write('<br/><br/>')
+		self.response.out.write('\n\n')
 		self.response.out.write('curl '+ninja_url)
 		
-		self.response.out.write('<br/><br/><br/><b>For deal stuff: </b><br/><br/>')
+		self.response.out.write('\n\n\n<b>For deal stuff: </b>\n\n')
 		self.response.out.write(deal)
-		self.response.out.write('<br/><br/>')
-#		self.response.out.write('<br/><br/>')
+		self.response.out.write('\n\n')
+#		self.response.out.write('\n\n')
 		self.response.out.write('curl '+deal_url)
 		
-		self.response.out.write('<br/><br/>')
-		self.response.out.write('<br/><br/>')
-		self.response.out.write('token: ')
-		self.response.out.write('<br/><br/>')
-		self.response.out.write(str(token))
-		self.response.out.write('<br/><br/>')
-		self.response.out.write(levr.unix_time(datetime.now()))
-		self.response.out.write('<br/><br/>')
-		self.response.out.write('| python -mjson.tool')
-		self.response.out.write('<br/><br/>')
-		self.response.out.write('<br/><br/>')
+#		projection = None
+		projection = [
+					'alias',
+					'new_notifications',
+					'first_name',
+					'last_name',
+					'level',
+					'display_name',
+					'foursquare_id',
+					'foursquare_token',
+					'foursquare_connected',
+					'followers',
+					'foursquare_friends',
+					'facebook_friends',
+					'twitter_friends',
+					'email_friends',
+					'favorites',
+					'upvotes',
+					'downvotes',
+					]
+		deal_projection = [
+						'upvotes',
+						'downvotes',
+						'karma'
+						]
+		self.response.out.write('\n\n\n Ethan')
+		self.response.out.write(levr.log_model_props(e,projection))
+		self.response.out.write('\n PAT')
+		self.response.out.write(levr.log_model_props(p,projection))
+		self.response.out.write('\n ALONSO')
+		self.response.out.write(levr.log_model_props(a,projection))
+		self.response.out.write('\nDEAL')
+		self.response.out.write(levr.log_model_props(d,deal_projection))
+		self.response.out.write('\n\n')
+		notifications = levr.Notification.all().fetch(None)
+		for n in notifications:
+			self.response.out.write(levr.log_model_props(n))
+		
 		
 	
 		

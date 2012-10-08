@@ -737,7 +737,7 @@ class Customer(db.Model):
 	
 	#foursquare
 	foursquare_connected= db.BooleanProperty()
-	foursquare_id		= db.StringProperty()
+	foursquare_id		= db.IntegerProperty()
 	foursquare_token	= db.StringProperty()
 	foursquare_friends	= db.ListProperty(int)
 	

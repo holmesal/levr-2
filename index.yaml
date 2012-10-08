@@ -46,6 +46,13 @@ indexes:
 - kind: Customer
   properties:
   - name: foursquare_friends
+  - name: email_friends
+  - name: followers
+  - name: twitter_friends
+
+- kind: Customer
+  properties:
+  - name: foursquare_friends
   - name: followers
 
 - kind: Customer

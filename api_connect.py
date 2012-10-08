@@ -81,8 +81,8 @@ class ConnectFoursquareHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 		
 class ConnectTwitterHandler(webapp2.RequestHandler):
-	@api_utils.validate(None,'param',user=True,token=False,screenName=True,levrToken=True)
 #	@api_utils.validate(None,None,user=False,token=False,screenName=False,levrToken=False)
+	@api_utils.validate(None,'param',user=True,token=False,screenName=True,levrToken=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		try:
@@ -112,9 +112,31 @@ class ConnectTwitterHandler(webapp2.RequestHandler):
 		except:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
-
+class TestConnectionHandler(webapp2.RequestHandler):
+	def get(self):
+		try:
+			logging.debug("\n\n\nTEST HANDLER\n\n\n")
+			u = self.request.get('user')
+			if u == 'ethan':
+				user = levr.Customer.all().filter('email','ethan@levr.com').get()
+			elif u == 'pat':
+				user = levr.Customer.all().filter('email','patrick@levr.com').get()
+			elif u == 'alonso':
+				user = levr.Customer.all().filter('email','alonso@levr.com').get()
+			
+			fs_id = user.foursquare_id
+			fs_token = user.foursquare_token
+			u = social.Foursquare(user,fs_id,fs_token)
+			u.first_time_connect()
+			
+			response = {'user':api_utils.package_user(user,'private')}
+			api_utils.send_response(self,response,user)
+		except:
+			levr.log_error()
+			api_utils.send_error(self,'Server Error')
 
 app = webapp2.WSGIApplication([('/api/connect/facebook', ConnectFacebookHandler),
 								('/api/connect/foursquare', ConnectFoursquareHandler),
-								('/api/connect/twitter', ConnectTwitterHandler)
+								('/api/connect/twitter', ConnectTwitterHandler),
+								('/api/connect/test', TestConnectionHandler)
 								],debug=True)
