@@ -429,8 +429,8 @@ class UpdatePinsHandler(webapp2.RequestHandler):
 			
 class Create100DeadNinjasHandler(webapp2.RequestHandler):
 	def get(self):
-		
-		# for number in list(xrange(100)):
+		logging.info('Creating 1000 dead ninjas.')
+# 		for number in list(xrange(100)):
 # 			ninja = levr.Customer(
 # 				display_name 		=	'Dead Ninja '+str(number),
 # 				alias				=	'deadninja'+str(number),
@@ -459,6 +459,11 @@ class HarmonizeVenuesHandler(webapp2.RequestHandler):
 # 			}
 # 			
 # 			t = taskqueue.add(url='/tasks/businessHarmonizationTask',payload=json.dumps(task_params))
+
+
+class UpdateBusinessHandler(webapp2.RequestHandler):
+	def get(self):
+		api_utils.update_foursquare_business('4b05866ff964a520256222e3')
 		
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload.*', DatabaseUploadHandler),
@@ -472,7 +477,8 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/category', TestCategoryHandler),
 								('/new/pins', UpdatePinsHandler),
 								('/new/deadNinjas', Create100DeadNinjasHandler),
-								('/new/harmonizeVenues',HarmonizeVenuesHandler)
+								('/new/harmonizeVenues',HarmonizeVenuesHandler),
+								('/new/updateBusiness',UpdateBusinessHandler)
 #								('/new/update' , UpdateUsersHandler)
 								],debug=True)
 

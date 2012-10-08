@@ -248,20 +248,23 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				if user.foursquare_token:
 					token = user.foursquare_token
 					
-			#if len(packaged_deals) == 0:
-			if True:
-				#not a lot of results, do the foursquare search in real-time
-				ft1 = datetime.now()
-				logging.info('FOURSQUARE IDS::::')
-				logging.info(foursquare_ids)
-				logging.debug('searching foursquare!')
-				foursquare_deals = api_utils.search_foursquare(geo_point,token,foursquare_ids)
-				logging.info('Levr results found: '+str(len(packaged_deals)))
-				logging.info('Foursquare results found: '+str(len(foursquare_deals)))
-				packaged_deals = packaged_deals + foursquare_deals
-				logging.info('Total results found: '+str(len(packaged_deals)))
-				ft2 = datetime.now()
-				logging.info('Foursquare fetch time: ' + str(ft2-ft1))
+			if len(packaged_deals) == 0:
+			#if False:
+				try:
+					#not a lot of results, do the foursquare search in real-time
+					ft1 = datetime.now()
+					logging.info('FOURSQUARE IDS::::')
+					logging.info(foursquare_ids)
+					logging.debug('searching foursquare!')
+					foursquare_deals = api_utils.search_foursquare(geo_point,token,foursquare_ids)
+					logging.info('Levr results found: '+str(len(packaged_deals)))
+					logging.info('Foursquare results found: '+str(len(foursquare_deals)))
+					packaged_deals = packaged_deals + foursquare_deals
+					logging.info('Total results found: '+str(len(packaged_deals)))
+					ft2 = datetime.now()
+					logging.info('Foursquare fetch time: ' + str(ft2-ft1))
+				except:
+					levr.log_error('Error in foursquare call or parsing.')
 			else:
 				#lots of results, do the foursquare search inside a task
 				params = {

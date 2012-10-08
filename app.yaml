@@ -53,10 +53,13 @@ handlers:
   script: foursquare.app
   secure: always
   
-#tasks
+#tasks and cronjobs
 - url: /tasks.*
   script: tasks.app
-  #login: admin
+  login: admin
+- url: /cronjobs.*
+  script: cron_jobs.app
+  login: admin
   
   
 #begin API scripts
@@ -125,4 +128,4 @@ skip_files:
 - ^(.*/)?.*/RCS/.*
 - ^(.*/)?\..*
 - ^(.*/)?.*\.bak$
-- ^Crypto/
+#- ^Crypto/

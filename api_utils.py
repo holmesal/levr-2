@@ -219,7 +219,7 @@ def package_business(business):
 
 	packaged_business = {
 		'businessID'	: enc.encrypt_key(str(business.key())),
-		'foursquare_id'	: business.foursquare_id,
+		'foursquareID'	: business.foursquare_id,
 		'businessName'	: business.business_name,
 		'vicinity'		: business.vicinity,
 		'geoPoint'		: str(business.geo_point),
@@ -1016,7 +1016,12 @@ def search_foursquare(geo_point,token,already_found=[]):
 	
 	for foursquare_deal in foursquare_deals:
 		logging.info('woo a deal!')
-		#logging.info(foursquare_deal['venue']['categories'][0]['name'])
+		
+		#sometimes venues do not have categories
+		if len(foursquare_deal['venue']['categories']) == 0:
+			logging.info('No venue category returned, making it "undefined"')
+			foursquare_deal['venue']['categories'] = [{'name':'undefined'}]
+		#logging.info(foursquare_deal['venue'])
 		if not filter_foursquare_deal(foursquare_deal,already_found):
 			#logging.debug(foursquare_deal['type'])
 			#logging.debug(foursquare_deal['message'])
@@ -1030,6 +1035,7 @@ def search_foursquare(geo_point,token,already_found=[]):
 					business_name 		= 	venue['name'],
 					foursquare_name		=	venue['name'],
 					foursquare_id		=	venue['id'],
+					foursquare_linked	=	True,
 					vicinity			=	venue['location']['address'] + ', ' + venue['location']['city'],
 					geo_point			=	db.GeoPt(venue['location']['lat'],venue['location']['lng']),
 					geo_hash			=	geohash.encode(venue['location']['lat'],venue['location']['lng']),
@@ -1047,58 +1053,9 @@ def search_foursquare(geo_point,token,already_found=[]):
 			existing_deal = levr.Deal.gql('WHERE foursquare_id=:1',foursquare_deal['id']).get()
 			if not existing_deal:
 				
-				#set parent to foursquare user, or create if does not exist
-				# foursquare_user = levr.Customer.gql('WHERE alias=:1 AND email=:2','Foursquare, Inc.','fake_foursquare_email').get()
-# 				if not foursquare_user:
-# 					#well create one then
-# 					foursquare_user = levr.Customer(
-# 							email			=	'fake_foursquare_email',
-# 							pw				=	enc.encrypt_password('Carl123!'),
-# 							alias			=	'Foursquare, Inc.',
-# 							display_name	=	'Foursquare, Inc.',
-# 							photo			=	'http://playfoursquare.s3.amazonaws.com/press/logo/icon-512x512.png'
-# 					)
-# 				
-# 				foursquare_user.put()
-
-				#grab a random ninja to be the owner of this deal
-				random_dead_ninja = get_random_dead_ninja()
+				#add the foursquare deal
+				deal = add_foursquare_deal(foursquare_deal,business)
 				
-				#silly multiline strings in foursquare api
-				message = foursquare_deal['message']
-				if message.find('\r\n') != -1:
-					message = message[0:message.find('\r\n')]
-				elif message.find('\r') != -1:
-					message = message[0:message.find('\r')]
-				elif message.find('\n') != -1:
-					message = message[0:message.find('\n')]
-				else:
-					#logging.debug('NO FUCKERY IN THIS HERE STRING')
-					pass
-				
-				##logging.debug(json.dumps(foursquare_deal['message'].rstrip('\r\n')))
-				deal = levr.Deal(
-					businessID		=	str(business.key()),
-					business_name	=	foursquare_deal['venue']['name'],
-					deal_status		=	'active',
-					tags			=	levr.tagger(foursquare_deal['message']+' '+foursquare_deal['description']+' '+foursquare_deal['venue']['name']+' '+foursquare_deal['venue']['categories'][0]['name']),
-					origin			=	'foursquare',
-					external_url	=	'foursquare://venues/'+foursquare_deal['venue']['id'],
-					foursquare_id	=	foursquare_deal['id'],
-					foursquare_type	=	foursquare_deal['venue']['categories'][0]['name'],
-					deal_text		=	message,
-					description		=	foursquare_deal['description'],
-					geo_point		=	business.geo_point,
-					geo_hash		=	business.geo_hash,
-					pin_color		=	'blue',
-					parent			=	random_dead_ninja.key(),
-					smallImg		=	'http://playfoursquare.s3.amazonaws.com/press/logo/icon-512x512.png'
-				)
-
-
-				deal.put()
-				logging.info('Foursquare special '+deal.foursquare_id+' added to database.')
-				#logging.debug(levr.log_model_props(deal))
 			else:
 				deal = existing_deal
 				logging.info('Foursquare special '+deal.foursquare_id+' found in database but not in search.')
@@ -1115,6 +1072,49 @@ def search_foursquare(geo_point,token,already_found=[]):
 	for deal in response_deals:
 		logging.info(deal['dealText'])
 	return response_deals
+
+def add_foursquare_deal(foursquare_deal,business):
+	#grab a random ninja to be the owner of this deal
+	random_dead_ninja = get_random_dead_ninja()
+	
+	#silly multiline strings in foursquare api
+	message = foursquare_deal['message']
+	if message.find('\r\n') != -1:
+		message = message[0:message.find('\r\n')]
+	elif message.find('\r') != -1:
+		message = message[0:message.find('\r')]
+	elif message.find('\n') != -1:
+		message = message[0:message.find('\n')]
+	else:
+		#logging.debug('NO FUCKERY IN THIS HERE STRING')
+		pass
+	
+	##logging.debug(json.dumps(foursquare_deal['message'].rstrip('\r\n')))
+	deal = levr.Deal(
+		businessID		=	str(business.key()),
+		business_name	=	foursquare_deal['venue']['name'],
+		deal_status		=	'active',
+		tags			=	levr.tagger(foursquare_deal['message']+' '+foursquare_deal['description']+' '+foursquare_deal['venue']['name']+' '+foursquare_deal['venue']['categories'][0]['name']),
+		origin			=	'foursquare',
+		external_url	=	'foursquare://venues/'+foursquare_deal['venue']['id'],
+		foursquare_id	=	foursquare_deal['id'],
+		foursquare_type	=	foursquare_deal['venue']['categories'][0]['name'],
+		deal_text		=	message,
+		description		=	foursquare_deal['description'],
+		geo_point		=	business.geo_point,
+		geo_hash		=	business.geo_hash,
+		pin_color		=	'blue',
+		parent			=	random_dead_ninja.key(),
+		smallImg		=	'http://playfoursquare.s3.amazonaws.com/press/logo/icon-512x512.png'
+	)
+
+
+	deal.put()
+	logging.info('Foursquare special '+deal.foursquare_id+' added to database.')
+	#logging.debug(levr.log_model_props(deal))
+	
+	return deal
+
 
 def filter_foursquare_deal(foursquare_deal,already_found):
 	
@@ -1149,7 +1149,7 @@ def filter_foursquare_deal(foursquare_deal,already_found):
 			return True
 			
 	#search description strings to weed out deals that require more than 1 checkin in a given number of days
-	allowed_description_fragments = ['Unlocked every check-in','Unlocked on your 1st check-in','Unlocked for checking in 1 times','Unlocked for swarms']
+	allowed_description_fragments = ['Unlocked every check-in','1st check-in','Unlocked for checking in 1 times','Unlocked for swarms']
 	flag='notfound'
 	for fragment in allowed_description_fragments:
 		if fragment in foursquare_deal['description']:
@@ -1168,7 +1168,7 @@ def get_random_dead_ninja():
 	#count them
 	count = deadNinjas.count()
 	#generate a random int
-	rando = random.randint(0,count)
+	rando = random.randint(1,count)
 	#grab the ninja based on that number
 	#this is sometimes crashing... last name is not a good way to do this
 	dead_ninja = levr.Customer.gql('WHERE last_name =:1',str(rando)).get()
@@ -1210,3 +1210,87 @@ def match_foursquare_business(geo_point,query):
 		return response
 	else:
 		return False
+		
+def update_foursquare_business(foursquare_id,token='random'):
+
+	#if token is passes as 'random', use a hardcoded token
+	if token == 'random':
+		hardcoded = ['IDMTODCAKR34GOI5MSLEQ1IWDJA5SYU0PGHT4F5CAIMPR4CR','ML4L1LW3SO0SKUXLKWMMBTSOWIUZ34NOTWTWRW41D0ANDBAX','RGTMFLSGVHNMZMYKSMW4HYFNEE0ZRA5PTD4NJE34RHUOQ5LZ']
+		token = random.choice(hardcoded)
+		logging.info('Using token: '+token)
+	
+
+	#go grab the business from foursquare
+	params = {
+		'v'				:	'20120920',
+		'oauth_token'	:	token
+	}
+
+	url = 'https://api.foursquare.com/v2/venues/'+foursquare_id+'?'+urllib.urlencode(params)
+	
+	result = urlfetch.fetch(url=url)
+	result = json.loads(result.content)
+	#logging.info(result)
+	foursquare_deals = result['response']['venue']['specials']['items']
+
+	#push dealids onto an array
+	foursquare_deal_ids = []
+	for special in foursquare_deals:
+		foursquare_deal_ids.append(special['id'])
+	logging.info(foursquare_deal_ids)
+	
+	#grab the business with that foursquare id
+	business = levr.Business.gql('WHERE foursquare_id = :1',foursquare_id).get()
+	business_key = business.key()
+	#grab the deals from that business
+	#deals = levr.Deal.gql('WHERE businessID = :1',str(business_key))
+	deals = levr.Deal.gql('WHERE businessID = :1 AND origin = :2 AND deal_status = :3',str(business_key),'foursquare','active')
+	
+	for deal in deals:
+		
+		if deal.foursquare_id not in foursquare_deal_ids:
+			#remove levr-stored foursquare deals not returned by the foursquare venue request (foursquare has removed them)
+			deal.deal_status = 'expired'
+			logging.info('The foursquare special '+deal.foursquare_id+' has been retired because it was not found on the foursquare servers.')
+			#put back
+			deal.put()
+		else:
+			#levr-stored deal WAS found in foursquare list, so remove from the list
+			#list comprehension should remove the foursquare_deal_id AND handle duplicates
+			foursquare_deal_ids = [x for x in foursquare_deal_ids if x != deal.foursquare_id]
+			logging.info('matched deal!')
+			logging.info(foursquare_deal_ids)
+	
+	
+	
+	#anything left in the list?
+	if len(foursquare_deal_ids) > 0:
+		logging.info('THERE IS SOMETHING IN THE LIST')	
+		#add any extra deals
+		for foursquare_deal in foursquare_deals:
+			if foursquare_deal['id'] in foursquare_deal_ids:
+				#check the deal against the filter function
+				already_found = []
+				#rearrange the deal
+				foursquare_deal.update({
+					'venue'		:	result['response']['venue']
+				})
+				# logging.info('THE DEAL:')
+# 				logging.info(levr.log_dict(foursquare_deal))
+				if not filter_foursquare_deal(foursquare_deal,already_found):
+					
+					#add the deal
+					deal = add_foursquare_deal(foursquare_deal,business)
+				
+# 	
+# 	#go grab all the deals from that business
+# 	deals = levr.Deal.gql('WHERE foursquare_id = :1',foursquare_id)
+# 	
+# 	for deal in deals:
+# 		logging.info(deal.foursquare_id)
+# 		logging.info('deal found!')
+# 	
+# 	
+	
+	#pull the specials
+	#logging.info(foursquare_deals)
