@@ -430,18 +430,18 @@ class UpdatePinsHandler(webapp2.RequestHandler):
 class Create100DeadNinjasHandler(webapp2.RequestHandler):
 	def get(self):
 		logging.info('Creating 1000 dead ninjas.')
-# 		for number in list(xrange(100)):
-# 			ninja = levr.Customer(
-# 				display_name 		=	'Dead Ninja '+str(number),
-# 				alias				=	'deadninja'+str(number),
-# 				email				=	'deadninja@levr.com',
-# 				first_name			=	'Dead Ninja',
-# 				last_name			=	str(number),
-# 				foursquare_token	=	'4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0',
-# 				pw					=	enc.encrypt_password('Carl123!')
-# 			)
-# 			
-# 			ninja.put()
+		for number in list(xrange(100)):
+			ninja = levr.Customer(
+				display_name 		=	'Dead Ninja '+str(number),
+				alias				=	'deadninja'+str(number),
+				email				=	'deadninja@levr.com',
+				first_name			=	'Dead Ninja',
+				last_name			=	str(number),
+				foursquare_token	=	'4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0',
+				pw					=	enc.encrypt_password('Carl123!')
+			)
+			
+			ninja.put()
 
 		#how to get a random dead ninja
 		#ninja = api_utils.get_random_dead_ninja()
@@ -465,6 +465,24 @@ class UpdateBusinessHandler(webapp2.RequestHandler):
 	def get(self):
 		api_utils.update_foursquare_business('4b05866ff964a520256222e3')
 		
+class ClearFoursquareHandler(webapp2.RequestHandler):
+	def get(self):
+		deals = levr.Deal.gql('WHERE origin=:1','foursquare')
+
+		# for deal in deals:
+# 		     deal.delete()
+# 		
+# 		businesses = levr.Business.gql('WHERE foursquare_id > :1','')
+# 		
+# 		for business in businesses:
+# 		    business.delete()
+# 		    
+# 		deadNinjas = levr.Customer.gql('WHERE email = :1','deadninja@levr.com')
+# 		
+# 		for ninja in deadNinjas:
+# 			ninja.delete()
+
+		
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload.*', DatabaseUploadHandler),
 								('/new/find', FilterGeohashHandler),
@@ -478,7 +496,8 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/pins', UpdatePinsHandler),
 								('/new/deadNinjas', Create100DeadNinjasHandler),
 								('/new/harmonizeVenues',HarmonizeVenuesHandler),
-								('/new/updateBusiness',UpdateBusinessHandler)
+								('/new/updateBusiness',UpdateBusinessHandler),
+								('/new/clearFoursquare',ClearFoursquareHandler)
 #								('/new/update' , UpdateUsersHandler)
 								],debug=True)
 
