@@ -180,6 +180,9 @@ class UserAddFollowHandler(webapp2.RequestHandler):
 			actorID = actor.key()
 			private = kwargs.get('private')
 			
+			#add actor to the list of followers
+			if actor not in user.followers:
+				user.followers.append(actor)
 			
 			#PERFORM ACTIONS
 			if not levr.create_notification('newFollower',user.key(),actorID):

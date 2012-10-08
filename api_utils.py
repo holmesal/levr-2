@@ -326,7 +326,8 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						#login stuff
 						'levrToken'		: str,
 						'facebookID'	: str,
-						'token'			: str,
+						'token'			: str, #oauth/access tokens for facebook, foursquare, etc...
+						'id'			: str, #e.g. facebook_id, foursquare_id, etc...
 						'screenName'	: str,
 						'email_or_owner': str,
 						'pw'			: str,
@@ -361,6 +362,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						'levrToken'			: '',
 						'facebookID'		: '',
 						'token'				: '',
+						'id'				: '',
 						'screenName'		: '',
 						'email_or_owner'	: '',
 						'pw'				: '',

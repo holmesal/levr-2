@@ -8,7 +8,7 @@ import api_utils
 from google.appengine.ext import db
 
 class ConnectFacebookHandler(webapp2.RequestHandler):
-	@api_utils.validate(None,'param',user=True,token=True,facebookID=True,levrToken=True)
+	@api_utils.validate(None,'param',user=True,token=True,id=True,levrToken=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		try:
@@ -40,31 +40,41 @@ class ConnectFacebookHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 
 class ConnectFoursquareHandler(webapp2.RequestHandler):
-	@api_utils.validate(None,'param',user=True,token=True,levrToken=True)
+	@api_utils.validate(None,'param',user=True,id=True,token=True,levrToken=True)#id=True
 	@api_utils.private
-	def post(self,*args,**kwargs):
+	def get(self,*args,**kwargs):
 		try:
 			#RESTRICTED
 			logging.debug('CONNECT FOURSQUARE\n\n\n')
 			logging.debug(kwargs)
 			
-			user		= kwargs.get('actor')
-			token		= kwargs.get('token')
-			
-			#create or refresh the alias
-			user = levr.build_display_name(user)
+			user					= kwargs.get('actor')
+			foursquare_token		= kwargs.get('token')
+			foursquare_id			= kwargs.get('id')
 			
 			
-			#add foursquare token
-			user.foursquare_token = token
-			#query foursquare for user data
-			user = social.foursquare_deets(user,token)
-	
-			#update
-			user.put()
+			fs = social.Foursquare(user,foursquare_id,foursquare_token)
+			response = fs.first_time_connect()
 			
-			#return the user
-			response = {'user':api_utils.package_user(user,'private')}
+#			response = fs.get_friends()
+#			response = fs.get_details()
+			
+			logging.debug(response)
+			logging.debug(type(response))
+#			#create or refresh the alias
+#			user = levr.build_display_name(user)
+#			
+#			
+#			#add foursquare token
+#			user.foursquare_token = token
+#			#query foursquare for user data
+#			user = social.foursquare_deets(user,token)
+#	
+#			#update
+#			user.put()
+#			
+#			#return the user
+#			response = {'user':api_utils.package_user(user,'private')}
 			api_utils.send_response(self,response,user)
 		except:
 			levr.log_error()
@@ -106,4 +116,5 @@ class ConnectTwitterHandler(webapp2.RequestHandler):
 
 app = webapp2.WSGIApplication([('/api/connect/facebook', ConnectFacebookHandler),
 								('/api/connect/foursquare', ConnectFoursquareHandler),
-								('/api/connect/twitter', ConnectTwitterHandler)],debug=True)
+								('/api/connect/twitter', ConnectTwitterHandler)
+								],debug=True)

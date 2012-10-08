@@ -13,29 +13,236 @@ import urllib
 #for twitter api
 import uuid
 
-def foursquare_deets(user,token):
-	try:
-		#goto foursquare
-		url = 'https://api.foursquare.com/v2/users/self?v=20120920&oauth_token='+token
-		result = urlfetch.fetch(url=url)
-		foursquare_user = json.loads(result.content)['response']['user']
+#def foursquare_deets(user,token):
+#	try:
+#		#goto foursquare
+#		url = 'https://api.foursquare.com/v2/users/self?v=20120920&oauth_token='+token
+#		result = urlfetch.fetch(url=url)
+#		foursquare_user = json.loads(result.content)['response']['user']
+#		
+#		#give preference to facebook and twitter info over foursquare info
+#		if not user.facebook_id and not user.twitter_id:
+#			#grab stuff
+#			user.first_name = foursquare_user['firstName']
+#			user.last_name = foursquare_user['lastName']
+#			user.alias = user.first_name+user.last_name[0]+'.'
+#			user.photo = foursquare_user['photo']['prefix']+'500x500'+foursquare_user['photo']['suffix']
+#			user.email = foursquare_user['contact']['email']
+#			logging.info(user.__dict__)
+#		else:
+#			logging.debug('user has already connected with facebook or twitter')
+#		return user
+#	except:
+#		raise Exception('Invalid foursquare response: '+result.content)
+#	
+#	return user
+class SocialClass:
+	def __init__(self,user):
+		self.user = user
+		raise Exception('social class is being instanciated')
+	def first_time_connect(self):
+		'''
+		User is just connecting to levr via a social service for the first time
+		Updates a users login credentials, their personal information, and their friend linkage
+		'''
+		
+		
+		#update access credentials
+		self.update_credentials()
+		#update user info
+		self.update_user_details()
+		#pull user friends
+		self.update_friends()
+		
+		self.put()
+		
+		return
+#	@classmethod
+	def test(cls):
+		logging.debug('\n\n\n\nTHIS IS A TEST!!!\n\n\n\n\n')
+	def add_followers(self,to_be_connected):
+		'''
+		Takes a list of users, checks if they are already following the user
+		If not already following, they are notified
+		If they are already following, nothing happens
+		'''
+#		#add actor to the list of followers
+#		for user in to_be_connected:
+#			if self.user.key() not in user.followers:
+#				user.followers.append(actor)
+		
+		logging.debug(to_be_connected)
+		to_be_notified = []
+		actor_id = self.user.key()
+		for u in to_be_connected:
+			if actor_id not in u.followers:
+				u.followers.append(actor_id)
+				to_be_notified.append(u.key())
+		
+		#only notify/add follower if the user is not already following
+		logging.debug(to_be_notified)
+		
+		#create a notification if there are users to be notified
+		if to_be_notified: levr.create_notification('newFollower',to_be_notified,self.user.key())
+		
+		return to_be_notified
+	def connect_friends(self):
+		'''
+		Finds every user that is friends with the user on other services, connect them
+		'''
+		levr_friends = []
+		##find the users friends and add them as connections
+		#only query for services that the user has provided an id for
+		if self.user.foursquare_id:
+			foursquare_friends	= levr.Customer.all(projection=['followers']).filter('foursquare_friends',self.user.foursquare_id).fetch(None)
+			levr_friends.extend(foursquare_friends)
+		if self.user.facebook_id:
+			facebook_friends	= levr.Customer.all(projection=['followers']).filter('facebook_friends',self.user.facebook_id).fetch(None)
+			levr_friends.extend(facebook_friends)
+		if self.user.twitter_id:
+			twitter_friends		= levr.Customer.all(projection=['followers']).filter('twitter_friends',self.user.twitter_id).fetch(None)
+			levr_friends.extend(twitter_friends)
+		if self.user.email:
+			email_friends		= levr.Customer.all(projection=['followers']).filter('email_friends',self.user.email).fetch(None)
+			levr_friends.extend(email_friends)
+		
+		logging.debug(levr_friends)
+		
+		#remove duplicate friends
+		levr_friends = list(set(levr_friends))
+		if levr_friends: 
+			logging.debug(levr_friends[0])
+		#set friends that are connected through other services as followers
+		new_friends = self.add_followers(levr_friends)
+		
+		return new_friends
+	def put(self):
+		'''
+		replicates the action of putting an entity back in the db
+		necessary because the user exists in this class's scope
+		returns the user's id
+		'''
+		uid = db.put(self.user)
+		return uid
+
+class Foursquare(SocialClass):
+	def __init__(self,user,foursquare_id,oauth_token):
+		self.user	= user
+		self.foursquare_id		= foursquare_id
+		self.oauth_token = oauth_token
+		self.version = '20121007' #the foursquare api version
+	
+	def update_credentials(self):
+		self.user.foursquare_id				= self.foursquare_id
+		self.user.foursquare_oauth_token	= self.oauth_token
+		
+		
+	def update_user_details(self):
+		'''
+		Grabs the users personal information from foursquare and updates the user
+		'''
+		#get foursquare details
+		foursquare_user = self.get_details()
 		
 		#give preference to facebook and twitter info over foursquare info
-		if not user.facebook_id and not user.twitter_id:
+		if not self.user.facebook_id and not self.user.twitter_id:
 			#grab stuff
-			user.first_name = foursquare_user['firstName']
-			user.last_name = foursquare_user['lastName']
-			user.alias = user.first_name+user.last_name[0]+'.'
-			user.photo = foursquare_user['photo']['prefix']+'500x500'+foursquare_user['photo']['suffix']
-			user.email = foursquare_user['contact']['email']
-			logging.info(user.__dict__)
+			self.user.first_name = foursquare_user['firstName']
+			self.user.last_name = foursquare_user['lastName']
+			self.user.alias = user.first_name+user.last_name[0]+'.'
+			self.user.photo = foursquare_user['photo']['prefix']+'500x500'+foursquare_user['photo']['suffix']
+			self.user.email = foursquare_user['contact']['email']
+			
+			logging.debug(levr.log_model_props(self.user))
 		else:
 			logging.debug('user has already connected with facebook or twitter')
-		return user
-	except:
-		raise Exception('Invalid foursquare response: '+result.content)
+		return
 	
-	return user
+	def update_friends(self):
+		'''
+		1. Makes a call to foursquare to pull all of the users friends
+		2. Pulls the facebook, twitter, email, and foursquare info from each friend with that info
+		3. Adds that information to a corresponding list on the user entity
+		4. Creates the db linkage between user and friends by calling create_notification
+		'''
+		#get the users friends
+		friends = self.get_friends()#self.foursquare_user['friends']
+		
+		#grab all friend 
+		foursquare_friends	= []
+		twitter_friends		= []
+		facebook_friends	= []
+		email_friends		= []
+		for f in friends:
+			foursquare_friends.append(int(f['id']))
+			contact			= f['contact']
+			if 'twitter'	in contact:
+				twitter_friends.append(contact['twitter'])
+			if 'facebook'	in contact:
+				facebook_friends.append(int(contact['facebook']))
+			if 'email'		in contact:
+				email_friends.append(contact['email'])
+		logging.debug(twitter_friends)
+		logging.debug('\n\n')
+		logging.debug(facebook_friends)
+		logging.debug('\n\n')
+		logging.debug(foursquare_friends)
+		logging.debug('\n\n')
+		
+		self.user.foursquare_friends	= foursquare_friends
+		self.user.facebook_friends		= facebook_friends
+		self.user.twitter_friends		= twitter_friends
+		
+		#Create the connection between the user and their friends
+		self.connect_friends()
+		
+		return
+		
+	def create_url(self,action):
+		'''
+		Creates a url to perform a specified action on the foursquares api
+		'''
+		url = 'https://api.foursquare.com/v2/users/'
+		url += str(self.foursquare_id)
+		logging.debug(action)
+		
+		logging.debug('\n\n\n\n')
+		if action:
+			logging.debug('add action!')
+			url+='/'+action
+			#otherwise, will not append action to the url
+		url += '?oauth_token='+self.oauth_token
+		url += '&v='+self.version
+		
+		logging.debug(url)
+		return url
+	def get_details(self):
+		'''
+		Fetches the user's foursquare details and returns the json provided by foursquare
+		'''
+		endpoint = self.create_url('')
+		
+		result = urlfetch.fetch(url=endpoint)
+		content = json.loads(result.content)
+		logging.debug(content)
+		response = content['response']
+		return response
+	
+	def get_friends(self):
+		try:
+			endpoint = self.create_url('friends')
+			result = urlfetch.fetch(url=endpoint)
+			content = json.loads(result.content)['response']
+			friends = content['friends']
+			friend_items = friends['items']
+#			logging.debug(friends)
+			return friend_items
+			
+		except:
+			levr.log_error()
+			raise Exception('Could not connect to foursquare')
+	
+
 
 def authorize_twitter(url,oauth_token,*args,**kwargs):
 	'''

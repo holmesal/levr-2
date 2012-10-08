@@ -79,7 +79,7 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 			
 			#add the actor to the list of followers
 			# if actor not in user.followers:
-# 				user.followers.append(actor)
+#				user.followers.append(actor)
 # 			else:
 # 				#do nothing
 # 				return True
@@ -92,7 +92,6 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 			
 			#replace user
 			db.put(user)
-			
 		elif notification_type == "followedUpload":
 			#user is the person being notified
 			user = Customer.get(to_be_notified[0])
@@ -116,11 +115,13 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 # 				#do nothing
 # 				return True
 			
-			a = 'Has liked your deal. Hooray!'
-			b = 'Is rushing to redeem your deal at this very moment.'
-			c = 'Thinks that your deal is just grand!'
+			phrases = [
+					'Has liked your deal. Hooray!',
+					'Is rushing to redeem your deal at this very moment.',
+					'Thinks that your deal is just grand!',
+					'Thinks your deal is absolutely spiffing.'
+					]
 			
-			phrases = [a,b,c]
 			
 			rando = randint(0,len(phrases)-1)
 			
@@ -705,8 +706,8 @@ def dealCreate(params,origin,upload_flag=True):
 
 class Customer(db.Model):
 #root class
-	#user meta info
-	tester			= db.BooleanProperty(default=False)
+	#levr 
+	levr_token		= db.StringProperty(required=True)#default=create_levr_token())
 	email 			= db.EmailProperty()
 	pw 				= db.StringProperty()
 	alias			= db.StringProperty(default='')
@@ -715,7 +716,8 @@ class Customer(db.Model):
 	display_name	= db.StringProperty()
 	photo			= db.StringProperty(default='http://www.levr.com/img/levr.png')
 	
-	#user status stuff
+	#user meta
+	tester			= db.BooleanProperty(default=False)
 	level			= db.IntegerProperty(default=1)
 	karma			= db.IntegerProperty(default=0)
 	new_notifications = db.IntegerProperty(default=0)
@@ -726,18 +728,28 @@ class Customer(db.Model):
 	upvotes			= db.ListProperty(db.Key,default=[])
 	downvotes		= db.ListProperty(db.Key,default=[])
 	
-	#tokens and ids, internal and external
-	levr_token		= db.StringProperty(default=create_levr_token())
+	
 	#facebook
-	facebook_token	= db.StringProperty()
-	facebook_id		= db.StringProperty()
+	facebook_connected	= db.BooleanProperty()
+	facebook_token		= db.StringProperty()
+	facebook_id			= db.StringProperty()
+	facebook_friends	= db.ListProperty(int)
+	
 	#foursquare
-	foursquare_id	= db.StringProperty()
-	foursquare_token= db.StringProperty()
+	foursquare_connected= db.BooleanProperty()
+	foursquare_id		= db.StringProperty()
+	foursquare_token	= db.StringProperty()
+	foursquare_friends	= db.ListProperty(int)
+	
 	#twitter
-	twitter_token	= db.StringProperty()
-	twitter_id		= db.IntegerProperty()
-	twitter_screen_name = db.StringProperty()
+	twitter_connected	= db.BooleanProperty()
+	twitter_token		= db.StringProperty()
+	twitter_id			= db.IntegerProperty()
+	twitter_screen_name	= db.StringProperty()
+	twitter_friends		= db.ListProperty(str)
+	
+	#list of friends emails so we can find them when they log in
+	email_friends		= db.ListProperty(str)
 	
 	#date stuff
 	date_created	= db.DateTimeProperty(auto_now_add=True)

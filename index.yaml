@@ -38,6 +38,21 @@ indexes:
   - name: amount
     direction: desc
 
+- kind: Customer
+  properties:
+  - name: email_friends
+  - name: followers
+
+- kind: Customer
+  properties:
+  - name: foursquare_friends
+  - name: followers
+
+- kind: Customer
+  properties:
+  - name: twitter_friends
+  - name: followers
+
 - kind: Deal
   properties:
   - name: deal_status
