@@ -14,6 +14,7 @@ from google.appengine.api import urlfetch
 import json
 from datetime import datetime
 from random import randint
+from google.appengine.api import taskqueue
 
 import api_utils
 
@@ -424,7 +425,37 @@ class UpdatePinsHandler(webapp2.RequestHandler):
 				
 			logging.info(deal.pin_color)
 			deal.put()
+			
+			
+class Create100DeadNinjasHandler(webapp2.RequestHandler):
+	def get(self):
 		
+		# for number in list(xrange(100)):
+# 			ninja = levr.Customer(
+# 				display_name 		=	'Dead Ninja '+str(number),
+# 				alias				=	'deadninja'+str(number),
+# 				email				=	'deadninja@levr.com',
+# 				first_name			=	'Dead Ninja',
+# 				last_name			=	str(number),
+# 				foursquare_token	=	'4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0',
+# 				pw					=	enc.encrypt_password('Carl123!')
+# 			)
+# 			
+# 			ninja.put()
+
+		#how to get a random dead ninja
+		#ninja = api_utils.get_random_dead_ninja()
+		
+		business = levr.Business.gql('WHERE business_name=:1','Fifties Diner').get()
+		
+		#fire off a task to check the foursquare similarity
+		task_params = {
+			'geo_str'		:	str(business.geo_point),
+			'query'			:	business.business_name,
+			'key'			:	str(business.key())
+		}
+		
+		t = taskqueue.add(url='/tasks/businessHarmonizationTask',payload=json.dumps(task_params))
 		
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload.*', DatabaseUploadHandler),
@@ -436,7 +467,8 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/notification', TestNotificationHandler),
 								('/new/yipit', TestYipitHandler),
 								('/new/category', TestCategoryHandler),
-								('/new/pins', UpdatePinsHandler)
+								('/new/pins', UpdatePinsHandler),
+								('/new/deadNinjas', Create100DeadNinjasHandler)
 #								('/new/update' , UpdateUsersHandler)
 								],debug=True)
 

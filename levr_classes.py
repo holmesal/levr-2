@@ -16,6 +16,7 @@ from random import randint
 from google.appengine.ext import db
 from google.appengine.ext.db import polymodel
 from google.appengine.ext import blobstore
+from google.appengine.api import taskqueue
 
 #from gaesessions import get_current_session
 
@@ -479,6 +480,15 @@ def dealCreate(params,origin,upload_flag=True):
 			
 			#put business
 			business.put()
+			
+			#fire off a task to check the foursquare similarity
+			task_params = {
+				'geo_str'		:	str(business.geo_point),
+				'query'			:	business.business_name,
+				'key'			:	str(business.key())
+			}
+			
+			t = taskqueue.add(url='/tasks/businessHarmonizationTask',payload=json.dumps(task_params))
 			
 			
 		else:

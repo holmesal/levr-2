@@ -47,5 +47,41 @@ class SearchFoursquareTaskHandler(webapp2.RequestHandler):
 		except:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
-app = webapp2.WSGIApplication([('/tasks/searchFoursquareTask', SearchFoursquareTaskHandler)
+			
+class BusinessHarmonizationTaskHandler(webapp2.RequestHandler):
+		def post(self):
+			try:
+				logging.info('''THE FOURSQUARE BUSINESS TASK IS RUNNING
+				
+				
+				''')
+				
+				payload = json.loads(self.request.body)
+				
+				geo_point = levr.geo_converter(payload['geo_str'])
+				
+				query = payload['query']
+				
+				key = payload['key']
+				
+				match = api_utils.match_foursquare_business(db.GeoPt(42.16617,-72.54514982),'no_match')
+		
+				logging.info(match)
+				
+				if match:
+					logging.info('Foursquare ID found: '+match)
+					#update business entity
+					business = levr.Business.get(key)
+					business.foursquare_id = match
+					business.put
+				else:
+					logging.info('No foursquare match found.')
+				
+			except:
+				levr.log_error()
+				api_utils.send_error(self,'Server Error')	
+		
+
+app = webapp2.WSGIApplication([('/tasks/searchFoursquareTask', SearchFoursquareTaskHandler),
+								('/tasks/businessHarmonizationTask', BusinessHarmonizationTaskHandler)
 								],debug=True)

@@ -290,13 +290,13 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			
 			
 			#add yipit call if no deals are returned
-			if len(packaged_deals) == 0:
-				packaged_deals = packaged_deals + api_utils.search_yipit(query,geo_point)
-				#update response
-				#this will return a numResults of 0 - meaning all the deals are daily deals
-				response.update({
-					'deals'		:	packaged_deals
-				})
+			# if len(packaged_deals) == 0:
+# 				packaged_deals = packaged_deals + api_utils.search_yipit(query,geo_point)
+# 				#update response
+# 				#this will return a numResults of 0 - meaning all the deals are daily deals
+# 				response.update({
+# 					'deals'		:	packaged_deals
+# 				})
 			
 			
 			api_utils.send_response(self,response)
