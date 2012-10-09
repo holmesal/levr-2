@@ -78,9 +78,6 @@ class BusinessHarmonizationTaskHandler(webapp2.RequestHandler):
 				else:
 					#update to show notfound
 					logging.info('No foursquare match found.')
-					business.foursquare_id = 'not_harmonized'
-					business.foursquare_name = 'not_harmonized'
-					business.put()
 				
 			except:
 				levr.log_error()

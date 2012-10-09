@@ -836,7 +836,7 @@ class Business(db.Model):
 	widget_id		= db.StringProperty(default=create_unique_id())
 	foursquare_id	= db.StringProperty()
 	foursquare_name	= db.StringProperty()
-	foursquare_linked	=	db.BooleanProperty(default=True)
+	foursquare_linked	=	db.BooleanProperty(default=False)
 	phone			= db.StringProperty()
 	activation_code = db.StringProperty()
 	locu_id			= db.StringProperty()
