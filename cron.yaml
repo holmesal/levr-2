@@ -2,7 +2,7 @@ cron:
 
 - description: make requests to foursquare to remove expired deals and such
   url: /cronjobs/foursquareDealUpdate
-  schedule: every 1 minutes
+  schedule: every day 2:00
   timezone: America/New_York
 
 #- description: set status of expired deals from active to expired
