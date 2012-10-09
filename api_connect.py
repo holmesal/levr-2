@@ -149,8 +149,11 @@ class TestConnectionHandler(webapp2.RequestHandler):
 				
 				logging.debug('\n\n\n\t\t\t ETHAN CONNECTS \n\n\n')
 				#ethan connects with twitter
+				twitter_token = 'default'
+				twitter_token_secret = 'default'
 				eth = e.first_time_connect(
-									ethan.twitter_token,
+									twitter_token,
+									twitter_token_secret,
 									twitter_screen_name = ethan.twitter_screen_name
 									)
 				
@@ -187,11 +190,15 @@ class TestConnectionHandler(webapp2.RequestHandler):
 			elif method == 'twitter':
 				user = levr.Customer.all().filter('email','ethan@levr.com').get()
 				u = social.Twitter(user)
-				
+				twitter_screen_name = user.twitter_screen_name
+#				twitter_id			= user.twitter_id
+				twitter_token		= 'debug'
+				twitter_token_secret= 'debug'
 				user, new_user_details, new_friends = u.first_time_connect(
 									twitter_token,
+									twitter_token_secret,
 									twitter_screen_name	=twitter_screen_name,
-									twitter_id			=twitter_id
+#									twitter_id			=twitter_id
 									)
 				response = {
 						'user':api_utils.package_user(user,True),

@@ -730,24 +730,25 @@ class Customer(db.Model):
 	
 	
 	#facebook
-	facebook_connected	= db.BooleanProperty()
-	facebook_token		= db.StringProperty()
+	facebook_connected	= db.BooleanProperty() #not required if have id
+	facebook_token		= db.StringProperty() #not permanent
 	facebook_id			= db.StringProperty()
 	facebook_friends	= db.ListProperty(int)
 	
 	#foursquare
-	foursquare_connected= db.BooleanProperty()
+	foursquare_connected= db.BooleanProperty() #not required if have id
 	foursquare_id		= db.IntegerProperty()
 	foursquare_token	= db.StringProperty()
 	foursquare_friends	= db.ListProperty(int)
 	
 	#twitter
-	twitter_connected	= db.BooleanProperty()
-	twitter_token		= db.StringProperty()
-	twitter_id			= db.IntegerProperty()
-	twitter_screen_name	= db.StringProperty()
-	twitter_friends_by_id = db.ListProperty(int)
-	twitter_friends_by_sn = db.ListProperty(str)
+	twitter_connected		= db.BooleanProperty() #not required if have id
+	twitter_token			= db.StringProperty()
+	twitter_token_secret	= db.StringProperty()
+	twitter_id				= db.IntegerProperty()
+	twitter_screen_name		= db.StringProperty()
+	twitter_friends_by_id	= db.ListProperty(int)
+	twitter_friends_by_sn	= db.ListProperty(str)
 	
 	#list of friends emails so we can find them when they log in
 	email_friends		= db.ListProperty(str)
