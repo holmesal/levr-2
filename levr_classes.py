@@ -730,19 +730,19 @@ class Customer(db.Model):
 	
 	
 	#facebook
-	facebook_connected	= db.BooleanProperty() #not required if have id
+	facebook_connected	= db.BooleanProperty(default=False) #not required if have id
 	facebook_token		= db.StringProperty() #not permanent
 	facebook_id			= db.StringProperty()
 	facebook_friends	= db.ListProperty(int)
 	
 	#foursquare
-	foursquare_connected= db.BooleanProperty() #not required if have id
+	foursquare_connected= db.BooleanProperty(default=False) #not required if have id
 	foursquare_id		= db.IntegerProperty()
 	foursquare_token	= db.StringProperty()
 	foursquare_friends	= db.ListProperty(int)
 	
 	#twitter
-	twitter_connected		= db.BooleanProperty() #not required if have id
+	twitter_connected		= db.BooleanProperty(default=False) #not required if have id
 	twitter_token			= db.StringProperty()
 	twitter_token_secret	= db.StringProperty()
 	twitter_id				= db.IntegerProperty()

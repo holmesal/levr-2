@@ -151,6 +151,8 @@ class TestConnectionHandler(webapp2.RequestHandler):
 				#ethan connects with twitter
 				twitter_token = 'default'
 				twitter_token_secret = 'default'
+				twitter_token = ethan.twitter_token
+				twitter_token_secret = ethan.twitter_token_secret
 				eth = e.first_time_connect(
 									twitter_token,
 									twitter_token_secret,
@@ -161,17 +163,17 @@ class TestConnectionHandler(webapp2.RequestHandler):
 						'pat' : {
 								'user':api_utils.package_user(patch[0],True),
 								'new_details': patch[1],
-								'new_friends': patch[2]
+								'new_friends': [str(f) for f in patch[2]]
 								},
 						'alonso' : {
 								'user':api_utils.package_user(al[0],True),
 								'new_details': al[1],
-								'new_friends': al[2]
+								'new_friends': [str(f) for f in al[2]]
 								},
 						'ethan'	: {
 								'user':api_utils.package_user(eth[0],True),
 								'new_details': eth[1],
-								'new_friends': eth[2]
+								'new_friends': [str(f) for f in eth[2]]
 								},
 						}
 				
@@ -184,7 +186,7 @@ class TestConnectionHandler(webapp2.RequestHandler):
 				response = {
 						'user':api_utils.package_user(user,True),
 						'new_details': new_user_details,
-						'new_friends': new_friends
+						'new_friends': [str(f) for f in new_friends]
 						}
 			
 			elif method == 'twitter':
@@ -203,7 +205,7 @@ class TestConnectionHandler(webapp2.RequestHandler):
 				response = {
 						'user':api_utils.package_user(user,True),
 						'new_details': new_user_details,
-						'new_friends': new_friends
+						'new_friends': [str(f) for f in new_friends]
 						}
 				
 				

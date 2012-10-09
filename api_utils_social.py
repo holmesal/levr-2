@@ -170,14 +170,14 @@ class SocialClass:
 		return self.user
 
 class Foursquare(SocialClass):
-	def __init__(self,user):
+	def __init__(self,user,*args):
 		'''
 		Foursquare
 		'''
 		self.user				= user
-		self.foursquare_id		= user.foursquare_id
-		self.foursquare_token	= user.foursquare_token
 		self.version = '20121007' #the foursquare api version
+		if 'verbose' in args:
+			self.verbose = True
 	def first_time_connect(self,auto_put=True,*args,**kwargs):
 		'''
 		Foursquare
@@ -265,7 +265,6 @@ class Foursquare(SocialClass):
 				updated['email']		= email
 			if not self.user.foursquare_id:
 				self.user.foursquare_id	= foursquare_id
-				self.foursquare_id		= foursquare_id
 				updated['id']			= foursquare_id
 #			if not self.user.twitter_screen_name:
 #				self.user.twitter_screen_name = 
@@ -341,7 +340,7 @@ class Foursquare(SocialClass):
 		
 		if action:
 			logging.debug('add action!')
-			url += str(self.foursquare_id)
+			url += str(self.user.foursquare_id)
 			url+='/'+action
 			method = 'GET'
 			headers = {}
@@ -350,7 +349,7 @@ class Foursquare(SocialClass):
 			method = 'GET'
 			headers = {}
 			#otherwise, will not append action to the url
-		url += '?oauth_token='+self.foursquare_token
+		url += '?oauth_token='+self.user.foursquare_token
 		url += '&v='+self.version
 		
 		logging.debug(url)
@@ -365,7 +364,7 @@ class Foursquare(SocialClass):
 		if result.status_code == 200:
 			content = json.loads(result.content)
 		else: 
-			raise Exception('Could Not connect')
+			raise Exception('Could Not connect:'+str(result.headers))
 			content = heads
 		### DEBUG
 #		if action == 'user':
@@ -375,38 +374,10 @@ class Foursquare(SocialClass):
 		### DEBUG
 		logging.debug(content)
 		return content
-#	def get_details(self):
-#		'''
-#		Fetches the user's foursquare details and returns the json provided by foursquare
-#		'''
-#		endpoint = self.create_url('')
-#		
-#		result = urlfetch.fetch(url=endpoint)
-#		content = json.loads(result.content)
-#		logging.debug(content)
-#		response = content['response']
-#		return response
-#	
-#	def get_friends(self):
-#		'''
-#		Fetches the user's foursquare friends, and returns the json
-#		'''
-#		logging.debug('\n\n GET FRIENDS \n\n')
-#		try:
-#			endpoint = self.create_url('friends')
-#			result = urlfetch.fetch(url=endpoint)
-#			content = json.loads(result.content)
-#			response = content['response']
-#			return response
-#			
-#		except:
-#			levr.log_error()
-#			raise Exception('Could not connect to foursquare')
 
 class Twitter(SocialClass):
 	def __init__(self,user,*args,**kwargs):
 		self.user			= user
-		self.twitter_id		= user.twitter_id
 		
 		
 		#These are values that identify our app
@@ -417,6 +388,7 @@ class Twitter(SocialClass):
 			self.verbose=True
 	def first_time_connect(self,twitter_token,twitter_token_secret,auto_put=True,*args,**kwargs):
 		'''
+		Twitter
 		User is just connecting to levr via a social service for the first time
 		Updates a users login credentials, their personal information, and their friend linkage
 		
@@ -448,6 +420,7 @@ class Twitter(SocialClass):
 	
 	def update_credentials(self,oauth_token,oauth_token_secret,*args,**kwargs):
 		'''
+		Twitter
 		Used to update the users twitter identification: 
 		twitter_token
 		twitter_token_secret
@@ -482,6 +455,9 @@ class Twitter(SocialClass):
 		
 		return
 	def update_user_details(self):
+		'''
+		Twitter
+		'''
 		content = self.fetch('user')
 		if not self.user.facebook_connected:
 			twitter_id	= content.get('id')
@@ -524,6 +500,7 @@ class Twitter(SocialClass):
 		return updated
 	def update_friends(self):
 		'''
+		Twitter
 		Updates a users friends
 		Makes a request to twitter for all of the users friends on twitter
 		Pulls all of their friends ids, and adds them to the users 'twitter_friends_by_id' property
@@ -656,22 +633,59 @@ class Twitter(SocialClass):
 		return content
 
 class Facebook(SocialClass):
+	'''
+	Facebook
+	'''
 	def __init__(self,user,*args,**kwargs):
 		self.user			= user
-		self.facebook_id	= user.facebook_id
-		
 		if 'verbose' in args:
 			self.verbose = True
-	def update_credentials(self,*args,**kwargs):
+	def first_time_connect(self,facebook_id,facebook_token,*args,**kwargs):
+		if self.verbose: logging.debug('\n\n\n\t\t\t\t FACEBOOK  \n\n\n')
+		'''
+		Facebook
+		'''
+		#update users facebook access credentials
+		self.update_credentials(facebook_id, facebook_token,*args,**kwargs)
+		#update user info
+		new_user_details = self.update_user_details()
+		#pull user friends
+		new_friends = self.update_friends()
 		
 		return
+	def update_credentials(self,facebook_id,facebook_token,*args,**kwargs):
+		'''
+		Facebook
+		'''
+		if self.verbose: logging.debug('\n\n\n\t\t\t\t FACEBOOK UPDATE CREDENTIALS \n\n\n')
+		return
 	def update_user_details(self):
+		'''
+		Facebook
+		'''
+		if self.verbose: logging.debug('\n\n\n\t\t\t\t FACEBOOK GET USER DETAILS \n\n\n')
 		return
 	def update_friends(self):
+		'''
+		Facebook
+		'''
+		if self.verbose: logging.debug('\n\n\n\t\t\t\t FACEBOOK UPDATE FRIENDS \n\n\n')
 		return
 	def create_url(self):
+		'''
+		Facebook
+		'''
+		if self.verbose: logging.debug('\n\n\n\t\t\t\t FACEBOOK CREATE URL \n\n\n')
 		return
-	def fetch(self,action=False):
+	def fetch(self,action):
+		'''
+		Facebook
+		Uncomment to spoof facebook fetch and override default
+		'''
+		if self.verbose: logging.debug('\n\n\n\t\t\t\t SPOOF FACEBOOK FETCH \n\n\n')
+		return
+	def handle_fetch_response(self,action=False):
+		if self.verbose: logging.debug('\n\n\n\t\t\t\t FACEBOOK  \n\n\n')
 		return
 
 def authorize_twitter(url,oauth_token,*args,**kwargs):

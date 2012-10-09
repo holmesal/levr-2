@@ -202,20 +202,28 @@ class TestHandler(webapp2.RequestHandler):
 					'last_name',
 					'level',
 					'display_name',
+					'followers',
+					
 					'foursquare_id',
 					'foursquare_token',
 					'foursquare_connected',
+					'foursquare_friends',
+					
 					'twitter_id',
 					'twitter_token',
+					'twitter_token_secret',
 					'twitter_screen_name',
 					'twitter_connected',
 					'twitter_friends_by_sn',
 					'twitter_friends_by_id',
-					'followers',
-					'foursquare_friends',
+					
+					'facebook_connected',
+					'facebook_token',
+					'facebook_id',
 					'facebook_friends',
-					'twitter_friends',
+					
 					'email_friends',
+					
 					'favorites',
 					'upvotes',
 					'downvotes',
