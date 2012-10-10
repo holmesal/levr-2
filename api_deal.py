@@ -3,10 +3,12 @@ import logging
 import levr_encrypt as enc
 import levr_classes as levr
 import api_utils
+import json
 #from api_utils import private
 import levr_utils
 from google.appengine.ext import db
 from google.appengine.api import mail
+from google.appengine.api import taskqueue
 
 
 #class RedeemHandler(webapp2.RequestHandler):
@@ -325,6 +327,25 @@ class ReportHandler(webapp2.RequestHandler):
 									dealID = dealID
 									).put()
 			
+			#is it a foursquare deal that got reported?
+			if deal.origin == 'foursquare':
+				#get the business
+				business = levr.Business.get(deal.businessID)
+				#get the business' foursquare ID
+				foursquare_id = business.foursquare_id
+				#is the user a foursquare user?
+				if user.foursquare_token > '':
+					token = user.foursquare_token
+				else:
+					token = 'random'
+				#fire off a task to review the foursquare deals for this business
+				task_params = {
+					'foursquare_id'		:	foursquare_id,
+					'token'				:	token,
+					'deal_id'			:	str(deal.key()),
+					'uid'				:	str(user.key())
+				}
+				t = taskqueue.add(url='/tasks/foursquareDealUpdateTask',payload=json.dumps(task_params))
 			
 			#send notification via email
 			message = mail.EmailMessage(
@@ -345,6 +366,8 @@ class ReportHandler(webapp2.RequestHandler):
 		except:
 			levr.log_error(self.request)
 			api_utils.send_error(self,'Server Error')
+
+
 
 class DealImgHandler(webapp2.RequestHandler):
 	@api_utils.validate('deal',None,size=True)

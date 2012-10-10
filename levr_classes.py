@@ -11,11 +11,13 @@ import uuid
 import levr_encrypt as enc
 from common_word_list import blacklist
 from random import randint
+import json
 
 
 from google.appengine.ext import db
 from google.appengine.ext.db import polymodel
 from google.appengine.ext import blobstore
+from google.appengine.api import taskqueue
 
 #from gaesessions import get_current_session
 
@@ -480,6 +482,15 @@ def dealCreate(params,origin,upload_flag=True):
 			#put business
 			business.put()
 			
+			#fire off a task to check the foursquare similarity
+			task_params = {
+				'geo_str'		:	str(business.geo_point),
+				'query'			:	business.business_name,
+				'key'			:	str(business.key())
+			}
+			
+			t = taskqueue.add(url='/tasks/businessHarmonizationTask',payload=json.dumps(task_params))
+			
 			
 		else:
 			logging.debug('business exists')
@@ -827,8 +838,9 @@ class Business(db.Model):
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	date_last_edited= db.DateTimeProperty(auto_now=True)
 	widget_id		= db.StringProperty(default=create_unique_id())
-	foursquare_id	= db.StringProperty(default="undefined")
-	foursquare_name	= db.StringProperty(default="undefined")
+	foursquare_id	= db.StringProperty()
+	foursquare_name	= db.StringProperty()
+	foursquare_linked	=	db.BooleanProperty(default=False)
 	phone			= db.StringProperty()
 	activation_code = db.StringProperty()
 	locu_id			= db.StringProperty()

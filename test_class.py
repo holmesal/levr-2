@@ -14,6 +14,7 @@ from google.appengine.api import urlfetch
 import json
 from datetime import datetime
 from random import randint
+from google.appengine.api import taskqueue
 
 import api_utils
 
@@ -414,7 +415,7 @@ class TestCategoryHandler(webapp2.RequestHandler):
 class UpdatePinsHandler(webapp2.RequestHandler):
 	def get(self):
 		#update all entities
-		deals = levr.Deal.all()
+		deals = levr.Deal.all().get()
 		
 		for deal in deals:
 			if deal.origin == 'foursquare':
@@ -423,8 +424,64 @@ class UpdatePinsHandler(webapp2.RequestHandler):
 				deal.pin_color = 'red'
 				
 			logging.info(deal.pin_color)
-			deal.put
+			deal.put()
+			
+			
+class Create100DeadNinjasHandler(webapp2.RequestHandler):
+	def get(self):
+		logging.info('Creating 1000 dead ninjas.')
+		for number in list(xrange(100)):
+			ninja = levr.Customer(
+				display_name 		=	'Dead Ninja '+str(number),
+				alias				=	'deadninja'+str(number),
+				email				=	'deadninja@levr.com',
+				first_name			=	'Dead Ninja',
+				last_name			=	str(number),
+				foursquare_token	=	'4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0',
+				pw					=	enc.encrypt_password('Carl123!')
+			)
+			
+			ninja.put()
+
+		#how to get a random dead ninja
+		#ninja = api_utils.get_random_dead_ninja()
 		
+class HarmonizeVenuesHandler(webapp2.RequestHandler):
+	def get(self):
+		all_businesses = levr.Business.gql('WHERE foursquare_name = :1','notfound')
+		
+		# for business in all_businesses:
+# 			logging.info('launching task for business: ' + business.business_name)
+# 			task_params = {
+# 			'geo_str'		:	str(business.geo_point),
+# 			'query'			:	business.business_name,
+# 			'key'			:	str(business.key())
+# 			}
+# 			
+# 			t = taskqueue.add(url='/tasks/businessHarmonizationTask',payload=json.dumps(task_params))
+
+
+class UpdateBusinessHandler(webapp2.RequestHandler):
+	def get(self):
+		api_utils.update_foursquare_business('4b05866ff964a520256222e3')
+		
+class ClearFoursquareHandler(webapp2.RequestHandler):
+	def get(self):
+		deals = levr.Deal.gql('WHERE origin=:1','foursquare')
+
+		# for deal in deals:
+# 		     deal.delete()
+# 		
+# 		businesses = levr.Business.gql('WHERE foursquare_id > :1','')
+# 		
+# 		for business in businesses:
+# 		    business.delete()
+# 		    
+# 		deadNinjas = levr.Customer.gql('WHERE email = :1','deadninja@levr.com')
+# 		
+# 		for ninja in deadNinjas:
+# 			ninja.delete()
+
 		
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload.*', DatabaseUploadHandler),
@@ -436,7 +493,11 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/notification', TestNotificationHandler),
 								('/new/yipit', TestYipitHandler),
 								('/new/category', TestCategoryHandler),
-								('/new/pins', UpdatePinsHandler)
+								('/new/pins', UpdatePinsHandler),
+								('/new/deadNinjas', Create100DeadNinjasHandler),
+								('/new/harmonizeVenues',HarmonizeVenuesHandler),
+								('/new/updateBusiness',UpdateBusinessHandler),
+								('/new/clearFoursquare',ClearFoursquareHandler)
 #								('/new/update' , UpdateUsersHandler)
 								],debug=True)
 

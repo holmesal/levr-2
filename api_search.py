@@ -35,7 +35,6 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			limit 		= kwargs.get('limit')
 			query 		= kwargs.get('query','all')
 			development = kwargs.get('development',False)
-			foursquare	= kwargs.get('foursquare',False)
 			user 		= kwargs.get('actor')
 			
 			#create tags from the query
@@ -95,7 +94,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 					
 					#fetch deals from hash set, and extend the list of deal keys
 					t1 = datetime.now()
-					deal_keys.extend(api_utils.get_deal_keys_from_hash_set(tags,new_hash_set,development=development,foursquare=foursquare))
+					deal_keys.extend(api_utils.get_deal_keys_from_hash_set(tags,new_hash_set,development=development))
 					t2 = datetime.now()
 					
 					#add new_hash_set to searched_hash_set
@@ -242,35 +241,43 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			logging.debug('total_time: '+str(total_time))
 			
 			#search foursquare for more results
+			#default token is 'random' - this will cause the search function to use a hardcoded token
+			token = 'random'
+			#if this is a registered foursquare user, set it to be an actual token
 			if user:
 				if user.foursquare_token:
-					#if len(results) < 5:
-					if False:
-						#not a lot of results, do the foursquare search in real-time
-						ft1 = datetime.now()
-						logging.info('FOURSQUARE IDS::::')
-						logging.info(foursquare_ids)
-						logging.debug('searching foursquare!')
-						foursquare_deals = api_utils.search_foursquare(geo_point,user,foursquare_ids)
-						logging.info('Levr results found: '+str(len(packaged_deals)))
-						logging.info('Foursquare results found: '+str(len(foursquare_deals)))
-						packaged_deals = packaged_deals + foursquare_deals
-						logging.info('Total results found: '+str(len(packaged_deals)))
-						ft2 = datetime.now()
-						logging.info('Foursquare fetch time: ' + str(ft2-ft1))
-					else:
-						#lots of results, do the foursquare search inside a task
-						params = {
-							'lat'			:	geo_point.lat,
-							'lon'			:	geo_point.lon,
-							'userID'		:	str(user.key()),
-							'foursquare_ids':	foursquare_ids
-						}
-						
-						logging.debug('Sending this to the task: ' + json.dumps(params))
-						
-						#start the task
-						t = taskqueue.add(url='/tasks/searchFoursquareTask',payload=json.dumps(params))
+					token = user.foursquare_token
+					
+			if len(packaged_deals) == 0:
+			#if False:
+				try:
+					#not a lot of results, do the foursquare search in real-time
+					ft1 = datetime.now()
+					logging.info('FOURSQUARE IDS::::')
+					logging.info(foursquare_ids)
+					logging.debug('searching foursquare!')
+					foursquare_deals = api_utils.search_foursquare(geo_point,token,foursquare_ids)
+					logging.info('Levr results found: '+str(len(packaged_deals)))
+					logging.info('Foursquare results found: '+str(len(foursquare_deals)))
+					packaged_deals = packaged_deals + foursquare_deals
+					logging.info('Total results found: '+str(len(packaged_deals)))
+					ft2 = datetime.now()
+					logging.info('Foursquare fetch time: ' + str(ft2-ft1))
+				except:
+					levr.log_error('Error in foursquare call or parsing.')
+			else:
+				#lots of results, do the foursquare search inside a task
+				params = {
+					'lat'			:	geo_point.lat,
+					'lon'			:	geo_point.lon,
+					'token'			:	token,
+					'foursquare_ids':	foursquare_ids
+				}
+				
+				logging.debug('Sending this to the task: ' + json.dumps(params))
+				
+				#start the task
+				t = taskqueue.add(url='/tasks/searchFoursquareTask',payload=json.dumps(params))
 
 			
 			response = {
@@ -290,13 +297,13 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			
 			
 			#add yipit call if no deals are returned
-			if len(packaged_deals) == 0:
-				packaged_deals = packaged_deals + api_utils.search_yipit(query,geo_point)
-				#update response
-				#this will return a numResults of 0 - meaning all the deals are daily deals
-				response.update({
-					'deals'		:	packaged_deals
-				})
+			# if len(packaged_deals) == 0:
+# 				packaged_deals = packaged_deals + api_utils.search_yipit(query,geo_point)
+# 				#update response
+# 				#this will return a numResults of 0 - meaning all the deals are daily deals
+# 				response.update({
+# 					'deals'		:	packaged_deals
+# 				})
 			
 			
 			api_utils.send_response(self,response)
