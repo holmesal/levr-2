@@ -5,10 +5,12 @@ import logging
 import os
 import geo.geohash as geohash
 from datetime import datetime
+import random
 
 from google.appengine.ext import db
 from google.appengine.api import images
 from google.appengine.api import urlfetch
+import urllib
 from math import sin, cos, asin, sqrt, degrees, radians, floor, sqrt
 from fnmatch import filter
 
@@ -98,8 +100,21 @@ def check_param(self,parameter,parameter_name,param_type='str',required=True):
 	logging.info(parameter_name+": "+str(parameter))
 	return True
 
+def create_pin_color(deal):
+	if deal.origin == 'levr':
+		pin_color = 'red'
+	elif deal.origin == 'foursquare':
+		pin_color = 'blue'
+	else:
+		pin_color = 'red'
+		
+	return pin_color
+
+
 def package_deal(deal,private=False,*args,**kwargs):
-	
+#	logging.debug(deal.businessID)
+#	logging.debug(deal.key())
+#	logging.debug(deal.deal_text)
 
 #	logging.debug(str(deal.geo_point))
 	packaged_deal = {
@@ -116,7 +131,7 @@ def package_deal(deal,private=False,*args,**kwargs):
 			'tags'			: deal.tags,
 # 			'dateEnd'		: str(deal.date_end)[:19],
 			'vote'			: deal.upvotes - deal.downvotes,
-			'pinColor'		: deal.pin_color,
+			'pinColor'		: create_pin_color(deal),
 			'karma'			: deal.karma,
 			'origin'		: deal.origin,
 			'owner'			: package_user(levr.Customer.get(deal.key().parent()))
@@ -135,7 +150,7 @@ def package_deal(deal,private=False,*args,**kwargs):
 		
 	return packaged_deal
 	
-def package_deal_external(externalDeal,externalBusiness):
+def package_deal_external(externalDeal,externalBusiness,fake_owner):
 	
 	packaged_deal = {
 # 			'barcodeImg'	: deal.barcode,
@@ -145,10 +160,13 @@ def package_deal_external(externalDeal,externalBusiness):
 			'description'	: externalDeal.description,
 			'largeImg'		: externalDeal.large_img,
 			'smallImg'		: externalDeal.small_img,
-			'pinColor'		: deal.pin_color,
-			'origin'		: deal.origin
+			'pinColor'		: externalDeal.pin_color,
+			'origin'		: externalDeal.origin,
+			'externalURL'	: externalDeal.externalURL,
+			'owner'			: fake_owner #externalAPI
 			}
-
+	
+	return packaged_deal
 
 def package_user(user,private=False,followers=True,**kwargs):
 
@@ -203,6 +221,7 @@ def package_business(business):
 
 	packaged_business = {
 		'businessID'	: enc.encrypt_key(str(business.key())),
+		'foursquareID'	: business.foursquare_id,
 		'businessName'	: business.business_name,
 		'vicinity'		: business.vicinity,
 		'geoPoint'		: str(business.geo_point),
@@ -263,6 +282,8 @@ def create_img_url(entity,size):
 		#create one glorious url
 		img_url = host_url+hook+enc.encrypt_key(entity.key())+'/img?size='+size
 		return img_url
+	if entity.foursquare_id and size=='small':
+		return 'http://playfoursquare.s3.amazonaws.com/press/logo/icon-512x512.png'
 	else:
 		return ''
 
@@ -602,15 +623,6 @@ def validate(url_param,authentication_source,*a,**to_validate):
 							if user.tester: kwargs.update({'development':True})
 							else: kwargs.update({'development':False})
 							
-							#send foursquare flag
-							logging.info(user.foursquare_token)
-							if user.foursquare_token:
-								kwargs.update({'foursquare':True})
-								logging.info('this is a registered foursquare user')
-							else:
-								logging.info('this is NOT a registered foursquare user')
-								kwargs.update({'foursquare':False})
-							
 						except Exception,e:
 							logging.debug(e)
 							raise TypeError(msg)
@@ -773,7 +785,6 @@ def get_deal_keys_from_hash_set(tags,hash_set,*args,**kwargs):
 	logging.info(kwargs)
 	#grab variables
 	development		= kwargs.get('development',False)
-	foursquare		= kwargs.get('foursquare',False)
 	if development:
 		#developer is searching
 		deal_status = 'test'
@@ -800,11 +811,6 @@ def get_deal_keys_from_hash_set(tags,hash_set,*args,**kwargs):
 			q.filter('deal_status =','test')
 #			logging.debug('flag development')
 		
-		if not foursquare:
-			q.filter('origin =','levr')
-			logging.info('only including Levr deals (no foursquare)')
-		else:
-			logging.info('including both levr and foursquare deals')
 		
 #		logging.debug("tags: "+str(tags))
 		#FILTER BY TAG
@@ -928,153 +934,102 @@ def level_check(user):
 def search_yipit(query,geo_point):
 	#words = ["a la carte","a la mode","appetizer","beef","beverage","bill","bistro","boiled","bowl","braised","bread","breakfast","brunch","butter","cafe","cafeteria","cake","candle","cashier","centerpiece","chair","charge","chef","chicken","coffee","cola","cold","condiments","cook","cooked","course","cream","credit card","cutlery","deli","delicatessen","delicious","dessert","dine","diner","dining","dinner","dish","dishwasher","doggie bag","dressing","eat","eggs","entree","fish","food","fork","French fries","fries","fruit","glass","gourmand","gourmet","grilled","hamburger","head waiter","high tea","hors d'oeuvre","hostess","hot","ice","ice cubes","iced","ingredients","ketchup","kitchen","knife","lemonade","lettuce","lunch","main course","maitre d'","manager","meal","meat","medium","menu","milk","mug","mustard","napkin","noodles","onion","order","party","pasta","pepper","plate","platter","pop","rare","reservation","restaurant","roasted","roll","salad","salt","sandwich","sauce","saucer","seafood","seared","server","side order","silverware","soda","soup","special","spices","spicy","spill","spoon","starters","steak","sugar","supper","table","tablecloth","tasty","tax","tea","tip","toast","to go","tomato","utensils","vegetables","waiter","waitress","water","well-done"]
 	
-	#if query in words:
-	if True:
-		#search for restaurants
-		logging.info(str(geo_point))
-		#search_lat, search_lng = geo_point.split(',')
-		search_lat = geo_point.lat
-		search_lon = geo_point.lon
-		#url = 'http://api.yipit.com/v1/deals/?key=d9qcYtHgkKcPTAGD&tag=restaurants&lat='+lat+'&lon='+lon
-		url = 'http://api.yipit.com/v1/deals/?key=d9qcYtHgkKcPTAGD&tag=restaurants&lat='+str(search_lat)+'&lon='+str(search_lon)
-		logging.info(url)
-		result = urlfetch.fetch(url=url)
-		result = json.loads(result.content)['response']
-		deals = result['deals']
+	#(if query in words used to be here)
+	
+	#search for restaurants
+# 	logging.info(str(geo_point))
+	#search_lat, search_lng = geo_point.split(',')
+	search_lat = geo_point.lat
+	search_lon = geo_point.lon
+	#url = 'http://api.yipit.com/v1/deals/?key=d9qcYtHgkKcPTAGD&tag=restaurants&lat='+lat+'&lon='+lon
+	url = 'http://api.yipit.com/v1/deals/?key=d9qcYtHgkKcPTAGD&tag=restaurants&lat='+str(search_lat)+'&lon='+str(search_lon)
+	logging.debug(url)
+	result = urlfetch.fetch(url=url)
+	result = json.loads(result.content)['response']
+	deals = result['deals']
+# 	logging.info(deals)
+	
+	packaged_deals = []
+	
+	for yipit_deal in deals:
 		
-		packaged_deals = []
+# 			logging.info(yipit_deal)
 		
-		for yipit_deal in deals:
+		yipit_business = yipit_deal['business']
+		
+		lat = yipit_business['locations'][0]['lat']
+		lon = yipit_business['locations'][0]['lon']
+		
+		if lat==None or lon==None:
+			pass
+		else:
+		
+			packaged_business = {
+				'businessID'	: 'yipitdoesnotuseidsforbusinesses',
+				'businessName'	: yipit_business['name'],
+				'vicinity'		: yipit_business['locations'][0]['address'] + ', ' + yipit_business['locations'][0]['locality'],
+				'geoPoint'		: str(db.GeoPt(lat,lon)),
+				'geoHash'		: geohash.encode(lat,lon)
+					}
 			
-			yipit_business = yipit_deal['business']
-			
-			lat = yipit_business['locations'][0]['lat']
-			lon = yipit_business['locations'][0]['lon']
-			
-			if lat==None or lon==None:
-				pass
-			else:
-			
-				business = levr.Business()
-				business.business_name = yipit_business['name']
-				business.vicinity = yipit_business['locations'][0]['address'] + ', ' + yipit_business['locations'][0]['locality']
-				business.geo_point = levr.geo_converter(str(lat)+','+str(lon))
-				business.geo_hash = geohash.encode(lat,lon)
-				
-				packaged_business = package_business(business,'yipitdoesnotuseidsforbusinesses')
-				
-				deal = levr.Deal()
-				deal.externalID = yipit_deal['id']
-				deal.deal_text = yipit_deal['yipit_title']
-				deal.description = ''
-				deal.large_img = yipit_deal['images']['image_big']
-				deal.small_img = yipit_deal['images']['image_small']
-				deal.deal_status = 'active'
-				deal.date_uploaded = datetime.now()
-				deal.tags = []
-				deal.pin_color = 'pink'
+			deal = levr.Deal()
+			deal.externalID = yipit_deal['id']
+			deal.deal_text = yipit_deal['yipit_title']
+			deal.description = ''
+			deal.large_img = yipit_deal['images']['image_big']
+			deal.small_img = yipit_deal['images']['image_small']
+			deal.pin_color = 'orange'
+			deal.origin = 'externalAPI'
+			deal.externalURL = yipit_deal['mobile_url']
 
-				
-				packaged_deal = package_deal(deal,False,business,)
+			#make fake owner
+			fake_owner = {
+				'alias'		: 'Powered by Yipit.',
+				'photoURL'	: 'http://farm6.static.flickr.com/5205/5281647796_c42d9b6a15.jpg',
+				'karma'		: 42,
+				'levelText'	: 'Click to see more deals and coupons on Yipit.'
+			}
 			
-				# packaged_business = {
-# 				'businessName'		:	business['name'],
-# 				'vicinity'			:	business['locations'][0]['address'] + ', ' + business['locations'][0]['locality'],
-# 				'geoPoint'			:	str(lat)+','+str(lon),
-# 				'geoHash'			:	geohash.encode(lat,lon)
-# 				}
+			packaged_deal = package_deal_external(deal,packaged_business,fake_owner)
 			
-# 				logging.info(packaged_business)
-				
-				packaged_deal = {
-				#barcode image
-				'business'			: packaged_business,
-				#date uploaded
-				#dealID
-				'dealText'			: deal['yipit_title'],
-				#description
-				#isExclusive
-				'largeImg'			: deal['images']['image_big'],
-				'smallImg'			: deal['images']['image_small'],
-				'shareURL'			: deal['yipit_url'],
-				'tags'				: 'restaurants',
-				'pinColor'			: '255,255,255',
-				'externalLink'		: deal['mobile_url'],
-				'attributionText'	: 'Powered by:',
-				'attributionImage'	: 'http://farm6.static.flickr.com/5205/5281647796_c42d9b6a15.jpg',
-				'attributionLink'	: 'http://www.yipit.com'
-				}
-				
-				
-				packaged_deals.append(packaged_deal)
-				
-		logging.info(packaged_deals)
-		return packaged_deals
-# 			
-# 				#build a deal
-# 				deal = levr.Deal()
-# 			
-# 		def package_business(business):
-# 	packaged_business = {
-# 		'businessID'	: enc.encrypt_key(str(business.key())),
-# 		'businessName'	: business.business_name,
-# 		'vicinity'		: business.vicinity,
-# 		'foursquareID'	: business.foursquare_id,
-# 		'foursquareName': business.foursquare_name,
-# 		'geoPoint'		: str(business.geo_point),
-# 		'geoHash'		: business.geo_hash
-# 						}
-# 		
-# 		packaged_deal = {
-# 			'barcodeImg'	: deal.barcode,
-# 			'business'		: package_business(levr.Business.get(deal.businessID)),
-# 			'dateUploaded'	: str(deal.date_end)[:19],
-# 			'dealID'		: enc.encrypt_key(deal.key()),
-# 			'dealText'		: deal.deal_text,
-# 			'description'	: deal.description,
-# 			'isExclusive'	: deal.is_exclusive,
-# 			'largeImg'		: create_img_url(deal,'large'),
-# 			'redemptions'	: deal.count_redeemed,
-# 			'smallImg'		: create_img_url(deal,'small'),
-# 			'status'		: deal.deal_status,
-# 			'shareURL'		: create_share_url(deal),
-# 			'tags'			: deal.tags,
-# 			'dateEnd'		: str(deal.date_end)[:19],
-# 			'vote'			: deal.upvotes - deal.downvotes,
-# 			'pinColor'		: deal.pin_color,
-# 			'karma'			: deal.karma
-# 			}
-# 			
-# 			
-	else:
-		return False
+			packaged_deals.append(packaged_deal)
+			
+	return packaged_deals	
 
-def search_foursquare(geo_point,user,already_found=[]):
-# 	try:
-	#user must be connected with foursquare to be able to access these specials
-	#go get the user's foursquare token
-	token = user.foursquare_token
-	#form the url
+def search_foursquare(geo_point,token,already_found=[]):
+
+	#if token is passes as 'random', use a hardcoded token
+	if token == 'random':
+		hardcoded = ['IDMTODCAKR34GOI5MSLEQ1IWDJA5SYU0PGHT4F5CAIMPR4CR','ML4L1LW3SO0SKUXLKWMMBTSOWIUZ34NOTWTWRW41D0ANDBAX','RGTMFLSGVHNMZMYKSMW4HYFNEE0ZRA5PTD4NJE34RHUOQ5LZ']
+		token = random.choice(hardcoded)
+		logging.info('Using token: '+token)
+		
+
 	url = 'https://api.foursquare.com/v2/specials/search?v=20120920&ll='+str(geo_point)+'&limit=50&oauth_token='+token
 	result = urlfetch.fetch(url=url)
 	result = json.loads(result.content)
 	foursquare_deals = result['response']['specials']['items']
 	
-	allowed_categories = ["Afghan Restaurant", "African Restaurant", "American Restaurant", "Arepa Restaurant", "Argentinian Restaurant", "Asian Restaurant", "Australian Restaurant", "BBQ Joint", "Bagel Shop", "Bakery", "Brazilian Restaurant", "Breakfast Spot", "Brewery", "Burger Joint", "Burrito Place", "Caf\u00e9", "Cajun / Creole Restaurant", "Caribbean Restaurant", "Chinese Restaurant", "Coffee Shop", "Cuban Restaurant", "Cupcake Shop", "Deli / Bodega", "Dessert Shop", "Dim Sum Restaurant", "Diner", "Distillery", "Donut Shop", "Dumpling Restaurant", "Eastern European Restaurant", "Ethiopian Restaurant", "Falafel Restaurant", "Fast Food Restaurant", "Filipino Restaurant", "Fish & Chips Shop", "Food Truck", "French Restaurant", "Fried Chicken Joint", "Gastropub", "German Restaurant", "Gluten-free Restaurant", "Greek Restaurant", "Hot Dog Joint", "Ice Cream Shop", "Indian Restaurant", "Indonesian Restaurant", "Italian Restaurant", "Japanese Restaurant", "Juice Bar", "Korean Restaurant", "Latin American Restaurant", "Mac & Cheese Joint", "Malaysian Restaurant", "Mediterranean Restaurant", "Mexican Restaurant", "Middle Eastern Restaurant", "Molecular Gastronomy Restaurant", "Mongolian Restaurant", "Moroccan Restaurant", "New American Restaurant", "Peruvian Restaurant", "Pizza Place", "Portuguese Restaurant", "Ramen / Noodle House", "Restaurant", "Salad Place", "Sandwich Place", "Scandinavian Restaurant", "Seafood Restaurant", "Snack Place", "Soup Place", "South American Restaurant", "Southern / Soul Food Restaurant", "Spanish Restaurant", "Steakhouse", "Sushi Restaurant", "Swiss Restaurant", "Taco Place", "Tapas Restaurant", "Tea Room", "Thai Restaurant", "Turkish Restaurant", "Vegetarian / Vegan Restaurant", "Vietnamese Restaurant", "Winery", "Wings Joint", "Bar", "Beer Garden", "Cocktail Bar", "Dive Bar", "Gay Bar", "Hookah Bar", "Hotel Bar", "Karaoke Bar", "Lounge", "Nightclub", "Other Nightlife", "Pub", "Sake Bar", "Speakeasy", "Sports Bar", "Strip Club", "Whisky Bar", "Wine Bar"]
 	
-	allowed_types = ['count','regular','flash','swarm','other','frequency','mayor']
+	
+	
 	
 	#initialize return array
 	response_deals = []
 	
 	for foursquare_deal in foursquare_deals:
 		logging.info('woo a deal!')
-		#logging.info(foursquare_deal['venue']['categories'][0]['name'])
-		if foursquare_deal['venue']['categories'][0]['name'] in allowed_categories and foursquare_deal['type'] in allowed_types and foursquare_deal['id'] not in already_found:
+		
+		#sometimes venues do not have categories
+		if len(foursquare_deal['venue']['categories']) == 0:
+			logging.info('No venue category returned, making it "undefined"')
+			foursquare_deal['venue']['categories'] = [{'name':'undefined'}]
+		#logging.info(foursquare_deal['venue'])
+		if not filter_foursquare_deal(foursquare_deal,already_found):
 			#logging.debug(foursquare_deal['type'])
 			#logging.debug(foursquare_deal['message'])
 			#logging.debug(foursquare_deal['venue']['categories'][0]['name'])
-			logging.info(foursquare_deal['id'])
+			#logging.info(foursquare_deal['id'])
 			#does business already exist?
 			existing_business = levr.Business.gql('WHERE foursquare_id=:1',foursquare_deal['venue']['id']).get()
 			if not existing_business:
@@ -1083,6 +1038,7 @@ def search_foursquare(geo_point,user,already_found=[]):
 					business_name 		= 	venue['name'],
 					foursquare_name		=	venue['name'],
 					foursquare_id		=	venue['id'],
+					foursquare_linked	=	True,
 					vicinity			=	venue['location']['address'] + ', ' + venue['location']['city'],
 					geo_point			=	db.GeoPt(venue['location']['lat'],venue['location']['lng']),
 					geo_hash			=	geohash.encode(venue['location']['lat'],venue['location']['lng']),
@@ -1100,56 +1056,12 @@ def search_foursquare(geo_point,user,already_found=[]):
 			existing_deal = levr.Deal.gql('WHERE foursquare_id=:1',foursquare_deal['id']).get()
 			if not existing_deal:
 				
-				#set parent to foursquare user, or create if does not exist
-				foursquare_user = levr.Customer.gql('WHERE alias=:1 AND email=:2','Foursquare, Inc.','fake_foursquare_email').get()
-				if not foursquare_user:
-					#well create one then
-					foursquare_user = levr.Customer(
-							email			=	'fake_foursquare_email',
-							pw				=	enc.encrypt_password('Carl123!'),
-							alias			=	'Foursquare, Inc.',
-							display_name	=	'Foursquare, Inc.',
-							photo			=	'http://playfoursquare.s3.amazonaws.com/press/logo/icon-512x512.png'
-					)
+				#add the foursquare deal
+				deal = add_foursquare_deal(foursquare_deal,business)
 				
-				foursquare_user.put()
-				
-				#silly multiline strings in foursquare api
-				message = foursquare_deal['message']
-				if message.find('\r\n') != -1:
-					message = message[0:message.find('\r\n')]
-				elif message.find('\r') != -1:
-					message = message[0:message.find('\r')]
-				elif message.find('\n') != -1:
-					message = message[0:message.find('\n')]
-				else:
-					#logging.debug('NO FUCKERY IN THIS HERE STRING')
-					pass
-				
-				##logging.debug(json.dumps(foursquare_deal['message'].rstrip('\r\n')))
-				deal = levr.Deal(
-					businessID		=	str(business.key()),
-					deal_status		=	'active',
-					tags			=	levr.tagger(foursquare_deal['message']+' '+foursquare_deal['description']+' '+foursquare_deal['venue']['name']+' '+foursquare_deal['venue']['categories'][0]['name']),
-					origin			=	'foursquare',
-					external_url	=	'foursquare://venues/'+foursquare_deal['venue']['id'],
-					foursquare_id	=	foursquare_deal['id'],
-					foursquare_type	=	foursquare_deal['venue']['categories'][0]['name'],
-					deal_text		=	message,
-					description		=	foursquare_deal['description'],
-					geo_point		=	business.geo_point,
-					geo_hash		=	business.geo_hash,
-					pin_color		=	'blue',
-					parent			=	foursquare_user.key()
-				)
-
-
-				deal.put()
-				logging.info('this is a new deal')
-				#logging.debug(levr.log_model_props(deal))
 			else:
-				logging.info('deal already exists')
 				deal = existing_deal
+				logging.info('Foursquare special '+deal.foursquare_id+' found in database but not in search.')
 				#logging.debug(levr.log_model_props(deal))
 				
 			
@@ -1159,4 +1071,229 @@ def search_foursquare(geo_point,user,already_found=[]):
 			
 		#end valid deal level
 	#end for loop
+	
+	for deal in response_deals:
+		logging.info(deal['dealText'])
 	return response_deals
+
+def add_foursquare_deal(foursquare_deal,business):
+	#grab a random ninja to be the owner of this deal
+	random_dead_ninja = get_random_dead_ninja()
+	
+	#silly multiline strings in foursquare api
+	message = foursquare_deal['message']
+	if message.find('\r\n') != -1:
+		message = message[0:message.find('\r\n')]
+	elif message.find('\r') != -1:
+		message = message[0:message.find('\r')]
+	elif message.find('\n') != -1:
+		message = message[0:message.find('\n')]
+	else:
+		#logging.debug('NO FUCKERY IN THIS HERE STRING')
+		pass
+	
+	##logging.debug(json.dumps(foursquare_deal['message'].rstrip('\r\n')))
+	deal = levr.Deal(
+		businessID		=	str(business.key()),
+		business_name	=	foursquare_deal['venue']['name'],
+		deal_status		=	'active',
+		tags			=	levr.tagger(foursquare_deal['message']+' '+foursquare_deal['description']+' '+foursquare_deal['venue']['name']+' '+foursquare_deal['venue']['categories'][0]['name']),
+		origin			=	'foursquare',
+		external_url	=	'foursquare://venues/'+foursquare_deal['venue']['id'],
+		foursquare_id	=	foursquare_deal['id'],
+		foursquare_type	=	foursquare_deal['venue']['categories'][0]['name'],
+		deal_text		=	message,
+		description		=	foursquare_deal['description'],
+		geo_point		=	business.geo_point,
+		geo_hash		=	business.geo_hash,
+		pin_color		=	'blue',
+		parent			=	random_dead_ninja.key(),
+		smallImg		=	'http://playfoursquare.s3.amazonaws.com/press/logo/icon-512x512.png'
+	)
+
+
+	deal.put()
+	logging.info('Foursquare special '+deal.foursquare_id+' added to database.')
+	#logging.debug(levr.log_model_props(deal))
+	
+	return deal
+
+
+def filter_foursquare_deal(foursquare_deal,already_found):
+	
+	allowed_categories = ["Afghan Restaurant", "African Restaurant", "American Restaurant", "Arepa Restaurant", "Argentinian Restaurant", "Asian Restaurant", "Australian Restaurant", "BBQ Joint", "Bagel Shop", "Bakery", "Brazilian Restaurant", "Breakfast Spot", "Brewery", "Burger Joint", "Burrito Place", "Caf\u00e9", "Cajun / Creole Restaurant", "Caribbean Restaurant", "Chinese Restaurant", "Coffee Shop", "Cuban Restaurant", "Cupcake Shop", "Deli / Bodega", "Dessert Shop", "Dim Sum Restaurant", "Diner", "Distillery", "Donut Shop", "Dumpling Restaurant", "Eastern European Restaurant", "Ethiopian Restaurant", "Falafel Restaurant", "Fast Food Restaurant", "Filipino Restaurant", "Fish & Chips Shop", "Food Truck", "French Restaurant", "Fried Chicken Joint", "Gastropub", "German Restaurant", "Gluten-free Restaurant", "Greek Restaurant", "Hot Dog Joint", "Ice Cream Shop", "Indian Restaurant", "Indonesian Restaurant", "Italian Restaurant", "Japanese Restaurant", "Juice Bar", "Korean Restaurant", "Latin American Restaurant", "Mac & Cheese Joint", "Malaysian Restaurant", "Mediterranean Restaurant", "Mexican Restaurant", "Middle Eastern Restaurant", "Molecular Gastronomy Restaurant", "Mongolian Restaurant", "Moroccan Restaurant", "New American Restaurant", "Peruvian Restaurant", "Pizza Place", "Portuguese Restaurant", "Ramen / Noodle House", "Restaurant", "Salad Place", "Sandwich Place", "Scandinavian Restaurant", "Seafood Restaurant", "Snack Place", "Soup Place", "South American Restaurant", "Southern / Soul Food Restaurant", "Spanish Restaurant", "Steakhouse", "Sushi Restaurant", "Swiss Restaurant", "Taco Place", "Tapas Restaurant", "Tea Room", "Thai Restaurant", "Turkish Restaurant", "Vegetarian / Vegan Restaurant", "Vietnamese Restaurant", "Winery", "Wings Joint", "Bar", "Beer Garden", "Cocktail Bar", "Dive Bar", "Gay Bar", "Hookah Bar", "Hotel Bar", "Karaoke Bar", "Lounge", "Nightclub", "Other Nightlife", "Pub", "Sake Bar", "Speakeasy", "Sports Bar", "Strip Club", "Whisky Bar", "Wine Bar"]
+	
+	logging.info('---------------------------------------------')
+	logging.info('Type: '+foursquare_deal['type'])
+	logging.info('Message: '+foursquare_deal['message'])
+	logging.info('Description: '+foursquare_deal['description'])
+	logging.info('Category: '+foursquare_deal['venue']['categories'][0]['name'])
+	
+	allowed_types = ['count','regular','flash','swarm','other','frequency']	#not mayor
+	
+	
+	
+	if foursquare_deal['venue']['categories'][0]['name'] not in allowed_categories:
+		#logging.info('Special '+foursquare_deal['id']+' filtered out because it was from a non-allowed category: '+foursquare_deal['venue']['categories'][0]['name'])
+		#return True
+		logging.info('Special from category: '+foursquare_deal['venue']['categories'][0]['name']+' allowed because category filter is turned off')
+	elif foursquare_deal['type'] not in allowed_types:
+		logging.info('Special '+foursquare_deal['id']+' filtered out because it was of a non-allowed type: '+foursquare_deal['type'])
+		return True
+	elif foursquare_deal['id'] in already_found:
+		logging.info('Special '+foursquare_deal['id']+' filtered out because it was already found in the database.')
+		return True
+		
+	#search keywords to weed out more deals
+	types = ['mayor','w/coupon! Text','spg.com/better','topguest.com']
+	for dealType in types:
+		if dealType in foursquare_deal['message'] or dealType in foursquare_deal['description']:
+			logging.info('Special '+foursquare_deal['id']+' filtered out because the non-allowed keyword "'+dealType+'" was found in the message or description.')
+			return True
+			
+	#search description strings to weed out deals that require more than 1 checkin in a given number of days
+	allowed_description_fragments = ['Unlocked every check-in','1st check-in','Unlocked for checking in 1 times','Unlocked for swarms']
+	flag='notfound'
+	for fragment in allowed_description_fragments:
+		if fragment in foursquare_deal['description']:
+			flag='found'
+	if flag == 'notfound':
+		logging.info('Special '+foursquare_deal['id']+' filtered out because a non-allowed description was found: '+foursquare_deal['description'])
+		return True
+		
+		
+	#if everything passes okay, return the falsities!
+	return False
+		
+def get_random_dead_ninja():
+	#go grab all the ninjas
+	deadNinjas = levr.Customer.gql('WHERE email=:1','deadninja@levr.com')
+	#count them
+	count = deadNinjas.count()
+	#generate a random int
+	rando = random.randint(1,count)
+	#grab the ninja based on that number
+	#this is sometimes crashing... last name is not a good way to do this
+	dead_ninja = levr.Customer.gql('WHERE last_name =:1',str(rando)).get()
+	#send out the dead ninja
+	
+	#<chief ninja>: Good luck - you're doing your country a great service.
+	#<crowd>: "one of us! one of us! one of us!"
+	#<dead ninja> "well ah well okay i guess, but you see right now isn't a terribly good time for me, you see, it's just that I have this very important appointment..." [drowned out by]
+	#<crowd>: "one of us! one of us! one of us! one of us!" [dead ninja is pushed towards the door] "one of us! one of us! one of us!"
+	return dead_ninja
+	
+def match_foursquare_business(geo_point,query):
+	
+	params = {
+		'client_id'		: 	'UNHLIF5EYXSKLX50DASZ2PQBGE2HDOIK5GXBWCIRC55NMQ4C',
+		'client_secret' : 	'VLKDNIT0XSA5FK3XIO05DAWVDVOXTSUHPE4H4WOHNIZV14G3',
+		'v'				:	'20120920',
+		'intent'		:	'match',
+		'll'			:	str(geo_point),
+		'query'			:	query
+	}
+	
+	url = 'https://api.foursquare.com/v2/venues/search?'+urllib.urlencode(params)
+	
+	#url = 'https://api.foursquare.com/v2/venues/search?v=20120920&intent=match&ll='+str(geo_point)+'&query='+query+'&client_id='+client_id+'&client_secret='+client_secret
+	result = urlfetch.fetch(url=url)
+	result = json.loads(result.content)
+	
+	venues = result['response']['venues']
+	if venues:
+		match = venues[0]
+		logging.info('Matching Foursquare businesses found. Mapping "'+query+'" to "'+match['name']+'".')
+		
+		response = {
+			'foursquare_name'		:	match['name'],
+			'foursquare_id'		:	match['id']
+		}
+		
+		return response
+	else:
+		return False
+		
+def update_foursquare_business(foursquare_id,token='random'):
+
+	#if token is passes as 'random', use a hardcoded token
+	if token == 'random':
+		hardcoded = ['IDMTODCAKR34GOI5MSLEQ1IWDJA5SYU0PGHT4F5CAIMPR4CR','ML4L1LW3SO0SKUXLKWMMBTSOWIUZ34NOTWTWRW41D0ANDBAX','RGTMFLSGVHNMZMYKSMW4HYFNEE0ZRA5PTD4NJE34RHUOQ5LZ']
+		token = random.choice(hardcoded)
+		logging.info('Using token: '+token)
+	
+
+	#go grab the business from foursquare
+	params = {
+		'v'				:	'20120920',
+		'oauth_token'	:	token
+	}
+
+	url = 'https://api.foursquare.com/v2/venues/'+foursquare_id+'?'+urllib.urlencode(params)
+	
+	result = urlfetch.fetch(url=url)
+	result = json.loads(result.content)
+	#logging.info(result)
+	foursquare_deals = result['response']['venue']['specials']['items']
+
+	#push dealids onto an array
+	foursquare_deal_ids = []
+	for special in foursquare_deals:
+		foursquare_deal_ids.append(special['id'])
+	logging.info(foursquare_deal_ids)
+	
+	#grab the business with that foursquare id
+	business = levr.Business.gql('WHERE foursquare_id = :1',foursquare_id).get()
+	business_key = business.key()
+	#grab the deals from that business
+	#deals = levr.Deal.gql('WHERE businessID = :1',str(business_key))
+	deals = levr.Deal.gql('WHERE businessID = :1 AND origin = :2 AND deal_status = :3',str(business_key),'foursquare','active')
+	
+	for deal in deals:
+		
+		if deal.foursquare_id not in foursquare_deal_ids:
+			#remove levr-stored foursquare deals not returned by the foursquare venue request (foursquare has removed them)
+			deal.deal_status = 'expired'
+			logging.info('The foursquare special '+deal.foursquare_id+' has been retired because it was not found on the foursquare servers.')
+			#put back
+			deal.put()
+		else:
+			#levr-stored deal WAS found in foursquare list, so remove from the list
+			#list comprehension should remove the foursquare_deal_id AND handle duplicates
+			foursquare_deal_ids = [x for x in foursquare_deal_ids if x != deal.foursquare_id]
+			logging.info('matched deal!')
+			logging.info(foursquare_deal_ids)
+	
+	
+	
+	#anything left in the list?
+	if len(foursquare_deal_ids) > 0:
+		logging.info('THERE IS SOMETHING IN THE LIST')	
+		#add any extra deals
+		for foursquare_deal in foursquare_deals:
+			if foursquare_deal['id'] in foursquare_deal_ids:
+				#check the deal against the filter function
+				already_found = []
+				#rearrange the deal
+				foursquare_deal.update({
+					'venue'		:	result['response']['venue']
+				})
+				# logging.info('THE DEAL:')
+# 				logging.info(levr.log_dict(foursquare_deal))
+				if not filter_foursquare_deal(foursquare_deal,already_found):
+					
+					#add the deal
+					deal = add_foursquare_deal(foursquare_deal,business)
+				
+# 	
+# 	#go grab all the deals from that business
+# 	deals = levr.Deal.gql('WHERE foursquare_id = :1',foursquare_id)
+# 	
+# 	for deal in deals:
+# 		logging.info(deal.foursquare_id)
+# 		logging.info('deal found!')
+# 	
+# 	
+	
+	#pull the specials
+	#logging.info(foursquare_deals)
