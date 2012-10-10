@@ -46,12 +46,12 @@ class SignupFacebookHandler(webapp2.RequestHandler):
 
 class SignupFoursquareHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,None,remoteToken=True)#id=True
-	def post(self):
+	def get(self,*args,**kwargs):
 		try:
 			#check token
 			foursquare_token = self.request.get('remoteToken',None)
 			
-			user = levr.Customer.all().filter('foursquare_token').get()
+			user = levr.Customer.all().filter('foursquare_token',foursquare_token).get()
 			
 			if user:
 				response = {
@@ -59,16 +59,16 @@ class SignupFoursquareHandler(webapp2.RequestHandler):
 						}
 			else:
 				#create new user
-				new_user = levr.Customer()
+				new_user = levr.Customer(levr_token = levr.create_levr_token())
 				#grab the new users foursquare info
-				user = social.Foursquare(new_users)
+				user = social.Foursquare(new_user)
 				try:
 					user, new_user_details, new_friends = user.first_time_connect(
-													facebook_id = facebook_id,
-													facebook_token	= facebook_token,
+													foursquare_token = foursquare_token
 													)
 				except Exception,e:
-					assert False, 'Could not connect with foursquare, {}'.format(e)
+					levr.log_error()
+					assert False, 'Could not connect with foursquare. '.format('')
 				#return the user
 				response = {
 						'user':api_utils.package_user(user,True,send_token=True),
@@ -78,7 +78,7 @@ class SignupFoursquareHandler(webapp2.RequestHandler):
 			api_utils.send_response(self,response,user)
 		except AssertionError,e:
 			levr.log_error()
-			api_utils.send_error('{}'.format(e))
+			api_utils.send_error(self,'{}'.format(e))
 		except Exception,e:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')

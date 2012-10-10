@@ -74,7 +74,9 @@ class SocialClass:
 		
 		logging.debug(to_be_connected)
 		to_be_notified = []
-		actor_id = self.user.key()
+		#if the user has not been stored yet, it will not have a key
+		try:	actor_id = self.user.key()
+		except:	actor_id = db.Key()
 		#for each user entity
 		for u in to_be_connected:
 			#they will be added as a follower if they are not already one and the user is not itself
