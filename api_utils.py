@@ -112,7 +112,9 @@ def create_pin_color(deal):
 
 
 def package_deal(deal,private=False,*args,**kwargs):
-	
+#	logging.debug(deal.businessID)
+#	logging.debug(deal.key())
+#	logging.debug(deal.deal_text)
 
 #	logging.debug(str(deal.geo_point))
 	packaged_deal = {
