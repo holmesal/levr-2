@@ -10,6 +10,7 @@ import json
 
 
 class SignupFacebookHandler(webapp2.RequestHandler):
+	@api_utils.validate(None,None,remoteToken=True,remoteID=True)
 	def post(self):
 		#RESTRICTED
 		
@@ -44,11 +45,10 @@ class SignupFacebookHandler(webapp2.RequestHandler):
 			
 
 class SignupFoursquareHandler(webapp2.RequestHandler):
+	@api_utils.validate(None,None,remoteToken=True)#id=True
 	def post(self):
-		#RESTRICTED
-		
 		#check token
-		token = self.request.get('token')
+		token = self.request.get('remoteToken')
 		if token == '':
 			api_utils.send_error(self,'Required parameter not passed: token')
 			return
