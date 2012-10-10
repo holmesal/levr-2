@@ -1,5 +1,5 @@
 application: levr-production
-version: 2
+version: test
 runtime: python27
 api_version: 1
 threadsafe: true
@@ -128,4 +128,4 @@ skip_files:
 - ^(.*/)?.*/RCS/.*
 - ^(.*/)?\..*
 - ^(.*/)?.*\.bak$
-#- ^Crypto/
+- ^Crypto/

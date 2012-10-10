@@ -512,18 +512,25 @@ class UpdatePinsHandler(webapp2.RequestHandler):
 class Create100DeadNinjasHandler(webapp2.RequestHandler):
 	def get(self):
 		logging.info('Creating 1000 dead ninjas.')
-		for number in list(xrange(100)):
-			ninja = levr.Customer(
-				display_name 		=	'Dead Ninja '+str(number),
-				alias				=	'deadninja'+str(number),
-				email				=	'deadninja@levr.com',
-				first_name			=	'Dead Ninja',
-				last_name			=	str(number),
-				foursquare_token	=	'4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0',
-				pw					=	enc.encrypt_password('Carl123!')
-			)
-			
-			ninja.put()
+		ninjas = levr.Customer.all().filter('first_name','Dead Ninja').count()
+		#don't want a bagillion dead ninjas by accident do we?
+		if ninjas <100:
+			for number in list(xrange(100)):
+				ninja = levr.Customer(
+					display_name 		=	'Dead Ninja '+str(number),
+					alias				=	'deadninja'+str(number),
+					email				=	'deadninja@levr.com',
+					first_name			=	'Dead Ninja',
+					last_name			=	str(number),
+					foursquare_token	=	'4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0',
+					pw					=	enc.encrypt_password('Carl123!'),
+					levr_token			=	levr.create_levr_token()
+				)
+				
+				ninja.put()
+			self.response.out.write('Done')
+		else:
+			self.response.out.write('Already have 100 undead ninjas')
 
 		#how to get a random dead ninja
 		#ninja = api_utils.get_random_dead_ninja()
