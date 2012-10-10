@@ -9,7 +9,10 @@ from google.appengine.ext import db
 
 class LoginFacebookHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,None,remoteID=True,remoteToken=False)
-	def get(self,*args,**kwargs):
+	def post(self,*args,**kwargs):
+		#=======================================================================
+		# This is not finished. Do not use.
+		#=======================================================================
 		#RESTRICTED
 		try:
 			token 		= kwargs.get('remoteToken')
@@ -32,8 +35,12 @@ class LoginFacebookHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 class LoginFoursquareHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,None,remoteID=False,remoteToken=True)
-	def get(self,*args,**kwargs):
+	def post(self,*args,**kwargs):
 		try:
+			#===================================================================
+			# This is not finished. Do not use.
+			#===================================================================
+			
 			#RESTRICTED
 			logging.debug('LOGIN FOURSQUARE\n\n\n')
 			logging.debug(kwargs)
@@ -81,7 +88,7 @@ class LoginFoursquareHandler(webapp2.RequestHandler):
 			
 class LoginTwitterHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,None,remoteID=True,remoteToken=True,remoteTokenSecret=True)
-	def get(self,*args,**kwargs):
+	def post(self,*args,**kwargs):
 		try:
 			#RESTRICTED
 			logging.debug('LOGIN TWITTER\n\n\n')

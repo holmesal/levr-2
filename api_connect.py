@@ -10,7 +10,7 @@ import webapp2
 class ConnectFacebookHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,'param',user=True,remoteToken=True,remoteID=True,levrToken=True)
 	@api_utils.private
-	def get(self,*args,**kwargs):
+	def post(self,*args,**kwargs):
 		try:
 			#RESTRICTED
 			user			= kwargs.get('actor',None)
@@ -38,7 +38,7 @@ class ConnectFacebookHandler(webapp2.RequestHandler):
 class ConnectFoursquareHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,'param',user=True,remoteToken=True,levrToken=True)#id=True
 	@api_utils.private
-	def get(self,*args,**kwargs):
+	def post(self,*args,**kwargs):
 		try:
 			#RESTRICTED
 			logging.debug('CONNECT FOURSQUARE\n\n\n')
@@ -70,7 +70,7 @@ class ConnectTwitterHandler(webapp2.RequestHandler):
 #	@api_utils.validate(None,None,user=False,token=False,screenName=False,levrToken=False)
 	@api_utils.validate(None,'param',user=True,remoteToken=True,remoteTokenSecret=True,remoteID=True,levrToken=True)
 	@api_utils.private
-	def get(self,*args,**kwargs):
+	def post(self,*args,**kwargs):
 		try:
 			#RESTRICTED
 			logging.debug('CONNECT TWITTER\n\n\n')
@@ -103,7 +103,7 @@ class ConnectTwitterHandler(webapp2.RequestHandler):
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 class TestConnectionHandler(webapp2.RequestHandler):
-	def get(self):
+	def post(self):
 		try:
 			logging.debug("\n\n\nTEST HANDLER\n\n\n")
 			u = self.request.get('user')
