@@ -1,10 +1,10 @@
-import webapp2
-import logging
-import levr_classes as levr
-import levr_encrypt as enc
+from google.appengine.ext import db
 import api_utils
 import api_utils_social as social
-from google.appengine.ext import db
+import levr_classes as levr
+import levr_encrypt as enc
+import logging
+import webapp2
 
 
 class LoginFacebookHandler(webapp2.RequestHandler):

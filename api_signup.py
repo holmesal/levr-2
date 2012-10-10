@@ -1,12 +1,12 @@
-import webapp2
-import logging
+from google.appengine.ext import db
+from random import randint
 import api_utils
 import api_utils_social as social
+import json
 import levr_classes as levr
 import levr_encrypt as enc
-from random import randint
-from google.appengine.ext import db
-import json
+import logging
+import webapp2
 
 
 class SignupFacebookHandler(webapp2.RequestHandler):
