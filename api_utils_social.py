@@ -412,7 +412,7 @@ class Foursquare(SocialClass):
 		Foursquare
 		Creates a url to perform a specified action on the foursquares api
 		'''
-		logging.debug('\n\n CREATE URL \n\n')
+		logging.debug('\n\n CREATE URL TWITTER \n\n')
 		url = 'https://api.foursquare.com/v2/users/'
 #		url += str(self.foursquare_id)
 		logging.debug(action)
@@ -428,10 +428,12 @@ class Foursquare(SocialClass):
 			method = 'GET'
 			headers = {}
 			#otherwise, will not append action to the url
-		url += '?oauth_token=' + self.user.foursquare_token
-		url += '&v=' + self.version
+#		url += '?oauth_token=' + self.user.foursquare_token
+#		url += '&v=' + self.version
+		url += '?oauth_token={}&v={}'.format(self.user.foursquare_token,
+											self.version)
 		
-		logging.debug(url)
+		raise Exception('{},\n{},\n{}'.format(url,method,headers))
 		return url, method, headers
 	
 		
@@ -489,7 +491,7 @@ class Twitter(SocialClass):
 			
 		#updates the users id and/or screen name
 		twitter_id 			= kwargs.get('twitter_id', False)
-		twitter_screen_name= kwargs.get('twitter_screen_name', False)
+		twitter_screen_name	= kwargs.get('twitter_screen_name', False)
 		logging.debug(twitter_id)
 		logging.debug(twitter_screen_name)
 		if not twitter_id and not twitter_screen_name:
@@ -512,12 +514,23 @@ class Twitter(SocialClass):
 		'''
 		content = self.fetch('user')
 		logging.debug('\n\n\t\t\t\t UPDATE USER DETAILS \n\n')
+		logging.debug(levr.log_dict(content))
+		updated = {}
+		
+		#update twitter info
+		twitter_id	= content.get('id')
+		screen_name	= content.get('screen_name')
+		if not self.user.twitter_id:
+			self.user.twitter_id	= twitter_id
+			updated['twitter_id']	= twitter_id
+		if not self.user.twitter_screen_name:
+			self.user.twitter_screen_name	= screen_name
+			updated['twitter_screen_name']	= screen_name
+		
+		#update general attributes
 		if not self.user.facebook_connected:
-			twitter_id	= content.get('id')
-			logging.debug(twitter_id)
-			logging.debug(type(twitter_id))
+			
 			photo		= content.get('profile_image_url_https')
-			screen_name	= content.get('screen_name')
 			name		= content.get('name')
 			names		= name.split(' ')
 			first_name	= names[0]
@@ -525,16 +538,9 @@ class Twitter(SocialClass):
 			display_name= self.build_display_name(first_name, last_name)
 			
 			#update user values if they are to be update
-			updated = {}
-			if not self.user.twitter_id:
-				self.user.twitter_id	= twitter_id
-				updated['twitter_id']	= twitter_id
 			if not self.user.photo:
 				self.user.photo			= photo
 				updated['photo']		= photo
-			if not self.user.twitter_screen_name:
-				self.user.twitter_screen_name	= screen_name
-				updated['twitter_screen_name']	= screen_name
 			if not self.user.first_name or not self.user.last_name:
 				self.user.display_name	= display_name
 				updated['display_name']	= display_name
@@ -549,6 +555,7 @@ class Twitter(SocialClass):
 				updated['display_name']
 			
 		else:
+			return updated
 			raise Exception('User has already connected with facebook')
 		
 		
@@ -582,17 +589,17 @@ class Twitter(SocialClass):
 			#fetching a users friends from twitter
 			endpoint += '/friends/ids.json'
 			method = "GET"
-			params = {'screen_name':self.user.twitter_screen_name}
+			params = {'user_id':self.user.twitter_id}
 		elif action == 'followers':
 			#fetching a users followers from twitter
 			endpoint += '/followers/ids.json'
 			method = "GET"
-			params = {'screen_name':self.user.twitter_screen_name}
+			params = {'user_id':self.user.twitter_id}
 		elif action == 'user' or not action:
 			#fetching a users info from twitter
 			endpoint += '/users/show.json'
 			method = "GET"
-			params = {'screen_name':self.user.twitter_screen_name}
+			params = {'user_id':self.user.twitter_id}
 		else:
 			levr.log_error()
 			raise Exception('Invalid url action')
@@ -603,17 +610,20 @@ class Twitter(SocialClass):
 		#update url with request parameters
 		req_url = endpoint + '?'
 		for key in params:
-			req_url += str(key) + '=' + params[key] + '&'
+#			req_url += str(key) + '=' + str(params[key]) + '&'
+			req_url += '{}={}&'.format(key,params[key])
 		#trim trailing ampersand
 		req_url = req_url[:-1]
 		
-		return req_url, headers
+		
+		logging.debug('\n\n{}\n{}\n{}\n\n'.format(req_url,method,headers))
+		return req_url, method, headers
 	def get_headers(self, url, method, **kwargs):
 		'''
 		Authorizes a twitter transaction using the stored oauth credentials
 		Returns a headers string
 		'''
-		logging.debug('\n\n\t\t\t\t AUTHORIZE \n\n')
+		logging.debug('\n\n\t\t\t\t TWITTER GET HEADERS \n\n')
 		logging.debug(kwargs)
 		params = {
 			#required oauth params
@@ -626,7 +636,7 @@ class Twitter(SocialClass):
 		url += '?'
 		for key in kwargs:
 			params[key] = kwargs.get(key)
-			url += str(key) + '=' + kwargs.get(key) + '&'
+			url += str(key) + '=' + str(kwargs.get(key)) + '&'
 		logging.debug(url)
 		#remove last &
 		url = url[:-1]
@@ -656,19 +666,19 @@ class Twitter(SocialClass):
 		
 		#only send back the headers. The url is useless for some reason
 		return headers
-	def fetch(self, action=None):
-		'''
-		Debugging fetch for twitter. spoofs a server call.
-		Comment out this function to make a real server call
-		'''
-		logging.warning('\n\n\n\n\t\t\t\t WARNING: SPOOFING TWITTER CALL \n\n\n\n')
-		### DEBUG
-		if action == 'user':
-			content = twitter_auth['example_user_info']['response']['content']
-		elif action == 'friends':
-			content = twitter_auth['example_friends']
-		### DEBUG
-		return content
+#	def fetch(self, action=None):
+#		'''
+#		Debugging fetch for twitter. spoofs a server call.
+#		Comment out this function to make a real server call
+#		'''
+#		logging.warning('\n\n\n\n\t\t\t\t WARNING: SPOOFING TWITTER CALL \n\n\n\n')
+#		### DEBUG
+#		if action == 'user':
+#			content = twitter_auth['example_user_info']['response']['content']
+#		elif action == 'friends':
+#			content = twitter_auth['example_friends']
+#		### DEBUG
+#		return content
 	def handle_fetch_response(self, content):
 		'''
 		The response handler for twitter requests

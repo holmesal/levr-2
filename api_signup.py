@@ -11,7 +11,7 @@ import json
 
 class SignupFacebookHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,None,remoteToken=True,remoteID=True)
-	def post(self):
+	def post(self,*args,**kwargs):
 		#RESTRICTED
 		
 		#check token
@@ -45,7 +45,7 @@ class SignupFacebookHandler(webapp2.RequestHandler):
 			
 
 class SignupFoursquareHandler(webapp2.RequestHandler):
-	@api_utils.validate(None,None,remoteToken=True)#id=True
+	@api_utils.validate(None,None,remoteToken=True)
 	def get(self,*args,**kwargs):
 		try:
 			#check token
@@ -84,40 +84,74 @@ class SignupFoursquareHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 		
 class SignupTwitterHandler(webapp2.RequestHandler):
-	def post(self):
-		#RESTRICTED
-		
-		#check token
-		token = self.request.get('token')
-		if token == '':
-			api_utils.send_error(self,'Required parameter not passed: token')
-			return
-		#check everything else
-		
-		#check if token currently exists in datastore
-		existing_user = levr.Customer.gql('WHERE twitter_token = :1',token).get()
-		
-		if existing_user:
-			#user already exists and is trying to log in again, return this user
-			response = {'user':api_utils.package_user(existing_user,True,send_token=True)}
-			api_utils.send_response(self,response,existing_user)
-		else:
-			#user does not exist, create new and populate via twitter API
-			user = levr.Customer()
-			user.twitter_token = token
-			user.twitter_screen_name = screen_name
-			#user.alias = screen_name
+	@api_utils.validate(None,None,remoteID=True,remoteToken=True,remoteTokenSecret=True)
+	def get(self,*args,**kwargs):
+		try:
+			twitter_id				= kwargs.get('remoteID',None)
+			twitter_token			= kwargs.get('remoteToken',None)
+			twitter_token_secret	= kwargs.get('remoteTokenSecret',None)
 			
-			'''#grab twitter deets
-			user = social.twitter_deets(user,token,screen_name)'''
 			
-			#create or refresh the alias
-			user = levr.build_display_name(user)
+			logging.debug('\n{}\n{}\n{}'.format(twitter_id,
+											twitter_token,
+											twitter_token_secret))
+			user = levr.Customer.all().filter('twitter_id',twitter_id).get()
 			
-			user.put()
-			response = {'user':api_utils.package_user(user,True,send_token=True)}
-			api_utils.send_response(self,response,user)
-		
+			if user:
+				response = {
+						'user':api_utils.package_user(user,True,send_token=True)
+						}
+			else:
+				#create new user
+				new_user = levr.Customer(levr_token = levr.create_levr_token())
+				#grab the new users twitter info
+				user = social.Twitter(new_user)
+				try:
+					user, new_user_details, new_friends = user.first_time_connect(
+													twitter_id			= twitter_id,
+													oauth_token			= twitter_token,
+													oauth_token_secret	= twitter_token_secret
+													)
+				except Exception,e:
+					levr.log_error()
+					assert False, 'Could not connect with foursquare. '.format('')
+				#return the user
+				response = {
+						'user':api_utils.package_user(user,True,send_token=True),
+						'new_friends'		: [enc.encrypt_key(f) for f in new_friends],
+						'new_user_details'	: new_user_details
+						}
+#			
+#			#check if token currently exists in datastore
+#			existing_user = levr.Customer.gql('WHERE twitter_token = :1',token).get()
+#			
+#			if existing_user:
+#				#user already exists and is trying to log in again, return this user
+#				response = {'user':api_utils.package_user(existing_user,True,send_token=True)}
+#				api_utils.send_response(self,response,existing_user)
+#			else:
+#				#user does not exist, create new and populate via twitter API
+#				user = levr.Customer()
+#				user.twitter_token = token
+#				user.twitter_screen_name = screen_name
+#				#user.alias = screen_name
+#				
+#				'''#grab twitter deets
+#				user = social.twitter_deets(user,token,screen_name)'''
+#				
+#				#create or refresh the alias
+#				user = levr.build_display_name(user)
+#				
+#				user.put()
+#				response = {'user':api_utils.package_user(user,True,send_token=True)}
+				api_utils.send_response(self,response,user)
+		except AssertionError,e:
+			levr.log_error()
+			api_utils.send_error(self,'{}'.format(e))
+		except Exception,e:
+			levr.log_error()
+			api_utils.send_error(self,'Server Error')
+			
 class SignupLevrHandler(webapp2.RequestHandler):
 	def post(self):
 		#RESTRICTED
