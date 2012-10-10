@@ -1,22 +1,20 @@
 #from __future__ import with_statement
 #from google.appengine.api import files
-import webapp2
-import levr_classes as levr
-import logging
-import levr_encrypt as enc
-import base_62_converter as converter
-#import geo.geohash as geohash
-import geo.geohash as geohash
-from google.appengine.ext import db
-from google.appengine.ext import blobstore
-from google.appengine.ext.webapp import blobstore_handlers
-from google.appengine.api import urlfetch
-import json
 from datetime import datetime
+from google.appengine.api import taskqueue, urlfetch
+from google.appengine.ext import blobstore, db
+from google.appengine.ext.webapp import blobstore_handlers
 from random import randint
-from google.appengine.api import taskqueue
-
 import api_utils
+import base_62_converter as converter
+import geo.geohash as geohash
+import json
+import levr_classes as levr
+import levr_encrypt as enc
+import logging
+import webapp2
+#import geo.geohash as geohash
+
 
 class MainPage(webapp2.RequestHandler):
 	def get(self):

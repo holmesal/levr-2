@@ -63,7 +63,7 @@ class SocialClass:
 	def add_followers(self, to_be_connected):
 		'''
 		Takes a list of user entities, checks if they are already following the user
-		If not already following, they are notified
+		If not already following, they follow and are notified
 		If they are already following, nothing happens
 		'''
 #		#add actor to the list of followers
@@ -72,12 +72,14 @@ class SocialClass:
 #				user.followers.append(actor)
 		logging.debug('\n\n ADD FOLLOWERS \n\n')
 		
-		logging.debug(to_be_connected)
+		logging.debug([user.key() for user in to_be_connected])
 		to_be_notified = []
 		#if the user has not been stored yet, it will not have a key
 		try:	actor_id = self.user.key()
-		except:	actor_id = db.Key()
-		#for each user entity
+		except:	
+			raise Exception('User does not exist in db yet. ')
+			actor_id = db.Key()
+		#for each user entity that has been identified as a potential new friend
 		for u in to_be_connected:
 			#they will be added as a follower if they are not already one and the user is not itself
 			if actor_id not in u.followers and u.key() != actor_id:
@@ -86,6 +88,9 @@ class SocialClass:
 				to_be_notified.append(u)
 		
 		if to_be_notified:
+			logging.debug(to_be_notified)
+			logging.debug(type(to_be_notified[0]))
+			logging.debug([user.key() for key in to_be_notified])
 			#place the list of user entities, and get a list of ids in return
 			to_be_notified = db.put(to_be_notified)
 #			to_be_notified = [friend.key() for friend in to_be_notified]
@@ -170,8 +175,6 @@ class SocialClass:
 		#remove duplicate friends
 		levr_friends = list(set(levr_friends))
 		
-		
-		
 		#get the friend entities
 		levr_friends = db.get(levr_friends)
 		
@@ -182,7 +185,7 @@ class SocialClass:
 	def extend_friends(self,**kwargs):
 		'''
 		SocialClass
-		Takes in a variable dict of lists of friends. 
+		Takes in a variable dict of lists of a users new friends. 
 		Extends the users friend lists with friends that do not already exist in them
 		'''
 		
@@ -343,9 +346,11 @@ class Foursquare(SocialClass):
 			if not self.user.display_name:
 				self.user.display_name	= display_name
 				updated['display_name']	= display_name
-			if not self.user.photo:
-				self.user.photo			= photo
-				updated['photo']		= photo
+#			if not self.user.photo:
+			#keep photo up to date
+			self.user.photo			= photo
+			updated['photo']		= photo
+			#grab email
 			if not self.user.email:
 				self.user.email			= email
 				updated['email']		= email
@@ -433,7 +438,6 @@ class Foursquare(SocialClass):
 		url += '?oauth_token={}&v={}'.format(self.user.foursquare_token,
 											self.version)
 		
-		raise Exception('{},\n{},\n{}'.format(url,method,headers))
 		return url, method, headers
 	
 		
@@ -498,7 +502,7 @@ class Twitter(SocialClass):
 			raise Exception('twitter_id or twitter_screen_name required in kwargs')
 		
 		#one of the two is sufficient to access twitter, one or both is acceptable to update
-		if twitter_id			: self.user.twitter_id			= int(twitter_id)
+		if twitter_id			: self.user.twitter_id			= twitter_id
 		if twitter_screen_name	: self.user.twitter_screen_name	= twitter_screen_name
 		
 		#user has the credentials needed to connect to twitter
@@ -538,9 +542,11 @@ class Twitter(SocialClass):
 			display_name= self.build_display_name(first_name, last_name)
 			
 			#update user values if they are to be update
-			if not self.user.photo:
-				self.user.photo			= photo
-				updated['photo']		= photo
+#			if not self.user.photo:
+			#keep photo up to date
+			self.user.photo			= photo
+			updated['photo']		= photo
+			
 			if not self.user.first_name or not self.user.last_name:
 				self.user.display_name	= display_name
 				updated['display_name']	= display_name
