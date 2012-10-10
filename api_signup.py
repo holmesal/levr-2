@@ -47,40 +47,41 @@ class SignupFacebookHandler(webapp2.RequestHandler):
 class SignupFoursquareHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,None,remoteToken=True)#id=True
 	def post(self):
-		#check token
-		token = self.request.get('remoteToken')
-		if token == '':
-			api_utils.send_error(self,'Required parameter not passed: token')
-			return
-		
-		#check if token currently exists in datastore
-		existing_user = levr.Customer.gql('WHERE foursquare_token = :1',token).get()
-		
-		if existing_user:
-			#user already exists and is trying to log in again, return this user
-			response = {'user':api_utils.package_user(existing_user,True,send_token=True)}
-			api_utils.send_response(self,response,existing_user)
-		else:
-			#user does not exist, create new and populate via foursquare API
-			user = levr.Customer()
-			user.foursquare_token = token
-			logging.info(token)
+		try:
+			#check token
+			foursquare_token = self.request.get('remoteToken',None)
 			
-			#add info from foursquare login on phone
-			#user.first_name = self.request.get('firstName')
-			#user.last_name = self.request.get('lastName')
-			#user.email = self.request.get('email')
+			user = levr.Customer.all().filter('foursquare_token').get()
 			
-			#grab foursquare deets
-			user = social.foursquare_deets(user,token)
-			
-			#create or refresh the alias
-			user = levr.build_display_name(user)
-			
-			#store user
-			user.put()
-			response = {'user':api_utils.package_user(user,True,send_token=True)}
+			if user:
+				response = {
+						'user':api_utils.package_user(user,True,send_token=True)
+						}
+			else:
+				#create new user
+				new_user = levr.Customer()
+				#grab the new users foursquare info
+				user = social.Foursquare(new_users)
+				try:
+					user, new_user_details, new_friends = user.first_time_connect(
+													facebook_id = facebook_id,
+													facebook_token	= facebook_token,
+													)
+				except Exception,e:
+					assert False, 'Could not connect with foursquare, {}'.format(e)
+				#return the user
+				response = {
+						'user':api_utils.package_user(user,True,send_token=True),
+						'new_friends'		: [enc.encrypt_key(f) for f in new_friends],
+						'new_user_details'	: new_user_details
+						}
 			api_utils.send_response(self,response,user)
+		except AssertionError,e:
+			levr.log_error()
+			api_utils.send_error('{}'.format(e))
+		except Exception,e:
+			levr.log_error()
+			api_utils.send_error(self,'Server Error')
 		
 class SignupTwitterHandler(webapp2.RequestHandler):
 	def post(self):
