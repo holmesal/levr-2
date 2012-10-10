@@ -3,81 +3,143 @@ import logging
 import levr_classes as levr
 import levr_encrypt as enc
 import api_utils
+import api_utils_social as social
 from google.appengine.ext import db
 
 
 class LoginFacebookHandler(webapp2.RequestHandler):
-	@api_utils.validate(None,None,facebookID=True,token=True)
+	@api_utils.validate(None,None,remoteID=True,remoteToken=False)
 	def get(self,*args,**kwargs):
 		#RESTRICTED
 		try:
-			token 		= kwargs.get('token')
-			facebook_id = kwargs.get('facebookID')
-			#check if token currently exists in datastore
-			existing_user = levr.Customer.all().filter('facebook_id',facebook_id).get()
+			token 		= kwargs.get('remoteToken')
+			facebook_id = int(kwargs.get('remoteID'))
 			
-			if existing_user:
-				#return the user
-				response = {'user':api_utils.package_user(existing_user,True,send_token=True)}
-				api_utils.send_response(self,response,existing_user)
-			else:
-				api_utils.send_error(self,'Authentication failed.')
-				return
+			user = levr.Customer.all().filter('facebook_id',facebook_id).get()
+			assert user, 'Facebook user is not registered with Levr, remoteID: {}'.format(facebook_id)
+			
+			#TODO: update users facebook info
+			
+			response = {
+					'user':api_utils.package_user(user,True,send_token=True)
+					}
+			api_utils.send_response(self,response,user)
+		except AssertionError,e:
+			levr.log_error()
+			api_utils.send_error(self,'{}'.format(e))
 		except:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 class LoginFoursquareHandler(webapp2.RequestHandler):
-	@api_utils.validate(None,None,token=True)
+	@api_utils.validate(None,None,remoteID=False,remoteToken=True)
 	def get(self,*args,**kwargs):
 		try:
 			#RESTRICTED
 			logging.debug('LOGIN FOURSQUARE\n\n\n')
 			logging.debug(kwargs)
+			
 			#check token
-			token = kwargs.get('token')
+			foursquare_id	= kwargs.get('remoteID',None)
+			foursquare_token= kwargs.get('remoteToken',None)
 			
-			#check if token currently exists in datastore
-			existing_user = levr.Customer.gql('WHERE foursquare_token = :1',token).get()
-			
-			if existing_user:
-				#return the user
-				response = {'user':api_utils.package_user(existing_user,True,send_token=True)}
-				api_utils.send_response(self,response,existing_user)
+			#find user with matching credentials
+			if foursquare_id:
+				user = levr.Customer.all().filter('foursquare_id',foursquare_id).get()
 			else:
-				api_utils.send_error(self,'Authentication failed.')
-				return
+				#
+				user = levr.Customer.all().filter('foursquare_token',foursquare_token).get()
+			
+			#if user could not be found, their foursquare_token might have changed
+			#consult foursquare
+			if not user:
+				### HACKY WORKAROUND
+				#spoof user object
+				user = levr.Customer()
+				user = social.Foursquare(user)
+				#add foursquare credentials
+				user.foursquare_id = foursquare_id
+				user.foursquare_token = foursquare_token
+				
+				try:
+					#connect to foursquare, and grab new info
+					new_user_details = user.update_user_details()
+				except Exception,e:
+					#could not connect to foursquare
+					assert False, 'Foursquare user is not registered with Levr: {}'.format(e)
+				### /HACKY WORKAROUND
+			
+			response = {
+					'user':api_utils.package_user(existing_user,True,send_token=True)
+					}
+			api_utils.send_response(self,response,existing_user)
+		except AssertionError,e:
+			levr.log_error()
+			api_utils.send_error(self,'{}'.format(e))
 		except:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 			
 class LoginTwitterHandler(webapp2.RequestHandler):
-	@api_utils.validate(None,None,externalID=True,token=True)
+	@api_utils.validate(None,None,remoteID=True,remoteToken=True,remoteTokenSecret=True)
 	def get(self,*args,**kwargs):
 		try:
 			#RESTRICTED
 			logging.debug('LOGIN TWITTER\n\n\n')
 			logging.debug(kwargs)
 			#check token
-			token = kwargs.get('token')
+			twitter_id				= int(kwargs.get('remoteID'))
+			twitter_token			= kwargs.get('remoteToken')
+			twitter_token_secret	= kwargs.get('remoteTokenSecret')
 			#check token
 			
+			#find the user with the specified twitter_id
+			user = levr.Customer.all().filter('twitter_id',twitter_id).get()
 			
-			#check if token currently exists in datastore
-			existing_user = levr.Customer.gql('WHERE twitter_token = :1',token).get()
-			
-			if existing_user:
-				#create or refresh the alias
-				user = levr.build_display_name(existing_user)
+			#assure that a user exists with this twitter id
+			assert user, 'Twitter user is not registered with Levr, remoteID: {}'.format(twitter_id)
+			logging.debug(user.twitter_token_secret != twitter_token_secret)
+			logging.debug(user.twitter_token != twitter_token)
+			#authenticate user from the server and update info
+			if user.twitter_token != twitter_token or user.twitter_token_secret != twitter_token_secret:
+				#the users auth token does not match, but may have changed. check with twitter.
+				logging.debug('{} != {}'.format(user.twitter_token,twitter_token))
+				logging.debug('{} != {}'.format(user.twitter_token_secret,twitter_token_secret))
+				user = social.Twitter(user)
 				
-				#return the user
-				response = {'user':api_utils.package_user(existing_user,True,send_token=True)}
-				api_utils.send_response(self,response,existing_user)
+				try:
+					logging.debug('eee')
+					new_user, new_user_details, new_friends = user.first_time_connect(
+																				
+																				twitter_id = twitter_id,
+																				twitter_token = twitter_token,
+																				twitter_token_secret = twitter_token_secret
+																				)
+					logging.debug('eee')
+				except Exception,e:
+					#failed authentication
+					#TODO: when error handling on the remote responses is improved, this will change
+					assert False, 'User could not be authenticated with Twitter. '.format(e)
+				else:
+					response = {
+							'user'				: api_utils.package_user(new_user,True,send_token=True),
+							}
 			else:
-				api_utils.send_error(self,'Authentication failed.')
-				return
-		except:
+				logging.debug('{} == {}'.format(user.twitter_token,twitter_token))
+				logging.debug('{} == {}'.format(user.twitter_token_secret,twitter_token_secret))
+				logging.debug('THEY ARE EQUAL')
+				#credentials are matched. 
+				#TODO: run task to update users information
+				#return the user
+				response = {
+						'user':api_utils.package_user(user,True,send_token=True)
+						}
+			api_utils.send_response(self,response,user)
+		except AssertionError,e:
 			levr.log_error()
-			api_utils.send_error(self,'Server Error')
+			api_utils.send_error(self,'{}'.format(e))
+		except Exception,e:
+			levr.log_error()
+			api_utils.send_error(self,'Server Error {}'.format(e))
 			
 			
 class LoginLevrHandler(webapp2.RequestHandler):

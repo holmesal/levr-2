@@ -323,14 +323,13 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						'since'		: int,
 						'size'		: str,
 						
-						#login stuff
-						'levrToken'		: str,
-						'facebookID'	: str,
-						'token'			: str, #oauth/access tokens for facebook, foursquare, etc...
-						'id'			: str, #e.g. facebook_id, foursquare_id, etc...
-						'screenName'	: str,
-						'email_or_owner': str,
-						'pw'			: str,
+						#login and connect stuff
+						'levrToken'			: str,
+						'remoteToken'		: str, #oauth/access tokens for facebook, foursquare, etc...
+						'remoteTokenSecret'	: str, #oauth token secret
+						'remoteID'			: str, #e.g. facebook_id, foursquare_id, etc...
+						'email_or_owner'	: str,
+						'pw'				: str,
 						
 						#deal upload stuff
 						'description'	: str,
@@ -358,12 +357,11 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						'size'		: 'large',
 						'query'		: 'all',
 						
-						#login stuff
+						#login and connect stuff
 						'levrToken'			: '',
-						'facebookID'		: '',
-						'token'				: '',
-						'id'				: '',
-						'screenName'		: '',
+						'remoteToken'		: '', #oauth/access tokens for facebook, foursquare, etc...
+						'remoteTokenSecret'	: '', #oauth token secret
+						'remoteID'			: '', #e.g. facebook_id, foursquare_id, etc...
 						'email_or_owner'	: '',
 						'pw'				: '',
 						
@@ -380,9 +378,9 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						}
 			
 			try:
-				####################################################
-				#Validate the input passed in the url, not as param#
-				####################################################
+				#===============================================================
+				# Validate the input passed in the url, not as param#
+				#===============================================================
 				
 				logging.debug("url_param: "+str(url_param))
 				

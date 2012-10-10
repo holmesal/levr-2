@@ -67,12 +67,14 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			ethan.alias	= 'ethan owns the deals'
 			ethan.favorites	= []
 			ethan.tester = True
+			ethan.levr_token = 'tlvXNw9F5Qgnqm_uKxYUx9xeyJHSRDnfBbVmUwvDWzQ'
 #			ethan.foursquare_id = 37756769
 			ethan.foursquare_token = 'IDMTODCAKR34GOI5MSLEQ1IWDJA5SYU0PGHT4F5CAIMPR4CR'
 #			ethan.twitter_token = '819972614-2HoAwfJcHCOePogonjPbNNxuQQsvHeYeJ3U2KasI'
 			ethan.twitter_screen_name = 'LevrDevr'
+			ethan.twitter_id	= 819972614
 			ethan = ethan.put()
-		
+		'AAACEdEose0cBANvf0FVOdH0NpoqLDZCnt8ZAlVfiYqe90CH1S7rOAEZC7ZChI340ElsX0bYXXOZC1Ks1kWU4JmsGMpUWzp7fm6CfIHKdXwN4ZAvVCFfGMa'
 		pat = levr.Customer.all(keys_only=True).filter('email','patrick@levr.com').get()
 		if not pat:
 			pat = levr.Customer(levr_token = levr_token)
@@ -145,15 +147,15 @@ class TestHandler(webapp2.RequestHandler):
 	def get(self):
 		
 		e = levr.Customer.all().filter('email','ethan@levr.com').get()
-		if e: ethan = enc.encrypt_key(e.key())
+		ethan = enc.encrypt_key(e.key())
 		p = levr.Customer.all().filter('email','patrick@levr.com').get()
-		if p: pat = enc.encrypt_key(p.key())
+		pat = enc.encrypt_key(p.key())
 		a = levr.Customer.all().filter('email','alonso@levr.com').get()
-		if a: alonso = enc.encrypt_key(a.key())
+		alonso = enc.encrypt_key(a.key())
 		n = levr.Customer.all().filter('email','santa@levr.com').get()
-		if n: ninja = enc.encrypt_key(n.key())
+		ninja = enc.encrypt_key(n.key())
 		d = levr.Deal.all().ancestor(db.Key(enc.decrypt_key(ethan))).get()
-		if d: deal = enc.encrypt_key(d.key())
+		deal = enc.encrypt_key(d.key())
 		
 		url = '\'http://0.0.0.0:8080/api'
 		

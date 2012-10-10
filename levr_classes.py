@@ -732,7 +732,7 @@ class Customer(db.Model):
 	#facebook
 	facebook_connected	= db.BooleanProperty(default=False) #not required if have id
 	facebook_token		= db.StringProperty() #not permanent
-	facebook_id			= db.StringProperty()
+	facebook_id			= db.IntegerProperty()
 	facebook_friends	= db.ListProperty(int)
 	
 	#foursquare

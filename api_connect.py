@@ -1,46 +1,42 @@
-import webapp2
-import logging
+from google.appengine.ext import db
 import api_utils
+import api_utils
+import api_utils_social as social
 import levr_classes as levr
 import levr_encrypt as enc
-import api_utils_social as social
-import api_utils
-from google.appengine.ext import db
+import logging
+import webapp2
 
 class ConnectFacebookHandler(webapp2.RequestHandler):
-	@api_utils.validate(None,'param',user=True,token=True,id=True,levrToken=True)
+	@api_utils.validate(None,'param',user=True,remoteToken=True,remoteID=True,levrToken=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		try:
 			#RESTRICTED
-			user		= kwargs.get('actor')
-			token		= kwargs.get('token')
-			facebook_id	= kwargs.get('facebookID')
+			user			= kwargs.get('actor',None)
+			facebook_token	= kwargs.get('remoteToken',None)
+			facebook_id		= kwargs.get('remoteID',None)
 			
+			user = social.Facebook(user,'verbose')
 			
-			
-			#add facebook token
-			user.facebook_token = token
-			#fetch user info from facebook graph api
-			user = social.facebook_deets(user,facebook_id,token)
-			
-			#create or refresh the alias
-			user = levr.build_display_name(user)
-			
-			#update
-			user.put()
+			new_user, new_user_details, new_friends = user.first_time_connect(
+												facebook_id = facebook_id,
+												facebook_token	= facebook_token,
+												)
 			
 			#return the user
 			response = {
-					'user':api_utils.package_user(user,True)
+					'user':api_utils.package_user(new_user,True),
+					'new_friends'		: [enc.encrypt_key(f) for f in new_friends],
+					'new_user_details'	: new_user_details
 					}
-			api_utils.send_response(self,response,user)
+			api_utils.send_response(self,response,new_user)
 		except:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 
 class ConnectFoursquareHandler(webapp2.RequestHandler):
-	@api_utils.validate(None,'param',user=True,id=True,token=True,levrToken=True)#id=True
+	@api_utils.validate(None,'param',user=True,remoteToken=True,levrToken=True)#id=True
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		try:
@@ -49,40 +45,30 @@ class ConnectFoursquareHandler(webapp2.RequestHandler):
 			logging.debug(kwargs)
 			
 			user					= kwargs.get('actor')
-			foursquare_token		= kwargs.get('token')
-			foursquare_id			= kwargs.get('id')
+			foursquare_token		= kwargs.get('remoteToken')
+			
+			#create an instance of the Foursquare social connection class
+			user = social.Foursquare(user,'verbose')
+			
+			#connect the user using foursquare
+			new_user, new_user_details, new_friends = user.first_time_connect(
+											foursquare_token=foursquare_token
+											)
 			
 			
-			fs = social.Foursquare(user)
-			response = fs.first_time_connect(foursquare_id,foursquare_token)
-			
-#			response = fs.get_friends()
-#			response = fs.get_details()
-			
-			logging.debug(response)
-			logging.debug(type(response))
-#			#create or refresh the alias
-#			user = levr.build_display_name(user)
-#			
-#			
-#			#add foursquare token
-#			user.foursquare_token = token
-#			#query foursquare for user data
-#			user = social.foursquare_deets(user,token)
-#	
-#			#update
-#			user.put()
-#			
-#			#return the user
-#			response = {'user':api_utils.package_user(user,'private')}
-			api_utils.send_response(self,response,user)
+			response = {
+					'user'				: api_utils.package_user(new_user,True),
+					'new_friends'		: [enc.encrypt_key(f) for f in new_friends],
+					'new_user_details'	: new_user_details
+					}
+			api_utils.send_response(self,response,new_user)
 		except:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 		
 class ConnectTwitterHandler(webapp2.RequestHandler):
 #	@api_utils.validate(None,None,user=False,token=False,screenName=False,levrToken=False)
-	@api_utils.validate(None,'param',user=True,token=False,screenName=True,levrToken=True)
+	@api_utils.validate(None,'param',user=True,remoteToken=True,remoteTokenSecret=True,remoteID=True,levrToken=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		try:
@@ -91,23 +77,27 @@ class ConnectTwitterHandler(webapp2.RequestHandler):
 			logging.debug(kwargs)
 			
 			user		= kwargs.get('actor')
-			oauth_token	= kwargs.get('token')
-			screen_name	= kwargs.get('screenName')
+			oauth_token	= kwargs.get('remoteToken')
+			oauth_token_secret = kwargs.get('remoteTokenSecret')
+			twitter_id	= kwargs.get('remoteID')
 			development = kwargs.get('development')
 			
-#			#add twitter token
-			user.twitter_token = oauth_token
-#			#add screen name
-			user.twitter_screen_name = screen_name
-#			
-			user = social.twitter_deets(user,development=development)
+			user = social.Twitter(user,'verbose')
 			
+			new_user, new_user_details, new_friends = user.first_time_connect(
+												oauth_token			= oauth_token,
+												oauth_token_secret	= oauth_token_secret,
+												twitter_id			= twitter_id
+												)
+##			
 			
-			#update
-	 		user.put()
 			#return the user
-			response = {'user':api_utils.package_user(user,'private')}
-			api_utils.send_response(self,response,user)
+			response = {
+					'user':api_utils.package_user(new_user,True),
+					'new_friends'		: [enc.encrypt_key(f) for f in new_friends],
+					'new_user_details'	: new_user_details
+					}
+			api_utils.send_response(self,response,new_user)
 			
 		except:
 			levr.log_error()
@@ -132,14 +122,14 @@ class TestConnectionHandler(webapp2.RequestHandler):
 			
 			
 				#pat connects with foursquare
-				p = social.Foursquare(pat)
+				p = social.Facebook(pat)
 				a = social.Foursquare(alonso)
 				e = social.Twitter(ethan)
 				
 				logging.debug('\n\n\n\t\t\t PAT CONNECTS  \n\n\n')
 				#pat connects with foursquare
 				patch = p.first_time_connect(
-									foursquare_token = pat.foursquare_token
+									foursquare_token = pat.facebook_token
 									)
 				
 				logging.debug('\n\n\n\t\t\t ALONSO CONNECTS \n\n\n')
@@ -154,8 +144,6 @@ class TestConnectionHandler(webapp2.RequestHandler):
 				twitter_token = ethan.twitter_token
 				twitter_token_secret = ethan.twitter_token_secret
 				eth = e.first_time_connect(
-									twitter_token,
-									twitter_token_secret,
 									twitter_screen_name = ethan.twitter_screen_name
 									)
 				
@@ -181,7 +169,7 @@ class TestConnectionHandler(webapp2.RequestHandler):
 			if method == 'foursquare':
 				fs_id = user.foursquare_id
 				fs_token = user.foursquare_token
-				u = social.Foursquare(user)
+				u = social.Foursquare(user,'verbose')
 				user, new_user_details, new_friends = u.first_time_connect(foursquare_token=fs_token)
 				response = {
 						'user':api_utils.package_user(user,True),
@@ -191,14 +179,10 @@ class TestConnectionHandler(webapp2.RequestHandler):
 			
 			elif method == 'twitter':
 				user = levr.Customer.all().filter('email','ethan@levr.com').get()
-				u = social.Twitter(user)
+				u = social.Twitter(user,'verbose','debug')
 				twitter_screen_name = user.twitter_screen_name
 #				twitter_id			= user.twitter_id
-				twitter_token		= 'debug'
-				twitter_token_secret= 'debug'
 				user, new_user_details, new_friends = u.first_time_connect(
-									twitter_token,
-									twitter_token_secret,
 									twitter_screen_name	=twitter_screen_name,
 #									twitter_id			=twitter_id
 									)
@@ -207,8 +191,17 @@ class TestConnectionHandler(webapp2.RequestHandler):
 						'new_details': new_user_details,
 						'new_friends': [str(f) for f in new_friends]
 						}
-				
-				
+			elif method == 'facebook':
+				u = social.Facebook(user,'verbose','debug')
+				facebook_id	= 1234380397
+				facebook_token = 'AAACEdEose0cBAF9BQo5IWPc6JlgGAMZAZCy50ZBIpJ3psytKfzBaiqm2d0fYi8UrVMOVpew9S9ZCkM3gEAVbDQZAKb15AJI5ZChzLkjIMZBTG4fhQkBvGu6'
+				user, new_user_details,new_friends = u.first_time_connect(True
+																		)
+				response = {
+						'user':api_utils.package_user(user,True),
+						'new_details': new_user_details,
+						'new_friends': [str(f) for f in new_friends]
+						}
 #				twitter_id = user.twitter_id
 #				twitter_screen_name = user.twitter_screen_name
 #				twitter_token = user.twitter_token
