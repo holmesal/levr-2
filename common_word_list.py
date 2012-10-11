@@ -38,6 +38,7 @@ blacklist = [
 'users',
 'user',
 'valid',
+'description'
 
 #===============================================================================
 # Foursquare Words

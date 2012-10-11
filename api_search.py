@@ -387,7 +387,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 					'boundingBox'		: bounding_box,
 #					'ending_hashes'		: list(searched_hash_set),
 					'ending_hash_length': list(searched_hash_set).__len__(),
-					'deals'				: packaged_deals.__len__()
+					'deals'				: packaged_deals#.__len__()
 					}
 			
 			

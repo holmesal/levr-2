@@ -1107,17 +1107,17 @@ def add_foursquare_deal(foursquare_deal,business):
 	
 	
 	
-	#build tags
-	tags = levr.tagger(foursquare_deal['message']+' '+foursquare_deal['venue']['name']+' '+foursquare_deal['venue']['categories'][0]['name'])
-	logging.debug(tags)
-	logging.debug(type(tags))
-		#Do not include these tags: +' '+foursquare_deal['description']
-	#filter out unwanted tags
-	tags = filter(lambda x: x not in blacklist, tags)
+	
 	
 	#===========================================================================
 	# Create deal
 	#===========================================================================
+	#build tags
+	tags = levr.tagger(foursquare_deal['message']+' '+foursquare_deal['venue']['name']+' '+foursquare_deal['venue']['categories'][0]['name'])
+	logging.debug(tags)
+	logging.debug(type(tags))
+	#Do not include these tags: +' '+foursquare_deal['description']
+	
 	
 	deal = levr.Deal(
 		businessID		=	str(business.key()),
