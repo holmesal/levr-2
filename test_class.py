@@ -510,26 +510,70 @@ class UpdatePinsHandler(webapp2.RequestHandler):
 class Create100DeadNinjasHandler(webapp2.RequestHandler):
 	def get(self):
 		logging.info('Creating 1000 dead ninjas.')
-		ninjas = levr.Customer.all().filter('first_name','Dead Ninja').count()
-		#don't want a bagillion dead ninjas by accident do we?
-		if ninjas <100:
-			for number in list(xrange(100)):
-				ninja = levr.Customer(
-					display_name 		=	'Dead Ninja '+str(number),
-					alias				=	'deadninja'+str(number),
+#		ninjas = levr.Customer.all().filter('first_name','Dead Ninja').count()
+#		#don't want a bagillion dead ninjas by accident do we?
+#		if ninjas <100:
+#			for number in list(xrange(100)):
+#				ninja = levr.Customer(
+#					display_name 		=	'Dead Ninja '+str(number),
+#					alias				=	'deadninja'+str(number),
+#					email				=	'deadninja@levr.com',
+#					first_name			=	'Dead Ninja',
+#					last_name			=	str(number),
+#					foursquare_token	=	'4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0',
+#					pw					=	enc.encrypt_password('Carl123!'),
+#					levr_token			=	levr.create_levr_token()
+#				)
+#				
+#				ninja.put()
+#			self.response.out.write('Done')
+#		else:
+#			self.response.out.write('Already have 100 undead ninjas')
+#		
+		#=======================================================================
+		# Real undead ninja names'n'shit'stuff yeah
+		#=======================================================================
+		#make sure this script is only run once
+		existing_ninjas = levr.Customer.all().filter('email','deadninja@levr.com').count()
+		assert existing_ninjas == 0, 'This script has already been run.'
+		
+		f	= open('undead_ninja_names.txt','r')
+#		
+		#read whole text file
+		conglomerate	= f.read()
+		logging.debug(conglomerate)
+		#split into name entries
+		names_list	= conglomerate.split('\n')
+		#only take 100 ninjas
+		if names_list.__len__() >100:
+			names_list = names_list[:100]
+		
+		undead_ninjas = []
+		for full_name in names_list:
+			#parse first and last names
+			first_name, last_name = full_name.split(' ')
+			#build display name
+			display_name = '{} {}.'.format(first_name,last_name[0])
+			ninja = levr.Customer(
+					display_name 		=	display_name,
+					alias				=	display_name,
 					email				=	'deadninja@levr.com',
-					first_name			=	'Dead Ninja',
-					last_name			=	str(number),
+					first_name			=	first_name,
+					last_name			=	last_name,
 					foursquare_token	=	'4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0',
 					pw					=	enc.encrypt_password('Carl123!'),
 					levr_token			=	levr.create_levr_token()
 				)
-				
-				ninja.put()
-			self.response.out.write('Done')
-		else:
-			self.response.out.write('Already have 100 undead ninjas')
-
+			undead_ninjas.append(ninja)
+		
+		#sanity check
+		self.response.out.headers['Content-Type'] = 'text/plain'
+		self.response.out.write('{} undead ninjas'.format(undead_ninjas.__len__()))
+		for ninja in undead_ninjas:
+			self.response.out.write(levr.log_model_props(ninja,['first_name','last_name','display_name']))
+		
+		#put all the ninjas
+		db.put(undead_ninjas)
 		#how to get a random dead ninja
 		#ninja = api_utils.get_random_dead_ninja()
 		

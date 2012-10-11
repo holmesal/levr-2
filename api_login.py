@@ -9,7 +9,7 @@ import webapp2
 
 class LoginFacebookHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,None,remoteID=True,remoteToken=False)
-	def post(self,*args,**kwargs):
+	def get(self,*args,**kwargs):
 		#=======================================================================
 		# This is not finished. Do not use.
 		#=======================================================================
@@ -35,7 +35,7 @@ class LoginFacebookHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 class LoginFoursquareHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,None,remoteID=False,remoteToken=True)
-	def post(self,*args,**kwargs):
+	def get(self,*args,**kwargs):
 		try:
 			#===================================================================
 			# This is not finished. Do not use.
@@ -88,7 +88,7 @@ class LoginFoursquareHandler(webapp2.RequestHandler):
 			
 class LoginTwitterHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,None,remoteID=True,remoteToken=True,remoteTokenSecret=True)
-	def post(self,*args,**kwargs):
+	def get(self,*args,**kwargs):
 		try:
 			#RESTRICTED
 			logging.debug('LOGIN TWITTER\n\n\n')

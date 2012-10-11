@@ -13,6 +13,7 @@ from google.appengine.api import urlfetch
 import urllib
 from math import sin, cos, asin, sqrt, degrees, radians, floor, sqrt
 from fnmatch import filter
+from common_word_list import blacklist
 
 
 #creates a url for remote or local server
@@ -815,13 +816,18 @@ def get_deal_keys_from_hash_set(tags,hash_set,*args,**kwargs):
 #		logging.debug("tags: "+str(tags))
 		#FILTER BY TAG
 		#do not filter by tags if the tag is one of the special key words
-		if tags and tags[0] not in SPECIAL_QUERIES:
-			#grab all deals where primary_cat is in tags
-			for tag in tags:
-				logging.debug('tag: '+str(tag))
-				q.filter('tags =',tag)
-		else:
-			pass
+		#=======================================================================
+		# EXPERIMENTAL: only filter by tag once the deals have been fetched
+		# 	That way, we will be able to return all deals if nothing is fetched
+		#
+		# if tags and tags[0] not in SPECIAL_QUERIES:
+		#	#grab all deals where primary_cat is in tags
+		#	for tag in tags:
+		#		logging.debug('tag: '+str(tag))
+		#		q.filter('tags =',tag)
+		# else:
+		#	pass
+		#=======================================================================
 #			logging.debug('This is a special case. Not filtering by tags: '+str(tags))
 		
 		
@@ -931,70 +937,72 @@ def level_check(user):
 		
 	return user
 
-def search_yipit(query,geo_point):
-	#words = ["a la carte","a la mode","appetizer","beef","beverage","bill","bistro","boiled","bowl","braised","bread","breakfast","brunch","butter","cafe","cafeteria","cake","candle","cashier","centerpiece","chair","charge","chef","chicken","coffee","cola","cold","condiments","cook","cooked","course","cream","credit card","cutlery","deli","delicatessen","delicious","dessert","dine","diner","dining","dinner","dish","dishwasher","doggie bag","dressing","eat","eggs","entree","fish","food","fork","French fries","fries","fruit","glass","gourmand","gourmet","grilled","hamburger","head waiter","high tea","hors d'oeuvre","hostess","hot","ice","ice cubes","iced","ingredients","ketchup","kitchen","knife","lemonade","lettuce","lunch","main course","maitre d'","manager","meal","meat","medium","menu","milk","mug","mustard","napkin","noodles","onion","order","party","pasta","pepper","plate","platter","pop","rare","reservation","restaurant","roasted","roll","salad","salt","sandwich","sauce","saucer","seafood","seared","server","side order","silverware","soda","soup","special","spices","spicy","spill","spoon","starters","steak","sugar","supper","table","tablecloth","tasty","tax","tea","tip","toast","to go","tomato","utensils","vegetables","waiter","waitress","water","well-done"]
-	
-	#(if query in words used to be here)
-	
-	#search for restaurants
-# 	logging.info(str(geo_point))
-	#search_lat, search_lng = geo_point.split(',')
-	search_lat = geo_point.lat
-	search_lon = geo_point.lon
-	#url = 'http://api.yipit.com/v1/deals/?key=d9qcYtHgkKcPTAGD&tag=restaurants&lat='+lat+'&lon='+lon
-	url = 'http://api.yipit.com/v1/deals/?key=d9qcYtHgkKcPTAGD&tag=restaurants&lat='+str(search_lat)+'&lon='+str(search_lon)
-	logging.debug(url)
-	result = urlfetch.fetch(url=url)
-	result = json.loads(result.content)['response']
-	deals = result['deals']
-# 	logging.info(deals)
-	
-	packaged_deals = []
-	
-	for yipit_deal in deals:
-		
-# 			logging.info(yipit_deal)
-		
-		yipit_business = yipit_deal['business']
-		
-		lat = yipit_business['locations'][0]['lat']
-		lon = yipit_business['locations'][0]['lon']
-		
-		if lat==None or lon==None:
-			pass
-		else:
-		
-			packaged_business = {
-				'businessID'	: 'yipitdoesnotuseidsforbusinesses',
-				'businessName'	: yipit_business['name'],
-				'vicinity'		: yipit_business['locations'][0]['address'] + ', ' + yipit_business['locations'][0]['locality'],
-				'geoPoint'		: str(db.GeoPt(lat,lon)),
-				'geoHash'		: geohash.encode(lat,lon)
-					}
-			
-			deal = levr.Deal()
-			deal.externalID = yipit_deal['id']
-			deal.deal_text = yipit_deal['yipit_title']
-			deal.description = ''
-			deal.large_img = yipit_deal['images']['image_big']
-			deal.small_img = yipit_deal['images']['image_small']
-			deal.pin_color = 'orange'
-			deal.origin = 'externalAPI'
-			deal.externalURL = yipit_deal['mobile_url']
-
-			#make fake owner
-			fake_owner = {
-				'alias'		: 'Powered by Yipit.',
-				'photoURL'	: 'http://farm6.static.flickr.com/5205/5281647796_c42d9b6a15.jpg',
-				'karma'		: 42,
-				'levelText'	: 'Click to see more deals and coupons on Yipit.'
-			}
-			
-			packaged_deal = package_deal_external(deal,packaged_business,fake_owner)
-			
-			packaged_deals.append(packaged_deal)
-			
-	return packaged_deals	
+#===============================================================================
+# def search_yipit(query,geo_point):
+#	#words = ["a la carte","a la mode","appetizer","beef","beverage","bill","bistro","boiled","bowl","braised","bread","breakfast","brunch","butter","cafe","cafeteria","cake","candle","cashier","centerpiece","chair","charge","chef","chicken","coffee","cola","cold","condiments","cook","cooked","course","cream","credit card","cutlery","deli","delicatessen","delicious","dessert","dine","diner","dining","dinner","dish","dishwasher","doggie bag","dressing","eat","eggs","entree","fish","food","fork","French fries","fries","fruit","glass","gourmand","gourmet","grilled","hamburger","head waiter","high tea","hors d'oeuvre","hostess","hot","ice","ice cubes","iced","ingredients","ketchup","kitchen","knife","lemonade","lettuce","lunch","main course","maitre d'","manager","meal","meat","medium","menu","milk","mug","mustard","napkin","noodles","onion","order","party","pasta","pepper","plate","platter","pop","rare","reservation","restaurant","roasted","roll","salad","salt","sandwich","sauce","saucer","seafood","seared","server","side order","silverware","soda","soup","special","spices","spicy","spill","spoon","starters","steak","sugar","supper","table","tablecloth","tasty","tax","tea","tip","toast","to go","tomato","utensils","vegetables","waiter","waitress","water","well-done"]
+#	
+#	#(if query in words used to be here)
+#	
+#	#search for restaurants
+# # 	logging.info(str(geo_point))
+#	#search_lat, search_lng = geo_point.split(',')
+#	search_lat = geo_point.lat
+#	search_lon = geo_point.lon
+#	#url = 'http://api.yipit.com/v1/deals/?key=d9qcYtHgkKcPTAGD&tag=restaurants&lat='+lat+'&lon='+lon
+#	url = 'http://api.yipit.com/v1/deals/?key=d9qcYtHgkKcPTAGD&tag=restaurants&lat='+str(search_lat)+'&lon='+str(search_lon)
+#	logging.debug(url)
+#	result = urlfetch.fetch(url=url)
+#	result = json.loads(result.content)['response']
+#	deals = result['deals']
+# # 	logging.info(deals)
+#	
+#	packaged_deals = []
+#	
+#	for yipit_deal in deals:
+#		
+# # 			logging.info(yipit_deal)
+#		
+#		yipit_business = yipit_deal['business']
+#		
+#		lat = yipit_business['locations'][0]['lat']
+#		lon = yipit_business['locations'][0]['lon']
+#		
+#		if lat==None or lon==None:
+#			pass
+#		else:
+#		
+#			packaged_business = {
+#				'businessID'	: 'yipitdoesnotuseidsforbusinesses',
+#				'businessName'	: yipit_business['name'],
+#				'vicinity'		: yipit_business['locations'][0]['address'] + ', ' + yipit_business['locations'][0]['locality'],
+#				'geoPoint'		: str(db.GeoPt(lat,lon)),
+#				'geoHash'		: geohash.encode(lat,lon)
+#					}
+#			
+#			deal = levr.Deal()
+#			deal.externalID = yipit_deal['id']
+#			deal.deal_text = yipit_deal['yipit_title']
+#			deal.description = ''
+#			deal.large_img = yipit_deal['images']['image_big']
+#			deal.small_img = yipit_deal['images']['image_small']
+#			deal.pin_color = 'orange'
+#			deal.origin = 'externalAPI'
+#			deal.externalURL = yipit_deal['mobile_url']
+# 
+#			#make fake owner
+#			fake_owner = {
+#				'alias'		: 'Powered by Yipit.',
+#				'photoURL'	: 'http://farm6.static.flickr.com/5205/5281647796_c42d9b6a15.jpg',
+#				'karma'		: 42,
+#				'levelText'	: 'Click to see more deals and coupons on Yipit.'
+#			}
+#			
+#			packaged_deal = package_deal_external(deal,packaged_business,fake_owner)
+#			
+#			packaged_deals.append(packaged_deal)
+#			
+#	return packaged_deals	
+#===============================================================================
 
 def search_foursquare(geo_point,token,already_found=[]):
 
@@ -1080,6 +1088,7 @@ def add_foursquare_deal(foursquare_deal,business):
 	#grab a random ninja to be the owner of this deal
 	random_dead_ninja = get_random_dead_ninja()
 	
+	
 	#silly multiline strings in foursquare api
 	message = foursquare_deal['message']
 	if message.find('\r\n') != -1:
@@ -1092,12 +1101,29 @@ def add_foursquare_deal(foursquare_deal,business):
 		#logging.debug('NO FUCKERY IN THIS HERE STRING')
 		pass
 	
+	logging.debug('\n\n\t\t\t foursquare deal info \n\n')
+	logging.debug(foursquare_deal['message']+' '+foursquare_deal['description']+' '+foursquare_deal['venue']['name']+' '+foursquare_deal['venue']['categories'][0]['name'])
 	##logging.debug(json.dumps(foursquare_deal['message'].rstrip('\r\n')))
+	
+	
+	
+	#build tags
+	tags = levr.tagger(foursquare_deal['message']+' '+foursquare_deal['venue']['name']+' '+foursquare_deal['venue']['categories'][0]['name'])
+	logging.debug(tags)
+	logging.debug(type(tags))
+		#Do not include these tags: +' '+foursquare_deal['description']
+	#filter out unwanted tags
+	tags = filter(lambda x: x not in blacklist, tags)
+	
+	#===========================================================================
+	# Create deal
+	#===========================================================================
+	
 	deal = levr.Deal(
 		businessID		=	str(business.key()),
 		business_name	=	foursquare_deal['venue']['name'],
-		deal_status		=	'active',
-		tags			=	levr.tagger(foursquare_deal['message']+' '+foursquare_deal['description']+' '+foursquare_deal['venue']['name']+' '+foursquare_deal['venue']['categories'][0]['name']),
+		deal_status		=	'test',#'active',
+		tags			=	tags,
 		origin			=	'foursquare',
 		external_url	=	'foursquare://venues/'+foursquare_deal['venue']['id'],
 		foursquare_id	=	foursquare_deal['id'],
@@ -1122,6 +1148,7 @@ def add_foursquare_deal(foursquare_deal,business):
 def filter_foursquare_deal(foursquare_deal,already_found):
 	
 	allowed_categories = ["Afghan Restaurant", "African Restaurant", "American Restaurant", "Arepa Restaurant", "Argentinian Restaurant", "Asian Restaurant", "Australian Restaurant", "BBQ Joint", "Bagel Shop", "Bakery", "Brazilian Restaurant", "Breakfast Spot", "Brewery", "Burger Joint", "Burrito Place", "Caf\u00e9", "Cajun / Creole Restaurant", "Caribbean Restaurant", "Chinese Restaurant", "Coffee Shop", "Cuban Restaurant", "Cupcake Shop", "Deli / Bodega", "Dessert Shop", "Dim Sum Restaurant", "Diner", "Distillery", "Donut Shop", "Dumpling Restaurant", "Eastern European Restaurant", "Ethiopian Restaurant", "Falafel Restaurant", "Fast Food Restaurant", "Filipino Restaurant", "Fish & Chips Shop", "Food Truck", "French Restaurant", "Fried Chicken Joint", "Gastropub", "German Restaurant", "Gluten-free Restaurant", "Greek Restaurant", "Hot Dog Joint", "Ice Cream Shop", "Indian Restaurant", "Indonesian Restaurant", "Italian Restaurant", "Japanese Restaurant", "Juice Bar", "Korean Restaurant", "Latin American Restaurant", "Mac & Cheese Joint", "Malaysian Restaurant", "Mediterranean Restaurant", "Mexican Restaurant", "Middle Eastern Restaurant", "Molecular Gastronomy Restaurant", "Mongolian Restaurant", "Moroccan Restaurant", "New American Restaurant", "Peruvian Restaurant", "Pizza Place", "Portuguese Restaurant", "Ramen / Noodle House", "Restaurant", "Salad Place", "Sandwich Place", "Scandinavian Restaurant", "Seafood Restaurant", "Snack Place", "Soup Place", "South American Restaurant", "Southern / Soul Food Restaurant", "Spanish Restaurant", "Steakhouse", "Sushi Restaurant", "Swiss Restaurant", "Taco Place", "Tapas Restaurant", "Tea Room", "Thai Restaurant", "Turkish Restaurant", "Vegetarian / Vegan Restaurant", "Vietnamese Restaurant", "Winery", "Wings Joint", "Bar", "Beer Garden", "Cocktail Bar", "Dive Bar", "Gay Bar", "Hookah Bar", "Hotel Bar", "Karaoke Bar", "Lounge", "Nightclub", "Other Nightlife", "Pub", "Sake Bar", "Speakeasy", "Sports Bar", "Strip Club", "Whisky Bar", "Wine Bar"]
+	
 	
 	logging.info('---------------------------------------------')
 	logging.info('Type: '+foursquare_deal['type'])
@@ -1166,21 +1193,19 @@ def filter_foursquare_deal(foursquare_deal,already_found):
 	return False
 		
 def get_random_dead_ninja():
-	#go grab all the ninjas
-	deadNinjas = levr.Customer.gql('WHERE email=:1','deadninja@levr.com')
-	#count them
-	count = deadNinjas.count()
-	#generate a random int
-	rando = random.randint(1,count)
-	#grab the ninja based on that number
-	#this is sometimes crashing... last name is not a good way to do this
-	dead_ninja = levr.Customer.gql('WHERE last_name =:1',str(rando)).get()
-	#send out the dead ninja
+	#get keys of all the dead ninjas
+	dead_ninjas		= levr.Customer.all(keys_only=True).filter('email','deadninja@levr.com').fetch(None)
+	#select a random dead ninja
+	dead_ninja_key	= random.choice(dead_ninjas)
+	#fetch the dead ninja entity
+	dead_ninja		= levr.Customer.get(dead_ninja_key)
+	
 	
 	#<chief ninja>: Good luck - you're doing your country a great service.
 	#<crowd>: "one of us! one of us! one of us!"
 	#<dead ninja> "well ah well okay i guess, but you see right now isn't a terribly good time for me, you see, it's just that I have this very important appointment..." [drowned out by]
 	#<crowd>: "one of us! one of us! one of us! one of us!" [dead ninja is pushed towards the door] "one of us! one of us! one of us!"
+	#<dead ninja> [To himself] "I never could get the hang of Thursdays..."
 	return dead_ninja
 	
 def match_foursquare_business(geo_point,query):
