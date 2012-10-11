@@ -98,6 +98,9 @@ class UpvoteHandler(webapp2.RequestHandler):
 			deal 	= kwargs.get('deal')
 			dealID 	= deal.key()
 			
+			#===================================================================
+			# Note, if this code changes, you should also change the code in /cronjobs/undeadActivity because it was copied and pasted...
+			#===================================================================
 			
 			#favorite
 			logging.debug(levr.log_model_props(user,['upvotes','downvotes','favorites']))

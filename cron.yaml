@@ -13,3 +13,8 @@ cron:
 #  url: /test/run_load_test
 #  schedule: every 1 minutes from 02:00 to 03:55
 #  timezone: America/New_York
+
+#- description: Simulate activity by setting the undead ninjas upon the masses to like stuff
+#  url: /cronjobs/undeadActivity
+#  schedule: every day 14:00
+#  timezone: America/New_york
