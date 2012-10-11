@@ -453,17 +453,17 @@ class TestNotificationHandler(webapp2.RequestHandler):
 		#go get the user
 		actor = levr.Customer.gql('WHERE email=:1','alonso@levr.com').get()
 		#go get the deal
-		deal = levr.Deal.get('ahFzfmxldnItcHJvZHVjdGlvbnIcCxIIQ3VzdG9tZXIYsuQDDAsSBERlYWwYwbsBDA')
+		deal = levr.Deal.get('WHERE ANCESTOR IS :1',user.key())
 		
 		
 		#new follower notification
 		levr.create_notification('newFollower',user.key(),actor)
 		
 		#followed upload notification
-		levr.create_notification('followedUpload',user.key(),actor,deal)
+		levr.create_notification('followedUpload',user.key(),actor,deal.key())
 		
 		#favorite notification
-		levr.create_notification('favorite',user.key(),actor,deal)
+		levr.create_notification('favorite',user.key(),actor,deal.key())
 		
 		#levelup notification
 		levr.create_notification('levelup',user.key(),actor)
