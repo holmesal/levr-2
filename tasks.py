@@ -26,18 +26,18 @@ class SearchFoursquareTaskHandler(webapp2.RequestHandler):
 # 			logging.info(foursquare_ids)
 			#grab the token from the payload
 			token = payload['token']
-			logging.info(token)
+#			logging.info(token)
 			
 # 			logging.info(levr.log_model_props(user))
 			
 			#foursquare stuff!
 			ft1 = datetime.now()
-			logging.info('FOURSQUARE IDS::::')
-			logging.info(foursquare_ids)
-			logging.debug('searching foursquare () from a task!')
+#			logging.info('FOURSQUARE IDS::::')
+#			logging.info(foursquare_ids)
+#			logging.debug('searching foursquare () from a task!')
 			foursquare_deals = api_utils.search_foursquare(geo_point,token,foursquare_ids)
 			logging.info('Foursquare results found: '+str(len(foursquare_deals)))
-			logging.info('Duplicates not put in database: '+str(len(foursquare_ids)))
+#			logging.info('Duplicates not put in database: '+str(len(foursquare_ids)))
 			ft2 = datetime.now()
 			logging.info('Foursquare action time: ' + str(ft2-ft1))
 			
