@@ -5,7 +5,7 @@ cron:
   schedule: every day 2:00
   timezone: America/New_York
 
-#- description: set status of expired deals from active to expired
+#- description: set status of expired deals from active to expireg
 #  url: /tasks/cleanDeals
 #  schedule: every day 18:23
 #  timezone: America/New_York
@@ -17,4 +17,4 @@ cron:
 - description: Set expired deals to expire
   url: /cronjobs/expireDeals
   schedule: every day 2:15
-  timezone: America/New_York
+  timezone: America/New_york

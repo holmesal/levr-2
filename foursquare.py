@@ -1,17 +1,17 @@
-import os
-import webapp2
+from google.appengine.api import urlfetch
+import api_utils
+import api_utils_social as social
+import jinja2
+import json
 import levr_classes as levr
 import levr_utils
+import logging
+import os
+import urllib
+import webapp2
 #import levr_encrypt as enc
 #import levr_utils
 #from google.appengine.ext import db
-import logging
-import jinja2
-from google.appengine.api import urlfetch
-import urllib
-import json
-import api_utils
-import api_utils_social as social
 
 
 #CASES:
