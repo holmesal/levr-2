@@ -280,7 +280,7 @@ class Foursquare(SocialClass):
 		self.version = '20121007' #the foursquare api version
 		
 
-	def connect_with_content(self,response_dict,*args,**kwargs):
+	def connect_with_content(self,response_dict,auto_put=True,*args,**kwargs):
 		'''
 		A user has already been validated with foursquare, and we have all of their information.
 		Performs the same actions as first_time_connect, but without making remote calls
