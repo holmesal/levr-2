@@ -253,12 +253,13 @@ class TestHandler(webapp2.RequestHandler):
 class AddDealsHandler(webapp2.RequestHandler):
 	def get(self):
 		
-#		lons = [x/1000. for x in range(72400,72600,10) if x%5 ==0]
-#		lats = [x/1000. for x in range(42400,42600,10) if x%5 ==0]
-#		self.response.out.write(lons.__len__()*lats.__len__())
-#		self.response.out.write(lats)
-#		
-#		ethan = levr.Customer.all().get().key()
+		lons = [x/1000. for x in range(72400,72600,10) if x%5 ==0]
+		lats = [x/1000. for x in range(42400,42600,10) if x%5 ==0]
+		self.response.out.write(lons.__len__()*lats.__len__())
+		self.response.out.write(lats)
+		
+		
+#		ethan = levr.Customer.all().filter('email','ethan@levr.com').get().key()
 #		
 #		for lat in lats:
 #			for lon in lons:
@@ -277,8 +278,8 @@ class AddDealsHandler(webapp2.RequestHandler):
 #		
 #				dealID = levr.dealCreate(params,'phone_new_business',False)
 #				self.response.out.write(dealID)
-		pass
-	
+#		pass
+		self.response.out.write('<br>Done')
 	
 class FilterGeohashHandler(webapp2.RequestHandler):
 	def get(self):
@@ -453,8 +454,15 @@ class TestNotificationHandler(webapp2.RequestHandler):
 		#go get the user
 		actor = levr.Customer.gql('WHERE email=:1','alonso@levr.com').get()
 		#go get the deal
-		deal = levr.Deal.get('WHERE ANCESTOR IS :1',user.key())
+		deal = levr.Deal.all().ancestor(user.key()).get()
 		
+		
+		
+		
+		if not deal:
+			deal = levr.Deal.all().get()
+		
+		assert deal, 'Cannot find any deals. Try uploading one. If that doesnt work, abandon all hope.' 
 		
 		#new follower notification
 		levr.create_notification('newFollower',user.key(),actor)
@@ -612,7 +620,24 @@ class ClearFoursquareHandler(webapp2.RequestHandler):
 # 		
 # 		for ninja in deadNinjas:
 # 			ninja.delete()
-
+class RefreshQHandler(webapp2.RequestHandler):
+	def get(self):
+		q = levr.Customer.all().filter('email','ethan@levr.com').get()
+		assert q, 'Could not fetch q...'
+		q.favorites = []
+		q.upvotes = []
+		q.downvotes = []
+		q.new_notifications = 0
+		q_key = q.put()
+		self.response.out.write('reset q favroites, upvotes, downvotes')
+		
+		notifications = levr.Notification.all().ancestor(q.key()).fetch(None)
+		
+		db.delete(notifications)
+		
+		self.response.out.write('deleted qs notifications')
+		
+		self.response.out.write('Done.')
 		
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload.*', DatabaseUploadHandler),
@@ -628,7 +653,8 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/deadNinjas', Create100DeadNinjasHandler),
 								('/new/harmonizeVenues',HarmonizeVenuesHandler),
 								('/new/updateBusiness',UpdateBusinessHandler),
-								('/new/clearFoursquare',ClearFoursquareHandler)
+								('/new/clearFoursquare',ClearFoursquareHandler),
+								('/new/refreshQ', RefreshQHandler)
 #								('/new/update' , UpdateUsersHandler)
 								],debug=True)
 

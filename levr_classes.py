@@ -10,6 +10,7 @@ import json
 import levr_encrypt as enc
 import logging
 import os
+import random
 import re
 import sys
 import traceback
@@ -43,7 +44,12 @@ def build_display_name(user):
 		user.display_name = 'Clint Eastwood'
 	
 	return user
-
+upvote_phrases = [
+		'Has liked your deal. Hooray!',
+		'Is rushing to redeem your deal at this very moment.',
+		'Thinks that your deal is just grand!',
+		'Thinks your deal is absolutely spiffing.'
+		]
 def create_notification(notification_type,to_be_notified,actor,deal=None):
 	'''
 	notification_type	= choices: 
@@ -63,6 +69,9 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 	actor				= db.Key
 						The person performing the action
 	'''
+	#===========================================================================
+	# If ths fundamentally changes, remember to change the undead ninja activity
+	#===========================================================================
 	try:
 		#type cast to_be_notified as a list
 		if type(to_be_notified) != list:
@@ -115,18 +124,9 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 # 				#do nothing
 # 				return True
 			
-			phrases = [
-					'Has liked your deal. Hooray!',
-					'Is rushing to redeem your deal at this very moment.',
-					'Thinks that your deal is just grand!',
-					'Thinks your deal is absolutely spiffing.'
-					]
-			
-			
-			rando = randint(0,len(phrases)-1)
 			
 			#select a random phrase
-			line2 = phrases[rando]
+			line2 = random.choice(upvote_phrases)
 			
 			#update notification count
 			user.new_notifications += 1
@@ -715,6 +715,7 @@ def dealCreate(params,origin,upload_flag=True):
 
 class Customer(db.Model):
 #root class
+	
 	#levr 
 	levr_token		= db.StringProperty(required=True)#default=create_levr_token())
 	email 			= db.EmailProperty()
@@ -898,6 +899,7 @@ class Deal(polymodel.PolyModel):
 	share_id		= db.StringProperty(default=create_unique_id())
 	#pin_color		= db.StringProperty(choices=set(['red','blue','green','pink','orange']),default='red')
 	pin_color		= db.StringProperty(default='red')
+	rank			= db.IntegerProperty(default = 0)
 	
 	
 	#deal interactions
@@ -906,14 +908,13 @@ class Deal(polymodel.PolyModel):
 	karma			= db.IntegerProperty(default=0)
 	
 	#date stuff
-	date_uploaded	= db.DateTimeProperty(auto_now_add=True)
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	date_last_edited= db.DateTimeProperty(auto_now=True)
-	date_start 		= db.DateTimeProperty(auto_now_add=False) #start date
 	date_end 		= db.DateTimeProperty(auto_now_add=False)
 	
 	#may be deprecated.. in limbo
-	rank			= db.IntegerProperty(default = 0)
+	date_uploaded	= db.DateTimeProperty(auto_now_add=True)
+	date_start 		= db.DateTimeProperty(auto_now_add=False) #start date
 	has_been_shared	= db.BooleanProperty(default = False)
 	count_seen 		= db.IntegerProperty(default = 0)  #number seen
 	

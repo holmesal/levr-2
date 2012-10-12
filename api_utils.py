@@ -1,19 +1,18 @@
+from common_word_list import blacklist
+from datetime import datetime
+from fnmatch import filter
+from google.appengine.api import images, urlfetch
+from google.appengine.ext import db
+from math import sin, cos, asin, sqrt, degrees, radians, floor, sqrt
+import geo.geohash as geohash
 import json
-import levr_encrypt as enc
 import levr_classes as levr
+import levr_encrypt as enc
 import logging
 import os
-import geo.geohash as geohash
-from datetime import datetime
 import random
-
-from google.appengine.ext import db
-from google.appengine.api import images
-from google.appengine.api import urlfetch
 import urllib
-from math import sin, cos, asin, sqrt, degrees, radians, floor, sqrt
-from fnmatch import filter
-from common_word_list import blacklist
+
 
 
 #creates a url for remote or local server
@@ -313,7 +312,6 @@ def private(handler_method):
 			levr.log_error()
 			send_error(self,'Server Error')
 			
-	
 	return check
 
 def validate(url_param,authentication_source,*a,**to_validate):
@@ -1192,14 +1190,20 @@ def filter_foursquare_deal(foursquare_deal,already_found):
 	#if everything passes okay, return the falsities!
 	return False
 		
-def get_random_dead_ninja():
+def get_random_dead_ninja(sample_size=1):
 	#get keys of all the dead ninjas
 	dead_ninjas		= levr.Customer.all(keys_only=True).filter('email','deadninja@levr.com').fetch(None)
-	#select a random dead ninja
-	dead_ninja_key	= random.choice(dead_ninjas)
-	#fetch the dead ninja entity
-	dead_ninja		= levr.Customer.get(dead_ninja_key)
 	
+	assert dead_ninjas, 'There are no undead ninjas in the database'
+	
+	#select a random dead ninja
+	dead_ninja_key	= random.sample(dead_ninjas,int(sample_size))
+	#fetch the dead ninja entity
+	dead_ninja		= db.get(dead_ninja_key)
+	
+	
+	if sample_size == 1:
+		dead_ninja = dead_ninja[0]
 	
 	#<chief ninja>: Good luck - you're doing your country a great service.
 	#<crowd>: "one of us! one of us! one of us!"

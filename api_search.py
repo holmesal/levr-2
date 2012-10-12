@@ -401,7 +401,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 # 				})
 			
 			
-			api_utils.send_response(self,response)
+			api_utils.send_response(self,response,user)
 					
 					
 		except:

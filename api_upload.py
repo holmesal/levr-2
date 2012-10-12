@@ -62,7 +62,7 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 					geoPoint		= True,
 					vicinity		= True,
 					types			= True,
-					description		= True,
+					description		= False,
 					dealText		= True,
 					distance		= True,
 					shareURL		= True
