@@ -32,7 +32,7 @@ class SocialClass:
 		return first_name + ' ' + last_name[0] + '.'
 	def first_time_connect(self, auto_put=True, *args, **kwargs):
 		'''
-		Twitter
+		
 		User is just connecting to levr via a social service for the first time
 		Updates a users login credentials, their personal information, and their friend linkage
 		
@@ -280,6 +280,41 @@ class Foursquare(SocialClass):
 		self.version = '20121007' #the foursquare api version
 		
 
+	def connect_with_content(self,response_dict,*args,**kwargs):
+		'''
+		A user has already been validated with foursquare, and we have all of their information.
+		Performs the same actions as first_time_connect, but without making remote calls
+		
+		@param response_dict: the response dictionary from connecting with foursquare
+		@type response_dict: dictionary
+		'''
+		logging.debug('\n\n CONNECT WITH CREDENTIALS \n\n')
+		
+		#parse incoming dict
+		user_content = response_dict['response']['user']
+		friend_groups = user_content['friends']
+		friend_list = []
+		for group in friend_groups:
+			if group['count'] != 0:
+				friend_list.append(group['items'])
+		
+		
+		#update access credentials
+		self.update_credentials(*args, **kwargs)
+		#update user info
+		new_user_details = self.update_user_details(user_content)
+		#pull user friends
+		new_friends = self.update_friends(friend_list)
+		
+		
+		
+		if auto_put:
+			#put the user before returnsing
+			user = self.put()
+		else: 
+			user = self.return_user()
+		return user, new_user_details, new_friends
+		
 	def update_credentials(self, *args, **kwargs):
 		'''
 		Foursquare
@@ -295,16 +330,26 @@ class Foursquare(SocialClass):
 		self.user.foursquare_token	= foursquare_token
 		return
 		
-	def update_user_details(self):
+	def update_user_details(self,content=None):
 		'''
 		Foursqaure
 		Grabs the users personal information from foursquare and updates the user
+		
+		if content is passed, it should be the user dict responded by foursquare
 		'''
-		#get foursquare details
-		foursquare_response = self.fetch('')
 		logging.debug('\n\n UPDATE USER DETAILS \n\n')
+		#get foursquare details
+		if not content:
+			logging.debug('USER CONTENT WAS NOT PASSED... fetch data')
+			foursquare_response = self.fetch('')
+			content = foursquare_response['response']['user']
+		else:
+			logging.debug('USER CONTENT WAS PASSED... do not fetch data')
+			pass
+		
+		
 #		logging.debug(foursquare_response)
-		content = foursquare_response['response']['user']
+		
 		logging.debug(levr.log_dict(content))
 		#give preference to facebook and twitter info over foursquare info
 #		if not self.user.facebook_id and not self.user.twitter_id:
@@ -362,7 +407,7 @@ class Foursquare(SocialClass):
 			logging.info('user has already connected with facebook or twitter')
 		return updated
 	
-	def update_friends(self,action=None):
+	def update_friends(self,friends=None):
 		'''
 		Foursquare
 		1. Makes a call to foursquare to pull all of the users friends
@@ -370,14 +415,18 @@ class Foursquare(SocialClass):
 		3. Adds that information to a corresponding list on the user entity
 		4. Creates the db linkage between user and friends by calling create_notification
 		'''
-		
-		#get the users friends
-		content = self.fetch('friends')
 		logging.debug('\n\n UPDATE FRIENDS \n\n')
-		logging.debug(levr.log_dict(content))
+		#get the users friends
+		if not friends:
+			logging.debug('FRIEND DATA DOES NOT EXIST... make fetch')
+			content = self.fetch('friends')
+			logging.debug(levr.log_dict(content))
+			friends = content['response']['friends']['items']
+		else:
+			logging.debug('FRIEND DATA EXISTS... do not make fetch')
+			logging.debug(levr.log_dict(friends))
 		
 		
-		friends = content['response']['friends']['items']
 		
 		#grab all friend informations
 		foursquare_friends		= []
