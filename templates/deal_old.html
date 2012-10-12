@@ -1,40 +1,11 @@
 {% extends "templates/merchantsBase.html" %}
 {% block htmlhead %}
-<!--link rel="stylesheet" href="/css/deal.css"-->
+<link rel="stylesheet" href="/css/deal.css">
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyDA6oSrrTbFLHVqZSt2JGeJWFLVa9F0074&sensor=false&libraries=places"></script>
 {% endblock %}
 
 {% block content %}
-<form class="form-horizontal">
-	<div class="control-group">
-		<label class="control-label" for="deal_text">What's the deal?</label>
-		<div class="controls">
-			<input type="text" id="inputDealText" placeholder="Describe your offer">
-		</div>
-	</div>
-	<div class="control-group">
-		<label class="control-label" for="">Anything else?</label>
-		<div class="controls">
-			<textarea type="text" id="inputDealText" placeholder="Special conditions, etc." rows="4"></textarea>
-		</div>
-	</div>
-	<div class="control-group">
-		<div class="controls">
-			<label class="control-label">
-				<input type="file"> Remember me
-			</label>
-			<button type="submit" class="btn">Sign in</button>
-		</div>
-	</div>
-</form>
-
-
-
-
-
-
-
-
-
 <div id="main">
 	<div id="top">
 		<h1 id="headerText">

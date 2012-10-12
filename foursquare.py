@@ -10,6 +10,8 @@ import jinja2
 from google.appengine.api import urlfetch
 import urllib
 import json
+import api_utils
+
 
 #CASES:
 
@@ -27,7 +29,7 @@ import json
 class AuthorizeBeginHandler(webapp2.RequestHandler):
 	def get(self):
 		logging.debug('Hit the Authorize Begin Handler')
-		client_id = 'HD3ZXKL5LX4TFCARNIZO1EG2S5BV5UHGVDVEJ2AXB4UZHEOU'
+		client_id = 'UNHLIF5EYXSKLX50DASZ2PQBGE2HDOIK5GXBWCIRC55NMQ4C'
 		redirect = 'https://levr-production.appspot.com/foursquare/authorize/complete'
 		url = "https://foursquare.com/oauth2/authenticate?client_id="+client_id+"&response_type=code&redirect_uri="+redirect
 		self.redirect(url)
@@ -35,8 +37,8 @@ class AuthorizeBeginHandler(webapp2.RequestHandler):
 class AuthorizeCompleteHandler(webapp2.RequestHandler):
 	def get(self):
 		logging.debug('Hit the Authorize Complete Handler')
-		client_id = 'HD3ZXKL5LX4TFCARNIZO1EG2S5BV5UHGVDVEJ2AXB4UZHEOU'
-		secret = 'LB3J4Q5VQWZPOZATSMOAEDOE5UYNL5P44YCR0FCPWFNXLR2K'
+		client_id = 'UNHLIF5EYXSKLX50DASZ2PQBGE2HDOIK5GXBWCIRC55NMQ4C'
+		secret = 'VLKDNIT0XSA5FK3XIO05DAWVDVOXTSUHPE4H4WOHNIZV14G3'
 		redirect = 'https://levr-production.appspot.com/foursquare/authorize/complete'
 		code = self.request.get('code')
 		
@@ -62,7 +64,7 @@ class PushHandler(webapp2.RequestHandler):
 		logging.debug(checkin)
 		
 		#verify that the secret passed matches ours
-		hc_secret = 'LB3J4Q5VQWZPOZATSMOAEDOE5UYNL5P44YCR0FCPWFNXLR2K'
+		hc_secret = 'VLKDNIT0XSA5FK3XIO05DAWVDVOXTSUHPE4H4WOHNIZV14G3'
 		if hc_secret != secret:
 			#raise an exception
 			logging.debug('SECRETS DO NOT MATCH')
@@ -78,7 +80,7 @@ class PushHandler(webapp2.RequestHandler):
 			'url'				: 'http://www.levr.com',
 			'contentID'			: 'BWANHHPAHAHA'
 		}
-		
+		'''
 		if business:	#business found
 			#for deal in levr.Deal().all().filter('businessID =', str(business.key())).run():
 			q = levr.Deal.gql("WHERE businessID = :1 AND deal_status = :2 ORDER BY count_redeemed DESC",str(business.key()),'active')
@@ -108,13 +110,19 @@ class PushHandler(webapp2.RequestHandler):
 			else:
 				reply['text'] = "See any deals? Pay it forward: click to upload."
 				reply['url'] = '' #deeplink into deal upload screen
+		'''
+		
+		reply['CHECKIN_ID'] = checkin['id']
+		reply['text'] = 'Hey ethan. click here to see this reply inside Levr.'
+		reply['url']  = 'levr://somestuff'
+		reply['contentID'] = 'BWANHHPAHAHA'
 			
 		url = 'https://api.foursquare.com/v2/checkins/'+reply['CHECKIN_ID']+'/reply?v=20120920&oauth_token='+'PZVIKS4EH5IFBJX1GH5TUFYAA3Z5EX55QBJOE3YDXKNVYESZ'
 		logging.debug(url)
 		result = urlfetch.fetch(url=url,
 								payload=urllib.urlencode(reply),
 								method=urlfetch.POST)
-		logging.debug(levr_utils.log_dict(result.__dict__))
+		logging.debug(api_utils.log_dict(result.__dict__))
 		
 class CatchUpHandler(webapp2.RequestHandler):
 	def get(self):

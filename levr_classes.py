@@ -770,6 +770,10 @@ class Customer(db.Model):
 	date_last_notified = db.DateTimeProperty(auto_now_add=True)
 	last_notified	= db.IntegerProperty(default=0)
 	
+	#only for businesses - this property enables them to create offers for that business, without having verified it
+	#this property is only used up until they have linked a business
+	owner_of		= db.StringProperty()
+	
 	#deprecated stuff
 	group			= db.StringProperty(choices=set(["paid","unpaid"]),default="unpaid")
 	payment_email	= db.EmailProperty()
@@ -973,7 +977,7 @@ class CustomerDeal(Deal):
 class Notification(db.Model):
 	date			= db.DateTimeProperty(auto_now_add=True)
 	date_in_seconds	= db.IntegerProperty()
-	notification_type = db.StringProperty(required=True,choices=set(['redemption','thanks','favorite','followedUpload','newFollower','levelup']))
+	notification_type = db.StringProperty(required=True,choices=set(['upvote','followedUpload','newFollower','levelup','shared','levr','expired']))
 	line2			= db.StringProperty(default='')
 #	owner			= db.ReferenceProperty(Customer,collection_name='notifications',required=True)
 	to_be_notified	= db.ListProperty(db.Key)
