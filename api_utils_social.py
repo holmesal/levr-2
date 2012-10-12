@@ -299,7 +299,7 @@ class Foursquare(SocialClass):
 			logging.debug(type(group))
 			if group['count'] != 0:
 				logging.debug
-				friend_list.append(group['items'])
+				friend_list.extend(group['items'])
 		
 		
 		#update access credentials
@@ -437,6 +437,7 @@ class Foursquare(SocialClass):
 		facebook_friends		= []
 		email_friends			= []
 		for f in friends:
+			logging.debug(f)
 			foursquare_friends.append(int(f['id']))
 			contact			= f['contact']
 			if 'twitter'	in contact:	twitter_friends_by_sn.append(contact['twitter'])
