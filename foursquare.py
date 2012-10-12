@@ -198,7 +198,6 @@ class CatchUpHandler(webapp2.RequestHandler):
 
 class TestHandler(webapp2.RequestHandler):
 	def get(self):
-		pass
 		q = levr.Business.all()
 		for business in q:
 			business.foursquare_id = 'undefined'
