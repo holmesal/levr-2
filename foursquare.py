@@ -99,31 +99,45 @@ class PushHandler(webapp2.RequestHandler):
 		#go look in our database for a matching foursquare venue id
 		business = levr.Business.gql('WHERE foursquare_id = :1',checkin["venue"]["id"]).get()
 		#business = levr.Business.get('ahFzfmxldnItcHJvZHVjdGlvbnIQCxIIQnVzaW5lc3MY-dIBDA')
+		user = levr.Customer.gql('WHERE foursquare_id = :1',checkin['user']['id']).get()
 		
-		#initialize the response object
-		reply = {
-			'CHECKIN_ID'		: checkin['id'],
-			'text'				: 'Hi there! We seem to be having some issues. Back soon!',
-			'url'				: 'http://www.levr.com',
-			'contentID'			: 'BWANHHPAHAHA'
-		}
-		'''
+		#initialize the response object - these are defaults
+		contentID = levr.create_content_id('foursquare')
+		levr_url = 'http://www.levr.com/mobile/'+contentID
+		
 		if business:	#business found
 			#for deal in levr.Deal().all().filter('businessID =', str(business.key())).run():
 			q = levr.Deal.gql("WHERE businessID = :1 AND deal_status = :2 ORDER BY count_redeemed DESC",str(business.key()),'active')
 			numdeals = q.count()
-			if numdeals > 1:	#many deals found
-				topdeal = q.get()
-				reply['text'] = "There are "+str(numdeals)+" deals here! Click to browse."
-				reply['url'] = '' #deeplink into dealResults screen
-			elif numdeals == 1:	#only one deal found
-				topdeal = q.get()
-				reply['text'] = topdeal.deal_text+". Click to redeem."
-				reply['url'] = '' #deeplink into dealDetail screen
+			if numdeals > 0:	#many deals found
+				deal = q.get()
+				text = 'Click to view the most popular offer here: '+ deal.deal_text
+				action='deal'
 			else:	#no deals found
-				reply['text'] = "See any deals? Pay it forward: click to upload."
-				reply['url'] = '' #deeplink into deal upload screen
-		else:			#no business found
+				text = "See any deals? Pay it forward! Click to add."
+				action = 'upload'
+		
+		#create floating_content entity and put
+		floating_content = levr.FloatingContent(
+			action=action,
+			contentID=contentID,
+			user=user,
+			deal=deal,
+			business=business
+		)
+		floating_content.put()
+		
+		
+		reply = {
+			'CHECKIN_ID'		:checkin['id'],
+			'text'				:text,
+			'url'				:levr_url,
+			'contentId'			:contentID
+		}
+		
+		
+		
+		'''else:			#no business found
 			#ask pat for all the deals within walking distance
 			url = 'http://www.levr.com/phone'
 			ll = str(checkin['venue']['location']['lat'])+','+str(checkin['venue']['location']['lng'])
@@ -136,16 +150,16 @@ class PushHandler(webapp2.RequestHandler):
 				reply['url'] = '' #deeplink into deal upload screen
 			else:
 				reply['text'] = "See any deals? Pay it forward: click to upload."
-				reply['url'] = '' #deeplink into deal upload screen
-		'''
+				reply['url'] = '' #deeplink into deal upload screen'''
+				
 		
-		reply['CHECKIN_ID'] = checkin['id']
-		reply['text'] = 'Hey ethan. click here to see this reply inside Levr.'
+		#reply['CHECKIN_ID'] = checkin['id']
+		#reply['text'] = 'Hey ethan. click here to see this reply inside Levr.'
 		#reply['url']  = 'fsq+unhlif5eyxsklx50dasz2pqbge2hdoik5gxbwcirc55nmq4c+reply://?contentId=abcdefg12345&fsqCallback=foursquare://checkins/'+checkin['id']
 		#reply['url']  = 'fsq+unhlif5eyxsklx50dasz2pqbge2hdoik5gxbwcirc55nmq4c+reply://?contentId=abcdefg12345'
 		#reply['url']  = 'http://www.levr.com?contentId=abcdefg12345'
-		reply['url']  = 'http://www.levr.com/deal/blah'
-		reply['contentId'] = 'abcdefg12345'
+		#reply['url']  = 'http://www.levr.com/deal/blah'
+		#reply['contentId'] = 'abcdefg12345'
 			
 		url = 'https://api.foursquare.com/v2/checkins/'+reply['CHECKIN_ID']+'/reply?v=20120920&oauth_token='+'PZVIKS4EH5IFBJX1GH5TUFYAA3Z5EX55QBJOE3YDXKNVYESZ'
 		#url = 'https://api.foursquare.com/v2/checkins/'+reply['CHECKIN_ID']+'/reply?v=20120920&text=hitherehello&url=foursquare%2Bunhlif5eyxsklx50dasz2pqbge2hdoik5gxbwcirc55nmq4c%2Breply%3A//%3FcontentId%3Dabcdefg12345&contentId=abcdefg12345&oauth_token='+'PZVIKS4EH5IFBJX1GH5TUFYAA3Z5EX55QBJOE3YDXKNVYESZ'

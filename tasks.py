@@ -9,6 +9,7 @@ from datetime import datetime
 import base64
 from google.appengine.api import urlfetch
 import urllib
+import api_utils_social as social
 
 
 class SearchFoursquareTaskHandler(webapp2.RequestHandler):
@@ -149,10 +150,60 @@ class NewUserTextTaskHandler(webapp2.RequestHandler):
 			
 		except:
 			levr.log_error()
+			
+class MergeUsersTaskHandler(webapp2.RequestHandler):
+	def post(self):
+		try:
+			
+			logging.info('''
+				
+				THE MERGE USERS TASK IS RUNNING
+				
+				''')
+			
+			payload = json.loads(self.request.body)
+			
+			uid = payload['uid']
+			contentID = payload['contentID']
+			service = payload['service']
+			
+			#grab the user
+			user = levr.Customer.get(uid)
+			#grab the donor's foursquare token
+			floating_content = levr.FloatingContent.gql('WHERE contentID=:1',contentID).get()
+			donor = floating_content.user
+			
+			if service=='foursquare':
+				logging.info('The user came from foursquare')
+				user = social.Foursquare(user,'verbose')
+				#connect the user using foursquare
+				new_user, new_user_details, new_friends = user.first_time_connect(
+										foursquare_token=donor.foursquare_token
+										)
+			elif service=='facebook':
+				logging.info('The user came from facebook')
+				user = social.Facebook(user,'verbose')
+				#connect the user using facebook
+				new_user, new_user_details, new_friends = user.first_time_connect(
+										facebook_token=donor.facebook_token
+										)
+			elif service=='twitter':
+				logging.info('The user came from twitter')
+				user = social.Twitter(user,'verbose')
+				#connect the user using facebook
+				new_user, new_user_details, new_friends = user.first_time_connect(
+										twitter_token=donor.twitter_token
+										)
+			else:
+				raise Exception('contentID prefix not recognized: '+service)
+		
+		except:
+			levr.log_error()
 		
 
 app = webapp2.WSGIApplication([('/tasks/searchFoursquareTask', SearchFoursquareTaskHandler),
 								('/tasks/businessHarmonizationTask', BusinessHarmonizationTaskHandler),
 								('/tasks/foursquareDealUpdateTask', FoursquareDealUpdateTaskHandler),
-								('/tasks/newUserTextTask', NewUserTextTaskHandler)
+								('/tasks/newUserTextTask', NewUserTextTaskHandler),
+								('/tasks/mergeUsersTask', MergeUsersTaskHandler)
 								],debug=True)
