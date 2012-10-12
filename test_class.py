@@ -102,6 +102,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			alonso.levr_token = 'tlvXNw9F5Qgnqm_uKxYUx9xeyJHSRDnfBbVmUwvDWzQ'
 #			alonso.foursquare_id = 32773785
 			alonso.foursquare_token = 'RGTMFLSGVHNMZMYKSMW4HYFNEE0ZRA5PTD4NJE34RHUOQ5LZ'
+			
 			alonso = alonso.put()
 		
 		ninja = levr.Customer.all(keys_only=True).filter('email','santa@levr.com').get()

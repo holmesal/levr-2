@@ -16,8 +16,6 @@ from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.ext import db
 from gaesessions import get_current_session
-import merchant_utils
-import api_utils
 
 jinja_environment = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
 class MerchantsHandler(webapp2.RequestHandler):
@@ -32,73 +30,21 @@ class MerchantsHandler(webapp2.RequestHandler):
 
 class LoginHandler(webapp2.RequestHandler):
 	def get(self):
+		action = self.request.get('action')
+		success	= self.request.get('success')
 		
-		email = self.request.get('email')
-		password = self.request.get('password')
-		
+		logging.debug(action)
+		logging.debug(action)
 		template_values = {
-			'email'		:	email,
-			'password'	:	password
+						'action'	: action,
+						'success'	: success
 		}
-		
+		logging.debug(levr_utils.log_dict(template_values))
 		template = jinja_environment.get_template('templates/login.html')
 		self.response.out.write(template.render(template_values))
-		
+#		self.response.out.write(os.path.dirname(__file__))
 	def post(self):
 		try:
-		
-			email = self.request.get('email')
-			password = self.request.get('password')
-			
-			if password != '':
-				password = enc.encrypt_password(password)
-				
-				logging.info(email)
-				logging.info(password)
-				
-				#check for this user
-				user = levr.Customer.gql('WHERE email=:1 AND pw=:2',email,password).get()
-				
-				if not user:
-					#simulate an error
-					error = "Your username or password isn't quite right. Please try again."
-					template_values = {
-						'email'		:	email,
-						'password'	:	enc.decrypt_password(password),
-						'error'		:	error
-					}
-					
-					template = jinja_environment.get_template('templates/login.html')
-					self.response.out.write(template.render(template_values))
-				else:
-					
-					#is this some fool ninja trying to log in online?
-					if not user.owner_of:
-						self.redirect('http://www.levr.com')
-					else:
-						#logged in, start a session and all that jazz
-						session = get_current_session()
-						session['uid'] = enc.encrypt_key(user.key())
-						session['loggedIn'] = True
-						session['validated'] = merchant_utils.validated_check(user)
-						session['owner_of']	=	enc.encrypt_key(user.owner_of)
-						
-						#send to the merchants page
-						self.redirect('/merchants/manage')
-				
-				
-			else:
-				error = "Please enter a password."
-				template_values = {
-					'email'		:	email,
-					'error'		:	error
-				}
-				template = jinja_environment.get_template('templates/login.html')
-				self.response.out.write(template.render(template_values))
-			
-			
-			
-			'''
 			#this is passed when an ajax form is checking the login state
 			email = self.request.get('email')
 			pw = enc.encrypt_password(self.request.get('pw'))
@@ -150,17 +96,6 @@ class LoginHandler(webapp2.RequestHandler):
 					template = jinja_environment.get_template('templates/login.html')
 					self.response.out.write(template.render(template_values))
 #					self.response.out.write(template_values)
-'''
-		except:
-			levr.log_error()
-
-class LogoutHandler(webapp2.RequestHandler):
-	def get(self):
-		try:
-			session = get_current_session()
-			session['loggedIn'] = False
-			self.redirect('/merchants/login')
-		
 		except:
 			levr.log_error()
 
@@ -406,18 +341,19 @@ class DealHandler(webapp2.RequestHandler):
 		'''This is the deal upload page'''
 		try:
 			#check login
-			headerData = merchant_utils.login_check(self)
+			headerData = levr_utils.loginCheck(self, True)
 			logging.debug(headerData)
 			#get the owner information
-			uid = headerData['uid']
-			uid = enc.decrypt_key(uid)
-			user = levr.Customer.get(uid)
-			logging.info(levr.log_model_props(user))
-			#get the business
-			business = levr.Business.get(enc.decrypt_key(headerData['owner_of']))	#TODO: this will be multiple businesses later
-			logging.info(levr.log_model_props(business))
+			ownerID = headerData['ownerID']
+			ownerID = enc.decrypt_key(ownerID)
+			ownerID = db.Key(ownerID)
+			owner = levr.BusinessOwner.get(ownerID)
+			logging.debug(owner)
 			
-			'''#create tags from the business
+			#get the business
+			business = owner.businesses.get()#TODO: this will be multiple businesses later
+			
+			#create tags from the business
 			tags = business.create_tags()
 			
 			#create the upload url
@@ -432,15 +368,7 @@ class DealHandler(webapp2.RequestHandler):
 							"deal"			: None,
 							"business"		: business, #TODO need to grab multiple businesses later
 							"owner"			: owner
-			}'''
-			
-			template_values = {
-							"upload_url"	: 'test upload url',
-							"deal"			: None,
-							"business"		: 'test business', #TODO need to grab multiple businesses later
-							"user"			: user
 			}
-			
 			template = jinja_environment.get_template('templates/deal.html')
 			self.response.out.write(template.render(template_values))
 		except:
@@ -561,44 +489,18 @@ class ManageHandler(webapp2.RequestHandler):
 	def get(self):
 		try:
 			#check login
-			headerData = merchant_utils.login_check(self)
+			headerData = levr_utils.loginCheck(self, True)
 			
 			#get the owner information
-			uid = headerData['uid']
-			uid = enc.decrypt_key(uid)
-			user = levr.Customer.get(uid)
-			logging.info(levr.log_model_props(user))
+			ownerID = headerData['ownerID']
+			ownerID = enc.decrypt_key(ownerID)
+			ownerID = db.Key(ownerID)
+			owner = levr.BusinessOwner.get(ownerID)
+			logging.debug(owner)
 			#get the business
-			business = levr.Business.get(enc.decrypt_key(headerData['owner_of']))	#TODO: this will be multiple businesses later
-			logging.info(levr.log_model_props(business))
-			
-			#grab the deals
-			q_deals = levr.Deal.gql('WHERE ANCESTOR IS :1',user.key())
-			logging.info(q_deals.count())
-			#package
-			deals = []
-			for deal in q_deals:
-				deals.append(deal)
-				logging.info(deal.deal_status)
+			business = owner.businesses.get()#TODO: this will be multiple businesses later
 			
 			
-			template_values = {
-				'headerData':headerData,
-				'title'		:'Manage',
-				'user'		:user,
-				'business'	:business,
-				'deals'		:deals,
-				'validated'	: merchant_utils.validated_check(user)
-			}
-			
-			
-			logging.info(template_values)
-			
-			template = jinja_environment.get_template('templates/manageOffers.html')
-			#template = jinja_environment.get_template('templates/merchantsBase.html')
-			self.response.out.write(template.render(template_values))
-			
-			'''
 			#get all deals that are children of the owner ordered by whether or not they are exclusive or not
 #			d = levr.Deal.all().ancestor(ownerID).order("is_exclusive").fetch(None)
 #			logging.debug(d)
@@ -612,7 +514,10 @@ class ManageHandler(webapp2.RequestHandler):
 				deals.append(levr.phoneFormat(deal, 'manage'))
 			
 			
-			
+			## ==== Spoofed values ====##
+			views = 20
+			rank = 21
+			redemptions = 23
 			
 			template_values = {
 				'headerData':headerData,
@@ -627,7 +532,7 @@ class ManageHandler(webapp2.RequestHandler):
 			logging.debug(template_values)
 			
 			template = jinja_environment.get_template('templates/manageOffers.html')
-			self.response.out.write(template.render(template_values))'''
+			self.response.out.write(template.render(template_values))
 		except:
 			levr.log_error()
 
@@ -846,12 +751,9 @@ class CheckPasswordHandler(webapp2.RequestHandler):
 			
 		except:
 			levr.log_error()
-		
-
 app = webapp2.WSGIApplication([('/merchants', MerchantsHandler),
 								('/merchants/', MerchantsHandler),
 								('/merchants/login', LoginHandler),
-								('/merchants/logout', LogoutHandler),
 								('/merchants/password/lost', LostPasswordHandler),
 								('/merchants/password/reset', ResetPasswordHandler),
 								('/merchants/emailCheck', EmailCheckHandler),

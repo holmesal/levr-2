@@ -1,67 +1,86 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-
-<!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame
-		Remove this if you use the .htaccess -->
-<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-
-<title>Merchants</title>
-<meta name="description" content="Merchants portal" />
-<meta name="author" content="Levr" />
-
-<meta name="viewport" content="width=device-width; initial-scale=1.0" />
-
-<!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
-<link rel="shortcut icon" href="/img/favicon.ico" />
-<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-
-<link rel="stylesheet" href="/css/merchantsBase.css">
-
-<!-- <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-		<script type="text/javascript"
-		src="http://maps.googleapis.com/maps/api/js?key=AIzaSyDA6oSrrTbFLHVqZSt2JGeJWFLVa9F0074&sensor=false&libraries=places"></script> -->
-{% block htmlhead %} {% endblock %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <!-- Bootstrap -->
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/bootstrap-responsive.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="/css/merchantsBase.css">
+	{% block htmlhead %} {% endblock %}
 </head>
 
 <body>
-	<!--div id="header">
-			<img id="header_logo" src="../img/levr_logo.png" alt="levr_logo"/>
-		</div-->
-	<div id="app-container">
-		<div id="nav">
-			<div class="nav-item" id="nav1">
-				<object class="navimg" data="../img/lock.svg" type="image/svg+xml"></object>
-				<a href="./manage" class="navText">My Offers</a>
-				<div class="navDivider"></div>
-			</div>
-			<div class="nav-item" id="nav2">
-				<object class="navimg" data="../img/tag.svg" type="image/svg+xml"></object>
-				<a href="./deal" class="navText">Create New</a>
-				<div class="navDivider"></div>
-			</div>
-			<div class="nav-item" id="nav3">
-				<object class="navimg" data="../img/tag.svg" type="image/svg+xml"></object>
-				<a href="./upload" class="navText">Upload From Store</a>
-				<div class="navDivider"></div>
-			</div>
-			<div class="nav-item" id="nav4">
-				<object class="navimg" data="../img/markup.svg" type="image/svg+xml"></object>
-				<a href="./widget" class="navText">Widget</a>
-				<div class="navDivider"></div>
-			</div>
-			<div class="nav-item" id="nav5">
-				<object class="navimg" data="../img/person.svg" type="image/svg+xml"></object>
-				<a href="./myAccount" class="navText">My Account</a>
-				<div class="navDivider"></div>
-			</div>
-			<div class="nav-item" id="nav6">
-				<object class="navimg" data="../img/portal.svg" type="image/svg+xml"></object>
-				<a href="/logout" class="navText">Logout</a>
-			</div>
+	{% if not validated %}
+		<div class="link_prompt">
+			<h4 class="linkText">
+				It looks like you haven't linked your business: {{business.business_name}}.
+				<a href='/merchants/link' id='btnLink' class="btn btn-success">Link now (it's really easy)</a>
+			</h4>
 		</div>
-		{% block content %} {% endblock %}
+	{% endif %}
+	<div class="container" >
+		<div class="row">
+			<div class="span10 offset1" id="appContainer">
+				<!-- BEGIN NAV AREA -->
+				<div class="navbar">
+					<div class="navbar-inner">
+						<a class="brand">
+							Levr for Merchants
+						</a>
+						<p class="brand business_name">{{business.business_name}}</p>
+					</div>
+				</div>
+				
+				<div class="row">
+					<div id='navLeft' class="span3 navbar">
+						<div id='innerLeft' class="navbar-inner">
+							<ul class="nav">
+								<li><a href="/merchants/manage">Manage your offers<i class="icon-chevron-right"></i></a></li>
+								<li><a href="/merchants/deal">Add an offer<i class="icon-chevron-right"></i></a></li>
+								<li><a href="/merchants/logout">Logout<i class="icon-chevron-right"></i></a></li>
+							</ul>
+						</div>
+					</div>
+					<div class="span7" id="content">
+						{% block content %} {% endblock %}
+					</div>
+				</div>
+				<!--div id="nav">
+					<div class="nav-item" id="nav1">
+						<object class="navimg" data="../img/lock.svg" type="image/svg+xml"></object>
+						<a href="./manage" class="navText">My Offers</a>
+						<div class="navDivider"></div>
+					</div>
+					<div class="nav-item" id="nav2">
+						<object class="navimg" data="../img/tag.svg" type="image/svg+xml"></object>
+						<a href="./deal" class="navText">Create New</a>
+						<div class="navDivider"></div>
+					</div>
+					<div class="nav-item" id="nav3">
+						<object class="navimg" data="../img/tag.svg" type="image/svg+xml"></object>
+						<a href="./upload" class="navText">Upload From Store</a>
+						<div class="navDivider"></div>
+					</div>
+					<div class="nav-item" id="nav4">
+						<object class="navimg" data="../img/markup.svg" type="image/svg+xml"></object>
+						<a href="./widget" class="navText">Widget</a>
+						<div class="navDivider"></div>
+					</div>
+					<div class="nav-item" id="nav5">
+						<object class="navimg" data="../img/person.svg" type="image/svg+xml"></object>
+						<a href="./myAccount" class="navText">My Account</a>
+						<div class="navDivider"></div>
+					</div>
+					<div class="nav-item" id="nav6">
+						<object class="navimg" data="../img/portal.svg" type="image/svg+xml"></object>
+						<a href="/logout" class="navText">Logout</a>
+					</div>
+				</div-->
+				<!--END NAV AREA -->
+			</div>
+		
+		</div>
 		<div id="footer">
 			{% block footer %}
 			<!-- &copy; Copyright  by Levr Inc. -->
