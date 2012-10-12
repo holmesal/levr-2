@@ -6,6 +6,9 @@ import api_utils
 import json
 from google.appengine.ext import db
 from datetime import datetime
+import base64
+from google.appengine.api import urlfetch
+import urllib
 
 
 class SearchFoursquareTaskHandler(webapp2.RequestHandler):
@@ -109,9 +112,41 @@ class FoursquareDealUpdateTaskHandler(webapp2.RequestHandler):
 				
 			except:
 				levr.log_error()
+				
+class NewUserTextTaskHandler(webapp2.RequestHandler):
+	def post(self):
+		try:
+			
+			payload = json.loads(self.request.body)
+			
+			#twilio credentials
+			sid = 'AC4880dbd1ff355288728be2c5f5f7406b'
+			token = 'ea7cce49e3bb805b04d00f76253f9f2b'
+			twiliourl='https://api.twilio.com/2010-04-01/Accounts/AC4880dbd1ff355288728be2c5f5f7406b/SMS/Messages.json'
+			
+			auth_header = 'Basic '+base64.b64encode(sid+':'+token)
+			logging.info(auth_header)
+			
+			numbers = ['+16052610083']
+			
+			for number in numbers:
+				request = {'From':'+16173608582',
+							'To':number,
+							'Body':'Awwwww yeeeaahhhhh. You have a new user: '+payload['user_string']}
+			
+			result = urlfetch.fetch(url=twiliourl,
+								payload=urllib.urlencode(request),
+								method=urlfetch.POST,
+								headers={'Authorization':auth_header})
+								
+			logging.info(levr.log_dict(result.__dict__))
+			
+		except:
+			levr.log_error()
 		
 
 app = webapp2.WSGIApplication([('/tasks/searchFoursquareTask', SearchFoursquareTaskHandler),
 								('/tasks/businessHarmonizationTask', BusinessHarmonizationTaskHandler),
-								('/tasks/foursquareDealUpdateTask', FoursquareDealUpdateTaskHandler)
+								('/tasks/foursquareDealUpdateTask', FoursquareDealUpdateTaskHandler),
+								('/tasks/newUserTextTask', NewUserTextTaskHandler)
 								],debug=True)

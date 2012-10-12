@@ -678,6 +678,16 @@ class TestCronJobHandler(webapp2.RequestHandler):
 		except:
 			levr.log_error()
 		
+class NewUserHandler(webapp2.RequestHandler):
+	def get(self):
+		task_params = {
+			'user_string'	:	'Alonso H.'
+			}
+			
+		t = taskqueue.add(url='/tasks/newUserTextTask',payload=json.dumps(task_params))
+		
+		self.response.out.write('ok')
+		
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload.*', DatabaseUploadHandler),
 								('/new/find', FilterGeohashHandler),
@@ -695,6 +705,8 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/clearFoursquare',ClearFoursquareHandler),
 								('/new/refreshQ', RefreshQHandler),
 								('/new/testcron', TestCronJobHandler),
+								('/new/newUser', NewUserHandler)
+
 #								('/new/update' , UpdateUsersHandler)
 								],debug=True)
 
