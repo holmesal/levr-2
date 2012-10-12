@@ -17,7 +17,9 @@ org.eclipse*
 *.pyc
 *~
 .DS_store
-
+*.DS_store
+*/*.DS_store
+*/*/*.DS_store
 #old files
 *.old
 
