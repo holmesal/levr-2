@@ -345,6 +345,13 @@ def unix_time(dt):
 	
 def unix_time_millis(dt):
 	return unix_time(dt) *1000.0
+	
+def text_notify(user_string):
+	task_params = {
+		'user_string'	:	'Alonso H.'
+	}
+	t = taskqueue.add(url='/tasks/newUserTextTask',payload=json.dumps(task_params))
+
 
 def dealCreate(params,origin,upload_flag=True):
 	'''pass in "self"'''

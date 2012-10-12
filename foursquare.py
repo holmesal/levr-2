@@ -51,9 +51,19 @@ class AuthorizeCompleteHandler(webapp2.RequestHandler):
 		#grab more user details
 		url = 'https://api.foursquare.com/v2/users/self?v=20120920&oauth_token='+token
 		result = urlfetch.fetch(url=url)
-		user = json.loads(result.content)
-		logging.debug(levr_utils.log_dict(user))
-		self.response.out.write(levr_utils.log_dict(user))
+		foursquare_user = json.loads(result.content)['response']['user']
+		logging.debug(levr.log_dict(foursquare_user))
+		
+		#send the founders a text
+		levr.text_notify(foursquare_user['firstName'] + ' ' + foursquare_user['lastName'] + ' (from foursquare)')
+		
+		#create the user here
+		
+		#set up the jinja template and echo out
+		template = jinja_environment.get_template('templates/deal.html')
+		self.response.out.write(template.render(template_values))
+		
+		logging.debug(levr.log_dict(user))
 
 class PushHandler(webapp2.RequestHandler):
 	def post(self):
@@ -114,15 +124,20 @@ class PushHandler(webapp2.RequestHandler):
 		
 		reply['CHECKIN_ID'] = checkin['id']
 		reply['text'] = 'Hey ethan. click here to see this reply inside Levr.'
-		reply['url']  = 'levr://somestuff'
-		reply['contentID'] = 'BWANHHPAHAHA'
+		#reply['url']  = 'fsq+unhlif5eyxsklx50dasz2pqbge2hdoik5gxbwcirc55nmq4c+reply://?contentId=abcdefg12345&fsqCallback=foursquare://checkins/'+checkin['id']
+		#reply['url']  = 'fsq+unhlif5eyxsklx50dasz2pqbge2hdoik5gxbwcirc55nmq4c+reply://?contentId=abcdefg12345'
+		#reply['url']  = 'http://www.levr.com?contentId=abcdefg12345'
+		reply['url']  = 'http://www.levr.com/deal/blah'
+		reply['contentId'] = 'abcdefg12345'
 			
 		url = 'https://api.foursquare.com/v2/checkins/'+reply['CHECKIN_ID']+'/reply?v=20120920&oauth_token='+'PZVIKS4EH5IFBJX1GH5TUFYAA3Z5EX55QBJOE3YDXKNVYESZ'
+		#url = 'https://api.foursquare.com/v2/checkins/'+reply['CHECKIN_ID']+'/reply?v=20120920&text=hitherehello&url=foursquare%2Bunhlif5eyxsklx50dasz2pqbge2hdoik5gxbwcirc55nmq4c%2Breply%3A//%3FcontentId%3Dabcdefg12345&contentId=abcdefg12345&oauth_token='+'PZVIKS4EH5IFBJX1GH5TUFYAA3Z5EX55QBJOE3YDXKNVYESZ'
 		logging.debug(url)
+		#result = urlfetch.fetch(url=url,method=urlfetch.POST)
 		result = urlfetch.fetch(url=url,
 								payload=urllib.urlencode(reply),
 								method=urlfetch.POST)
-		logging.debug(api_utils.log_dict(result.__dict__))
+		logging.debug(levr.log_dict(result.__dict__))
 		
 class CatchUpHandler(webapp2.RequestHandler):
 	def get(self):
