@@ -639,6 +639,44 @@ class RefreshQHandler(webapp2.RequestHandler):
 		self.response.out.write('deleted qs notifications')
 		
 		self.response.out.write('Done.')
+class TestCronJobHandler(webapp2.RequestHandler):
+	def get(self):
+		try:
+			self.response.out.headers['Content-Type'] = 'text/plain'
+			self.response.out.write('Hello\n')
+			
+			now = datetime.now()
+			
+			### DEBUG
+			all_deals = levr.Deal.all().fetch(None)
+			for deal in all_deals:
+				self.response.out.write(levr.log_model_props(deal,['date_end','deal_status']))
+				self.response.out.write(deal.date_end > now)
+			### /DEBUG
+			
+			#fetch all deals that are set to expire
+			
+			self.response.out.write('\n\n\t\tdate_end: '+str(now))
+			deals = levr.Deal.all().filter('deal_status','test').filter('date_end <=',now).fetch(None)
+			self.response.out.write('\n\n deals found: '+str(deals.__len__()))
+			
+			#set deal_status to expired
+			for deal in deals:
+				
+				self.response.out.write(levr.log_model_props(deal))
+				deal.deal_status = 'expired'
+				to_be_notified = deal.key().parent()
+				assert to_be_notified,'No deal parent was found'
+				levr.create_notification('expired',to_be_notified,None,deal.key())
+			#create notification for ninja owner - epired deal notification
+			#fetch parents
+			db.put(deals)
+			notifications = levr.Notification.all().filter('notification_type','expired').fetch(None)
+			for notification in notifications:
+				self.response.out.write(levr.log_model_props(notification))
+			
+		except:
+			levr.log_error()
 		
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload.*', DatabaseUploadHandler),
@@ -655,7 +693,8 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/harmonizeVenues',HarmonizeVenuesHandler),
 								('/new/updateBusiness',UpdateBusinessHandler),
 								('/new/clearFoursquare',ClearFoursquareHandler),
-								('/new/refreshQ', RefreshQHandler)
+								('/new/refreshQ', RefreshQHandler),
+								('/new/testcron', TestCronJobHandler),
 #								('/new/update' , UpdateUsersHandler)
 								],debug=True)
 

@@ -63,6 +63,11 @@ indexes:
 - kind: Deal
   properties:
   - name: deal_status
+  - name: date_end
+
+- kind: Deal
+  properties:
+  - name: deal_status
   - name: geo_hash
 
 - kind: Deal

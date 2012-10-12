@@ -11,7 +11,7 @@ Crypto/
 pycrypto-2.3*
 python-geohash-*
 org.eclipse*
-
+boto/
 
 #extraneous files
 *.pyc

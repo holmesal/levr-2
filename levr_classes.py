@@ -58,7 +58,7 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 	'followerUpload', 
 	'newFollower', 
 	'levelup'
-	
+	'expired'
 	deprecated: redemption
 	
 						The action being performed
@@ -70,7 +70,7 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 						The person performing the action
 	'''
 	#===========================================================================
-	# If ths fundamentally changes, remember to change the undead ninja activity
+	# If this fundamentally changes, remember to change the undead ninja activity
 	#===========================================================================
 	try:
 		#type cast to_be_notified as a list
@@ -166,6 +166,15 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 			line2 = 'You are now level 99. Woohoo!'
 			
 			#replace user
+			user.put()
+		elif notification_type == 'expired':
+			logging.debug('\n\n\n\n\n\n EXPIRED!!! \n\n\n\n')
+			user = db.get(to_be_notified[0])
+			
+			user.new_notifications += 1
+			
+			line2 = 'Your deal has expired :('
+			
 			user.put()
 			
 		else:
