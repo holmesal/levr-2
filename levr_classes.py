@@ -348,7 +348,7 @@ def unix_time_millis(dt):
 	
 def text_notify(user_string):
 	task_params = {
-		'user_string'	:	'Alonso H.'
+		'user_string'	:	user_string
 	}
 	t = taskqueue.add(url='/tasks/newUserTextTask',payload=json.dumps(task_params))
 
