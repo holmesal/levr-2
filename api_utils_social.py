@@ -292,10 +292,13 @@ class Foursquare(SocialClass):
 		
 		#parse incoming dict
 		user_content = response_dict['response']['user']
-		friend_groups = user_content['friends']
+		friend_groups = user_content['friends']['groups']
 		friend_list = []
 		for group in friend_groups:
+			logging.debug(group)
+			logging.debug(type(group))
 			if group['count'] != 0:
+				logging.debug
 				friend_list.append(group['items'])
 		
 		
