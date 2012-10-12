@@ -205,13 +205,9 @@ class LoginValidateHandler(webapp2.RequestHandler):
 			logging.debug(levr.log_dict(data))
 			#set last login
 			user = data['user']
-#			logging.debug('dates')
-#			logging.debug(datetime.now())
-#			logging.debug(datetime.now() - timedelta(days=2))
-			user.date_last_login = datetime.now() - timedelta(days=1)
+#			user.date_last_login = datetime.now() - timedelta(days=1)
 #			logging.debug(user.date_last_login)
 			user.put()
-#			logging.debug(user.date_last_login)
 			api_utils.send_response(self,response,user)
 			
 			
@@ -249,23 +245,11 @@ class SpoofUndeadNinjaActivity:
 		self.days_since_last_login = self.calc_days_since(self.user.date_last_login)
 		logging.debug(self.days_since_last_login)
 		logging.debug(type(self.days_since_last_login))
-#		logging.debug(self.days_since_last_login)
-#		logging.debug('now')
-#		logging.debug(datetime.now())
-#		logging.debug(self.now)
-#		logging.debug('timedelta')
-#		logging.debug(timedelta(days=7))
-#		timediff = self.now - timedelta(days=7)
-#		timediff2 = self.now- timedelta(days=10)
-#		
-#		logging.debug(timediff-timediff2)
-#		logging.debug(timediff.total_seconds())
-#		logging.debug(timediff.total_seconds()/60/60/24)
 		
 		#set environment params
 		self.max_likes_per_day		= kwargs.get('max_likes_per_day',3) #a.k.a. the number of chances to like in a day
 		
-		self.ideal_likes_per_day	= float(kwargs.get('ideal_likes_per_day',1.5))
+		self.ideal_likes_per_day	= float(kwargs.get('ideal_likes_per_day',2))
 		
 		#constrain system...
 		assert type(self.max_likes_per_day) == int, 'max likes per day must be int'
@@ -287,10 +271,22 @@ class SpoofUndeadNinjaActivity:
 		for deal in self.user_deals:
 #			days_since_upload = self.calc_days_since(deal.date_created)
 #			logging.debug(days_since_upload)
-			likes_per_day	= self.get_likes_per_day(self.chance_of_like, self.max_likes_per_day)
-			logging.debug('likes per day: '+str(likes_per_day))
-			logging.debug('total days: '+str(self.days_since_last_login))
-			total_likes		= likes_per_day * self.days_since_last_login
+			whole_days = int(floor(self.days_since_last_login))
+			partial_days = self.days_since_last_login - whole_days
+			
+			#add up likes for whole days
+			total_likes = 0
+			for day in range(0,whole_days):
+				total_likes += self.get_likes_per_day(self.chance_of_like, self.max_likes_per_day)
+			
+			#add up likes from the partial day
+			total_likes += self.get_likes_per_day(self.chance_of_like, self.max_likes_per_day) * partial_days
+			
+			
+#			likes_per_day	= self.get_likes_per_day(self.chance_of_like, self.max_likes_per_day)
+#			logging.debug('likes per day: '+str(likes_per_day))
+#			logging.debug('total days: '+str(self.days_since_last_login))
+#			total_likes		= likes_per_day * self.days_since_last_login
 			logging.debug('total likes: '+str(total_likes))
 			#round off total likes to an integer
 			total_likes		= floor(total_likes)
@@ -323,13 +319,15 @@ class SpoofUndeadNinjaActivity:
 					#===========================================================
 					#create the notification
 					notifications.append(levr.Notification(
-										notification_type	= 'favorite',
+										notification_type	= 'upvote',
 										line2				= random.choice(levr.upvote_phrases),
 										to_be_notified		= [self.user.key()],
 										actor				= ninja.key(),
 										deal				= deal.key(), #default to None,
 										date_in_seconds		= self.now_in_seconds
 										))
+				else:
+					assert False
 			undead_ninjas_set.update(undead_ninjas)
 					
 					
