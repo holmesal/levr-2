@@ -224,6 +224,12 @@ class Test(webapp2.RequestHandler):
 class SpoofUndeadNinjaActivity:
 	'''
 	The undead walk the earth! And they like things!
+	Takes a user, calculates the time since their last login, and creates a number of 
+	notifications with a probability based on values we specify.
+	
+	variables:
+	max_likes_per_day
+	ideal_likes_per_day
 	'''
 	def __init__(self,user,development=False,**kwargs):
 		self.user = user
