@@ -11,6 +11,7 @@ from google.appengine.api import urlfetch
 import urllib
 import json
 import api_utils
+import api_utils_social as social
 
 
 #CASES:
@@ -51,13 +52,29 @@ class AuthorizeCompleteHandler(webapp2.RequestHandler):
 		#grab more user details
 		url = 'https://api.foursquare.com/v2/users/self?v=20120920&oauth_token='+token
 		result = urlfetch.fetch(url=url)
-		foursquare_user = json.loads(result.content)['response']['user']
-		logging.debug(levr.log_dict(foursquare_user))
+		response_dict = json.loads(result.content)
 		
-		#send the founders a text
-		levr.text_notify(foursquare_user['firstName'] + ' ' + foursquare_user['lastName'] + ' (from foursquare)')
+		logging.debug(levr.log_dict(response_dict))
+		
+		#create a levr token
+		lt = levr.create_levr_token()
 		
 		#create the user here
+		user = levr.Customer(levr_token=lt)
+		user.put()
+		
+		#let the foursquare parsing code do its thing
+		user = social.Foursquare(user)
+		
+		user,new_details,new_friends = user.connect_with_content(response_dict,True,foursquare_token=token)
+		
+		logging.debug(levr.log_model_props(user))
+		logging.debug(levr.log_dict(new_details))
+		logging.debug(levr.log_dict(new_friends))
+		
+		
+		#send the founders a text
+		levr.text_notify(user.first_name + ' ' + user.last_name + ' from foursquare')
 		
 		#set up the jinja template and echo out
 		template = jinja_environment.get_template('templates/deal.html')

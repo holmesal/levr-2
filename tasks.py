@@ -117,6 +117,12 @@ class NewUserTextTaskHandler(webapp2.RequestHandler):
 	def post(self):
 		try:
 			
+			logging.info('''
+				
+				SKYNET IS TEXTING THE FOUNDERS
+				
+				''')
+			
 			payload = json.loads(self.request.body)
 			
 			#twilio credentials
@@ -127,7 +133,7 @@ class NewUserTextTaskHandler(webapp2.RequestHandler):
 			auth_header = 'Basic '+base64.b64encode(sid+':'+token)
 			logging.info(auth_header)
 			
-			numbers = ['+16052610083']
+			numbers = ['+16052610083','+16035605655']
 			
 			for number in numbers:
 				request = {'From':'+16173608582',
