@@ -333,7 +333,7 @@ class SpoofUndeadNinjaActivity:
 										date_in_seconds		= self.now_in_seconds
 										))
 				else:
-					assert False
+					pass
 			undead_ninjas_set.update(undead_ninjas)
 					
 					
