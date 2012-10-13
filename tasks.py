@@ -183,6 +183,8 @@ class MergeUsersTaskHandler(webapp2.RequestHandler):
 				new_user, new_user_details, new_friends = user.first_time_connect(
 										foursquare_token=donor.foursquare_token
 										)
+				#add deals
+				#delete donor user
 			elif service=='facebook':
 				logging.info('The user came from facebook')
 				user = social.Facebook(user,'verbose')

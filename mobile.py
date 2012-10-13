@@ -6,6 +6,7 @@ import levr_classes as levr
 import levr_encrypt as enc
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
+import urllib
 
 #create jinja environment
 jinja_environment = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
@@ -37,6 +38,7 @@ class MobileUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		deal_text = self.request.get('deal_text')
 		description = self.request.get('description')
 		contentID = self.request.get('contentID')
+		callback_url = self.request.get('callback_url')
 		
 		logging.info(uid)
 		logging.info(businessID)
@@ -62,14 +64,20 @@ class MobileUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 
 		dealID = levr.dealCreate(params,'phone_new_business')
 		
-		self.redirect('/mobile/upload/complete/'+contentID)
+		self.redirect('/mobile/upload/complete/?callback_url='+urllib.quote(callback_url))
 		
 class UploadCompleteHandler(webapp2.RequestHandler):
-	def get(self):
+	def get(self,*args,**kwargs):
 		
 		#check if phone is iphone or android
-		pass
+		download_url = 'http://www.google.com'
 		
+		callback_url = self.request.get('callback_url')
+		
+		template_values = {
+			'download_url'	:	download_url,
+			'callback_url'	:	callback_url
+		}
 		
 		#write out the download page
 		template = jinja_environment.get_template('templates/mobileUploadComplete.html')
@@ -84,6 +92,7 @@ class ContentIDHandler(webapp2.RequestHandler):
 			#grab the content ID
 			contentID = args[0]
 			logging.debug('ContentID: ' + contentID)
+			callback_url = self.request.get('fsqCallback')
 			
 			#uhh wtf do i do?
 			floating_content = levr.FloatingContent.gql('WHERE contentID=:1',contentID).get()
