@@ -17,7 +17,10 @@ import uuid
 
 class SocialClass:
 	def __init__(self, user, *args, **kwargs):
+		logging.debug('init social class')
 		self.user = user
+		self.set_noise_level(*args)
+	def set_noise_level(self,*args):
 		if 'verbose' in args:
 			self.verbose = True
 			logging.info('\n\n\n\t\t\t RUNNING IN VERBOSE MODE \n\n\n')
@@ -798,9 +801,45 @@ class Facebook(SocialClass):
 	'''
 	Facebook
 	'''
-	def __init__(self, user, *args, **kwargs):
+	def __init__(self, user=None, *args, **kwargs):
+		'''
+		Facebook
+		'''
+		logging.debug('\n\n\n \t\t\t INIT FACEBOOK \n\n\n')
+		self.set_noise_level(*args)
+		# if user is not passed, then check if a user exists with the identity specified. if they do not exist, then create a new one
+		if not user:
+			#user was not passed, check to make sure that the user does not already exist
+			# if the user exists, pass it to SocialClass.__init__
+			# otherwise, create a new user and pass it that
+			facebook_token = kwargs.get('facebook_token')
+			#make sure foursquare token was passed
+			assert facebook_token, 'Did not pass a user, so must pass facebook_token as kwarg'
+			
+			#assign the foursquare_token so that self.fetch will work
+			self.facebook_token = facebook_token
+			#fetch the user info
+			response = self.fetch('user')
+			logging.debug(levr.log_dict(response))
+			#get the user id
+			facebook_id = int(response['id'])
+			
+			#search for the user by that id
+			user = levr.Customer.all().filter('facebook_id',facebook_id).get()
+#			logging.debug('\n\n\n\n \t\t\t\t USER \n\n\n\n')
+			logging.debug(user)
+			logging.debug(levr.log_model_props(user))
+			if not user:
+				logging.debug('user doesnt exist')
+				#user does not exist in database - create a new one!
+				user = levr.Customer(levr_token = levr.create_levr_token())
+				user.put()
+			else:
+				logging.debug('user exists')
+			# else: user was found and we will init with that user
+		
+		#init all dat social stuff!
 		SocialClass.__init__(self, user, *args, **kwargs)
-
 	def update_credentials(self, *args, **kwargs):
 		'''
 		Facebook
@@ -863,9 +902,6 @@ class Facebook(SocialClass):
 		if not self.user.photo:
 			self.user.photo			= photo
 			updated['photo']		= photo
-		if not self.user.email:
-			self.user.email			= email
-			updated['email']		= email
 		
 		return updated
 	def update_friends(self):
@@ -894,7 +930,16 @@ class Facebook(SocialClass):
 		url = 'https://graph.facebook.com/'
 		
 		#if the user has a registered facebook_id, use that. Otherwise, use me
-		if self.user.facebook_id:
+#		try:
+#			if self.user.facebook_id:
+#				url+= self.user.facebook_id
+#			else:
+#				url+= 'me'
+#		except:
+#			url+= 'me'
+#		
+		
+		if hasattr(self, 'user') and self.user.facebook_id:
 			url+= str(self.user.facebook_id)
 		else:
 			url+= 'me'
@@ -916,7 +961,10 @@ class Facebook(SocialClass):
 		#add access token to the request
 		if '?' not in url:	url += '?'
 		else:				url += '&'
-		url += 'access_token=' + self.user.facebook_token
+		try: facebook_token = self.user.facebook_token
+		except: facebook_token = self.facebook_token
+		
+		url += 'access_token=' + facebook_token
 		
 		logging.debug(url)
 		return url, method, headers

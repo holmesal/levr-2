@@ -46,7 +46,8 @@ class ExchangeCodeHandler(webapp2.RequestHandler):
 		
 class AuthorizeCompleteHandler(webapp2.RequestHandler):
 	def get(self):
-		logging.debug('\n\n\t\t Exchange code param with facebook for auth stuff \n\n')
+		logging.debug('Hit the Authorize Complete Handler')
+		
 		client_id = facebook_auth['client_id']
 		client_secret = facebook_auth['client_secret']
 		
@@ -75,36 +76,17 @@ class AuthorizeCompleteHandler(webapp2.RequestHandler):
 		logging.debug(type(result.content))
 		logging.debug(levr.log_dir(result.content))
 		
-		access_token = result.content.split('&')[0].split('=')[1]
-		logging.debug(access_token)
+		facebook_token = result.content.split('&')[0].split('=')[1]
+		logging.debug(facebook_token)
 		
-		
-		
-		
-		
-		logging.debug('Hit the Authorize Complete Handler')
-		
-		#=======================================================================
-		# Get values
-		#=======================================================================
-		facebook_token = self.request.get('access_token')
-		expires = self.request.get('expires')
-		#create a levr token
-		
-		#=======================================================================
-		# Create the user and connect them
-		#=======================================================================
-		#create the user here
-		user = levr.Customer(levr.create_levr_token())
-		user.put()
 		
 		
 		#=======================================================================
-		# Should check if user exists with the facebook id... if they do, use that wrapper
+		# Create User and connect them with levr
 		#=======================================================================
 		
-		#wrap the user in the social class
-		user = social.Facebook(user)
+		#wrap the user in the social class - creates new user if user doesnt exist
+		user = social.Facebook(facebook_token=facebook_token)
 		
 		user,new_details,new_friends = user.first_time_connect(facebook_token=facebook_token)
 		
@@ -117,9 +99,9 @@ class AuthorizeCompleteHandler(webapp2.RequestHandler):
 		levr.text_notify(user.first_name + ' ' + user.last_name + ' from facebook')
 		
 		#set up the jinja template and echo out
-		template = jinja_environment.get_template('templates/deal.html')
-		self.response.out.write(template.render(template_values))
-		
+#		template = jinja_environment.get_template('templates/deal.html')
+#		self.response.out.write(template.render(template_values))
+		self.response.out.write('Hooray! you are connected with levr!')
 		logging.debug(levr.log_dict(user))
 
 class PushHandler(webapp2.RequestHandler):
