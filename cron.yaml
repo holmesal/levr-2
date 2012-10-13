@@ -17,4 +17,4 @@ cron:
 - description: Set expired deals to expire
   url: /cronjobs/expireDeals
   schedule: every day 2:15
-  timezone: America/New_york
+  timezone: America/New_York
