@@ -272,12 +272,43 @@ class SocialClass:
 		return self.user
 
 class Foursquare(SocialClass):
-	def __init__(self, user, *args, **kwargs):
+	def __init__(self, user=None, *args, **kwargs):
 		'''
 		Foursquare
 		'''
-		SocialClass.__init__(self, user, *args, **kwargs)
+		#set the foursquare api version
 		self.version = '20121007' #the foursquare api version
+		
+		
+		if not user:
+			#user was not passed, check to make sure that the user does not already exist
+			# if the user exists, pass it to SocialClass.__init__
+			# otherwise, create a new user and pass it that
+			foursquare_token = kwargs.get('foursquare_token')
+			#make sure foursquare token was passed
+			assert foursquare_token, 'Did not pass a user, so must pass foursquare_token as kwarg'
+			
+			#assign the foursquare_token so that self.fetch will work
+			self.foursquare_token = foursquare_token
+			#fetch the user info
+			response = self.fetch('')
+			logging.debug(levr.log_dict(response))
+			#get the user id
+			foursquare_id = int(response['response']['user']['id'])
+			
+			#search for the user by that id
+			user = levr.Customer.all().filter('foursquare_id',foursquare_id).get()
+			
+			if not user:
+				#user does not exist in database - create a new one!
+				user = levr.Customer(levr_token = levr.create_levr_token())
+				user.put()
+			# else: user was found and we will init with that user
+		
+		#init all dat social stuff!
+		SocialClass.__init__(self, user, *args, **kwargs)
+		
+		
 		
 
 	def connect_with_content(self,response_dict,auto_put=True,*args,**kwargs):
@@ -488,7 +519,9 @@ class Foursquare(SocialClass):
 			#otherwise, will not append action to the url
 #		url += '?oauth_token=' + self.user.foursquare_token
 #		url += '&v=' + self.version
-		url += '?oauth_token={}&v={}'.format(self.user.foursquare_token,
+		try: foursquare_token = self.user.foursquare_token
+		except: foursquare_token = self.foursquare_token
+		url += '?oauth_token={}&v={}'.format(foursquare_token,
 											self.version)
 		
 		return url, method, headers

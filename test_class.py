@@ -6,14 +6,15 @@ from google.appengine.ext import blobstore, db
 from google.appengine.ext.webapp import blobstore_handlers
 from random import randint
 import api_utils
+import api_utils_social
 import base_62_converter as converter
 import geo.geohash as geohash
 import json
 import levr_classes as levr
 import levr_encrypt as enc
 import logging
-import webapp2
 import uuid
+import webapp2
 #import geo.geohash as geohash
 
 
@@ -731,6 +732,15 @@ class FloatingContentHandler(webapp2.RequestHandler):
 		
 		#write out the token
 		self.response.out.write(contentID)
+class TestFoursquareHandler(webapp2.RequestHandler):
+	def get(self):
+		foursquare_token = 'ML4L1LW3SO0SKUXLKWMMBTSOWIUZ34NOTWTWRW41D0ANDBAX'
+		user = api_utils_social.Foursquare(foursquare_token=foursquare_token)
+		logging.debug(levr.log_dir(user))
+		new_user,new_details,new_friends = user.first_time_connect(foursquare_token=foursquare_token)
+		logging.debug(new_details)
+		logging.debug(new_friends)
+		logging.debug(levr.log_model_props(new_user))
 		
 		
 app = webapp2.WSGIApplication([('/new', MainPage),
@@ -751,7 +761,8 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/refreshQ', RefreshQHandler),
 								('/new/testcron', TestCronJobHandler),
 								('/new/newUser', NewUserHandler),
-								('/new/floatingContent', FloatingContentHandler)
+								('/new/floatingContent', FloatingContentHandler),
+								('/new/foursquare', TestFoursquareHandler)
 
 #								('/new/update' , UpdateUsersHandler)
 								],debug=True)

@@ -35,45 +35,53 @@ class AuthorizeBeginHandler(webapp2.RequestHandler):
 		client_id		= facebook_auth['client_id']
 		state			= uuid.uuid4()
 		scope			= 'publish_actions'
-		redirect_uri	= 'http://levr-production.appspot.com/facebook/authorize/exchange'
+		redirect_uri	= 'http://test.levr-production.appspot.com/facebook/authorize/complete'
 		url = 'https://www.facebook.com/dialog/oauth?client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}&state={scope}'.format(
 													client_id = client_id, redirect_uri= redirect_uri, scope= scope, state= state)
 		logging.debug(url)
 		self.redirect(url)
 class ExchangeCodeHandler(webapp2.RequestHandler):
 	def get(self):
+		self.redirect(url)
+		
+class AuthorizeCompleteHandler(webapp2.RequestHandler):
+	def get(self):
 		logging.debug('\n\n\t\t Exchange code param with facebook for auth stuff \n\n')
 		client_id = facebook_auth['client_id']
 		client_secret = facebook_auth['client_secret']
 		
 		#=======================================================================
-		# get response params
+		# Fetch access_token from facebook
 		#=======================================================================
 		
 		#check for error
 		error = self.request.get('error',None)
 		assert error == None, 'User denied request'
 		
-		state = self.reqest.get('state',None)
+		state = self.request.get('state',None)
 		code = self.request.get('code',None)
 		logging.debug(state)
 		logging.debug(code)
-		#make sure code has proper appendage
-		assert code[-4:] == '#_=_'
-		#remove appended #_=_ from the code
-		code = code[:-4]
 		
-		#=======================================================================
-		# Redirect back to Facebook
-		#=======================================================================
-		redirect_uri = 'http://levr-production.appspot.com/facebook.authorize/complete'
+		
+		redirect_uri = 'http://test.levr-production.appspot.com/facebook/authorize/complete'
 		
 		url = 'https://graph.facebook.com/oauth/access_token?client_id={client_id}&redirect_uri={redirect_uri}&client_secret={client_secret}&code={code}'.format(
 															 client_id= client_id, redirect_uri= redirect_uri, client_secret= client_secret, code= code)
-		self.redirect(url)
 		
-class AuthorizeCompleteHandler(webapp2.RequestHandler):
-	def get(self):
+		# Fetch the access token from facebook
+		result = urlfetch.fetch(url=url)
+		logging.debug(result.content)
+		logging.debug(type(result.content))
+		logging.debug(levr.log_dir(result.content))
+		
+		access_token = result.content.split('&')[0].split('=')[1]
+		logging.debug(access_token)
+		
+		
+		
+		
+		
 		logging.debug('Hit the Authorize Complete Handler')
 		
 		#=======================================================================
@@ -90,6 +98,11 @@ class AuthorizeCompleteHandler(webapp2.RequestHandler):
 		user = levr.Customer(levr.create_levr_token())
 		user.put()
 		
+		
+		#=======================================================================
+		# Should check if user exists with the facebook id... if they do, use that wrapper
+		#=======================================================================
+		
 		#wrap the user in the social class
 		user = social.Facebook(user)
 		
@@ -101,7 +114,7 @@ class AuthorizeCompleteHandler(webapp2.RequestHandler):
 		
 		
 		#send the founders a text
-		levr.text_notify(user.first_name + ' ' + user.last_name + ' from foursquare')
+		levr.text_notify(user.first_name + ' ' + user.last_name + ' from facebook')
 		
 		#set up the jinja template and echo out
 		template = jinja_environment.get_template('templates/deal.html')
@@ -134,37 +147,7 @@ class PushHandler(webapp2.RequestHandler):
 			'url'				: 'http://www.levr.com',
 			'contentID'			: 'BWANHHPAHAHA'
 		}
-		'''
-		if business:	#business found
-			#for deal in levr.Deal().all().filter('businessID =', str(business.key())).run():
-			q = levr.Deal.gql("WHERE businessID = :1 AND deal_status = :2 ORDER BY count_redeemed DESC",str(business.key()),'active')
-			numdeals = q.count()
-			if numdeals > 1:	#many deals found
-				topdeal = q.get()
-				reply['text'] = "There are "+str(numdeals)+" deals here! Click to browse."
-				reply['url'] = '' #deeplink into dealResults screen
-			elif numdeals == 1:	#only one deal found
-				topdeal = q.get()
-				reply['text'] = topdeal.deal_text+". Click to redeem."
-				reply['url'] = '' #deeplink into dealDetail screen
-			else:	#no deals found
-				reply['text'] = "See any deals? Pay it forward: click to upload."
-				reply['url'] = '' #deeplink into deal upload screen
-		else:			#no business found
-			#ask pat for all the deals within walking distance
-			url = 'http://www.levr.com/phone'
-			ll = str(checkin['venue']['location']['lat'])+','+str(checkin['venue']['location']['lng'])
-			request_point = levr.geo_converter(ll)
-			precision = 6
-			results = levr_utils.get_deals_in_area(['all'],request_point,precision)
 
-			if len(results) > 0:
-				reply['text'] = "There are "+str(len(results))+" deals near you - click to view."
-				reply['url'] = '' #deeplink into deal upload screen
-			else:
-				reply['text'] = "See any deals? Pay it forward: click to upload."
-				reply['url'] = '' #deeplink into deal upload screen
-		'''
 		
 		reply['CHECKIN_ID'] = checkin['id']
 		reply['text'] = 'Hey ethan. click here to see this reply inside Levr.'
@@ -198,6 +181,7 @@ class CatchUpHandler(webapp2.RequestHandler):
 			result = urlfetch.fetch(url=url)
 			
 			self.response.out.write('running ' + business.business_name + '\n')
+			
 			
 			try:
 				match = json.loads(result.content)['response']['venues'][0]
