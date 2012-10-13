@@ -56,15 +56,8 @@ class AuthorizeCompleteHandler(webapp2.RequestHandler):
 		
 		logging.debug(levr.log_dict(response_dict))
 		
-		#create a levr token
-		lt = levr.create_levr_token()
-		
-		#create the user here
-		user = levr.Customer(levr_token=lt)
-		user.put()
-		
 		#let the foursquare parsing code do its thing
-		user = social.Foursquare(user)
+		user = social.Foursquare(foursquare_token=token)
 		
 		user,new_details,new_friends = user.connect_with_content(response_dict,True,foursquare_token=token)
 		
@@ -76,9 +69,11 @@ class AuthorizeCompleteHandler(webapp2.RequestHandler):
 		#send the founders a text
 		levr.text_notify(user.first_name + ' ' + user.last_name + ' from foursquare')
 		
+		#launch the jinja environment
+		jinja_environment = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
 		#set up the jinja template and echo out
-		template = jinja_environment.get_template('templates/deal.html')
-		self.response.out.write(template.render(template_values))
+		template = jinja_environment.get_template('templates/landing.html')
+		self.response.out.write(template.render())
 		
 		logging.debug(levr.log_dict(user))
 
@@ -99,76 +94,99 @@ class PushHandler(webapp2.RequestHandler):
 		#go look in our database for a matching foursquare venue id
 		business = levr.Business.gql('WHERE foursquare_id = :1',checkin["venue"]["id"]).get()
 		#business = levr.Business.get('ahFzfmxldnItcHJvZHVjdGlvbnIQCxIIQnVzaW5lc3MY-dIBDA')
-		user = levr.Customer.gql('WHERE foursquare_id = :1',checkin['user']['id']).get()
+		user = levr.Customer.gql('WHERE foursquare_id = :1',int(checkin['user']['id'])).get()
 		
 		#initialize the response object - these are defaults
 		contentID = levr.create_content_id('foursquare')
 		levr_url = 'http://www.levr.com/mobile/'+contentID
 		
-		if business:	#business found
+		if business:	#business found - CURRENTLY ONLY REPLYING AT BUSINESSES THAT ARE IN OUR DATABASE
 			#for deal in levr.Deal().all().filter('businessID =', str(business.key())).run():
 			q = levr.Deal.gql("WHERE businessID = :1 AND deal_status = :2 ORDER BY count_redeemed DESC",str(business.key()),'active')
-			numdeals = q.count()
-			if numdeals > 0:	#many deals found
-				deal = q.get()
-				text = 'Click to view the most popular offer here: '+ deal.deal_text
-				action='deal'
-			else:	#no deals found
+			
+			deal = None
+			
+			for d in q:
+				if d.origin != 'foursquare':
+					deal = d
+					text = 'Click to view the most popular offer here: '+ deal.deal_text
+					action='deal'
+					break
+			else:
 				text = "See any deals? Pay it forward! Click to add."
 				action = 'upload'
+				deal = None
+		# 	
+# 			
+# 			numdeals = q.count()
+# 			if numdeals > 0:	#many deals found
+# 				deal_matched = False
+# 				text = "See any deals? Pay it forward! Click to add."
+# 				action = 'upload'
+# 				while deal_matched == False:
+# 					deal = q.get()
+# 					if deal.origin != 'foursquare':
+# 						text = 'Click to view the most popular offer here: '+ deal.deal_text
+# 						action='deal'
+# 						deal_matched = True
+# 			else:	#no deals found
+# 				text = "See any deals? Pay it forward! Click to add."
+# 				action = 'upload'
 		
-		#create floating_content entity and put
-		floating_content = levr.FloatingContent(
-			action=action,
-			contentID=contentID,
-			user=user,
-			deal=deal,
-			business=business
-		)
-		floating_content.put()
-		
-		
-		reply = {
-			'CHECKIN_ID'		:checkin['id'],
-			'text'				:text,
-			'url'				:levr_url,
-			'contentId'			:contentID
-		}
-		
-		
-		
-		'''else:			#no business found
-			#ask pat for all the deals within walking distance
-			url = 'http://www.levr.com/phone'
-			ll = str(checkin['venue']['location']['lat'])+','+str(checkin['venue']['location']['lng'])
-			request_point = levr.geo_converter(ll)
-			precision = 6
-			results = levr_utils.get_deals_in_area(['all'],request_point,precision)
-
-			if len(results) > 0:
-				reply['text'] = "There are "+str(len(results))+" deals near you - click to view."
-				reply['url'] = '' #deeplink into deal upload screen
-			else:
-				reply['text'] = "See any deals? Pay it forward: click to upload."
-				reply['url'] = '' #deeplink into deal upload screen'''
-				
-		
-		#reply['CHECKIN_ID'] = checkin['id']
-		#reply['text'] = 'Hey ethan. click here to see this reply inside Levr.'
-		#reply['url']  = 'fsq+unhlif5eyxsklx50dasz2pqbge2hdoik5gxbwcirc55nmq4c+reply://?contentId=abcdefg12345&fsqCallback=foursquare://checkins/'+checkin['id']
-		#reply['url']  = 'fsq+unhlif5eyxsklx50dasz2pqbge2hdoik5gxbwcirc55nmq4c+reply://?contentId=abcdefg12345'
-		#reply['url']  = 'http://www.levr.com?contentId=abcdefg12345'
-		#reply['url']  = 'http://www.levr.com/deal/blah'
-		#reply['contentId'] = 'abcdefg12345'
+			#create floating_content entity and put
+			floating_content = levr.FloatingContent(
+				action=action,
+				contentID=contentID,
+				user=user,
+				deal=deal,
+				business=business
+			)
+			floating_content.put()
 			
-		url = 'https://api.foursquare.com/v2/checkins/'+reply['CHECKIN_ID']+'/reply?v=20120920&oauth_token='+'PZVIKS4EH5IFBJX1GH5TUFYAA3Z5EX55QBJOE3YDXKNVYESZ'
-		#url = 'https://api.foursquare.com/v2/checkins/'+reply['CHECKIN_ID']+'/reply?v=20120920&text=hitherehello&url=foursquare%2Bunhlif5eyxsklx50dasz2pqbge2hdoik5gxbwcirc55nmq4c%2Breply%3A//%3FcontentId%3Dabcdefg12345&contentId=abcdefg12345&oauth_token='+'PZVIKS4EH5IFBJX1GH5TUFYAA3Z5EX55QBJOE3YDXKNVYESZ'
-		logging.debug(url)
-		#result = urlfetch.fetch(url=url,method=urlfetch.POST)
-		result = urlfetch.fetch(url=url,
-								payload=urllib.urlencode(reply),
-								method=urlfetch.POST)
-		logging.debug(levr.log_dict(result.__dict__))
+			
+			reply = {
+				'CHECKIN_ID'		:checkin['id'],
+				'text'				:text,
+				'url'				:levr_url,
+				'contentId'			:contentID
+			}
+		
+		
+		
+			'''else:			#no business found
+				#ask pat for all the deals within walking distance
+				url = 'http://www.levr.com/phone'
+				ll = str(checkin['venue']['location']['lat'])+','+str(checkin['venue']['location']['lng'])
+				request_point = levr.geo_converter(ll)
+				precision = 6
+				results = levr_utils.get_deals_in_area(['all'],request_point,precision)
+	
+				if len(results) > 0:
+					reply['text'] = "There are "+str(len(results))+" deals near you - click to view."
+					reply['url'] = '' #deeplink into deal upload screen
+				else:
+					reply['text'] = "See any deals? Pay it forward: click to upload."
+					reply['url'] = '' #deeplink into deal upload screen'''
+					
+			
+			#reply['CHECKIN_ID'] = checkin['id']
+			#reply['text'] = 'Hey ethan. click here to see this reply inside Levr.'
+			#reply['url']  = 'fsq+unhlif5eyxsklx50dasz2pqbge2hdoik5gxbwcirc55nmq4c+reply://?contentId=abcdefg12345&fsqCallback=foursquare://checkins/'+checkin['id']
+			#reply['url']  = 'fsq+unhlif5eyxsklx50dasz2pqbge2hdoik5gxbwcirc55nmq4c+reply://?contentId=abcdefg12345'
+			#reply['url']  = 'http://www.levr.com?contentId=abcdefg12345'
+			#reply['url']  = 'http://www.levr.com/deal/blah'
+			#reply['contentId'] = 'abcdefg12345'
+				
+			url = 'https://api.foursquare.com/v2/checkins/'+checkin['id']+'/reply?v=20120920&oauth_token='+user.foursquare_token
+			#url = 'https://api.foursquare.com/v2/checkins/'+reply['CHECKIN_ID']+'/reply?v=20120920&text=hitherehello&url=foursquare%2Bunhlif5eyxsklx50dasz2pqbge2hdoik5gxbwcirc55nmq4c%2Breply%3A//%3FcontentId%3Dabcdefg12345&contentId=abcdefg12345&oauth_token='+'PZVIKS4EH5IFBJX1GH5TUFYAA3Z5EX55QBJOE3YDXKNVYESZ'
+			logging.debug(url)
+			#result = urlfetch.fetch(url=url,method=urlfetch.POST)
+			result = urlfetch.fetch(url=url,
+									payload=urllib.urlencode(reply),
+									method=urlfetch.POST)
+			logging.debug(levr.log_dict(result.__dict__))
+		else:
+			logging.info('BUSINESS NOT FOUND')
 		
 class CatchUpHandler(webapp2.RequestHandler):
 	def get(self):
