@@ -71,7 +71,7 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 	def post(self,*args,**kwargs):
 		try:
 			logging.info('uploadDeal\n\n\n')
-			logging.debug(kwargs)
+			logging.info(kwargs)
 			user = kwargs.get('actor')
 			uid = user.key()
 			#make sure than an image is uploaded

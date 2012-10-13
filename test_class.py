@@ -695,43 +695,59 @@ class FloatingContentHandler(webapp2.RequestHandler):
 		
 		#make up some floating content
 		
-		#delete donor if exists
-		don = levr.Customer.gql('WHERE alias=:1','donor')
+# 		#delete donor if exists
+# 		don = levr.Customer.gql('WHERE alias=:1','donor')
+# 		
+# 		for d in don:
+# 			d.delete()
+# 		
+# 		#make a new user that is associated with foursquare and nothing else
+# 		donor = levr.Customer(
+# 				foursquare_token = '4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0',
+# 				alias = 'donor',
+# 				levr_token = levr.create_levr_token()
+# 		)
+# 		
+# 		donor.put()
 		
-		for d in don:
-			d.delete()
+		owner = levr.Customer.gql('WHERE alias=:1','q').get()
 		
-		#make a new user that is associated with foursquare and nothing else
-		donor = levr.Customer(
-				foursquare_token = '4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0',
-				alias = 'donor',
-				levr_token = levr.create_levr_token()
-		)
+		deal = levr.Deal.get('ahFzfmxldnItcHJvZHVjdGlvbnIbCxIIQ3VzdG9tZXIYsuQDDAsSBERlYWwYtG0M')
 		
-		donor.put()
-		
-		owner = levr.Customer.gql('WHERE email=:1','ethan@levr.com').get()
-		
-		deal = levr.Deal.gql('WHERE ANCESTOR IS :1',owner.key()).get()
+		user = levr.Customer.gql('WHERE email=:1','alonso@getlevr.com').get()
 		
 		business = levr.Business.get(deal.businessID)
 		
 		contentID = levr.create_content_id('foursquare') #or facebook or twitter
+		self.response.out.write('Upload: ' + contentID + '\n')
 		
-		#new floating content
+		#floating content for upload
 		fc = levr.FloatingContent(
 				action='upload',
 				contentID=contentID,
-				user=donor,
-				business=business,
+				user=user,
+				business=business
+		)
+		
+		#put it in!
+		fc.put()
+		
+		contentID = levr.create_content_id('foursquare') #or facebook or twitter
+		#write out the token
+		self.response.out.write('Deal: ' + contentID)
+		
+		
+		#floating content for deal
+		fc = levr.FloatingContent(
+				action='deal',
+				contentID=contentID,
+				user=user,
 				deal=deal
 		)
 		
 		#put it in!
 		fc.put()
 		
-		#write out the token
-		self.response.out.write(contentID)
 class TestFoursquareHandler(webapp2.RequestHandler):
 	def get(self):
 		foursquare_token = 'ML4L1LW3SO0SKUXLKWMMBTSOWIUZ34NOTWTWRW41D0ANDBAX'

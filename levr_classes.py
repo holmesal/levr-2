@@ -1033,6 +1033,7 @@ class BusinessBetaRequest(db.Model):
 class FloatingContent(db.Model):
 	action				= db.StringProperty(required=True,choices=set(['upload','deal']))
 	contentID			= db.StringProperty(required=True)
+	origin				= db.StringProperty()
 	user				= db.ReferenceProperty(Customer,collection_name='floating_content')
 	deal				= db.ReferenceProperty(Deal,collection_name='floating_content')
 	business			= db.ReferenceProperty(Business,collection_name='floating_content')

@@ -4,7 +4,6 @@ import api_utils_social as social
 import jinja2
 import json
 import levr_classes as levr
-import levr_utils
 import logging
 import os
 import urllib
@@ -116,7 +115,8 @@ class PushHandler(webapp2.RequestHandler):
 				text = "See any deals? Pay it forward! Click to add."
 				action = 'upload'
 				deal = None
-		# 	
+
+#	
 # 			
 # 			numdeals = q.count()
 # 			if numdeals > 0:	#many deals found
@@ -136,6 +136,7 @@ class PushHandler(webapp2.RequestHandler):
 			#create floating_content entity and put
 			floating_content = levr.FloatingContent(
 				action=action,
+				origin='foursquare',
 				contentID=contentID,
 				user=user,
 				deal=deal,

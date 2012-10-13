@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Levr</title>
+    <!-- Bootstrap -->
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/bootstrap-responsive.min.css" rel="stylesheet">
+    <link href="../css/mobileupload.css" rel="stylesheet">
+    
+    <!-- start time tracking -->
+	<script>var startTime = (new Date()).getTime();</script>
+		
+    <!-- start Mixpanel --><script type="text/javascript">(function(c,a){window.mixpanel=a;var b,d,h,e;b=c.createElement("script");b.type="text/javascript";b.async=!0;b.src=("https:"===c.location.protocol?"https:":"http:")+'//cdn.mxpnl.com/libs/mixpanel-2.1.min.js';d=c.getElementsByTagName("script")[0];d.parentNode.insertBefore(b,d);a._i=[];a.init=function(b,c,f){function d(a,b){var c=b.split(".");2==c.length&&(a=a[c[0]],b=c[1]);a[b]=function(){a.push([b].concat(Array.prototype.slice.call(arguments,0)))}}var g=a;"undefined"!==typeof f?
+g=a[f]=[]:f="mixpanel";g.people=g.people||[];h="disable track track_pageview track_links track_forms register register_once unregister identify name_tag set_config people.identify people.set people.increment".split(" ");for(e=0;e<h.length;e++)d(g,h[e]);a._i.push([b,c,f])};a.__SV=1.1})(document,window.mixpanel||[]);
+mixpanel.init("2af9fbfe441a94146b37bdffac0022b8");</script><!-- end Mixpanel -->
+    
+    
+  </head>
+  <body>
+  
+  <div class='container'>
+  	<div class="row">
+  		<div class="span12">
+  			<h3>Add an offer:</h3>
+  			<form class="form" action='{{ upload_url }}' method="POST" enctype="multipart/form-data">
+  				<input type=hidden name='uid' value="{{uid}}">
+  				<input type=hidden name='businessID' value="{{businessID}}">
+  				<input type=hidden name='callback_url' value="{{callback_url}}">
+  				<div class="control-group"><input type="file" name="img"></div>
+	  			<div class="control-group"><input type="text" name="deal_text" placeholder="What's the deal?"></div>
+	  			
+	  			<div class="control-group"><textarea rows="3" name="description" placeholder="Anything else people should know?"></textarea></div>
+	  			<button type="submit" >Submit</button>
+  			</form>
+  			
+  		</div>
+  	</div>
+  </div>
+  
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
+    <script src="../js/bootstrap.min.js"></script>
+    <script src="../js/mobileupload.js"></script>
+  </body>
+</html>
