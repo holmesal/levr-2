@@ -738,9 +738,9 @@ class TestFoursquareHandler(webapp2.RequestHandler):
 		user = api_utils_social.Foursquare(foursquare_token=foursquare_token)
 		logging.debug(levr.log_dir(user))
 		new_user,new_details,new_friends = user.first_time_connect(foursquare_token=foursquare_token)
-		logging.debug(new_details)
-		logging.debug(new_friends)
-		logging.debug(levr.log_model_props(new_user))
+		self.response.out.write(new_details)
+		self.response.out.write(new_friends)
+		self.response.out.write(levr.log_model_props(new_user))
 		
 		
 app = webapp2.WSGIApplication([('/new', MainPage),

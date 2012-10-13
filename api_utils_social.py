@@ -276,6 +276,7 @@ class Foursquare(SocialClass):
 		'''
 		Foursquare
 		'''
+		logging.debug('\n\n\n \t\t\t INIT FOURSQUARE \n\n\n')
 		#set the foursquare api version
 		self.version = '20121007' #the foursquare api version
 		
@@ -298,11 +299,16 @@ class Foursquare(SocialClass):
 			
 			#search for the user by that id
 			user = levr.Customer.all().filter('foursquare_id',foursquare_id).get()
-			
+#			logging.debug('\n\n\n\n \t\t\t\t USER \n\n\n\n')
+			logging.debug(user)
+			logging.debug(levr.log_model_props(user))
 			if not user:
+				logging.debug('user doesnt exist')
 				#user does not exist in database - create a new one!
 				user = levr.Customer(levr_token = levr.create_levr_token())
 				user.put()
+			else:
+				logging.debug('user exists')
 			# else: user was found and we will init with that user
 		
 		#init all dat social stuff!
