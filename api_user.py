@@ -359,8 +359,6 @@ class UserInfoHandler(webapp2.RequestHandler):
 			levr.log_error(self.request)
 			api_utils.send_error(self,'Server Error')
 		
-		
-		
 app = webapp2.WSGIApplication([('/api/user/(.*)/favorites', UserFavoritesHandler),
 								('/api/user/(.*)/uploads', UserUploadsHandler),
 								('/api/user/(.*)/followers', UserGetFollowersHandler),

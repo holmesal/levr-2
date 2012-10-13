@@ -82,6 +82,8 @@ handlers:
   script: api_connect.app
 - url: /api/merchant.*
   script: api_merchant.app
+- url: /api/deeplink.*
+  script: api_deeplink.app
 
 
 

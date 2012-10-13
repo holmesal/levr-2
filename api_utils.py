@@ -1326,3 +1326,8 @@ def update_foursquare_business(foursquare_id,token='random'):
 	
 	#pull the specials
 	#logging.info(foursquare_deals)
+
+
+
+	
+#delete account and all follower references

@@ -13,6 +13,7 @@ import levr_classes as levr
 import levr_encrypt as enc
 import logging
 import webapp2
+import uuid
 #import geo.geohash as geohash
 
 
@@ -688,6 +689,50 @@ class NewUserHandler(webapp2.RequestHandler):
 		
 		self.response.out.write('ok')
 		
+class FloatingContentHandler(webapp2.RequestHandler):
+	def get(self):
+		
+		#make up some floating content
+		
+		#delete donor if exists
+		don = levr.Customer.gql('WHERE alias=:1','donor')
+		
+		for d in don:
+			d.delete()
+		
+		#make a new user that is associated with foursquare and nothing else
+		donor = levr.Customer(
+				foursquare_token = '4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0',
+				alias = 'donor',
+				levr_token = levr.create_levr_token()
+		)
+		
+		donor.put()
+		
+		owner = levr.Customer.gql('WHERE email=:1','ethan@levr.com').get()
+		
+		deal = levr.Deal.gql('WHERE ANCESTOR IS :1',owner.key()).get()
+		
+		business = levr.Business.get(deal.businessID)
+		
+		contentID = levr.create_content_id('foursquare') #or facebook or twitter
+		
+		#new floating content
+		fc = levr.FloatingContent(
+				action='upload',
+				contentID=contentID,
+				user=donor,
+				business=business,
+				deal=deal
+		)
+		
+		#put it in!
+		fc.put()
+		
+		#write out the token
+		self.response.out.write(contentID)
+		
+		
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload.*', DatabaseUploadHandler),
 								('/new/find', FilterGeohashHandler),
@@ -705,7 +750,8 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/clearFoursquare',ClearFoursquareHandler),
 								('/new/refreshQ', RefreshQHandler),
 								('/new/testcron', TestCronJobHandler),
-								('/new/newUser', NewUserHandler)
+								('/new/newUser', NewUserHandler),
+								('/new/floatingContent', FloatingContentHandler)
 
 #								('/new/update' , UpdateUsersHandler)
 								],debug=True)

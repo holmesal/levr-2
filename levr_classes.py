@@ -329,6 +329,11 @@ def create_levr_token():
 	token = uuid.uuid4()
 	token = enc.encrypt_key(''.join(token.__str__().split('-'))).replace('=','')
 	return token
+	
+def create_content_id(service):
+	token = uuid.uuid4().hex
+	return service[0:3]+token
+
 
 def create_unique_id():
 	#create the share ID - based on milliseconds since epoch
@@ -1024,4 +1029,11 @@ class BusinessBetaRequest(db.Model):
 	contact_email	= db.StringProperty()
 	contact_phone	= db.StringProperty()
 	date_created	= db.DateTimeProperty(auto_now_add=True)
+	
+class FloatingContent(db.Model):
+	action				= db.StringProperty(required=True,choices=set(['upload','deal']))
+	contentID			= db.StringProperty(required=True)
+	user				= db.ReferenceProperty(Customer,collection_name='floating_content')
+	deal				= db.ReferenceProperty(Deal,collection_name='floating_content')
+	business			= db.ReferenceProperty(Business,collection_name='floating_content')
 
