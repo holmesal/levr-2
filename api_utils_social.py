@@ -778,18 +778,21 @@ class Facebook(SocialClass):
 		if self.debug == True:
 			logging.warning('\n\n\n\t\t\t\t WARNING: RUNNING TWITTER CONNECTION IN DEBUG MODE')
 			self.user.facebook_token	= facebook_auth['pat_facebook_token']
-			self.user.facebook_id		= facebook_auth['pat_facebook_id']
+			self.user.facebook_id		= int(facebook_auth['pat_facebook_id'])
 		else:
 			#pull oauth credentials
 			facebook_token = kwargs.get('facebook_token',None)
 			facebook_id = kwargs.get('facebook_id',None)
 			#assure the credentials exist
 			assert facebook_token, 'facebook_token required in kwargs'
-			assert facebook_id, 'facebook_id required in kwargs'
-			facebook_id = int(facebook_id)
 			#not in debug mode, values are user provided
 			self.user.facebook_token	= facebook_token
-			self.user.facebook_id		= facebook_id
+			#facebook_id is not required to get info
+			if facebook_id:
+				facebook_id = int(facebook_id)
+				self.user.facebook_id		= facebook_id
+		#set connection to facebook
+		self.user.facebook_connected = True
 		return
 	def update_user_details(self):
 		'''
@@ -849,7 +852,13 @@ class Facebook(SocialClass):
 		Facebook
 		'''
 		if self.verbose: logging.debug('\n\n\n\t\t\t\t FACEBOOK CREATE URL \n\n\n')
-		url = 'https://graph.facebook.com/' + str(self.user.facebook_id)
+		url = 'https://graph.facebook.com/'
+		
+		#if the user has a registered facebook_id, use that. Otherwise, use me
+		if self.user.facebook_id:
+			url+= str(self.user.facebook_id)
+		else:
+			url+= 'me'
 		
 		if action == 'friends':
 			logging.debug('add action!')

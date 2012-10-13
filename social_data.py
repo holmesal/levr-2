@@ -8,6 +8,8 @@ twitter_auth = {
 		'LevrDevr_oauth_token_secret'	: 'f0Rzdx8iiL58ebiyvokcf4JW2C9oSKbfJ81rwhsg',
 		}
 facebook_auth = {
+			'client_id':'448791615162217',
+			'client_secret':'1db3af8377ccef564230ed62c27bbcc6',
 			'pat_facebook_id' : 1234380397,
 			'pat_facebook_token' : 'AAACEdEose0cBANE5rXw73cOBjbgWih4aTitqy1ueJDDRtNwMz3ZA3cQwO8DVSiK2FMJeXSO7F0dXb6mAS2gemef5mBPd9yrPnQOX8BFMbCD1OxzvS'
 			}
