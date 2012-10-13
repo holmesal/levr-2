@@ -232,7 +232,7 @@ class TestHandler(webapp2.RequestHandler):
 
 app = webapp2.WSGIApplication([('/facebook/push', PushHandler),
 								('/facebook/authorize', AuthorizeBeginHandler),
-								('/facebook/exchange', ExchangeCodeHandler),
+								('/facebook/authorize/exchange', ExchangeCodeHandler),
 								('/facebook/authorize/complete', AuthorizeCompleteHandler),
 								('/facebook/catchup', CatchUpHandler),
 								('/facebook/test', TestHandler)],
