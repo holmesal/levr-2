@@ -754,26 +754,26 @@ class Customer(db.Model):
 	new_notifications = db.IntegerProperty(default=0)
 	
 	#notifications, favorites, upvotes, etc...
-	followers		= db.ListProperty(db.Key)
-	favorites		= db.ListProperty(db.Key,default=[])
-	upvotes			= db.ListProperty(db.Key,default=[])
-	downvotes		= db.ListProperty(db.Key,default=[])
+	followers		= db.ListProperty(db.Key) # Customer
+	favorites		= db.ListProperty(db.Key,default=[]) # Deal
+	upvotes			= db.ListProperty(db.Key,default=[]) # Deal
+	downvotes		= db.ListProperty(db.Key,default=[]) # Deal
 	
 	
 	#facebook
-	facebook_connected	= db.BooleanProperty(default=False) #not required if have id
+	facebook_connected	= db.BooleanProperty(default=False)
 	facebook_token		= db.StringProperty() #not permanent
 	facebook_id			= db.IntegerProperty()
 	facebook_friends	= db.ListProperty(int)
 	
 	#foursquare
-	foursquare_connected= db.BooleanProperty(default=False) #not required if have id
+	foursquare_connected= db.BooleanProperty(default=False)
 	foursquare_id		= db.IntegerProperty()
 	foursquare_token	= db.StringProperty()
 	foursquare_friends	= db.ListProperty(int)
 	
 	#twitter
-	twitter_connected		= db.BooleanProperty(default=False) #not required if have id
+	twitter_connected		= db.BooleanProperty(default=False)
 	twitter_token			= db.StringProperty()
 	twitter_token_secret	= db.StringProperty()
 	twitter_id				= db.IntegerProperty()
@@ -807,8 +807,80 @@ class Customer(db.Model):
 	
 	
 	
-	
-	
+	def secure_delete(self):
+		'''
+		Securely deletes a Customer entity by removing all references to the entity in the database
+		and then calling db.Models delete method on the entity. See ya.
+		'''
+		key = self.key()
+		
+		#=======================================================================
+		# Notifications
+		# Delete the notifications
+		#=======================================================================
+		# to_be_notified notifications
+		notes = Notification.all().filter('to_be_notified',key).fetch(None)
+		# actor notifications
+		more_notes = self.notification_set.fetch(None)
+		notes.extend(more_notes)
+		
+		logging.debug('Notifications deleted: {}'.format(notes.__len__()))
+		db.delete(notes)
+		
+		#=======================================================================
+		# Other Customers
+		# Remove reference links
+		#=======================================================================
+		users = Customer.all().filter('followers',key).fetch(None)
+		# remove the deleted users key
+		for user in users:
+			user.followers.remove(key)
+		logging.debug(users)
+		logging.debug('Follower references removed: {}'.format(users.__len__()))
+		db.put(users)
+		
+		#=======================================================================
+		# Deal
+		# have to delete the deals I guess... no other options since they are children
+		#=======================================================================
+		deals = Deal.all().ancestor(key).fetch(None)
+		logging.debug('Child Deals removed: {}'.format(deals.__len__()))
+		db.delete(deals)
+		
+		
+		#=======================================================================
+		# Business
+		# Empty the reference property
+		#=======================================================================
+		businesses = self.businesses.fetch(None)
+		for business in businesses:
+			business.owner = None
+		logging.debug('Businesses no longer owned: {}'.format(businesses.__len__()))
+		db.put(businesses)
+		
+		
+		#=======================================================================
+		# ReportedDeal
+		# Remove reference link
+		#=======================================================================
+		reported_deals = self.reported_deals.fetch(None)
+		for deal in reported_deals:
+			deal.uid = None
+		logging.debug('ReportedDeals not longer being referenced: {}'.format(reported_deals.__len__()))
+		db.put(reported_deals)
+		
+		#=======================================================================
+		# FloatingContent
+		# Delete the content - it is now irrelevant
+		#=======================================================================
+		floating_content = self.floating_content.fetch(None)
+		logging.debug('Floating content removed: {}'.format(floating_content.__len__()))
+		db.delete(floating_content)
+		
+		#call the users delete function to delete the user
+		self.delete()
+		
+		return
 	
 	
 	@property
@@ -883,7 +955,6 @@ class Business(db.Model):
 	activation_code = db.StringProperty()
 	locu_id			= db.StringProperty()
 	karma			= db.IntegerProperty(default=0)
-
 
 	def create_tags(self):
 		#create tags list
@@ -1000,7 +1071,6 @@ class Notification(db.Model):
 	date_in_seconds	= db.IntegerProperty()
 	notification_type = db.StringProperty(required=True,choices=set(['upvote','followedUpload','newFollower','levelup','shared','levr','expired']))
 	line2			= db.StringProperty(default='')
-#	owner			= db.ReferenceProperty(Customer,collection_name='notifications',required=True)
 	to_be_notified	= db.ListProperty(db.Key)
 	deal			= db.ReferenceProperty(Deal,collection_name='notifications')
 	actor			= db.ReferenceProperty(Customer)

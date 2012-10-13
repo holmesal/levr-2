@@ -732,15 +732,23 @@ class FloatingContentHandler(webapp2.RequestHandler):
 		
 		#write out the token
 		self.response.out.write(contentID)
-class TestFoursquareHandler(webapp2.RequestHandler):
+class SandboxHandler(webapp2.RequestHandler):
+	'''
+	Dont delete this. This is my dev playground.
+	'''
 	def get(self):
-		foursquare_token = 'ML4L1LW3SO0SKUXLKWMMBTSOWIUZ34NOTWTWRW41D0ANDBAX'
-		user = api_utils_social.Foursquare(foursquare_token=foursquare_token)
-		logging.debug(levr.log_dir(user))
-		new_user,new_details,new_friends = user.first_time_connect(foursquare_token=foursquare_token)
-		self.response.out.write(new_details)
-		self.response.out.write(new_friends)
-		self.response.out.write(levr.log_model_props(new_user))
+		user = levr.Customer.all().filter('email','ethan@levr.com').get()
+		self.response.headers['Content-Type'] = 'text/plain'
+		self.response.out.write(levr.log_model_props(user))
+		assert user, 'user doesnt exist'
+		
+		cont = levr.FloatingContent(user=user,action='upload',contentID='adwadaw').put()
+		biz = levr.Business(owner=user).put()
+		
+		
+		user.secure_delete()
+		
+		self.response.out.write('\n\nDone!')
 		
 		
 app = webapp2.WSGIApplication([('/new', MainPage),
@@ -762,7 +770,7 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/testcron', TestCronJobHandler),
 								('/new/newUser', NewUserHandler),
 								('/new/floatingContent', FloatingContentHandler),
-								('/new/foursquare', TestFoursquareHandler)
+								('/new/sandbox', SandboxHandler)
 
 #								('/new/update' , UpdateUsersHandler)
 								],debug=True)

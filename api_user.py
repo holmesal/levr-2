@@ -173,7 +173,7 @@ class UserAddFollowHandler(webapp2.RequestHandler):
 			}
 		'''
 		try:
-			logging.info('USER ADD FOLLOWER\n\n\n')
+			logging.info('\n\n\n\t\t\t USER ADD FOLLOWER\n\n\n')
 			user 	= kwargs.get('user')
 			uid 	= user.key()
 			actor	= kwargs.get('actor')
@@ -181,8 +181,8 @@ class UserAddFollowHandler(webapp2.RequestHandler):
 			private = kwargs.get('private')
 			
 			#add actor to the list of followers
-			if actor not in user.followers:
-				user.followers.append(actor)
+			if actorID not in user.followers:
+				user.followers.append(actorID)
 			
 			#PERFORM ACTIONS
 			if not levr.create_notification('newFollower',user.key(),actorID):
@@ -190,7 +190,7 @@ class UserAddFollowHandler(webapp2.RequestHandler):
 				return
 			
 			#get notifications
-			
+			db.put([user,actor])
 			
 			#respond
 			api_utils.send_response(self,{'dt':str(actor.date_last_notified)},actor)
