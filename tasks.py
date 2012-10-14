@@ -21,9 +21,11 @@ class SearchFoursquareTaskHandler(webapp2.RequestHandler):
 				
 				''')
 			
-# 			logging.info(self.request.body)
+			
+			
+#  			logging.debug(self.request.body)
 			payload = json.loads(self.request.body)
-# 			logging.info(payload)
+ 			logging.debug(payload)
 			geo_point = db.GeoPt(payload['lat'],payload['lon'])
 # 			logging.info(geo_point)
 			foursquare_ids = payload['foursquare_ids']
@@ -59,6 +61,7 @@ class BusinessHarmonizationTaskHandler(webapp2.RequestHandler):
 				''')
 				
 				payload = json.loads(self.request.body)
+				logging.debug(payload)
 				
 				geo_point = levr.geo_converter(payload['geo_str'])
 				
@@ -73,7 +76,7 @@ class BusinessHarmonizationTaskHandler(webapp2.RequestHandler):
 				business = levr.Business.get(key)
 				
 				if match:
-					logging.info('Foursquare ID found: '+match)
+					logging.info('Foursquare ID found: '+match['foursquare_id'])
 					#update business entity
 					business.foursquare_id = match['foursquare_id']
 					business.foursquare_name = match['foursquare_name']
@@ -180,6 +183,8 @@ class MergeUsersTaskHandler(webapp2.RequestHandler):
 				new_user, new_user_details, new_friends = user.first_time_connect(
 										foursquare_token=donor.foursquare_token
 										)
+				#add deals
+				#delete donor user
 			elif service=='facebook':
 				logging.info('The user came from facebook')
 				user = social.Facebook(user,'verbose')

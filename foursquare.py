@@ -4,7 +4,6 @@ import api_utils_social as social
 import jinja2
 import json
 import levr_classes as levr
-import levr_utils
 import logging
 import os
 import urllib
@@ -100,6 +99,9 @@ class PushHandler(webapp2.RequestHandler):
 		contentID = levr.create_content_id('foursquare')
 		levr_url = 'http://www.levr.com/mobile/'+contentID
 		
+		#search for expired offers at that business
+		#q_expired = levr.Deal.gql('WHERE businessID=:1 AND deal_status=:2',business)
+		
 		if business:	#business found - CURRENTLY ONLY REPLYING AT BUSINESSES THAT ARE IN OUR DATABASE
 			#for deal in levr.Deal().all().filter('businessID =', str(business.key())).run():
 			q = levr.Deal.gql("WHERE businessID = :1 AND deal_status = :2 ORDER BY count_redeemed DESC",str(business.key()),'active')
@@ -116,7 +118,8 @@ class PushHandler(webapp2.RequestHandler):
 				text = "See any deals? Pay it forward! Click to add."
 				action = 'upload'
 				deal = None
-		# 	
+
+#	
 # 			
 # 			numdeals = q.count()
 # 			if numdeals > 0:	#many deals found
@@ -136,6 +139,7 @@ class PushHandler(webapp2.RequestHandler):
 			#create floating_content entity and put
 			floating_content = levr.FloatingContent(
 				action=action,
+				origin='foursquare',
 				contentID=contentID,
 				user=user,
 				deal=deal,

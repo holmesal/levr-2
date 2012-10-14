@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deal</title>
+    <!-- Bootstrap -->
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-responsive.min.css" rel="stylesheet">
+    <link href="/css/mobiledealview.css" rel="stylesheet">
+    
+    <!-- start time tracking -->
+	<script>var startTime = (new Date()).getTime();</script>
+		
+    <!-- start Mixpanel --><script type="text/javascript">(function(c,a){window.mixpanel=a;var b,d,h,e;b=c.createElement("script");b.type="text/javascript";b.async=!0;b.src=("https:"===c.location.protocol?"https:":"http:")+'//cdn.mxpnl.com/libs/mixpanel-2.1.min.js';d=c.getElementsByTagName("script")[0];d.parentNode.insertBefore(b,d);a._i=[];a.init=function(b,c,f){function d(a,b){var c=b.split(".");2==c.length&&(a=a[c[0]],b=c[1]);a[b]=function(){a.push([b].concat(Array.prototype.slice.call(arguments,0)))}}var g=a;"undefined"!==typeof f?
+g=a[f]=[]:f="mixpanel";g.people=g.people||[];h="disable track track_pageview track_links track_forms register register_once unregister identify name_tag set_config people.identify people.set people.increment".split(" ");for(e=0;e<h.length;e++)d(g,h[e]);a._i.push([b,c,f])};a.__SV=1.1})(document,window.mixpanel||[]);
+mixpanel.init("2af9fbfe441a94146b37bdffac0022b8");</script><!-- end Mixpanel -->
+   
+   <style>
+	   #deal_img{
+		   background-image: url({{deal['largeImg']}});
+		   background-color: gray;
+		   background-size: cover;
+		   background-position: center center;
+	   }
+   </style>
+    
+  </head>
+  <body>
+  
+  <div class='container'>
+  	<div class="row">
+  		<div class="span12">
+  			<div id='deal_img'>
+	  			<div id='business_background'>
+		  			<p id="businessName">{{deal['business']['businessName']}}</p>
+		  			<p id="businessVicinity">{{deal['business']['vicinity']}}</p>
+	  			</div>
+  			</div>
+   			<h4 id='dealText'>{{deal['dealText']}}</h4>
+   			<p id='description'>{{deal['description']}}</p>
+   			{% if user_agent=='ios' %}
+   				<a id='itunes' href='http://itunes.apple.com/us/app/levr/id564566794?mt=8' class="btn btn-block btn-primary btn-large">View more offers on Levr.</a>
+   			{% endif %}
+   			<div id='ninja'>
+	   			<img id='userphoto' src="{{deal['owner']['photoURL']}}">
+	   			<h5 id="ninjaName">{{deal['owner']['alias']}}</br><span id='ninjaLevel'>Level {{deal['owner']['level']}}</span></h5>
+	   			<p id="ninjaKarma">{{deal['owner']['karma']}}</p>
+   			</div>
+  		</div>
+  	</div>
+  </div>
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+	    
+	    function previewImage(input){
+			if (input.files && input.files[0]) {
+		        var reader = new FileReader();
+		        reader.onload = function (e) {
+		        	$('#deal_text,#description,#submitBtn').show()
+		        	$('#imgPreview').css('background-image','url('+e.target.result+')');
+		        	$('#imgPreview').css('display','block')
+		        	$('#imgPrompt,#fakeImgBtn').hide()
+		        };
+		
+		        reader.readAsDataURL(input.files[0]);
+		    }
+		}
+	    
+	    $(document).ready(function() {
+		    $('#fakeImgBtn,#imgPreview').click(function(){
+			    $('#img').trigger('click')
+			    return False
+		    })
+		    
+		    $('#deal_text').keyup(function(){
+			    if ($('#deal_text').val().length>0){
+				    $(':submit').removeAttr("disabled")
+			    } else{
+				    $(':submit').attr("disabled", "disabled");
+			    }
+		    })
+	    })
+    </script>
+  </body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Levr</title>
+    <!-- Bootstrap -->
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-responsive.min.css" rel="stylesheet">
+    <link href="/css/mobileuploadcomplete.css" rel="stylesheet">
+    
+    <!-- start time tracking -->
+	<script>var startTime = (new Date()).getTime();</script>
+		
+    <!-- start Mixpanel --><script type="text/javascript">(function(c,a){window.mixpanel=a;var b,d,h,e;b=c.createElement("script");b.type="text/javascript";b.async=!0;b.src=("https:"===c.location.protocol?"https:":"http:")+'//cdn.mxpnl.com/libs/mixpanel-2.1.min.js';d=c.getElementsByTagName("script")[0];d.parentNode.insertBefore(b,d);a._i=[];a.init=function(b,c,f){function d(a,b){var c=b.split(".");2==c.length&&(a=a[c[0]],b=c[1]);a[b]=function(){a.push([b].concat(Array.prototype.slice.call(arguments,0)))}}var g=a;"undefined"!==typeof f?
+g=a[f]=[]:f="mixpanel";g.people=g.people||[];h="disable track track_pageview track_links track_forms register register_once unregister identify name_tag set_config people.identify people.set people.increment".split(" ");for(e=0;e<h.length;e++)d(g,h[e]);a._i.push([b,c,f])};a.__SV=1.1})(document,window.mixpanel||[]);
+mixpanel.init("2af9fbfe441a94146b37bdffac0022b8");</script><!-- end Mixpanel -->
+    
+    
+  </head>
+  <body>
+  
+  <div class='container'>
+  	<div class="row">
+  		<div class="span12">
+  			<h3>Nice!</h3>
+  			<p>Find local offers that others have uploaded, and upload your own with the click of a button.</p>
+  			<p>Plus, awesome foursquare integration.</p>
+  			{% if user_agent=='ios' %}
+   				<a id='btnDownload' href='http://itunes.apple.com/us/app/levr/id564566794?mt=8' class="btn btn-block btn-primary btn-large">Download Levr.</a>
+   			{% endif %}
+  			<img id='pin' src="/img/pin.png">
+  			
+  		</div>
+  	</div>
+  </div>
+  
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <!--script src="../js/mobileupload.js"></script-->
+  </body>
+</html>

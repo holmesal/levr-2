@@ -1,5 +1,5 @@
 application: levr-production
-version: test
+version: 2
 runtime: python27
 api_version: 1
 threadsafe: true
@@ -54,6 +54,8 @@ handlers:
   secure: always
 - url: /facebook.*
   script: facebook.app
+- url: /mobile.*
+  script: mobile.app
 #  secure: always
 
 #tasks and cronjobs
