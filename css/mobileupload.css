@@ -1,7 +1,58 @@
 body{
-	background-image: url(../img/noisy_net.png);
+	background-image: url(../img/classy_fabric.png);
 	text-align: center;
 	margin: 0px;
 	padding: 0px;
 	color: #f6f6f6;
+}
+
+#cameraButton{
+	
+}
+
+#submitBtn{
+	font-size: 18pt;
+	font-weight: 200;
+}
+
+
+
+#img,#deal_text,textarea,#submitBtn{
+	width: 90%;
+	max-width: 400px;
+	font-size: 12pt;
+
+}
+
+#img-group{
+	position: relative;
+}
+
+#fakeImgBtn{
+	width: 90%;
+	max-width: 400px;
+	font-size: 14pt;
+}
+
+#img{
+	display: none;
+}
+
+#deal_text,#description,#submitBtn{
+	display: none;
+}
+
+#pin{
+	margin-top: 50px;
+	width: 15%;
+	max-width: 100px;
+}
+
+#imgPreview{
+	height: 200px;
+	width: 100%;
+	display: none;
+	background-position: center center;
+	background-repeat: no-repeat;
+	background-size: cover;
 }

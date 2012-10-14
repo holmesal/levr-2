@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Levr</title>
+    <title>Upload</title>
     <!-- Bootstrap -->
     <link href="../css/bootstrap.min.css" rel="stylesheet">
     <link href="../css/bootstrap-responsive.min.css" rel="stylesheet">
@@ -22,24 +22,47 @@ mixpanel.init("2af9fbfe441a94146b37bdffac0022b8");</script><!-- end Mixpanel -->
   <div class='container'>
   	<div class="row">
   		<div class="span12">
-  			<h3>Add an offer:</h3>
+  			<div id='imgPreview'></div>
+  			<h3 id='imgPrompt'>Take a photo of the offer:</h3>
   			<form class="form" action='{{ upload_url }}' method="POST" enctype="multipart/form-data">
   				<input type=hidden name='uid' value="{{uid}}">
   				<input type=hidden name='businessID' value="{{businessID}}">
   				<input type=hidden name='callback_url' value="{{callback_url}}">
-  				<div class="control-group"><input type="file" name="img"></div>
-	  			<div class="control-group"><input type="text" name="deal_text" placeholder="What's the deal?"></div>
+  				<div id='img_group' class="control-group"><a id='fakeImgBtn' href='#' class="btn btn-success btn-large">Launch camera</a><input id='img' type="file" name="img" onchange="previewImage(this);"></div>
+	  			<div class="control-group"><input id='deal_text' type="text" name="deal_text" placeholder="What's the deal?"></div>
 	  			
-	  			<div class="control-group"><textarea rows="3" name="description" placeholder="Anything else people should know?"></textarea></div>
-	  			<button type="submit" >Submit</button>
+	  			<div class="control-group"><textarea id='description' rows="3" name="description" placeholder="Anything else people should know?"></textarea></div>
+	  			
+	  			<button id='submitBtn' type="submit" class="btn btn-primary btn-large">Upload</button>
   			</form>
-  			
+  			<img id='pin' src="../img/pin.png">
   		</div>
   	</div>
   </div>
   
     <script src="http://code.jquery.com/jquery-latest.js"></script>
     <script src="../js/bootstrap.min.js"></script>
-    <script src="../js/mobileupload.js"></script>
+    <script type="text/javascript">
+	    function previewImage(input){
+			if (input.files && input.files[0]) {
+		        var reader = new FileReader();
+		        reader.onload = function (e) {
+		        	$('#deal_text,#description,#submitBtn').show()
+		        	$('#imgPreview').css('background-image','url('+e.target.result+')');
+		        	$('#imgPreview').css('display','block')
+		        	$('#imgPrompt,#fakeImgBtn').hide()
+		        };
+		
+		        reader.readAsDataURL(input.files[0]);
+		    }
+		}
+	    
+	    $(document).ready(function() {
+		    $('#fakeImgBtn,#imgPreview').click(function(){
+			    $('#img').trigger('click')
+			    return False
+		    })
+	    })
+    </script>
   </body>
 </html>

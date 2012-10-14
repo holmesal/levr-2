@@ -6,7 +6,7 @@
     <!-- Bootstrap -->
     <link href="../css/bootstrap.min.css" rel="stylesheet">
     <link href="../css/bootstrap-responsive.min.css" rel="stylesheet">
-    <link href="../css/mobileupload.css" rel="stylesheet">
+    <link href="../css/mobileuploadcomplete.css" rel="stylesheet">
     
     <!-- start time tracking -->
 	<script>var startTime = (new Date()).getTime();</script>
@@ -22,11 +22,11 @@ mixpanel.init("2af9fbfe441a94146b37bdffac0022b8");</script><!-- end Mixpanel -->
   <div class='container'>
   	<div class="row">
   		<div class="span12">
-  			<h3>Awesome!:</h3>
-  			<p>Prompt to download the mobile app</p>
-  			<a href="{{download_url}}">Download the Levr App.</a>
-  			<p>Or another link to go back to foursquare</p>
-  			<a href="{{callback_url}}">Back to foursquare</a>
+  			<h3>Nice!</h3>
+  			<p>Download Levr to find more local offers like this one.</p>
+  			<a id='btnDownload' class="btn btn-success btn-large btn-block" href="{{download_url}}">Download the Levr App.</a>
+  			<a id='btnFoursquare' class="btn btn-primary btn-large btn-block" href="{{callback_url}}">Go back to foursquare</a>
+  			<img id='pin' src="../img/pin.png">
   			
   		</div>
   	</div>

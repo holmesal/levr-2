@@ -80,7 +80,7 @@ class UploadCompleteHandler(webapp2.RequestHandler):
 		}
 		
 		#write out the download page
-		template = jinja_environment.get_template('templates/mobileUploadComplete.html')
+		template = jinja_environment.get_template('templates/mobileuploadcomplete.html')
 		self.response.out.write(template.render(template_values))
 		
 
