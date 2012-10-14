@@ -868,14 +868,7 @@ class SpoofUndeadNinjaActivity:
 	
 	def calc_days_since(self,date):
 		diff = self.now - date
-		logging.debug(self.now)
-		logging.debug(date)
-		logging.debug(type(date))
-		logging.debug(diff)
-		logging.debug(type(diff))
-		logging.debug(diff.total_seconds)
 		seconds_since = self.now_in_seconds - unix_time(date)
-		logging.debug(seconds_since)
 		days_since = seconds_since/60./60./24.
 		logging.debug('days since: '+str(days_since))
 		return days_since

@@ -52,70 +52,70 @@ class SearchFoursquareTaskHandler(webapp2.RequestHandler):
 			levr.log_error()
 			
 class BusinessHarmonizationTaskHandler(webapp2.RequestHandler):
-		def post(self):
-			try:
-				logging.info('''
-				
-				THE FOURSQUARE BUSINESS TASK IS RUNNING
-				
-				''')
-				
-				payload = json.loads(self.request.body)
-				logging.debug(payload)
-				
-				geo_point = levr.geo_converter(payload['geo_str'])
-				
-				query = payload['query']
-				
-				key = payload['key']
-				
-				match = api_utils.match_foursquare_business(db.GeoPt(42.16617,-72.54514982),query)
-		
-				logging.info(match)
-				
-				business = levr.Business.get(key)
-				
-				if match:
-					logging.info('Foursquare ID found: '+match['foursquare_id'])
-					#update business entity
-					business.foursquare_id = match['foursquare_id']
-					business.foursquare_name = match['foursquare_name']
-					business.foursquare_linked	=	True
-					business.put()
-				else:
-					#update to show notfound
-					logging.info('No foursquare match found.')
-				
-			except:
-				levr.log_error()
+	def post(self):
+		try:
+			logging.info('''
+			
+			THE FOURSQUARE BUSINESS TASK IS RUNNING
+			
+			''')
+			
+			payload = json.loads(self.request.body)
+			logging.debug(payload)
+			
+			geo_point = levr.geo_converter(payload['geo_str'])
+			
+			query = payload['query']
+			
+			key = payload['key']
+			
+			match = api_utils.match_foursquare_business(db.GeoPt(42.16617,-72.54514982),query)
+	
+			logging.info(match)
+			
+			business = levr.Business.get(key)
+			
+			if match:
+				logging.info('Foursquare ID found: '+match['foursquare_id'])
+				#update business entity
+				business.foursquare_id = match['foursquare_id']
+				business.foursquare_name = match['foursquare_name']
+				business.foursquare_linked	=	True
+				business.put()
+			else:
+				#update to show notfound
+				logging.info('No foursquare match found.')
+			
+		except:
+			levr.log_error()
 				
 class FoursquareDealUpdateTaskHandler(webapp2.RequestHandler):
-		def post(self):
-			try:
-				logging.info('''
-				
-				THE FOURSQUARE DEAL UPDATE TASK IS RUNNING
-				
-				''')
-				
-				payload = json.loads(self.request.body)
-				
-				foursquare_id = payload['foursquare_id']
-				deal_id = payload['deal_id']
-				uid = payload['uid']
-				token =  payload['token']
-				
-				logging.info('This task was started by a user/deal with the following information:')
-				logging.info('UID: '+uid)
-				logging.info('Foursquare user token: '+token)
-				logging.info('Reported deal ID: '+deal_id)	
-				logging.info('Business foursquare ID: '+foursquare_id)			
-				
-				api_utils.update_foursquare_business(foursquare_id,token)
-				
-				
-			except:
-				levr.log_error()
+	def post(self):
+		try:
+			logging.info('''
+			
+			THE FOURSQUARE DEAL UPDATE TASK IS RUNNING
+			
+			''')
+			
+			payload = json.loads(self.request.body)
+			
+			foursquare_id = payload['foursquare_id']
+			deal_id = payload['deal_id']
+			uid = payload['uid']
+			token =  payload['token']
+			
+			logging.info('This task was started by a user/deal with the following information:')
+			logging.info('UID: '+uid)
+			logging.info('Foursquare user token: '+token)
+			logging.info('Reported deal ID: '+deal_id)	
+			logging.info('Business foursquare ID: '+foursquare_id)			
+			
+			api_utils.update_foursquare_business(foursquare_id,token)
+			
+			
+		except:
+			levr.log_error()
 				
 class NewUserTextTaskHandler(webapp2.RequestHandler):
 	def post(self):

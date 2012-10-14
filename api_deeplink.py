@@ -44,6 +44,7 @@ class FloatingContentExistingHandler(webapp2.RequestHandler):
 	
 	'''
 	@api_utils.validate(None,'param',user=True,levrToken=True)
+	@api_utils.private
 	def get(self,*args,**kwargs):
 		try:
 			#if we hit this handler it means that a user has both a levr account, and an account with the external service
