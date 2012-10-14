@@ -7,9 +7,25 @@ import levr_encrypt as enc
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
 import urllib
+import api_utils
 
 #create jinja environment
 jinja_environment = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
+
+def check_user_agent(self):
+	uastring = str(self.request.headers['user-agent'])
+	
+	logging.info(uastring)
+		
+	if 'iPhone' in uastring:
+		return 'ios'
+	elif 'iPad' in uastring:
+		return 'ios'
+	else:
+		return 'unknown'
+		
+	return 'ios'
+
 
 class MobileDownloadHandler(webapp2.RequestHandler):
 	def get(self):
@@ -75,14 +91,12 @@ class UploadCompleteHandler(webapp2.RequestHandler):
 		callback_url = self.request.get('callback_url')
 		
 		template_values = {
-			'download_url'	:	download_url,
-			'callback_url'	:	callback_url
+			'user_agent': check_user_agent(self)
 		}
 		
 		#write out the download page
 		template = jinja_environment.get_template('templates/mobileuploadcomplete.html')
 		self.response.out.write(template.render(template_values))
-		
 
 
 class ContentIDHandler(webapp2.RequestHandler):
@@ -110,13 +124,15 @@ class ContentIDHandler(webapp2.RequestHandler):
 				template_values = {
 					'uid':enc.encrypt_key(str(floating_content.user.key())),
 					'businessID':enc.encrypt_key(str(floating_content.business.key())),
-					'upload_url':upload_url,
-					'callback_url':callback_url
+					'upload_url':upload_url
 				}
 			elif floating_content.action == 'deal':
 				#write out deal template
-				template = jinja_environment.get_template('templates/landing_v3.html')
-				template_values = {}
+				template = jinja_environment.get_template('templates/mobiledealview.html')
+				template_values = {
+					'deal':	api_utils.package_deal(floating_content.deal),
+					'user_agent': check_user_agent(self)
+				}
 				
 				
 			
@@ -130,5 +146,4 @@ class ContentIDHandler(webapp2.RequestHandler):
 app = webapp2.WSGIApplication([('/mobile/download',MobileDownloadHandler),
 								('/mobile/upload',MobileUploadHandler),
 								('/mobile/upload/complete/(.*)',UploadCompleteHandler),
-
 								('/mobile/(.*)',ContentIDHandler)],debug=True)

@@ -99,6 +99,9 @@ class PushHandler(webapp2.RequestHandler):
 		contentID = levr.create_content_id('foursquare')
 		levr_url = 'http://www.levr.com/mobile/'+contentID
 		
+		#search for expired offers at that business
+		#q_expired = levr.Deal.gql('WHERE businessID=:1 AND deal_status=:2',business)
+		
 		if business:	#business found - CURRENTLY ONLY REPLYING AT BUSINESSES THAT ARE IN OUR DATABASE
 			#for deal in levr.Deal().all().filter('businessID =', str(business.key())).run():
 			q = levr.Deal.gql("WHERE businessID = :1 AND deal_status = :2 ORDER BY count_redeemed DESC",str(business.key()),'active')
