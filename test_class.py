@@ -156,8 +156,8 @@ class TestHandler(webapp2.RequestHandler):
 		alonso = enc.encrypt_key(a.key())
 		n = levr.Customer.all().filter('email','santa@levr.com').get()
 		ninja = enc.encrypt_key(n.key())
-		d = levr.Deal.all().ancestor(db.Key(enc.decrypt_key(ethan))).get()
-		deal = enc.encrypt_key(d.key())
+		
+		
 		
 		url = '\'http://0.0.0.0:8080/api'
 		
@@ -166,7 +166,7 @@ class TestHandler(webapp2.RequestHandler):
 		pat_url = url+'/user/'+pat+'\' | python -mjson.tool'
 		alonso_url = url+'/user/'+alonso+'\' | python -mjson.tool'
 		ninja_url = url+'/user/'+ninja+'\' | python -mjson.tool'
-		deal_url = url+'/deal/'+deal+'\' | python -mjson.tool'
+		
 		
 		levr_token = db.get(enc.decrypt_key(ethan)).levr_token
 		self.response.out.headers['Content-Type'] = 'text/plain'
@@ -192,11 +192,16 @@ class TestHandler(webapp2.RequestHandler):
 		self.response.out.write('\n\n')
 		self.response.out.write('curl '+ninja_url)
 		
-		self.response.out.write('\n\n\n<b>For deal stuff: </b>\n\n')
-		self.response.out.write(deal)
-		self.response.out.write('\n\n')
-#		self.response.out.write('\n\n')
-		self.response.out.write('curl '+deal_url)
+		d = levr.Deal.all().ancestor(db.Key(enc.decrypt_key(ethan))).get()
+		if d:
+			deal = enc.encrypt_key(d.key())
+			deal_url = url+'/deal/'+deal+'\' | python -mjson.tool'
+		
+			self.response.out.write('\n\n\n<b>For deal stuff: </b>\n\n')
+			self.response.out.write(deal)
+			self.response.out.write('\n\n')
+	#		self.response.out.write('\n\n')
+			self.response.out.write('curl '+deal_url)
 		
 #		projection = None
 		projection = [
@@ -244,7 +249,7 @@ class TestHandler(webapp2.RequestHandler):
 		self.response.out.write('\n ALONSO')
 		self.response.out.write(levr.log_model_props(a,projection))
 		self.response.out.write('\nDEAL')
-		self.response.out.write(levr.log_model_props(d,deal_projection))
+		if d: self.response.out.write(levr.log_model_props(d,deal_projection))
 		self.response.out.write('\n\n')
 		notifications = levr.Notification.all().fetch(None)
 		for n in notifications:
@@ -737,16 +742,28 @@ class SandboxHandler(webapp2.RequestHandler):
 	Dont delete this. This is my dev playground.
 	'''
 	def get(self):
-		user = levr.Customer.all().filter('email','ethan@levr.com').get()
 		self.response.headers['Content-Type'] = 'text/plain'
-		self.response.out.write(levr.log_model_props(user))
-		assert user, 'user doesnt exist'
-		
-		cont = levr.FloatingContent(user=user,action='upload',contentID='adwadaw').put()
-		biz = levr.Business(owner=user).put()
+		#fetch old user
+		ethan = levr.Customer.all().filter('email','ethan@levr.com').get()
+		alonso = levr.Customer.all().filter('email','alonso@levr.com').get()
 		
 		
-		user.secure_delete()
+		
+		# Fetch old users deal
+		deal = levr.Deal.all().ancestor(ethan).get()
+		self.response.out.write(deal.parent().alias+' owns '+str(deal.key()))
+		self.response.out.write(levr.log_model_props(deal))
+		
+		self.response.out.write('\n')
+		new_deal = deal.transfer_ownership_to(alonso)
+		
+		self.response.out.write(new_deal.parent().alias+'owns '+str(new_deal.key()))
+		self.response.out.write(levr.log_model_props(deal))
+		self.response.out.write('\n')
+		old_deal = deal.transfer_ownership_to(ethan)
+		
+		self.response.out.write(old_deal.parent().alias+' owns '+str(old_deal.key()))
+		self.response.out.write(levr.log_model_props(deal))
 		
 		self.response.out.write('\n\nDone!')
 		
