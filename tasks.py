@@ -184,7 +184,12 @@ class MergeUsersTaskHandler(webapp2.RequestHandler):
 										foursquare_token=donor.foursquare_token
 										)
 				#add deals
-				#delete donor user
+				# Wipe donors identifying information
+				donor.foursquare_connected = False
+				donor.foursquare_id = -1
+				donor.foursquare_token = ''
+				donor.foursquare_friends = []
+				
 			elif service=='facebook':
 				logging.info('The user came from facebook')
 				user = social.Facebook(user,'verbose')
@@ -192,6 +197,13 @@ class MergeUsersTaskHandler(webapp2.RequestHandler):
 				new_user, new_user_details, new_friends = user.first_time_connect(
 										facebook_token=donor.facebook_token
 										)
+				# Wipe donors identifying information
+				donor.facebook_connected = False
+				donor.facebook_id = -1
+				donor.facebook_token = ''
+				donor.facebook_friends = []
+				
+				
 			elif service=='twitter':
 				logging.info('The user came from twitter')
 				user = social.Twitter(user,'verbose')
@@ -199,9 +211,21 @@ class MergeUsersTaskHandler(webapp2.RequestHandler):
 				new_user, new_user_details, new_friends = user.first_time_connect(
 										twitter_token=donor.twitter_token
 										)
+				
+				#wipe donors identifying information
+				donor.twitter_connected = False
+				donor.twitter_token = ''
+				donor.twitter_token_secret = ''
+				donor.twitter_id = -1
+				donor.twitter_screen_name = ''
+				donor.twitter_friends_by_id = []
+				donor.twitter_friends_by_sn = []
+				
 			else:
 				raise Exception('contentID prefix not recognized: '+service)
-		
+			
+			# Set the changes to the donors identity
+			donor.put()
 		except:
 			levr.log_error()
 		

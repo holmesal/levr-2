@@ -805,147 +805,152 @@ class Customer(db.Model):
 	new_redeem_count= db.IntegerProperty(default = 0) #number of unseen redemptions
 	vicinity		= db.StringProperty() #the area of the user, probably a college campus
 	
-	def merge_into_user(self,new_user):
-		'''
-		Merges two accounts. new_user will cannibalize the user that this method is called on.
-		This includes transferring all of the old users information.
-		
-		@param new_user:
-		@type new_user: Customer
-		'''
-		
-		new_user = self.secure_delete(self,new_user)
-		return new_user
-	
-	def secure_delete(self,new_user=None):
-		'''
-		Securely deletes a Customer entity by removing all references to the entity in the database
-		and then calling db.Models delete method on the entity. See ya.
-		
-		If new_user is passed, then instead of deleting all relational references, they are transfered to the new user
-		
-		@param new_user: 
-		@type new_user: Customer
-		'''
-		old_key = self.key()
-		new_key = new_user.key()
-		
-		#=======================================================================
-		# Notifications
-		# Delete the notifications
-		#=======================================================================
-		# to_be_notified notifications
-		to_be_notified = Notification.all().filter('to_be_notified',old_key).fetch(None)
-		# actor notifications
-		actor = self.notification_set.fetch(None)
-		
-		notes = set([])
-		notes.update(to_be_notified)
-		notes.update(actor)
-		
-		
-		logging.debug('Notifications: {}'.format(to_be_notified.__len__()+actor.__len__()))
-		
-		
-		if new_user:
-			#transfer notifications
-			#exchange to_be_notified
-			for note in notes:
-				#user exists in to_be_notified
-				if old_key in user.to_be_notified:
-					#remove old reference
-					note.to_be_notified.remove(old_key)
-					#add new reference
-					note.to_be_notified.append(new_key)
-				# otherwise, user is the actor
-				else:
-					note.actor = new_user
-			db.put(notes)
-		else:
-			#delete all notifications
-			notes = set([])
-			notes.update(to_be_notified)
-			notes.update(actor)
-			db.delete(notes)
-		
-		#=======================================================================
-		# Other Customers
-		# Remove reference links
-		#=======================================================================
-		users = Customer.all().filter('followers',old_key).fetch(None)
-		# remove the deleted users key
-		for user in users:
-			#remove old reference
-			user.followers.remove(old_key)
-			#add new reference if there is one
-			if new_user:	user.followers.append(new_key)
-			
-		logging.debug(users)
-		logging.debug('Follower references: {}'.format(users.__len__()))
-		db.put(users)
-		
-		#=======================================================================
-		# Deal
-		# 
-		#=======================================================================
-		deals = Deal.all().ancestor(old_key).fetch(None)
-		logging.debug('Child Deals: {}'.format(deals.__len__()))
-		
-		for deal in deals:
-			if new_user:
-				#transfer ownership
-				deal.transfer_ownership_to(new_user)
-			else:
-				#secure deletion
-				deal.secure_delete()
-		
-		
-		
-		#=======================================================================
-		# Business
-		# Empty the reference property
-		#=======================================================================
-		businesses = self.businesses.fetch(None)
-		for business in businesses:
-			#update or remove ownership
-			if new_user:	business.owner = new_user
-			else:			business.owner = None
-		logging.debug('Businesses ownership: {}'.format(businesses.__len__()))
-		db.put(businesses)
-		
-		
-		#=======================================================================
-		# ReportedDeal
-		# Remove reference link
-		#=======================================================================
-		reported_deals = self.reported_deals.fetch(None)
-		for deal in reported_deals:
-			# Transfer or remove ownership
-			if new_user:	deal.uid = new_user
-			else:			deal.uid = None
-		logging.debug('ReportedDeals: {}'.format(reported_deals.__len__()))
-		db.put(reported_deals)
-		
-		#=======================================================================
-		# FloatingContent
-		# Delete the content - it is now irrelevant
-		#=======================================================================
-		floating_content = self.floating_content.fetch(None)
-		logging.debug('Floating content removed: {}'.format(floating_content.__len__()))
-		
-		if new_user:
-			# Update reference
-			for content in floating_content:
-				content.user = new_user
-			db.put(floating_content)
-		else:
-			# Delete the content... no longer relevant
-			db.delete(floating_content)
-		
-		#call the users delete function to delete the user
-#		self.delete()
-		
-		return
+#===============================================================================
+	#===========================================================================
+	# Do not use this. It is not complete
+	#===========================================================================
+#	def merge_into_user(self,new_user):
+#		'''
+#		Merges two accounts. new_user will cannibalize the user that this method is called on.
+#		This includes transferring all of the old users information.
+#		
+#		@param new_user:
+#		@type new_user: Customer
+#		'''
+#		
+#		new_user = self.secure_delete(self,new_user)
+#		return new_user
+#	
+#	def secure_delete(self,new_user=None):
+#		'''
+#		Securely deletes a Customer entity by removing all references to the entity in the database
+#		and then calling db.Models delete method on the entity. See ya.
+#		
+#		If new_user is passed, then instead of deleting all relational references, they are transfered to the new user
+#		
+#		@param new_user: 
+#		@type new_user: Customer
+#		'''
+#		old_key = self.key()
+#		new_key = new_user.key()
+#		
+#		#=======================================================================
+#		# Notifications
+#		# Delete the notifications
+#		#=======================================================================
+#		# to_be_notified notifications
+#		to_be_notified = Notification.all().filter('to_be_notified',old_key).fetch(None)
+#		# actor notifications
+#		actor = self.notification_set.fetch(None)
+#		
+#		notes = set([])
+#		notes.update(to_be_notified)
+#		notes.update(actor)
+#		
+#		
+#		logging.debug('Notifications: {}'.format(to_be_notified.__len__()+actor.__len__()))
+#		
+#		
+#		if new_user:
+#			#transfer notifications
+#			#exchange to_be_notified
+#			for note in notes:
+#				#user exists in to_be_notified
+#				if old_key in user.to_be_notified:
+#					#remove old reference
+#					note.to_be_notified.remove(old_key)
+#					#add new reference
+#					note.to_be_notified.append(new_key)
+#				# otherwise, user is the actor
+#				else:
+#					note.actor = new_user
+#			db.put(notes)
+#		else:
+#			#delete all notifications
+#			notes = set([])
+#			notes.update(to_be_notified)
+#			notes.update(actor)
+#			db.delete(notes)
+#		
+#		#=======================================================================
+#		# Other Customers
+#		# Remove reference links
+#		#=======================================================================
+#		users = Customer.all().filter('followers',old_key).fetch(None)
+#		# remove the deleted users key
+#		for user in users:
+#			#remove old reference
+#			user.followers.remove(old_key)
+#			#add new reference if there is one
+#			if new_user:	user.followers.append(new_key)
+#			
+#		logging.debug(users)
+#		logging.debug('Follower references: {}'.format(users.__len__()))
+#		db.put(users)
+#		
+#		#=======================================================================
+#		# Deal
+#		# 
+#		#=======================================================================
+#		deals = Deal.all().ancestor(old_key).fetch(None)
+#		logging.debug('Child Deals: {}'.format(deals.__len__()))
+#		
+#		for deal in deals:
+#			if new_user:
+#				#transfer ownership
+#				deal.transfer_ownership_to(new_user)
+#			else:
+#				#secure deletion
+#				deal.secure_delete()
+#		
+#		
+#		
+#		#=======================================================================
+#		# Business
+#		# Empty the reference property
+#		#=======================================================================
+#		businesses = self.businesses.fetch(None)
+#		for business in businesses:
+#			#update or remove ownership
+#			if new_user:	business.owner = new_user
+#			else:			business.owner = None
+#		logging.debug('Businesses ownership: {}'.format(businesses.__len__()))
+#		db.put(businesses)
+#		
+#		
+#		#=======================================================================
+#		# ReportedDeal
+#		# Remove reference link
+#		#=======================================================================
+#		reported_deals = self.reported_deals.fetch(None)
+#		for deal in reported_deals:
+#			# Transfer or remove ownership
+#			if new_user:	deal.uid = new_user
+#			else:			deal.uid = None
+#		logging.debug('ReportedDeals: {}'.format(reported_deals.__len__()))
+#		db.put(reported_deals)
+#		
+#		#=======================================================================
+#		# FloatingContent
+#		# Delete the content - it is now irrelevant
+#		#=======================================================================
+#		floating_content = self.floating_content.fetch(None)
+#		logging.debug('Floating content removed: {}'.format(floating_content.__len__()))
+#		
+#		if new_user:
+#			# Update reference
+#			for content in floating_content:
+#				content.user = new_user
+#			db.put(floating_content)
+#		else:
+#			# Delete the content... no longer relevant
+#			db.delete(floating_content)
+#		
+#		#call the users delete function to delete the user
+# #		self.delete()
+#		
+#		return
+#===============================================================================
 	
 	
 	@property
@@ -1089,111 +1094,123 @@ class Deal(polymodel.PolyModel):
 	is_exclusive	= db.BooleanProperty(default=False)
 	
 	
-	def transfer_ownership_to(self,new_owner):
-		'''
-		Removes a deal
-		Transfers all of a deals information to a new deal owned by the new_owner
-		
-		@param new_owner: The new owner of the deal; entity, not the key
-		@type new_owner: Customer
-		'''
-		# get deal info
-		# set new owner
-		new_deal = Deal(parent=new_owner)
-		
-		logging.debug(log_dict(self.properties()))
-		
-		for key in self.properties():
-			# do not attempt to transfer private properties
-			if key[0] != '_':
-				val = getattr(self,key)
-				logging.debug('\n\n key: '+str(key)+'\n val: '+str(val))
-				setattr(new_deal, key, val)
-		
-		new_deal.put()
-		
-		self.secure_delete(new_deal)
-		return new_deal
-	
-	def secure_delete(self,new_deal=None):
-		'''
-		Securely deletes a deal entity, removing all of its references to other database entries
-		'''
-		old_key = self.key()
-		new_key = new_deal.key()
-		#=======================================================================
-		# Customer: upvotes, downvotes, favorites
-		#=======================================================================
-		upvotes = Customer.all().filter('upvotes',old_key).fetch(None)
-		downvotes = Customer.all().filter('downvotes',old_key).fetch(None)
-		favorites = Customer.all().filter('favorites',old_key).fetch(None)
-		
-		users = set([])
-		users.update(upvotes)
-		users.update(downvotes)
-		users.update(favorites)
-		
-		for user in users:
-			# upvotes
-			if old_key in upvotes:
-				user.upvotes.remove(old_key)
-				if new_deal:
-					user.upvotes.append(new_key)
-			# downvotes
-			if old_key in downvotes:
-				user.downvotes.remove(old_key)
-				if new_deal:
-					user.downvotes.append(new_key)
-			# favorites
-			if old_key in favorites:
-				user.favorites.remove(old_key)
-				if new_deal:
-					user.favorites.append(new_key)
-		logging.debug(users)
-		#replace users
-		db.put(users)
-		
-		#=======================================================================
-		# Notification
-		# If new deal is passed, replace the reference, otherwise delete the deal
-		#=======================================================================
-		notes = self.notifications.fetch(None)
-		
-		if new_deal:
-			for note in notes:
-				note.deal = new_deal
-			db.put(notes)
-		else:
-			db.delete(notes)
-		
-		#=======================================================================
-		# ReportedDeal
-		# If new deal is passed, replace the reference, otherwise delete
-		#=======================================================================
-		reported_deals = self.reported_deals.fetch(None)
-		
-		if new_deal:
-			for deal in reported_deals:
-				deal.deal = new_deal
-			db.put(reported_deals)
-		else:
-			db.delete(reported_deals)
-		
-		
-		#=======================================================================
-		# FloatingContent
-		# If new deal is passed, replace reference, otherwise delete
-		#=======================================================================
-		floating_content = self.floating_content.fetch(None)
-		
-		if new_deal:
-			for deal in floating_content:
-				deal.deal = new_deal
-			db.put(floating_content)
-		else:
-			db.delete(floating_content)
-		
-		self.delete()
+#===============================================================================
+	#===========================================================================
+	# DO NOT USE THIS. INCOMPLETE
+	#===========================================================================
+#	def transfer_ownership_to(self,new_owner):
+#		'''
+#		Removes a deal
+#		Transfers all of a deals information to a new deal owned by the new_owner
+#		
+#		@param new_owner: The new owner of the deal; entity, not the key
+#		@type new_owner: Customer
+#		'''
+#		# get deal info
+#		# set new owner
+#		new_deal = Deal(parent=new_owner)
+#		
+#		logging.debug(log_dict(self.properties()))
+#		
+#		for key in self.properties():
+#			# do not attempt to transfer private properties
+#			if key[0] != '_':
+#				val = getattr(self,key)
+#				logging.debug('\n\n key: '+str(key)+'\n val: '+str(val))
+#				setattr(new_deal, key, val)
+#		
+#		new_deal.put()
+#		
+#		self.secure_delete(new_deal)
+#		return new_deal
+#	
+#	def secure_delete(self,new_deal=None):
+#		'''
+#		Deal
+#		Securely deletes a deal entity, removing all of its references to other database entries
+#		'''
+#		old_key = self.key()
+#		new_key = new_deal.key()
+#		to_put = []
+#		#=======================================================================
+#		# Customer: upvotes, downvotes, favorites
+#		#=======================================================================
+#		upvotes = Customer.all().filter('upvotes',old_key).fetch(None)
+#		downvotes = Customer.all().filter('downvotes',old_key).fetch(None)
+#		favorites = Customer.all().filter('favorites',old_key).fetch(None)
+#		
+#		users = set([])
+#		users.update(upvotes)
+#		users.update(downvotes)
+#		users.update(favorites)
+#		
+#		logging.debug(upvotes)
+#		logging.debug(downvotes)
+#		logging.debug(favorites)
+#		
+#		
+#		for user in users:
+#			# upvotes
+#			if old_key in upvotes:
+#				user.upvotes.remove(old_key)
+#				if new_deal:
+#					user.upvotes.append(new_key)
+#			# downvotes
+#			if old_key in downvotes:
+#				user.downvotes.remove(old_key)
+#				if new_deal:
+#					user.downvotes.append(new_key)
+#			# favorites
+#			if old_key in favorites:
+#				user.favorites.remove(old_key)
+#				if new_deal:
+#					user.favorites.append(new_key)
+#		logging.debug(users)
+#		#replace users
+# #		db.put(users)
+#		to_put.extend(users)
+#		#=======================================================================
+#		# Notification
+#		# If new deal is passed, replace the reference, otherwise delete the deal
+#		#=======================================================================
+#		notes = self.notifications.fetch(None)
+#		
+#		if new_deal:
+#			for note in notes:
+#				note.deal = new_deal
+#			db.put(notes)
+#		else:
+#			db.delete(notes)
+#		
+#		#=======================================================================
+#		# ReportedDeal
+#		# If new deal is passed, replace the reference, otherwise delete
+#		#=======================================================================
+#		reported_deals = self.reported_deals.fetch(None)
+#		
+#		if new_deal:
+#			for deal in reported_deals:
+#				deal.deal = new_deal
+#			db.put(reported_deals)
+#		else:
+#			db.delete(reported_deals)
+#		
+#		
+#		#=======================================================================
+#		# FloatingContent
+#		# If new deal is passed, replace reference, otherwise delete
+#		#=======================================================================
+#		floating_content = self.floating_content.fetch(None)
+#		
+#		if new_deal:
+#			for deal in floating_content:
+#				deal.deal = new_deal
+#			db.put(floating_content)
+#		else:
+#			db.delete(floating_content)
+#		
+#		self.delete()
+#===============================================================================
 		
 	
 

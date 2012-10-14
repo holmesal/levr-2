@@ -715,14 +715,14 @@ class FloatingContentHandler(webapp2.RequestHandler):
 # 		
 # 		donor.put()
 		
-		owner = levr.Customer.gql('WHERE alias=:1','q').get()
-		
-		deal = levr.Deal.get('ahFzfmxldnItcHJvZHVjdGlvbnIbCxIIQ3VzdG9tZXIYsuQDDAsSBERlYWwYtG0M')
-		
-		user = levr.Customer.gql('WHERE email=:1','alonso@getlevr.com').get()
-		
+		owner = levr.Customer.gql('WHERE alias=:1','alonso').get()
+		assert owner, 'no owner'
+		deal = levr.Deal.all().get()#.get('ahFzfmxldnItcHJvZHVjdGlvbnIbCxIIQ3VzdG9tZXIYsuQDDAsSBERlYWwYtG0M')
+		assert deal, 'no deal'
+		user = levr.Customer.gql('WHERE email=:1','q').get()
+		assert user, 'no user'
 		business = levr.Business.get(deal.businessID)
-		
+		assert business, 'no business'
 		contentID = levr.create_content_id('foursquare') #or facebook or twitter
 		self.response.out.write('Upload: ' + contentID + '\n')
 		
@@ -737,39 +737,14 @@ class FloatingContentHandler(webapp2.RequestHandler):
 		#put it in!
 		fc.put()
 		
-		contentID = levr.create_content_id('foursquare') #or facebook or twitter
-		#write out the token
-		self.response.out.write(contentID)
+
 class SandboxHandler(webapp2.RequestHandler):
 	'''
 	Dont delete this. This is my dev playground.
 	'''
 
 	def get(self):
-		self.response.headers['Content-Type'] = 'text/plain'
-		#fetch old user
-		ethan = levr.Customer.all().filter('email','ethan@levr.com').get()
-		alonso = levr.Customer.all().filter('email','alonso@levr.com').get()
-		
-		
-		
-		# Fetch old users deal
-		deal = levr.Deal.all().ancestor(ethan).get()
-		self.response.out.write(deal.parent().alias+' owns '+str(deal.key()))
-		self.response.out.write(levr.log_model_props(deal))
-		
-		self.response.out.write('\n')
-		new_deal = deal.transfer_ownership_to(alonso)
-		
-		self.response.out.write(new_deal.parent().alias+'owns '+str(new_deal.key()))
-		self.response.out.write(levr.log_model_props(deal))
-		self.response.out.write('\n')
-		old_deal = deal.transfer_ownership_to(ethan)
-		
-		self.response.out.write(old_deal.parent().alias+' owns '+str(old_deal.key()))
-		self.response.out.write(levr.log_model_props(deal))
-		
-		self.response.out.write('\n\nDone!')
+		pass
 		
 		
 app = webapp2.WSGIApplication([('/new', MainPage),
@@ -791,9 +766,7 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/testcron', TestCronJobHandler),
 								('/new/newUser', NewUserHandler),
 								('/new/floatingContent', FloatingContentHandler),
-								('/new/sandbox', SandboxHandler)
-
-#								('/new/update' , UpdateUsersHandler)
+								('/new/sandbox', SandboxHandler),
 								],debug=True)
 
 

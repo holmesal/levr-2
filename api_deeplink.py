@@ -38,6 +38,7 @@ class FloatingContentNewHandler(webapp2.RequestHandler):
 		api_utils.send_response(self,response)
 		
 class FloatingContentExistingHandler(webapp2.RequestHandler):
+	@api_utils.validate(None,'param',user=True,levrToken=True)
 	def get(self,*args,**kwargs):
 		
 		#if we hit this handler it means that a user has both a levr account, and an account with the external service
@@ -50,7 +51,7 @@ class FloatingContentExistingHandler(webapp2.RequestHandler):
 		service = contentID[0:3]
 		
 		uid=enc.decrypt_key(self.request.get('uid'))
-		levr_token = self.request.get('levr_token')
+		levr_token = self.request.get('levrToken')
 		#grab the existing user
 		user = levr.Customer.get(uid)
 		
