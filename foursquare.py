@@ -81,6 +81,9 @@ class AuthorizeCompleteHandler(webapp2.RequestHandler):
 			self.response.out.write('Could not connect with Foursquare')
 
 class PushHandler(webapp2.RequestHandler):
+	'''
+	What does this do?
+	'''
 	def post(self):
 		try:
 			logging.debug('Foursquare push request received!')
@@ -201,6 +204,9 @@ class PushHandler(webapp2.RequestHandler):
 			self.reponse.out.write('Could not connect with Foursquare')
 		
 class CatchUpHandler(webapp2.RequestHandler):
+	'''
+	What does this do?
+	'''
 	def get(self):
 		try:
 			client_id = 'HD3ZXKL5LX4TFCARNIZO1EG2S5BV5UHGVDVEJ2AXB4UZHEOU'

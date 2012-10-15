@@ -44,7 +44,7 @@ class FloatingContentNewHandler(webapp2.RequestHandler):
 		
 class FloatingContentExistingHandler(webapp2.RequestHandler):
 	'''
-	
+	User is logged into levr. I.e. case where uid and levrToken is available on phone
 	'''
 	@api_utils.validate(None,'param',user=True,levrToken=True)
 	@api_utils.private

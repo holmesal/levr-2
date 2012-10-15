@@ -175,9 +175,11 @@ class MergeUsersTaskHandler(webapp2.RequestHandler):
 			#grab the donor's foursquare token
 			floating_content = levr.FloatingContent.gql('WHERE contentID=:1',contentID).get()
 			donor = floating_content.user
+			user.karma += donor.karma
 			
 			if service=='foursquare':
 				logging.info('The user came from foursquare')
+				
 				user = social.Foursquare(user,'verbose')
 				#connect the user using foursquare
 				new_user, new_user_details, new_friends = user.first_time_connect(

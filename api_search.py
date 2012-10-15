@@ -47,7 +47,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			#===================================================================
 			
 			#variables
-			precision		= 5
+			precision		= 6
 			min_count		= 100
 			deal_keys		= []
 			max_iterations	= 3
@@ -118,7 +118,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			
 			
 			#===================================================================
-			# Create Bouding Box
+			# Create Bounding Box
 			#===================================================================
 			
 			#create bounding box from resulting new_hash_set - this is the outer set

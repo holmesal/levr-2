@@ -225,6 +225,7 @@ def tagger(text):
 	text = text.replace(","," ")
 	#replace underscores with spaces
 	text = text.replace("_"," ")
+	text = text.replace("/"," ")
 	#remove all non text characters
 	text = re.sub(r"[^\w\s]", '', text)
 	#parse text string into a list of words if it is longer than 2 chars long
