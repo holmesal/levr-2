@@ -1439,7 +1439,7 @@ class SpoofUndeadNinjaActivity:
 					#===========================================================
 					#create the notification
 					notifications.append(levr.Notification(
-										notification_type	= 'upvote',
+										notification_type	= 'favorite',
 										line2				= random.choice(levr.upvote_phrases),
 										to_be_notified		= [self.user.key()],
 										actor				= ninja.key(),
