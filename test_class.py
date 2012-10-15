@@ -740,7 +740,7 @@ class FloatingContentHandler(webapp2.RequestHandler):
 				contentID=contentID,
 				user=user,
 				deal=deal,
-				origin='foursquare'
+				origin='foursquare',
 				business=business
 		)
 		

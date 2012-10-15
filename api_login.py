@@ -1,6 +1,5 @@
 from datetime import datetime,timedelta
 from google.appengine.ext import db
-from math import floor
 import api_utils
 import api_utils_social as social
 import levr_classes as levr
@@ -184,7 +183,7 @@ class LoginLevrHandler(webapp2.RequestHandler):
 			existing_user = levr.build_display_name(existing_user)
 			
 			
-			data = levr.SpoofUndeadNinjaActivity(existing_user).run()
+			data = api_utils.SpoofUndeadNinjaActivity(existing_user).run()
 			logging.debug(levr.log_dict(data))
 			#set last login
 			existing_user = data['user']
@@ -209,11 +208,11 @@ class LoginValidateHandler(webapp2.RequestHandler):
 			
 			response = {'user':api_utils.package_user(user,True)}
 			
-			data = levr.SpoofUndeadNinjaActivity(user).run()
+			data = api_utils.SpoofUndeadNinjaActivity(user).run()
 			logging.debug(levr.log_dict(data))
 			#set last login
 			user = data['user']
-#			user.date_last_login = datetime.now() - timedelta(days=1)
+			user.date_last_login = datetime.now()
 #			logging.debug(user.date_last_login)
 			user.put()
 			api_utils.send_response(self,response,user)
@@ -226,11 +225,9 @@ class Test(webapp2.RequestHandler):
 	def get(self):
 		user = levr.Customer.all().filter('email','ethan@levr.com').get()
 		
-		output = levr.SpoofUndeadNinjaActivity(user).run()
+		output = api_utils.SpoofUndeadNinjaActivity(user).run()
 		api_utils.send_response(self,output)
 		
-
-	
 		
 		
 		

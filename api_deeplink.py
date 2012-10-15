@@ -11,6 +11,9 @@ import json
 #from google.appengine.api import mail
 
 class FloatingContentNewHandler(webapp2.RequestHandler):
+	'''
+	User is not logged into levr
+	'''
 	def get(self,*args,**kwargs):
 		try:
 			contentID = args[0]

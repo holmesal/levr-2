@@ -278,6 +278,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 					if flag == True:
 						accepted_deals_tuple_list.append(toop)
 			else:
+				logging.debug('All of the deals')
 				accepted_deals_tuple_list = tuple_list
 				
 				
