@@ -1177,7 +1177,9 @@ def filter_foursquare_deal(foursquare_deal,already_found):
 			return True
 			
 	#search description strings to weed out deals that require more than 1 checkin in a given number of days
-	allowed_description_fragments = ['Unlocked every check-in','1st check-in','Unlocked for checking in 1 times','Unlocked for swarms']
+	allowed_description_fragments = ['Unlocked every check-in','1st check-in','Unlocked for checking in 1 times','Unlocked for swarms','consecutive','chance to win']
+	
+	
 	flag='notfound'
 	for fragment in allowed_description_fragments:
 		if fragment in foursquare_deal['description']:
