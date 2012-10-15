@@ -734,6 +734,16 @@ class FloatingContentHandler(webapp2.RequestHandler):
 				business=business
 		)
 		
+		# Floating content for a deal
+		fc2 = levr.FloatingContent(
+				action='upload',
+				contentID=contentID,
+				user=user,
+				deal=deal,
+				origin='foursquare'
+				business=business
+		)
+		
 		#put it in!
 		fc.put()
 		

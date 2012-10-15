@@ -555,7 +555,44 @@ class Twitter(SocialClass):
 	#These are values that identify our app
 	_oauth_consumer_key		= twitter_auth['oauth_consumer_key']
 	_oauth_consumer_secret	= twitter_auth['oauth_consumer_secret']
-	def __init__(self, user, *args, **kwargs):
+	def __init__(self, user=None, *args, **kwargs):
+		'''
+		Twitter
+		'''
+		logging.debug('\n\n\n \t\t\t INIT Twitter \n\n\n')
+		self.set_noise_level(*args)
+		# if user is not passed, then check if a user exists with the identity specified. if they do not exist, then create a new one
+		if not user:
+			#user was not passed, check to make sure that the user does not already exist
+			# if the user exists, pass it to SocialClass.__init__
+			# otherwise, create a new user and pass it that
+			twitter_token = kwargs.get('facebook_token')
+			#make sure foursquare token was passed
+			assert twitter_token, 'Did not pass a user, so must pass facebook_token as kwarg'
+			
+			#assign the foursquare_token so that self.fetch will work
+			self.twitter_token = twitter_token
+			#fetch the user info
+			response = self.fetch('user')
+			logging.debug(levr.log_dict(response))
+			#get the user id
+			twitter_id = int(response['id'])
+			
+			#search for the user by that id
+			user = levr.Customer.all().filter('facebook_id',twitter_id).get()
+#			logging.debug('\n\n\n\n \t\t\t\t USER \n\n\n\n')
+			logging.debug(user)
+			logging.debug(levr.log_model_props(user))
+			if not user:
+				logging.debug('user doesnt exist')
+				#user does not exist in database - create a new one!
+				user = levr.Customer(levr_token = levr.create_levr_token())
+				user.put()
+			else:
+				logging.debug('user exists')
+			# else: user was found and we will init with that user
+		
+		#init all dat social stuff!
 		SocialClass.__init__(self, user, *args, **kwargs)
 		
 	

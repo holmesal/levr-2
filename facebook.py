@@ -1,4 +1,5 @@
 from google.appengine.api import urlfetch
+from social_data import facebook_auth
 import api_utils
 import api_utils_social as social
 import jinja2
@@ -8,9 +9,8 @@ import levr_utils
 import logging
 import os
 import urllib
-import webapp2
-from social_data import facebook_auth
 import uuid
+import webapp2
 #import levr_encrypt as enc
 #import levr_utils
 #from google.appengine.ext import db
