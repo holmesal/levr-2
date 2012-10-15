@@ -8,6 +8,8 @@ import logging
 import os
 import urllib
 import webapp2
+import mixpanel_track as mp_track
+import time
 #import levr_encrypt as enc
 #import levr_utils
 #from google.appengine.ext import db
@@ -154,6 +156,14 @@ class PushHandler(webapp2.RequestHandler):
 					business=business
 				)
 				floating_content.put()
+				
+				#track event via mixpanel (asynchronous)
+				properties = {
+					'time'				:	time.time(),
+					'distinct_id'		:	str(user.key()),		#not encrypted
+					'mp_name_tag'		:	user.display_name
+				}
+				mp_track.track('Foursquare checkin reply',properties)
 				
 				
 				reply = {
