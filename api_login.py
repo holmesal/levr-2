@@ -208,10 +208,14 @@ class LoginValidateHandler(webapp2.RequestHandler):
 			
 			response = {'user':api_utils.package_user(user,True)}
 			
-			data = api_utils.SpoofUndeadNinjaActivity(user).run()
-			logging.debug(levr.log_dict(data))
-			#set last login
-			user = data['user']
+			try:
+				data = api_utils.SpoofUndeadNinjaActivity(user).run()
+				logging.debug(levr.log_dict(data))
+				#set last login
+				user = data['user']
+			except:
+				levr.log_error()
+				
 			user.date_last_login = datetime.now()
 #			logging.debug(user.date_last_login)
 			user.put()
