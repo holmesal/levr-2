@@ -44,12 +44,14 @@ def build_display_name(user):
 		user.display_name = 'Clint Eastwood'
 	
 	return user
+	
 upvote_phrases = [
 		'Has liked your deal. Hooray!',
 		'Is rushing to redeem your deal at this very moment.',
 		'Thinks that your deal is just grand!',
 		'Thinks your deal is absolutely spiffing.'
 		]
+		
 def create_notification(notification_type,to_be_notified,actor,deal=None):
 	'''
 	notification_type	= choices: 
@@ -1257,7 +1259,7 @@ class Notification(db.Model):
 	# Only has outbound references, no inbound
 	date				= db.DateTimeProperty(auto_now_add=True)
 	date_in_seconds		= db.IntegerProperty()
-	notification_type	= db.StringProperty(required=True,choices=set(['upvote','followedUpload','newFollower','levelup','shared','levr','expired']))
+	notification_type	= db.StringProperty(required=True,choices=set(['favorite','followedUpload','newFollower','levelup','shared','levr','expired']))
 	line2				= db.StringProperty(default='')
 	to_be_notified		= db.ListProperty(db.Key)
 	deal				= db.ReferenceProperty(Deal,collection_name='notifications')
@@ -1276,6 +1278,7 @@ class Notification(db.Model):
 #	date_created	= db.DateTimeProperty(auto_now_add=True)
 #	date_last_edited= db.DateTimeProperty(auto_now=True)
 #===============================================================================
+
 
 class ReportedDeal(db.Model):
 	# Only has outbound references, no inbound

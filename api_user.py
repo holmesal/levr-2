@@ -53,7 +53,9 @@ class UserFavoritesHandler(webapp2.RequestHandler):
 				favorites = levr.Deal.get(favorites)
 				
 				#package each deal object
-				deals = [api_utils.package_deal(deal,False) for deal in favorites]
+				if favorites:
+					for deal in favorites:
+						api_utils.package_deal(deal,False)
 			else:
 				#favorites is either empty or the offset is past the length of it
 				deals = []
