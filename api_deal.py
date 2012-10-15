@@ -294,7 +294,7 @@ class DeleteFavoriteHandler(webapp2.RequestHandler):
 			
 			response = {}
 			
-			api_utils.send_response(self,reponse,user)
+			api_utils.send_response(self,response,user)
 		except:
 			levr.log_error(self.request)
 			api_utils.send_error(self,'Server Error')
