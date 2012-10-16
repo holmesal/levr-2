@@ -59,7 +59,7 @@ class FloatingContentExistingHandler(webapp2.RequestHandler):
 			#grab and parse contentID to figure out what service the user has previously linked with
 			
 			logging.debug(kwargs)
-			user = kwargs.get('user')
+			user = kwargs.get('actor')
 			contentID = kwargs.get('contentID')
 			assert contentID,'contentID is not being passed'
 #			contentID = args[0]

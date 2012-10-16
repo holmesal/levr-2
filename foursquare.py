@@ -4,6 +4,7 @@ import api_utils_social as social
 import jinja2
 import json
 import levr_classes as levr
+import levr_encrypt as enc
 import logging
 import os
 import urllib
@@ -160,10 +161,18 @@ class PushHandler(webapp2.RequestHandler):
 				#track event via mixpanel (asynchronous)
 				properties = {
 					'time'				:	time.time(),
-					'distinct_id'		:	str(user.key()),		#not encrypted
-					'mp_name_tag'		:	user.display_name
+					'distinct_id'		:	enc.encrypt_key(user.key()),		#not encrypted
+					'mp_name_tag'		:	user.display_name,
+					'action'			:	action
 				}
 				mp_track.track('Foursquare checkin reply',properties)
+				
+				user_props = {
+					'$first_name'	:	user.first_name,
+					'$last_name'	:	user.last_name
+				}
+				
+				mp_track.person(enc.encrypt_key(user.key()),user_props)
 				
 				
 				reply = {

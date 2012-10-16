@@ -80,17 +80,17 @@ class MobileUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 
 		dealID = levr.dealCreate(params,'phone_new_business')
 		
-		self.redirect('/mobile/upload/complete/?callback_url='+urllib.quote(callback_url))
+		logging.info('/mobile/upload/complete/?uid='+urllib.quote(enc.encrypt_key(uid)))
+		self.redirect('/mobile/upload/complete/?uid='+urllib.quote(enc.encrypt_key(uid)))
+		
 		
 class UploadCompleteHandler(webapp2.RequestHandler):
 	def get(self,*args,**kwargs):
 		
-		#check if phone is iphone or android
-		download_url = 'http://www.google.com'
-		
-		callback_url = self.request.get('callback_url')
+		uid = self.request.get('uid')
 		
 		template_values = {
+			'uid'		: uid,
 			'user_agent': check_user_agent(self)
 		}
 		
@@ -130,6 +130,7 @@ class ContentIDHandler(webapp2.RequestHandler):
 				#write out deal template
 				template = jinja_environment.get_template('templates/mobiledealview.html')
 				template_values = {
+					'uid':enc.encrypt_key(str(floating_content.user.key())),
 					'deal':	api_utils.package_deal(floating_content.deal),
 					'user_agent': check_user_agent(self)
 				}
