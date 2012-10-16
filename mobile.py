@@ -4,7 +4,7 @@ import logging
 import jinja2
 import levr_classes as levr
 import levr_encrypt as enc
-from google.appengine.ext import blobstore
+from google.appengine.ext import blobstore, db
 from google.appengine.ext.webapp import blobstore_handlers
 import urllib
 import api_utils
@@ -104,7 +104,8 @@ class ContentIDHandler(webapp2.RequestHandler):
 		
 		try:
 			#grab the content ID
-			contentID = args[0]
+			#contentID = args[0]
+			contentID = self.request.get('contentID')
 			logging.debug('ContentID: ' + contentID)
 			
 			#uhh wtf do i do?
@@ -113,7 +114,7 @@ class ContentIDHandler(webapp2.RequestHandler):
 			logging.info(floating_content.action)
 			
 			if floating_content.action == 'upload':
-				user = floating_content.user
+				'''user = floating_content.user
 				
 				#write out upload template
 				template = jinja_environment.get_template('templates/mobileupload.html')
@@ -122,7 +123,14 @@ class ContentIDHandler(webapp2.RequestHandler):
 					'businessID':enc.encrypt_key(str(floating_content.business.key())),
 					'upload_url':blobstore.create_upload_url('/mobile/upload')
 				}
-				logging.debug(template_values)
+				logging.debug(template_values)'''
+				
+				upload_url = blobstore.create_upload_url('/mobile/upload')
+				
+				self.response.out.write('<html><body>')
+				self.response.out.write('<form action="%s" method="POST" enctype="multipart/form-data">' % upload_url)
+				self.response.out.write('''Upload File: <input type="file" name="img"><br> <input type="submit"
+				name="submit" value="Create!"> </form></body></html>''')
 				
 			elif floating_content.action == 'deal':
 				#write out deal template
@@ -135,7 +143,7 @@ class ContentIDHandler(webapp2.RequestHandler):
 				
 				
 			
-			self.response.out.write(template.render(template_values))
+			#self.response.out.write(template.render(template_values))
 			
 		except:
 			levr.log_error()
@@ -145,4 +153,4 @@ class ContentIDHandler(webapp2.RequestHandler):
 app = webapp2.WSGIApplication([('/mobile/download',MobileDownloadHandler),
 								('/mobile/upload',MobileUploadHandler),
 								('/mobile/upload/complete/(.*)',UploadCompleteHandler),
-								('/mobile/(.*)',ContentIDHandler)],debug=True)
+								('/mobile',ContentIDHandler)],debug=True)
