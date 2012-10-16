@@ -349,6 +349,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						'remoteTokenSecret'	: str, #oauth token secret
 						'remoteID'			: str, #e.g. facebook_id, foursquare_id, etc...
 						'email_or_owner'	: str,
+						'email'				: str,
 						'pw'				: str,
 						'alias'				: str,
 						
@@ -384,6 +385,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						'remoteTokenSecret'	: '', #oauth token secret
 						'remoteID'			: '', #e.g. facebook_id, foursquare_id, etc...
 						'email_or_owner'	: '',
+						'email'				: '',
 						'pw'				: '',
 						'alias'				: '',
 						

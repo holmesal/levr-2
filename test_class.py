@@ -209,6 +209,7 @@ class TestHandler(webapp2.RequestHandler):
 					'new_notifications',
 					'first_name',
 					'last_name',
+					'karma',
 					'level',
 					'display_name',
 					'followers',

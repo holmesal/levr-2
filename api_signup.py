@@ -142,7 +142,7 @@ class SignupTwitterHandler(webapp2.RequestHandler):
 			
 class SignupLevrHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,None,email=True,alias=True,pw=True)
-	def post(self):
+	def post(self,*args,**kwargs):
 		#RESTRICTED
 		try:
 			logging.debug(kwargs)

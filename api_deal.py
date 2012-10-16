@@ -70,30 +70,36 @@ class UpvoteHandler(webapp2.RequestHandler):
 				#do not change the karma of the user who uploaded
 				#do not add notification for the ninja
 				db.put([user,deal])
+				pass
 			else:
 				logging.debug('flag deal not in upvotes or downvotes')
 				
-				#get owner of the deal
-				ninja = levr.Customer.get(deal.key().parent())
-				#check owner. if the owner is a dummy owner left over from an account transfer, grab the real owner.
-				if ninja.email == 'dummy@levr.com':
-					logging.debug('\n\n\n \t\t\t DUMMY NINJA! REDIRECTING REFERENCE TO THE REAL ONE!!! \n\n\n')
-					ninja = levr.Customer.get(ninja.pw)
-				
-				#compare owner to user doing the voting
-				if ninja.key() == user.key():
-					#ninja is upvoting his own deal
-					#increase that users karma! reward for uploading a deal!
-					user.karma += 1
-					#level check!
-					api_utils.level_check(user)
-				else:
-					#increase the ninjas karma
-					ninja.karma += 1
-					#level check!
-					api_utils.level_check(ninja)
-					#replace ninja. we dont want him anymore
-					ninja.put()
+				# If the deal is in the users favorites, then they upvoted the deal at one point and then
+				# removed that upvote either via another upvote or a downvote, and they are trying to upvote again
+				# At this point, the deal should get its upvote back, but the ninja gets no karma because they do not
+				# lose a karma point when the deal is downloaded
+				if dealID not in user.favorites:
+					#get owner of the deal
+					ninja = levr.Customer.get(deal.key().parent())
+					#check owner. if the owner is a dummy owner left over from an account transfer, grab the real owner.
+					if ninja.email == 'dummy@levr.com':
+						logging.debug('\n\n\n \t\t\t DUMMY NINJA! REDIRECTING REFERENCE TO THE REAL ONE!!! \n\n\n')
+						ninja = levr.Customer.get(ninja.pw)
+					
+					#compare owner to user doing the voting
+					if ninja.key() == user.key():
+						#ninja is upvoting his own deal
+						#increase that users karma! reward for uploading a deal!
+						user.karma += 1
+						#level check!
+						api_utils.level_check(user)
+					else:
+						#increase the ninjas karma
+						ninja.karma += 1
+						#level check!
+						api_utils.level_check(ninja)
+						#replace ninja. we dont want him anymore
+						ninja.put()
 				
 				
 				#add to upvote list
