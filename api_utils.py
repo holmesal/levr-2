@@ -5,6 +5,7 @@ from google.appengine.api import images, urlfetch
 from google.appengine.ext import db
 from math import sin, cos, asin, sqrt, degrees, radians, floor, sqrt
 import geo.geohash as geohash
+import google.appengine.api.memcache
 import json
 import levr_classes as levr
 import levr_encrypt as enc
@@ -773,6 +774,20 @@ def send_img(self,blob_key,size):
 	except Exception,e:
 		levr.log_error()
 		send_error(self,'Server Error')
+	
+def get_deal_keys_from_memcache(hash_set,*args,**kwargs):
+	'''
+	Returns two lists: a list of tuples of ('geohash',[deal_keys])
+	and a list of ['geohash','geohash'] for geohashes that were not found in the memcache
+	
+	@param hash_set: The geohashes that the search is requesting
+	@type hash_set: list
+	'''
+	logging.debug(hash_set)
+	assert type(hash_set) is list, 'hash_set should be a list'
+	key_dict = memcache.get_multi(hash_set,namespace='geohash')
+	logging.debug(levr.log_dict(key_dict))
+	return key_dict
 	
 	
 def get_deal_keys_from_hash_set(tags,hash_set,*args,**kwargs):
