@@ -62,10 +62,13 @@ mixpanel.init("ab1137787f393161bd481e2756b77850");</script><!-- end Mixpanel -->
 	    $(document).ready(function() {
 	    
 	    	//identify as the user that generated the contentID
-	    	mixpanel.identify("{{ uid }}");
+	    	mixpanel.people.identify("{{ uid }}");
 	    	
 	    	//track arrival via mixpanel
 	    	mixpanel.track("Foursquare web wrapper arrival");
+	    	
+	    	//track uploads began (per user)
+	    	mixpanel.people.increment("Uploads Began",1);
 	    
 	    
 		    $('#fakeImgBtn,#imgPreview').click(function(){

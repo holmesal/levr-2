@@ -40,10 +40,13 @@ mixpanel.init("ab1137787f393161bd481e2756b77850");</script><!-- end Mixpanel -->
 	    $(document).ready(function() {
 	    	
 	    	//identify as the user that generated the contentID
-	    	mixpanel.identify("{{ uid }}");
+	    	mixpanel.people.identify("{{ uid }}");
 	    	
 	    	//track arrival via mixpanel
 	    	mixpanel.track("Upload complete arrival");
+	    	
+	    	//track uploads completed (per user)
+	    	mixpanel.people.increment("Uploads Completed",1);
 	    	
 	    	mixpanel.track_links("#btnDownload", "Download button clicked");
 	    })
