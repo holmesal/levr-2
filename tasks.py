@@ -77,14 +77,35 @@ class BusinessHarmonizationTaskHandler(webapp2.RequestHandler):
 			
 			if match:
 				logging.info('Foursquare ID found: '+match['foursquare_id'])
+				
+				#are there any previously added foursquare businesses?
+				#q_orphans = levr.Business.gql('WHERE foursquare_id=:1',match['foursquare_id'])
+				
+				#grab a duplicate business
+				duplicate_business = levr.Business.gql('WHERE foursquare_id=:1',match['foursquare_id']).get()
+				
+				if duplicate_business:
+					#grab all the deal keys from that business
+					keys = levr.Deal.gql('WHERE businessID = :1',str(duplicate_business.key())).fetch(keys_only=True)
+					duplicate_business.delete()
+				
 				#update business entity
 				business.foursquare_id = match['foursquare_id']
 				business.foursquare_name = match['foursquare_name']
 				business.foursquare_linked	=	True
 				business.put()
+				
+				for key in keys:
+					deal = db.get(key)
+					deal.businessID = str(business.key())
+					deal.put()
+				
 			else:
 				#update to show notfound
 				logging.info('No foursquare match found.')
+				
+				
+			#go grab all the deals and update
 			
 		except:
 			levr.log_error()
