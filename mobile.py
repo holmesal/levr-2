@@ -106,7 +106,6 @@ class ContentIDHandler(webapp2.RequestHandler):
 			#grab the content ID
 			contentID = args[0]
 			logging.debug('ContentID: ' + contentID)
-			callback_url = self.request.get('fsqCallback')
 			
 			#uhh wtf do i do?
 			floating_content = levr.FloatingContent.gql('WHERE contentID=:1',contentID).get()
@@ -116,16 +115,15 @@ class ContentIDHandler(webapp2.RequestHandler):
 			if floating_content.action == 'upload':
 				user = floating_content.user
 				
-				#create upload url
-				upload_url = blobstore.create_upload_url('/mobile/upload')
-				
 				#write out upload template
 				template = jinja_environment.get_template('templates/mobileupload.html')
 				template_values = {
 					'uid':enc.encrypt_key(str(floating_content.user.key())),
 					'businessID':enc.encrypt_key(str(floating_content.business.key())),
-					'upload_url':upload_url
+					'upload_url':blobstore.create_upload_url('/mobile/upload')
 				}
+				logging.debug(template_values)
+				
 			elif floating_content.action == 'deal':
 				#write out deal template
 				template = jinja_environment.get_template('templates/mobiledealview.html')
