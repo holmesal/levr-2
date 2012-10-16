@@ -1,0 +1,189 @@
+User cases
+
+
+Test Cases - deals
+
+
+Alonso creates a levr acct - 
+	-Alonso connects to levr from inside fs
+		:ASSERT:
+			Alonso now has two accounts
+			Alonso-fs
+			Alonso-levr
+		-Alonso uploads a deal from fs
+			:ASSERT:
+				Alonsos accounts are now merged
+				Alonso-levr has 0 karma
+				Deal is owned by the Levr account
+		-Alonso views a deal from fs
+			:ASSERT:
+				Alonsos accounts are now merged
+			-Alonso likes the deal
+				
+	-Alonso connects to fs from inside levr
+		ASSERT:
+			One acct for alonso
+			Alonsos fs information is updated
+			
+-Alonso DOES NOT create a levr acct
+	-Alonso connects from levr from inside fs
+		:ASSERT:
+			Alonso has only one account, with only fs info
+		-Alonso views a deal from fs using web wrapper
+			:ASSERT:
+				Nothing. He can't do anything. PSYCHE!
+		-Alonso uploads a deal from fs using the web wrapper and it is liked 5 times
+			:ASSERT:
+				Alonso-fs has 5 karma
+				Alonso-fs has 5 notifications
+				Alonso-fs has 1 deal children
+				Alonso-fs is level 2
+				Deal1 has 5 upvotes
+			-Alonso dls levr
+				-Alonso signs in w/fs
+					:ASSERT:
+						Alonso has one account, phone has uid, levrToken of user acct created via fs
+						Alonso has 5 karma
+						Alonso has 5 notifications
+						Alonso has 1 deal children
+						Alonso is level 2
+						Deal1 has 5 upvotes
+						5 users have references to the deal in their upvotes and favorites
+				-Alonso signs in w/levr
+					:ASSERT:
+						Alonso has two accts
+						Alonso-levr has 0 karma
+						Alonso-levr has 0 notifications
+						Alonso-levr has 0 deal children
+						Alonso-fs has 5 karma
+						Alonso-fs has 5 notifications
+						Alonso-fs has 1 deal children
+						Alonso-fs is level 2
+						Deal1 has 5 upvotes
+					-Alonso clicks on a deal view via fs
+						:ASSERT:
+							Alonsos accounts are merged
+							Alonso-levr has 5 karma
+							Alonso-levr has 5 notifications
+							Alonso-levr has 0 deal children
+							Alonso-levr is level 2
+							Alonso-fs has 0 karma
+							Alonso-fs has 0 notifications
+							Alonso-fs has 1 deal children
+							Alonso-fs is level 1
+							Deal1 has 5 upvotes
+						-Pat likes Deal1 ***karma goes to Alonso-levr
+							:ASSERT:
+								Alonso-levr has 6 karma +1
+								Alonso-levr has 6 notifications +1
+								Alonso-levr has 0 deal children
+								Alonso-levr is level 2
+								Alonso-fs has 0 karma
+								Alonso-fs has 0 notifications
+								Alonso-fs has 1 deal children
+								Alonso-fs is level 1
+								Deal1 has 6 upvotes +1
+								Pat has reference to Deal1 owned by Alonso-fs
+							-Alonso clicks on an upload deal link via fs and uploads a deal
+								:ASSERT:
+									Accounts have already been merged
+									Alonso-levr has 6 karma
+									Alonso-levr has 6 notifications
+									Alonso-levr has 1 deal children +1
+									Alonso-levr is level 2
+									Alonso-fs has 0 karma
+									Alonso-fs has 0 notifications
+									Alonso-fs has 1 deal children
+									Alonso-fs is level 1
+									Deal1 has 6 upvotes
+									Deal2 has 0 upvotes
+								-Pat likes Deal2
+									:ASSERT:
+										Alonso-levr has 7 karma +1
+										Alonso-levr has 7 notifications +1
+										Alonso-levr has 1 deal children +1
+										Alonso-levr is level 2
+										Alonso-fs has 0 karma
+										Alonso-fs has 0 notifications
+										Alonso-fs has 1 deal children
+										Alonso-fs is level 1
+										Deal1 has 6 upvotes
+										Deal2 has 0 upvotes
+										
+					-Alonso uploads Deal3 via fs
+						:ASSERT:
+							Alonsos accounts are merged
+							Alonso-levr has 5 karma
+							Alonso-levr has 5 notifications
+							Alonso-levr has 1 deal children +1
+							Alonso-levr is level 2
+							Alonso-fs has 0 karma
+							Alonso-fs has 0 notifications
+							Alonso-fs has 1 deal children
+							Alonso-fs is level 1
+							Deal1 has 5 upvotes
+						-Pat downvotes Deal3
+							:ASSERT:
+								Alonso-levr has 5 karma
+								Alonso-levr has 5 notifications
+								Alonso-levr has 1 deal children 
+								Alonso-levr is level 2
+								Alonso-fs has 0 karma
+								Alonso-fs has 0 notifications
+								Alonso-fs has 1 deal children
+								Alonso-fs is level 1
+								Deal1 has 5 upvotes
+								Deal3 has 1 downvote
+
+Test Merging Accounts
+	Alonso-levr is the levr acct
+	Alonso-fs is the fs acct
+	
+	What is transfered from alonso-fs?
+	
+	
+	tester if either of them is tester
+	karma - sum
+	level - recalculate
+	new_notifications - sum
+	#followers - updated during remote call
+	#favorites - n/a
+	#upvotes - n/a
+	#downvotes -n/a
+	
+	date_created - whichever is lesser
+	date_last_login - reset to now
+	date_last_notified - whichever is greater
+	last_notified - whatever date_last_notified is set
+
+Test deal uploading
+	businesses are being created properly
+	Images are the correct orientation
+	
+Test foursquare deal uploading
+	businesses are being created properly
+		Are businesses being matched up? Google places vs fs venue api
+	Images are the correct orientation
+
+
+
+Foursquare
+	What happens when we dont have...
+	
+
+Test upvote,downvote, remove favorite
+Test Adding Friends - calls to remote apis
+Triggers on:
+	signup
+	connects
+	merge accts
+
+Test upload from phone and web wrapper
+
+
+Test login logic, signup logic
+
+
+
+
+
