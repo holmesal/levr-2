@@ -249,7 +249,7 @@ class SocialClass:
 				content = levr.log_dict(json.loads(response.content))
 				headers = levr.log_dict(response.headers.data)
 			except:
-				content = 'Content coult not be fetched\n\n'
+				content = 'Content could not be fetched\n\n'
 				headers = levr.log_dict(response.headers.data)
 			raise Exception('Could Not connect:' +headers+ content)
 		

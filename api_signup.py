@@ -21,16 +21,15 @@ class SignupFacebookHandler(webapp2.RequestHandler):
 			user = levr.Customer.all().filter('facebook_id',facebook_id).get()
 			
 			if user:
+				#fallback to a login
 				response = {
 						'user':api_utils.package_user(user,True,send_token=True)
 						}
 			else:
-				#create new user
-				new_user = levr.Customer(levr_token = levr.create_levr_token())
-				#put the entity so it has a complete key
-				new_user.put()
+				#user doesnt exist!
+				
 				#grab the new users foursquare info
-				user = social.Foursquare(new_user)
+				user = social.Foursquare()
 				try:
 					new_user, new_user_details, new_friends = user.first_time_connect(
 												facebook_id = facebook_id,
@@ -38,9 +37,8 @@ class SignupFacebookHandler(webapp2.RequestHandler):
 												)
 				except Exception,e:
 					#remove the entity that was created because the signup failed
-					new_user.delete()
 					levr.log_error()
-					assert False, 'Could not connect with facebook. '.format('')
+					assert False, 'Could not connect with facebook.'
 				#return the user
 				response = {
 						'user':api_utils.package_user(user,True,send_token=True),
@@ -67,16 +65,17 @@ class SignupFoursquareHandler(webapp2.RequestHandler):
 			user = levr.Customer.all().filter('foursquare_token',foursquare_token).get()
 			
 			if user:
+				#fallback to login
 				response = {
 						'user':api_utils.package_user(user,True,send_token=True)
 						}
 			else:
+				#===============================================================
+				# NOTE: there is a remote chance that the users foursquare oauth_token would change.
+				# this would not recognize that
+				#===============================================================
 				#create new user
-				new_user = levr.Customer(levr_token = levr.create_levr_token())
-				#put the entity so it has a complete key
-				new_user.put()
-				#grab the new users foursquare info
-				user = social.Foursquare(new_user)
+				user = social.Foursquare()
 				try:
 					user, new_user_details, new_friends = user.first_time_connect(
 													foursquare_token = foursquare_token
@@ -109,23 +108,23 @@ class SignupTwitterHandler(webapp2.RequestHandler):
 			twitter_token_secret	= kwargs.get('remoteTokenSecret',None)
 			
 			
-			logging.debug('\n{}\n{}\n{}'.format(twitter_id,
+			logging.debug('\n\n{}\n{}\n{}\n\n'.format(
+											twitter_id,
 											twitter_token,
-											twitter_token_secret))
+											twitter_token_secret
+											)
+						)
 			user = levr.Customer.all().filter('twitter_id',twitter_id).get()
 			logging.debug(user)
 			if user:
+				#fallback to login
 				logging.debug('User exists!')
 				response = {
 						'user':api_utils.package_user(user,True,send_token=True)
 						}
 			else:
 				#create new user
-				new_user = levr.Customer(levr_token = levr.create_levr_token())
-				#put entity so it has a complete key
-				new_user.put()
-				#grab the new users twitter info
-				user = social.Twitter(new_user)
+				user = social.Twitter()
 				try:
 					user, new_user_details, new_friends = user.first_time_connect(
 													twitter_id			= twitter_id,
@@ -152,27 +151,14 @@ class SignupTwitterHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Server Error')
 			
 class SignupLevrHandler(webapp2.RequestHandler):
+	@api_utils.validate(None,None,email=True,alias=True,pw=True)
 	def post(self):
 		#RESTRICTED
 		try:
-			logging.info(self.request.get('email'))
-			logging.info(self.request.get('alias'))
-			logging.info(self.request.get('pw'))
-			
-			email = self.request.get('email')
-			if email == '':
-				api_utils.send_error(self,'Required parameter not passed: email')
-				return
-			
-			alias = self.request.get('alias')
-			if alias == '':
-				api_utils.send_error(self,'Required parameter not passed: alias')
-				return
-			
-			pw = self.request.get('pw')
-			if pw == '':
-				api_utils.send_error(self,'Required parameter not passed: pw')
-				return
+			logging.debug(kwargs)
+			email = kwargs.get('email',None)
+			alias = kwargs.get('alias',None)
+			pw = kwargs.get('pw',None)
 			
 			'''Check availability of username+pass, create and login if not taken'''
 			#check availabilities
@@ -192,17 +178,6 @@ class SignupLevrHandler(webapp2.RequestHandler):
 			user.email = email
 			user.pw 	= enc.encrypt_password(pw)
 			user.alias = alias
-			
-			#generate random number to decide what split test group they are in
-			choice = randint(10,1000)
-			decision = choice%2
-			if decision == 1:
-				group = 'paid'
-			else:
-				group = 'unpaid'
-			
-			#set a/b test group to customer entity
-			user.group = group
 			
 			#create or refresh the alias
 			user = levr.build_display_name(user)

@@ -164,9 +164,11 @@ class LoginLevrHandler(webapp2.RequestHandler):
 			
 			email_or_owner = kwargs.get('email_or_owner')
 			pw = kwargs.get('pw')
+			pw = enc.encrypt_password(pw)
+			
 			
 			#check both email and password
-			pw = enc.encrypt_password(pw)
+			
 			r_email = levr.Customer.gql('WHERE email = :1 AND pw=:2',email_or_owner,pw).get()
 			r_alias  = levr.Customer.gql('WHERE alias = :1 AND pw=:2',email_or_owner,pw).get()
 			if r_email:
@@ -182,6 +184,9 @@ class LoginLevrHandler(webapp2.RequestHandler):
 			#create or refresh the alias
 			existing_user = levr.build_display_name(existing_user)
 			
+			#===================================================================
+			# Spoof Ninja Activity!
+			#===================================================================
 			
 			data = api_utils.SpoofUndeadNinjaActivity(existing_user).run()
 			logging.debug(levr.log_dict(data))

@@ -11,78 +11,7 @@ from google.appengine.api import mail
 from google.appengine.api import taskqueue
 
 
-#class RedeemHandler(webapp2.RequestHandler):
-#	@api_utils.validate('deal','param',user=True)
-#	@api_utils.private
-#	def get(self,*args,**kwargs):
-#		'''
-#		inputs: uid
-#		Response: none
-#		'''
-#		#RESTRICTED
-#		try:
-#			user 	= kwargs.get('actor')
-#			deal 	= kwargs.get('deal')
-#			
-#			uid 	= user.key()
-#			dealID 	= deal.key()
-#			
-#			
-#			#PERFORM ACTIONS
-#			owner = dealID.parent()
-#			logging.debug(owner)
-#			
-#			if not levr.create_notification('redemption',dealID.parent(),uid,dealID):
-#				raise Exception('Problem in create_notifications')
-#			
-#			deal.count_redeemed += 1
-#			
-#			#respond
-#			api_utils.send_response(self,{},user)
-#		except:
-#			levr.log_error(self.request)
-#			api_utils.send_error(self,'Server Error')
-#
 
-#class AddFavoriteHandler(webapp2.RequestHandler):
-#	@api_utils.validate('deal','param',user=True)
-#	@api_utils.private
-#	def get(self,*args,**kwargs):
-#		'''
-#		Input: uid
-#		Response: None
-#		'''
-#		#RESTRICTED
-#		try:
-#			user 	= kwargs.get('actor')
-#			deal 	= kwargs.get('deal')
-#			
-#			uid 	= user.key()
-#			dealID 	= deal.key()
-#			
-#			
-#			#PERFORM ACTIONS
-#			logging.debug(levr.log_model_props(user))
-#			#only add to favorites if not already in favorites
-#			if dealID not in user.favorites:
-#				logging.debug('Flag not in favorites')
-#				#append dealID to favorites property
-#				user.favorites.append(dealID)
-#				logging.debug(user.favorites)
-#				
-#				#create favorite notification
-#				levr.create_notification('favorite',dealID.parent(),uid,dealID)
-#			
-#				#close entity
-#				user.put()
-#			else:
-#				logging.debug('Already upvoted!')
-#			
-#			api_utils.send_response(self,{},user)
-#		except:
-#			levr.log_error(self.request)
-#			api_utils.send_error(self,'Server Error')
-#			
 
 class UpvoteHandler(webapp2.RequestHandler):
 	@api_utils.validate('deal','param',user=True,levrToken=True)
@@ -97,6 +26,10 @@ class UpvoteHandler(webapp2.RequestHandler):
 			uid 	= user.key()
 			deal 	= kwargs.get('deal')
 			dealID 	= deal.key()
+			
+			
+			# Check owner of the deal. If the owner is a dummy account, 
+			
 			
 			#===================================================================
 			# Note, if this code changes, you should also change the code in /cronjobs/undeadActivity because it was copied and pasted...
@@ -136,7 +69,6 @@ class UpvoteHandler(webapp2.RequestHandler):
 				#add deal to favorites
 				if dealID not in user.favorites:
  					user.favorites.append(dealID)
-					pass
 				
 				#do not change the karma of the user who uploaded
 				#do not add notification for the ninja
@@ -146,6 +78,11 @@ class UpvoteHandler(webapp2.RequestHandler):
 				
 				#get owner of the deal
 				ninja = levr.Customer.get(deal.key().parent())
+				#check owner. if the owner is a dummy owner left over from an account transfer, grab the real owner.
+				if ninja.email == 'dummy@levr.com':
+					logging.debug('\n\n\n \t\t\t DUMMY NINJA! REDIRECTING REFERENCE TO THE REAL ONE!!! \n\n\n')
+					ninja = levr.Customer.get(ninja.pw)
+				
 				#compare owner to user doing the voting
 				if ninja.key() == user.key():
 					#ninja is upvoting his own deal

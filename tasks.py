@@ -175,7 +175,37 @@ class MergeUsersTaskHandler(webapp2.RequestHandler):
 			#grab the donor's foursquare token
 			floating_content = levr.FloatingContent.gql('WHERE contentID=:1',contentID).get()
 			donor = floating_content.user
+			
+			#===================================================================
+			# Merge user data from donor to user
+			#===================================================================
+			
+			if donor.tester or user.tester: user.tester = True
 			user.karma += donor.karma
+			api_utils.level_check(user)
+			
+			user.new_notifications += donor.new_notification
+			#===================================================================
+			# Notification references - dont care about actor references
+			#===================================================================
+			notification_references = levr.notifications.all().filter('to_be_notified',donor.key()).fetch(None)
+			for n in notification_references:
+				n.to_be_notified.remove(donor.key())
+			db.put(notification_references)
+			
+			#===================================================================
+			# remove all follower references to the donor - these will be reset with remote api call
+			#===================================================================
+			donor_references = levr.Customer.all().filter('followers',donor.key()).fetch(None)
+			for u in donor_references:
+				u.followers.remove(donor.key())
+			
+			
+			#===================================================================
+			# Point back to the new owner for the sake of upvotes
+			#===================================================================
+			donor.email = 'dummy@levr.com'
+			donor.pw = str(user.key())
 			
 			if service=='foursquare':
 				logging.info('The user came from foursquare')
