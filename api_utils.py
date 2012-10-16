@@ -458,7 +458,12 @@ def validate(url_param,authentication_source,*a,**to_validate):
 					except:
 						levr.log_error('Check validator call. "query" should not be passed as a param if there is no variable regex in the url declaration')
 						TypeError('query: None')
-				
+				elif url_param == 'contentID':
+					try:
+						contentID = args[0]
+						kwargs.update({'contentID':contentID})
+					except:
+						raise KeyError('contentID')
 				elif url_param == None:
 					#nothing is passed to the handler as part of the url
 					pass

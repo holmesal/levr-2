@@ -46,7 +46,7 @@ class FloatingContentExistingHandler(webapp2.RequestHandler):
 	'''
 	User is logged into levr. I.e. case where uid and levrToken is available on phone
 	'''
-	@api_utils.validate(None,'param',user=True,levrToken=True)
+	@api_utils.validate('contentID','param',user=True,levrToken=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		try:
@@ -56,11 +56,13 @@ class FloatingContentExistingHandler(webapp2.RequestHandler):
 			#if so, we need to merge these two accounts and update references (are there any?)
 			
 			#grab and parse contentID to figure out what service the user has previously linked with
-			contentID = args[0]
-			service = contentID[0:3]
+			
 			logging.debug(kwargs)
 			user = kwargs.get('user')
-			
+			contentID = kwargs.get('contentID')
+			assert contentID,'contentID is not being passed'
+#			contentID = args[0]
+			service = contentID[0:3]
 			#grab the floating content and the requesting user
 			floating_content = levr.FloatingContent.gql('WHERE contentID=:1',contentID).get()
 			donor = floating_content.user
