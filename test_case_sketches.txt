@@ -4,6 +4,37 @@ User cases
 Test Cases - deals
 
 
+Major components:
+
+Sign Up
+	Levr
+	Twitter
+	Fousquare
+	Facebook
+Connect
+	Twitter
+Upload
+	Levr
+	Foursquare Web Wrapper
+Search
+	Relevancy
+	Expando
+Vote
+	Up/downvote own deal
+	Up/downvote other ninja's deal
+Notify
+	New follower
+	Upvote
+	Upload
+	Any others?
+Deeplink
+	Foursquare upload
+	Foursquare view
+	
+
+
+
+
 Alonso creates a levr acct - 
 	-Alonso connects to levr from inside fs
 		:ASSERT:
