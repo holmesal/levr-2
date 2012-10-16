@@ -10,42 +10,32 @@ import webapp2
 
 
 class SignupFacebookHandler(webapp2.RequestHandler):
-	@api_utils.validate(None,None,remoteToken=True,remoteID=True)
+	@api_utils.validate(None,None,remoteToken=True)
 	def post(self,*args,**kwargs):
 		#RESTRICTED
 		try:
 			#check token
 			facebook_token	= kwargs.get('remoteToken',None)
-			facebook_id		= kwargs.get('remoteID',None)
 			
-			user = levr.Customer.all().filter('facebook_id',facebook_id).get()
+#			user = levr.Customer.all().filter('facebook_id',facebook_id).get()
 			
-			if user:
-				#fallback to a login
-				response = {
-						'user':api_utils.package_user(user,True,send_token=True)
-						}
-			else:
-				#user doesnt exist!
-				
-				#grab the new users foursquare info
-				user = social.Foursquare()
-				try:
-					new_user, new_user_details, new_friends = user.first_time_connect(
-												facebook_id = facebook_id,
-												facebook_token	= facebook_token,
-												)
-				except Exception,e:
-					#remove the entity that was created because the signup failed
-					levr.log_error()
-					assert False, 'Could not connect with facebook.'
-				#return the user
-				response = {
-						'user':api_utils.package_user(user,True,send_token=True),
-						'new_friends'		: [enc.encrypt_key(f) for f in new_friends],
-						'new_user_details'	: new_user_details
-						}
-			api_utils.send_response(self,response,user)
+			user = social.Facebook(None,'verbose',facebook_token=facebook_token)
+			try:
+				new_user, new_user_details, new_friends = user.first_time_connect(
+											facebook_token	= facebook_token,
+											)
+			except Exception,e:
+				levr.log_error()
+				assert False, 'Could not connect with facebook.'
+			
+			#return the user
+			response = {
+					'user':api_utils.package_user(new_user,True,send_token=True),
+					'new_friends'		: [enc.encrypt_key(f) for f in new_friends],
+					'new_user_details'	: new_user_details
+					}
+			
+			api_utils.send_response(self,response,new_user)
 		except AssertionError,e:
 			levr.log_error()
 			api_utils.send_error(self,'{}'.format(e))

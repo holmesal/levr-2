@@ -11,7 +11,7 @@ facebook_auth = {
 			'client_id':'448791615162217',
 			'client_secret':'1db3af8377ccef564230ed62c27bbcc6',
 			'pat_facebook_id' : 1234380397,
-			'pat_facebook_token' : 'AAACEdEose0cBANE5rXw73cOBjbgWih4aTitqy1ueJDDRtNwMz3ZA3cQwO8DVSiK2FMJeXSO7F0dXb6mAS2gemef5mBPd9yrPnQOX8BFMbCD1OxzvS'
+			'pat_facebook_token' : 'AAAGYLHDMx2kBAG8OYxTBBehQMHMvDzb869cGt9UvjEW17C8ykC3En0Fbyuc0FzYnwGGs0uvMf3WcGSjFpzPb1M4Jhgd6jJf8sMJEV4FEEc0a2EZCQ'
 			}
 foursquare_auth = {
 				'client_id' : 'UNHLIF5EYXSKLX50DASZ2PQBGE2HDOIK5GXBWCIRC55NMQ4C',

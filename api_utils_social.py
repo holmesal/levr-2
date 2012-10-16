@@ -855,13 +855,13 @@ class Facebook(SocialClass):
 			
 			#assign the foursquare_token so that self.fetch will work
 			self.facebook_token = facebook_token
-			#fetch the user info
+			#fetch the user info from facebook
 			response = self.fetch('user')
 			logging.debug(levr.log_dict(response))
-			#get the user id
+			#get the user id from the remote api call
 			facebook_id = int(response['id'])
 			
-			#search for the user by that id
+			#search for the user in our db by that id
 			user = levr.Customer.all().filter('facebook_id',facebook_id).get()
 #			logging.debug('\n\n\n\n \t\t\t\t USER \n\n\n\n')
 			logging.debug(user)
@@ -874,6 +874,7 @@ class Facebook(SocialClass):
 			else:
 				logging.debug('user exists')
 			# else: user was found and we will init with that user
+		logging.debug(user)
 		
 		#init all dat social stuff!
 		SocialClass.__init__(self, user, *args, **kwargs)
@@ -882,10 +883,6 @@ class Facebook(SocialClass):
 		Facebook
 		Updates the users facebook api credentials
 		
-		@param facebook_id:
-		@type facebook_id:
-		@param facebook_token:
-		@type facebook_token:
 		'''
 		if self.verbose: logging.debug('\n\n\n\t\t\t\t FACEBOOK UPDATE CREDENTIALS \n\n\n')
 		
@@ -915,18 +912,22 @@ class Facebook(SocialClass):
 		Fetches a users information, parses it, and sets them to the user properties
 		'''
 		facebook_user = self.fetch('user')
+		updated = {}
 		if self.verbose: logging.debug('\n\n\n\t\t\t\t FACEBOOK GET USER DETAILS \n\n\n')
 		name			= facebook_user['name']
 		first_name		= facebook_user['first_name']
 		last_name		= facebook_user['last_name']
 		display_name	= self.build_display_name(first_name, last_name)
 		pic_data		= facebook_user['picture']['data']
+		facebook_id		= int(facebook_user['id'])
 		if not pic_data['is_silhouette']:
 			#picture is not a silhouette
 			#grab photo url
 			photo = pic_data['url']
+		if not self.user.facebook_id:
+			self.user.facebook_id = facebook_id
+			updated['facebook_id'] = facebook_id
 		
-		updated = {}
 		if not self.user.first_name:
 			self.user.first_name	= first_name
 			updated['first_name']	= first_name
