@@ -148,7 +148,7 @@ class LoginTwitterHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'{}'.format(e))
 		except Exception,e:
 			levr.log_error()
-			api_utils.send_error(self,'Server Error {}'.format(e))
+			api_utils.send_error(self,'Server Error')
 			
 			
 class LoginLevrHandler(webapp2.RequestHandler):

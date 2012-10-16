@@ -28,9 +28,6 @@ class UpvoteHandler(webapp2.RequestHandler):
 			dealID 	= deal.key()
 			
 			
-			# Check owner of the deal. If the owner is a dummy account, 
-			
-			
 			#===================================================================
 			# Note, if this code changes, you should also change the code in /cronjobs/undeadActivity because it was copied and pasted...
 			#===================================================================
@@ -125,7 +122,7 @@ class UpvoteHandler(webapp2.RequestHandler):
 			api_utils.send_response(self,response,user)
 			
 		except:
-			levr.log_error(self.request.body)
+			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 
 class DownvoteHandler(webapp2.RequestHandler):
@@ -197,7 +194,7 @@ class DownvoteHandler(webapp2.RequestHandler):
 			api_utils.send_response(self,response,user)
 			
 		except:
-			levr.log_error(self.request.body)
+			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 
 
@@ -233,7 +230,7 @@ class DeleteFavoriteHandler(webapp2.RequestHandler):
 			
 			api_utils.send_response(self,response,user)
 		except:
-			levr.log_error(self.request)
+			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 		
 		
@@ -304,7 +301,7 @@ class ReportHandler(webapp2.RequestHandler):
 			
 			api_utils.send_response(self,{},user)
 		except:
-			levr.log_error(self.request)
+			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 
 
@@ -364,7 +361,7 @@ class DealInfoHandler(webapp2.RequestHandler):
 			}
 			api_utils.send_response(self,response)
 		except:
-			levr.log_error(self.request.body)
+			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 
 app = webapp2.WSGIApplication([ #('/api/deal/(.*)/redeem.*', RedeemHandler),

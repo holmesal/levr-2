@@ -669,7 +669,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 				send_error(self,'Invalid parameter, '+str(e))
 			except Exception,e:
 				levr.log_error()
-				send_error(self,'Server Error: '+str(e))
+				send_error(self,'Server Error')
 			else:
 				return handler_method(self,*args,**kwargs)
 		
@@ -771,7 +771,7 @@ def send_img(self,blob_key,size):
 	except KeyError,e:
 		send_error(self,e)
 	except Exception,e:
-		levr.log_error(e)
+		levr.log_error()
 		send_error(self,'Server Error')
 	
 	

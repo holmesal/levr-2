@@ -199,10 +199,10 @@ class MergeUsersTaskHandler(webapp2.RequestHandler):
 			donor_references = levr.Customer.all().filter('followers',donor.key()).fetch(None)
 			for u in donor_references:
 				u.followers.remove(donor.key())
-			
+			db.put(donor_references)
 			
 			#===================================================================
-			# Point back to the new owner for the sake of upvotes
+			# Point back to the new owner for the sake of that user getting the right upvotes
 			#===================================================================
 			donor.email = 'dummy@levr.com'
 			donor.pw = str(user.key())

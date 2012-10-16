@@ -406,7 +406,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 					
 					
 		except:
-			levr.log_error(self.request.params)
+			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 			
 			
@@ -428,7 +428,7 @@ class SearchNewHandler(webapp2.RequestHandler):
 			logging.info("\n\nSEARCH NEW")
 			
 		except:
-			levr.log_error(levr.log_dir(self.request))
+			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 
 class SearchHotHandler(webapp2.RequestHandler):
@@ -448,7 +448,7 @@ class SearchHotHandler(webapp2.RequestHandler):
 		try:
 			pass
 		except:
-			levr.log_error(self.request.params)
+			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 class SearchPopularHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,None,geoPoint=True,limit=False,radius=False,user=False,levrToken=False)
@@ -564,7 +564,7 @@ class SearchPopularHandler(webapp2.RequestHandler):
 					}
 			api_utils.send_response(self,response)
 		except:
-			levr.log_error(self.request.params)
+			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 
 		

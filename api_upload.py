@@ -49,7 +49,7 @@ class UploadRequestHandler(webapp2.RequestHandler):
 					}
 			api_utils.send_response(self,response,user)
 		except:
-			levr.log_error(self.request.params)
+			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 	'''

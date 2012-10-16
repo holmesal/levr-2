@@ -40,6 +40,7 @@ class FloatingContentNewHandler(webapp2.RequestHandler):
 			
 			api_utils.send_response(self,response)
 		except Exception,e:
+			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 		
 class FloatingContentExistingHandler(webapp2.RequestHandler):
@@ -122,6 +123,7 @@ class FloatingContentExistingHandler(webapp2.RequestHandler):
 			
 			api_utils.send_response(self,response)
 		except Exception,e:
+			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 		
 app = webapp2.WSGIApplication([('/api/deeplink/(.*)/new',FloatingContentNewHandler),

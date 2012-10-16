@@ -71,7 +71,7 @@ class UserFavoritesHandler(webapp2.RequestHandler):
 			api_utils.send_response(self,response,user)
 			
 		except:
-			levr.log_error(self.request)
+			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 		
 
@@ -114,7 +114,7 @@ class UserUploadsHandler(webapp2.RequestHandler):
 			#respond
 			api_utils.send_response(self,response,user)
 		except:
-			levr.log_error(self.request)
+			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 		
 class UserGetFollowersHandler(webapp2.RequestHandler):
@@ -160,7 +160,7 @@ class UserGetFollowersHandler(webapp2.RequestHandler):
 			#respond
 			api_utils.send_response(self,response,user)
 		except:
-			levr.log_error(self.request)
+			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 		
 class UserAddFollowHandler(webapp2.RequestHandler):
@@ -200,7 +200,7 @@ class UserAddFollowHandler(webapp2.RequestHandler):
 			api_utils.send_response(self,{'dt':str(actor.date_last_notified)},actor)
 			
 		except:
-			levr.log_error(self.request)
+			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 
 class UserUnfollowHandler(webapp2.RequestHandler):
@@ -252,7 +252,7 @@ class UserUnfollowHandler(webapp2.RequestHandler):
 			api_utils.send_response(self,{},actor)
 			
 		except:
-			levr.log_error(self.request)
+			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 class UserImgHandler(webapp2.RequestHandler):
 	@api_utils.validate('user',None,size=True)
@@ -330,7 +330,7 @@ class UserNotificationsHandler(webapp2.RequestHandler):
 			#!!!!!!!IMPORTANT!!!!
 			user.put()
 		except:
-			levr.log_error(self.request)
+			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 		
 		
