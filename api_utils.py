@@ -1,11 +1,10 @@
 from common_word_list import blacklist
 from datetime import datetime
 from fnmatch import filter
-from google.appengine.api import images, urlfetch
+from google.appengine.api import images, urlfetch, memcache
 from google.appengine.ext import db
 from math import sin, cos, asin, sqrt, degrees, radians, floor, sqrt
 import geo.geohash as geohash
-import google.appengine.api.memcache
 import json
 import levr_classes as levr
 import levr_encrypt as enc
@@ -774,23 +773,70 @@ def send_img(self,blob_key,size):
 	except Exception,e:
 		levr.log_error()
 		send_error(self,'Server Error')
-	
-def get_deal_keys_from_memcache(hash_set,*args,**kwargs):
+
+
+def get_deal_keys(hash_set,**kwargs):
 	'''
-	Returns two lists: a list of tuples of ('geohash',[deal_keys])
-	and a list of ['geohash','geohash'] for geohashes that were not found in the memcache
+	<bullhorn> Why are we here?!
+	<screams> To get deal keys!!
+	<bullhorn> Why are we here?!
+	<screams> To take what is ours!!
+	<bullhorn> And how are we going to get it?!
+	<screams> First we will search the memcache for all of the requested geohashes.
+				The geohashes that are in the memcache will be returned with a list of deal_keys for that geohash
+				The geohashes that are not in the memcache, we will perform a db query for that geohash and get
+				the deal_keys that way. And then we will burn those motherfuckers to the ground!! Freeeeeeeedoooooooom!!!
+				
+	Returns: list of deal keys
+	Optional kwargs:
+		development = Boolean; if in development, will search for deal_text='test' otherwise deal_text='active'
+	
+	@param hash_set: the geohashes in question
+	@type hash_set: list
+	'''
+	# search hashes from memcache
+	keys_dict, unresolved_hashes = get_deals_from_memcache(hash_set,**kwargs)
+	
+	if unresolved_hashes:
+		# search db for hashes, and place the results in the memcache
+		more_keys = get_deals_from_db(unresolved_hashes,**kwargs)
+	
+	
+def get_deal_keys_from_memcache(hash_set,**kwargs):
+	'''
+	Returns two lists: a dict of {geohash:list_of_deal_keys}
+	and a list of ['geohash',] for geohashes that were not found in the memcache
 	
 	@param hash_set: The geohashes that the search is requesting
 	@type hash_set: list
 	'''
 	logging.debug(hash_set)
 	assert type(hash_set) is list, 'hash_set should be a list'
-	key_dict = memcache.get_multi(hash_set,namespace='geohash')
+	
+	development		= kwargs.get('development',False)
+	if development:
+		#developer is searching
+		namespace = 'test_geohash'
+		logging.debug('test deals')
+	else:
+		#a real person is searching!
+		namespace = 'active_geohash'
+		logging.debug('active deals')
+	
+	
+	#fetch deal_key lists by geohash
+	key_dict = memcache.get_multi(hash_set,namespace=namespace)
+	
+	#grab the hashes that were not found in the memcache
+	unresolved_hashes = filter(lambda hash: hash not in key_dict,hash_set)
+	
+	
 	logging.debug(levr.log_dict(key_dict))
-	return key_dict
+	logging.debug(unresolved_hashes)
+	return key_dict,unresolved_hashes
 	
 	
-def get_deal_keys_from_hash_set(tags,hash_set,*args,**kwargs):
+def get_deal_keys_from_hash_set(tags,hash_set,**kwargs):
 	'''
 	Returns a list of deal keys in the hash sets specified
 	
@@ -829,24 +875,6 @@ def get_deal_keys_from_hash_set(tags,hash_set,*args,**kwargs):
 		else:
 			q.filter('deal_status =','test')
 #			logging.debug('flag development')
-		
-		
-#		logging.debug("tags: "+str(tags))
-		#FILTER BY TAG
-		#do not filter by tags if the tag is one of the special key words
-		#=======================================================================
-		# EXPERIMENTAL: only filter by tag once the deals have been fetched
-		# 	That way, we will be able to return all deals if nothing is fetched
-		#
-		# if tags and tags[0] not in SPECIAL_QUERIES:
-		#	#grab all deals where primary_cat is in tags
-		#	for tag in tags:
-		#		logging.debug('tag: '+str(tag))
-		#		q.filter('tags =',tag)
-		# else:
-		#	pass
-		#=======================================================================
-#			logging.debug('This is a special case. Not filtering by tags: '+str(tags))
 		
 		
 		#grab all deals in the geohash

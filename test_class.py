@@ -1,7 +1,7 @@
 #from __future__ import with_statement
 #from google.appengine.api import files
 from datetime import datetime
-from google.appengine.api import taskqueue, urlfetch
+from google.appengine.api import taskqueue, urlfetch, memcache
 from google.appengine.ext import blobstore, db
 from google.appengine.ext.webapp import blobstore_handlers
 from random import randint
@@ -9,7 +9,6 @@ import api_utils
 import api_utils_social
 import base_62_converter as converter
 import geo.geohash as geohash
-import google.appengine.api.memcache
 import json
 import levr_classes as levr
 import levr_encrypt as enc
@@ -788,10 +787,11 @@ class SandboxHandler(webapp2.RequestHandler):
 	Dont delete this. This is my dev playground.
 	'''
 	def get(self):
+		self.response.headers['Content-Type']= 'text/plain'
 		point = '42.5,-72.5'
 		geopoint = levr.geo_converter(point)
-		hash = geohash.encode(geopoint)
-		hash_set = geohash.extend(hash)
+		hash = geohash.encode(geopoint.lat,geopoint.lon)
+		hash_set = geohash.expand(hash)
 		
 		logging.debug(levr.log_dict(memcache.get_stats()))
 		
@@ -799,23 +799,26 @@ class SandboxHandler(webapp2.RequestHandler):
 		memcache.delete_multi(hash_set,namespace='geohash')
 		
 		logging.debug(levr.log_dict(memcache.get_stats()))
-		dp = ['one','two','three','four',5,6,7,'eight','nine']
+		dp = ['one','two','three','four',[5,6,7,54,100],6,7,'eight','nine']
 		
-		for idx,h in hash_set:
-			memcache.add(h,dp[idx])
+		for idx,h in enumerate(hash_set):
+			memcache.add(h,dp[idx],namespace='geohash')
 		
 		logging.debug(levr.log_dict(memcache.get_stats()))
-		
 		
 		
 		data = api_utils.get_deal_keys_from_memcache(hash_set)
-		
+		self.response.out.write(levr.log_dict(data))
 		logging.debug(levr.log_dict(memcache.get_stats()))
 		
+		memcache.delete(hash_set[0],namespace='geohash')
+		
+		self.response.out.write(levr.log_dict(api_utils.get_deal_keys_from_memcache(hash_set)))
 		
 		
-		self.response.headers['Content-Type']= 'text/plain'
-		self.response.out.write(levr.log_dict(data))
+		
+		self.response.out.write('done')
+		
 		
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload.*', DatabaseUploadHandler),
