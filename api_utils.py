@@ -794,34 +794,38 @@ def get_deal_keys(hash_set,**kwargs):
 	@param hash_set: the geohashes in question
 	@type hash_set: list
 	'''
-	# search hashes from memcache
-	keys_dict, unresolved_hashes = get_deals_from_memcache(hash_set,**kwargs)
-	
-	if unresolved_hashes:
-		# search db for hashes, and place the results in the memcache
-		more_keys = get_deals_from_db(unresolved_hashes,**kwargs)
-	
-	
-def get_deal_keys_from_memcache(hash_set,**kwargs):
-	'''
-	Returns two lists: a dict of {geohash:list_of_deal_keys}
-	and a list of ['geohash',] for geohashes that were not found in the memcache
-	
-	@param hash_set: The geohashes that the search is requesting
-	@type hash_set: list
-	'''
-	logging.debug(hash_set)
-	assert type(hash_set) is list, 'hash_set should be a list'
-	
 	development		= kwargs.get('development',False)
 	if development:
 		#developer is searching
+		deal_status = 'test'
 		namespace = 'test_geohash'
 		logging.debug('test deals')
 	else:
 		#a real person is searching!
+		deal_status = 'active'
 		namespace = 'active_geohash'
 		logging.debug('active deals')
+	
+	# search hashes from memcache
+	keys_dict, unresolved_hashes = get_deals_from_memcache(hash_set,namespace)
+	
+	if unresolved_hashes:
+		# search db for hashes, and place the results in the memcache
+		more_keys = get_deals_from_db(unresolved_hashes,deal_status,namespace)
+	
+
+def get_deal_keys_from_memcache(hash_set,namespace):
+	'''
+	Returns two things: a dict of {geohash:list_of_deal_keys}
+	and a list of ['geohash',] for geohashes that were not found in the memcache
+	
+	@param hash_set: The geohashes that the search is requesting
+	@type hash_set: list
+	@param namespace: the memcache namespace
+	@type namespace: active_geohash or test_geohash
+	'''
+	logging.debug(hash_set)
+	assert type(hash_set) is list, 'hash_set should be a list'
 	
 	
 	#fetch deal_key lists by geohash
@@ -836,9 +840,9 @@ def get_deal_keys_from_memcache(hash_set,**kwargs):
 	return key_dict,unresolved_hashes
 	
 	
-def get_deal_keys_from_hash_set(tags,hash_set,**kwargs):
+def get_deal_keys_from_db(hash_set,deal_status,namespace):
 	'''
-	Returns a list of deal keys in the hash sets specified
+	Returns a dict mapping of hashes and deal keys
 	
 	tags = list of tags that are strings
 	request point is db.GeoPt format
@@ -847,50 +851,51 @@ def get_deal_keys_from_hash_set(tags,hash_set,**kwargs):
 	development		default=False
 	
 	'''
-	logging.info(kwargs)
-	#grab variables
-	development		= kwargs.get('development',False)
-	if development:
-		#developer is searching
-		deal_status = 'test'
-		logging.debug('test deals')
-	else:
-		#a real person is searching!
-		deal_status = 'active'
-		logging.debug('active deals')
-	
-	SPECIAL_QUERIES = ['all','popular','new','hot']
-	
 	
 	####build search query
-	deal_keys = []
+	hashes_and_keys = {}
 	for query_hash in hash_set:
 		#initialize query
-		q = levr.Deal.all(keys_only=True)
-		
-		#if a real deal, status is active
-		if not development:
-			q.filter('deal_status =','active')
-#			logging.debug('flag active')
-		else:
-			q.filter('deal_status =','test')
-#			logging.debug('flag development')
-		
+		q = levr.Deal.all(keys_only=True).filter('deal_status',deal_status)
 		
 		#grab all deals in the geohash
 		q.filter('geo_hash >=',query_hash).filter('geo_hash <=',query_hash+"{") #max bound
-#					logging.debug(q)
-#		logging.debug(levr.log_dict(q.__dict__))
 		
 		
 		#FETCH DEAL KEYS
-		fetched_deals = q.fetch(None)
-		logging.info('From: '+query_hash+", fetched: "+str(fetched_deals.__len__()))
+		fetched_deal_keys = q.fetch(None)
+		logging.info('From: '+query_hash+", fetched: "+str(fetched_deal_keys.__len__()))
 		
-		#add to the list
-		deal_keys.extend(fetched_deals)
+		# add deal keys to the dict that will be set to the memcache
+		hashes_and_keys.extend({hash_key:fetched_deal_keys})
+		
+		
+	# add keys to memcache
+	set_deal_keys_to_memcache(hashes_and_keys,namespace)
 	
-	return deal_keys
+	return hashes_and_keys
+
+def set_deal_keys_to_memcache(hashes_and_keys,namespace):
+	'''
+	Takes a mapping of {hash:deal_keys} and adds them to memcache as {key=hash:val=deal_keys}
+	@param hashes_and_keys: 
+	@type hashes_and_keys: dict
+	'''
+	dict_you_want = { your_key: old_dict[your_key] for your_key in your_keys }
+	failsafe = 0
+	# tries to set the hashes to memcache a max of 5 times
+	while True and failsafe <5:
+		failsafe +=1
+		#set_multi returns a 
+		rejected_keys = memcache.set_multi(hashes_and_keys)
+		if rejected_keys:
+			#some of the keys were not updated properly
+			hashes_and_keys = {hash:hashes_and_keys[hash] for hash in rejected_keys }
+		else:
+			#nothing was rejected, break loop
+			break
+	logging.debug('set_deal_keys_to_memcache iterations: {}'.format(failsafe))
+	return
 
 def filter_deals_by_radius(deals,center,radius):
 	'''
