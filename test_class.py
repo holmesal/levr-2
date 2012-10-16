@@ -754,7 +754,8 @@ class SandboxHandler(webapp2.RequestHandler):
 	'''
 
 	def get(self):
-		pass
+		geopoint = levr.geo_converter('42.5,-72.5')
+		geohash = geohash.encode(geopoint)
 		
 		
 app = webapp2.WSGIApplication([('/new', MainPage),
