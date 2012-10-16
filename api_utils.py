@@ -350,6 +350,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						'remoteID'			: str, #e.g. facebook_id, foursquare_id, etc...
 						'email_or_owner'	: str,
 						'pw'				: str,
+						'alias'				: str,
 						
 						#deal upload stuff
 						'description'	: str,
@@ -384,6 +385,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						'remoteID'			: '', #e.g. facebook_id, foursquare_id, etc...
 						'email_or_owner'	: '',
 						'pw'				: '',
+						'alias'				: '',
 						
 						#deal upload stuff
 						'description'	: '',
