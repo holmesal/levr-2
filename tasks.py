@@ -263,7 +263,7 @@ class MergeUsersTaskHandler(webapp2.RequestHandler):
 			
 class RotateImageHandler(webapp2.RequestHandler):
 	def post(self):
-		
+		pass
 		
 
 app = webapp2.WSGIApplication([('/tasks/searchFoursquareTask', SearchFoursquareTaskHandler),

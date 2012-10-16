@@ -24,7 +24,7 @@ mixpanel.init("ab1137787f393161bd481e2756b77850");</script><!-- end Mixpanel -->
   		<div class="span12">
   			<div id='imgPreviewContainer'><div id='imgPreview'></div></div>
   			<h3 id='imgPrompt'>Take a photo of the offer:</h3>
-  			<form class="form" action='{{ upload_url }}' method="POST" enctype="multipart/form-data">
+  			<form class="form" action="{{upload_url}}" method="POST" enctype="multipart/form-data">
   				<input type=hidden name='uid' value="{{uid}}">
   				<input type=hidden name='businessID' value="{{businessID}}">
   				<input type=hidden name='callback_url' value="{{callback_url}}">

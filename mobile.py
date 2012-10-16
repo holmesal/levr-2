@@ -36,7 +36,7 @@ class MobileDownloadHandler(webapp2.RequestHandler):
 		
 
 class MobileUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
-	def post(self,*args,**kwargs):
+	def post(self):
 		
 		logging.debug(self.get_uploads())
 		if self.get_uploads(): #will this work?
