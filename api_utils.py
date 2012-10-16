@@ -1244,6 +1244,9 @@ def match_foursquare_business(geo_point,query):
 	result = json.loads(result.content)
 	
 	venues = result['response']['venues']
+	
+	logging.debug(levr.log_dict(venues))
+	
 	if venues:
 		match = venues[0]
 		logging.info('Matching Foursquare businesses found. Mapping "'+query+'" to "'+match['name']+'".')
