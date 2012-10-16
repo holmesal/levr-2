@@ -682,6 +682,8 @@ def send_img(self,blob_key,size):
 		logging.debug(levr.log_dir(blob_key.properties))
 		
 		
+		
+		
 		#read the blob data into a string !!!! important !!!!
 		blob_data = blob_key.open().read()
 		
@@ -692,6 +694,9 @@ def send_img(self,blob_key,size):
 		img_height	= img.height
 		logging.debug(img_width)
 		logging.debug(img_height)
+		
+		logging.debug(img.get_original_metadata())
+		logging.debug(levr.log_dict(img.get_original_metadata()))
 		
 		#define output parameters
 		if size == 'large':
