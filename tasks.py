@@ -69,7 +69,7 @@ class BusinessHarmonizationTaskHandler(webapp2.RequestHandler):
 			
 			key = payload['key']
 			
-			match = api_utils.match_foursquare_business(db.GeoPt(42.16617,-72.54514982),query)
+			match = api_utils.match_foursquare_business(geo_point,query)
 	
 			logging.info(match)
 			

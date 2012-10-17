@@ -1239,6 +1239,14 @@ def match_foursquare_business(geo_point,query):
 		'query'			:	query
 	}
 	
+	#geocode the vicinity because we don't trust the geoPoint coming back from google (sometimes misleading)
+	# geo_url = 'https://maps.googleapis.com/maps/api/geocode/json?sensor=false&address='+vicinity
+# 	
+# 	result = urlfetch.fetch(url=geo_url)
+# 	result = json.loads(result.content)
+# 	
+# 	logging.debug(result)
+	
 	#url = 'https://api.foursquare.com/v2/venues/search?'+urllib.urlencode(params)
 	
 	url = 'https://api.foursquare.com/v2/venues/search?v='+params['v']+'&intent='+params['intent']+'&ll='+params['ll']+'&query='+urllib.quote(params['query'])+'&client_id='+params['client_id']+'&client_secret='+params['client_secret']
@@ -1253,7 +1261,9 @@ def match_foursquare_business(geo_point,query):
 	
 	venues = result['response']['venues']
 	
-	logging.debug(levr.log_dict(venues))
+	logging.debug(result)
+	
+	logging.debug(levr.log_dict(venues[0]))
 	
 	if venues:
 		match = venues[0]
