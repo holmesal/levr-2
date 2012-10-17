@@ -1239,7 +1239,9 @@ def match_foursquare_business(geo_point,query):
 		'query'			:	query
 	}
 	
-	url = 'https://api.foursquare.com/v2/venues/search?'+urllib.urlencode(params)
+	#url = 'https://api.foursquare.com/v2/venues/search?'+urllib.urlencode(params)
+	
+	url = 'https://api.foursquare.com/v2/venues/search?v='+params['v']+'&intent='+params['intent']+'&ll='+params['ll']+'&query='+urllib.quote(params['query'])+'&client_id='+params['client_id']+'&client_secret='+params['client_secret']
 	
 	#url = 'https://api.foursquare.com/v2/venues/search?v=20120920&intent=match&ll='+str(geo_point)+'&query='+query+'&client_id='+client_id+'&client_secret='+client_secret
 	
