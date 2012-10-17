@@ -3,6 +3,7 @@ import webapp2
 import jinja2
 import logging
 from google.appengine.api import mail
+import random
 
 class landing(webapp2.RequestHandler):
 	def get(self):
@@ -13,21 +14,39 @@ class landing(webapp2.RequestHandler):
 		#get the user-agent
 		uastring = str(self.request.headers['user-agent'])
 		
-		if 'Mobile' in uastring:
-			if 'iPad' in uastring:
-				logging.info('THIS IS AN iPad')
-				#serve desktop landing page
-				template = jinja_environment.get_template('templates/landing_v3.html')
-			else:
-				logging.info('THIS IS A MOBILE DEVICE')
-				#serve mobile landing page
-				template = jinja_environment.get_template('templates/landing_v3.html')
-		else:
-			logging.info('THIS IS A DESKTOP DEVICE')
-			#serve desktop landing page
-			template = jinja_environment.get_template('templates/landing_v3.html')
+		#same template for mobile and desktop (for now)
+		# if 'Mobile' in uastring:
+# 			if 'iPad' in uastring:
+# 				logging.info('THIS IS AN iPad')
+# 				#serve desktop landing page
+# 				template = jinja_environment.get_template('templates/landing_v3.html')
+# 			else:
+# 				logging.info('THIS IS A MOBILE DEVICE')
+# 				#serve mobile landing page
+# 				template = jinja_environment.get_template('templates/landing_v3.html')
+# 		else:
+# 			logging.info('THIS IS A DESKTOP DEVICE')
+# 			#serve desktop landing page
+# 			template = jinja_environment.get_template('templates/landing_v3.html')
 		
-		self.response.out.write(template.render())
+		#choices = ['Version A','Version B']
+		#version = random.choice(choices)
+		
+		version = 'Version B'
+		
+		logging.info('Serving: '+version)
+		template_values = {
+			"version"	:	version
+		}
+		
+		if version == 'Version A':
+			template_values.update({'css':'landing_v3_version_a'})
+		elif version == 'Version B':
+			template_values.update({'css':'landing_v3_version_b'})
+		
+		template = jinja_environment.get_template('templates/landing_v3.html')
+		self.response.out.write(template.render(template_values))
+
 		
 	def post(self):
 			logging.info(self.request.get('email'))

@@ -4,9 +4,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Levr</title>
     <!-- Bootstrap -->
-    <link href="../css/bootstrap.min.css" rel="stylesheet">
-    <link href="../css/bootstrap-responsive.min.css" rel="stylesheet">
-    <link href="../css/landing_v3.css" rel="stylesheet">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-responsive.min.css" rel="stylesheet">
+    <link href="/css/{{css}}.css" rel="stylesheet">
+    <!--link href="/css/landing_v3_version_b.css" rel="stylesheet"-->
     
     <!-- start time tracking -->
 	<script>var startTime = (new Date()).getTime();</script>
@@ -20,6 +21,7 @@ mixpanel.init("2af9fbfe441a94146b37bdffac0022b8");</script><!-- end Mixpanel -->
   <body>
 <div class="top">  
   	<div class="container">
+  		{% if version=='Version A' %}
 	  	<div class="row" id="home">
 		  	<div class="span12" id='jumboHeader'>
 		  		<!--h1 id='big'>Levr.</h1-->
@@ -46,6 +48,39 @@ mixpanel.init("2af9fbfe441a94146b37bdffac0022b8");</script><!-- end Mixpanel -->
 	  			<a id='buttonbeta' class='btn btn-large btn-primary btn-custom' href='http://tflig.ht/PjSN9X'><i id='betaicon' class="icon-cog icon-white"></i>Beta-test Levr</a>
 	  		</div>
 	  	</div>
+	  	
+	  	{% elif version=='Version B' %}
+	  	<div class="row" id="home">
+		  	<div class="span6" id='jumboHeader'>
+		  		<!--h1 id='big'>Levr.</h1-->
+		  		<img id='iPhoneLeft' src="../img/iphone_v3.png">
+		  	</div>
+		  	<div class="span6" id='right'>
+			  	<p id='call' class="right">Great offers at local businesses.</p>
+			  	<p id='call'>Powered by your community.</p>
+			  	
+			  	<p class="download download-right">Levr is currently in beta on the iPhone.</p>
+	  			<!--img id='appstore' src="../img/appstore.png"-->
+	  			<a id='buttonbeta' class='btn btn-large btn-primary btn-custom' href='http://tflig.ht/PjSN9X'><i id='betaicon' class="icon-cog icon-white"></i>Beta-test Levr</a>
+		  	</div>
+	  	</div>
+	  	<div class="row panes-right" id="panes">
+	  		<div class="span6" id="left">
+		  		<img id='picture' src='../img/picture.png'>
+		  		<p class="paneHead">Snap a photo, upload an offer.</p>
+		  		<p class="paneSupp">Earn karma when you save others money.</p>
+	  		</div>
+	  		<div class="span6" id="right">
+		  		<img id='radius' src='../img/radius.png'>
+		  		<p class="paneHead">Discover new places to eat, shop, and play.</p>
+		  		<p class="paneSupp">See what others have found in your area.</p>
+	  		</div>
+	  		<div id="download" class="span12">
+	  			<!--p class="download">Download Levr on the app store.</p-->
+	  			
+	  		</div>
+	  	</div>  		
+	  	{% endif %}
 	</div>
 </div>
 <div class="bottom">
@@ -70,6 +105,22 @@ mixpanel.init("2af9fbfe441a94146b37bdffac0022b8");</script><!-- end Mixpanel -->
 </div>
     <script src="http://code.jquery.com/jquery-latest.js"></script>
     <script src="../js/bootstrap.min.js"></script>
-    <script src="../js/landing_v3.js"></script>
+    <script type="text/javascript">
+	    $(window).load(function(){
+			//track loadtime
+			var endTime = (new Date()).getTime();
+		    var millisecondsLoading = endTime - startTime;
+			mixpanel.track("Levr V3 Landing Page Loaded",{"Load Time":millisecondsLoading,"Version":'{{version}}'})
+			
+			mixpanel.track_links("#buttonbeta", "Beta button clicked");
+			
+			
+			
+			mixpanel.track_links("#buttonRadius", "Radi.us button clicked");
+			
+			mixpanel.track_links("#buttonMerchants", "Merchants button clicked");
+			
+		})
+    </script>
   </body>
 </html>
