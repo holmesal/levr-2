@@ -812,6 +812,11 @@ def get_deal_keys(hash_set,**kwargs):
 	if unresolved_hashes:
 		# search db for hashes, and place the results in the memcache
 		more_keys = get_deals_from_db(unresolved_hashes,deal_status,namespace)
+		keys_dict.update(more_keys)
+	
+	deal_keys = [keys_dict[key] for key in keys_dict]
+	return deal_keys
+		
 	
 
 def get_deal_keys_from_memcache(hash_set,namespace):

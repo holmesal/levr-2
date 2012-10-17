@@ -774,14 +774,14 @@ class FloatingContentHandler(webapp2.RequestHandler):
 		
 		#put it in!
 		fc.put()
-		
-def set_geohash_to_memcache(key,val):
-	client = memcache.Client()
-	while True: # Retry loop
-		counter = client.gets(key)
-		assert counter is not None, 'Uninitialized counter'
-		if client.cas(key, counter+1):
-			break
+#		
+#def set_geohash_to_memcache(key,val):
+#	client = memcache.Client()
+#	while True: # Retry loop
+#		counter = client.gets(key)
+#		assert counter is not None, 'Uninitialized counter'
+#		if client.cas(key, counter+1):
+#			break
 class SandboxHandler(webapp2.RequestHandler):
 	'''
 	Dont delete this. This is my dev playground.
