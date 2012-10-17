@@ -313,9 +313,8 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			
 			package_time = t2-t1
 			
-			tend = datetime.now()
-			total_time = tend-tstart
 			
+			t1= datetime.now()
 			
 			#===================================================================
 			# Foursquare search
@@ -360,10 +359,13 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				t = taskqueue.add(url='/tasks/searchFoursquareTask',payload=json.dumps(params))
 				
 			
+			t2 = datetime.now()
+			
+			foursquare_search_time = t2-t1
 			
 			
-			
-			
+			tend = datetime.now()
+			total_time = tend-tstart
 			
 			
 			
@@ -371,6 +373,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			# Send response
 			#===================================================================
 			logging.debug('geo_box_creation_time'+str(geo_box_creation_time))
+			logging.debug('foursquare_search_time'+ str(foursquare_search_time))
 			logging.debug('total_query_time: '+str(total_query_time))
 			logging.debug('fetch_time: '+str(fetch_time))
 			logging.debug('calc_maxes_time: '+str(calc_maxes_time))
@@ -381,6 +384,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			response = {
 					'numResults'		: accepted_deals_count,
 					'total_query_time'	: str(total_query_time),
+					'foursquare_search_time': str(foursquare_search_time),
 					'geo_box_creation_time': str(geo_box_creation_time),
 					'fetch_time'		: str(fetch_time),
 					'calc_maxes_time'	: str(calc_maxes_time),
@@ -391,7 +395,9 @@ class SearchQueryHandler(webapp2.RequestHandler):
 					'boundingBox'		: bounding_box,
 #					'ending_hashes'		: list(searched_hash_set),
 					'ending_hash_length': list(searched_hash_set).__len__(),
-					'deals'				: packaged_deals#.__len__()
+					'total_results'		: packaged_deals.__len__(),
+					'foursquare_deals'	: foursquare_deals.__len__(),
+					'deals'				: packaged_deals
 					}
 			
 			
@@ -570,9 +576,33 @@ class SearchPopularHandler(webapp2.RequestHandler):
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 
-		
+class SearchFoursquareHandler(webapp2.RequestHandler):
+	'''
+	Search only returns ALL of the existing foursquare deals every time
+	'''
+	def get(self):
+		try:
+			#should only return deals with a foursquare_id set
+			deals = levr.Deal.all().filter('foursquare_id >','').fetch(None)
+			logging.debug('number of foursquare deals: '+str(deals.__len__()))
+			
+#			for deal in deals:
+#				assert deal.foursquare_id, 'A deal was returned that does not have a foursquare id. change the query.'
+			return_deals = [api_utils.package_deal(deal) for deal in deals if deal.foursquare_id]
+			
+			
+			response = {
+					'foursquareDeals' : return_deals,
+					'numFoursquareDeals' : return_deals.__len__()
+					}
+			api_utils.send_response(self,response)
+		except:
+			levr.log_error()
+			api_utils.send_error(self,'Server Error')
 app = webapp2.WSGIApplication([(r'/api/search/new', SearchNewHandler),
 								('/api/search/hot', SearchHotHandler),
 								('/api/search/popular', SearchPopularHandler),
+								('/api/search/foursquare', SearchFoursquareHandler),
 								('/api/search/(.*)', SearchQueryHandler)
+								
 								],debug=True)

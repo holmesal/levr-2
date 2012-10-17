@@ -125,7 +125,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		params = {
 					'uid'				: ethan,
 					'business_name'		: 'Als Sweatshop',
-					'geo_point'			: levr.geo_converter('42.5000,-72.5'),
+					'geo_point'			: levr.geo_converter('42.343880,-71.059570'),
 					'vicinity'			: '10 Buick St',
 					'types'				: 'Establishment,Food',
 					'deal_description'	: 'This is a description gut guts who why when you buy a shoe with feet',
@@ -140,7 +140,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		params = {
 					'uid'				: ethan,
 					'business_name'		: 'Als Sweatshop 2',
-					'geo_point'			: levr.geo_converter('42.4900,-72.5'),
+					'geo_point'			: levr.geo_converter('42.343879999999999, -71.059569999999994'),
 					'vicinity'			: '10 Buick St',
 					'types'				: 'Establishment,Food',
 					'deal_description'	: 'This is a description gut guts who why when you buy a shoe with feet',
@@ -155,7 +155,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		params = {
 					'uid'				: ethan,
 					'business_name'		: 'Als Sweatshop 3',
-					'geo_point'			: levr.geo_converter('42.5100,-72.5'),
+					'geo_point'			: levr.geo_converter('42.343880,-71.059575'),
 					'vicinity'			: '10 Buick St',
 					'types'				: 'Establishment,Food',
 					'deal_description'	: 'This is a description gut guts who why when you buy a shoe with feet',

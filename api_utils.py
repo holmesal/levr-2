@@ -38,67 +38,8 @@ def send_error(self,error):
 	self.response.out.write(json.dumps(reply))
 	
 	
-def check_search_inputs(self,lat,lon,limit):
-	
-	#check geopoint
-	try:
-		geo_string = str(lat)+","+str(lon)
-		geo_point = levr.geo_converter(geo_string)
-	except:
-		self.send_error(self,'Invalid parameter: lat or lon'+geo_string)
-		return (False,None,None)
-	
-	if limit != '':
-		#limit was passed, so check if it is integer
-		if not limit.isdigit():
-			#limit fails, return false
-			self.send_error(self,'Invalid parameter: limit'+str(limit))
-			return (False,None,None)
-	else:
-		#limit was not passed, set to default
-		limit = None
-	
-	return (True,geo_point,limit)
 	
 	
-def check_param(self,parameter,parameter_name,param_type='str',required=True):
-	#check if parameter sent in params
-	#parameter is passed
-	logging.info(parameter_name+": "+str(parameter))
-	if not parameter:
-#		logging.info("EERRRRR")
-		#parameter is empty
-#		if required == True:
-#			send_error(self,'Required parameter not passed: '+str(parameter_name))
-		return False
-	else:
-		#parameter is not empty
-		#if parameter is an entity key, make sure
-		if param_type == 'key':
-#			logging.info('key')
-			#parameter is an entity key
-			try:
-#				logging.info('start test key')
-#				logging.debug(parameter)
-				parameter = enc.decrypt_key(parameter)
-#				logging.debug(parameter)
-				parameter = db.Key(parameter)
-#				logging.debug(parameter)
-#				logging.debug('end test key')
-			except:
-#				if required == True:
-#					send_error(self,'Invalid parameter: '+str(parameter_name)+"; "+str(parameter))
-				return False
-		elif param_type == 'int':
-#			logging.debug('integer')
-			if not parameter.isdigit():
-#				if required == True:
-#					send_error(self,'Invalid parameter: '+str(parameter_name)+"; "+str(parameter))
-#				else:
-				logging.error('Flag parameter: '+str(parameter))
-				return False
-	logging.info(parameter_name+": "+str(parameter))
-	return True
 
 def create_pin_color(deal):
 	if deal.origin == 'levr':
@@ -141,8 +82,8 @@ def package_deal(deal,private=False,*args,**kwargs):
 
 	if rank: packaged_deal['rank'] = rank
 	
-	logging.debug('rank')
-	logging.debug(kwargs.get('rank'))
+#	logging.debug('rank')
+#	logging.debug(kwargs.get('rank'))
 	
 	if private == True:
 		packaged_deal.update({
@@ -1103,7 +1044,7 @@ def search_foursquare(geo_point,token,already_found=[]):
 		logging.info('Using token: '+token)
 		
 
-	url = 'https://api.foursquare.com/v2/specials/search?v=20120920&ll='+str(geo_point)+'&limit=50&oauth_token='+token
+	url = 'https://api.foursquare.com/v2/specials/search?v=20120920&ll='+str(geo_point)+'&oauth_token='+token
 	result = urlfetch.fetch(url=url)
 	result = json.loads(result.content)
 	foursquare_deals = result['response']['specials']['items']
@@ -1252,9 +1193,9 @@ def add_foursquare_deal(foursquare_deal,business):
 	# Update memcache because a deal was created
 	#===========================================================================
 	if deal.deal_status == 'active':
-		namespace = MEMCACHE_ACTIVE_GEOHASH_NAMESPACE
+		namespace = levr.MEMCACHE_ACTIVE_GEOHASH_NAMESPACE
 	elif deal.deal_status == 'test':
-		namespace = MEMCACHE_TEST_GEOHASH_NAMESPACE
+		namespace = levr.MEMCACHE_TEST_GEOHASH_NAMESPACE
 	else:
 		raise Exception('Invalid memcahce namespace')
 	levr.update_deal_key_memcache(deal.geo_point,deal.key(),namespace)
