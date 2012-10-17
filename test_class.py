@@ -760,15 +760,18 @@ class SandboxHandler(webapp2.RequestHandler):
 		
 class DeleteEverythingHandler(webapp2.RequestHandler):
 	def get(self):
-		self.response.out.write('DELETING EVERYTHING')
+		self.response.out.write('DELETING EVERYTHING - DANGEROUS!')
 		
-		deals = levr.Deal.all().fetch(None)
-		db.delete(deals)
-		businesses = levr.Business.all().fetch(None)
-		db.delete(businesses)
-		
+#		
+#		deals = levr.Deal.all().fetch(None)
+#		db.delete(deals)
+#		businesses = levr.Business.all().fetch(None)
+#		db.delete(businesses)
+#		
 		users = levr.Customer.all().fetch(None)
 		for user in users:
+			if not user.levr_token:
+				user.levr_token = levr.create_levr_token()
 			user.upvotes = []
 			user.favorites = []
 			user.downvotes = []
