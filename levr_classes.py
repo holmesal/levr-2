@@ -1,6 +1,6 @@
 from common_word_list import blacklist
 from datetime import datetime, timedelta
-from google.appengine.api import taskqueue
+from google.appengine.api import taskqueue, memcache
 from google.appengine.ext import blobstore, db
 from google.appengine.ext.db import polymodel
 from random import randint, randint
@@ -362,6 +362,62 @@ def text_notify(user_string):
 	t = taskqueue.add(url='/tasks/newUserTextTask',payload=json.dumps(task_params))
 
 
+MEMCACHE_ACTIVE_GEOHASH_NAMESPACE = 'active_geohash'
+MEMCACHE_TEST_GEOHASH_NAMESPACE = 'test_geohash'
+def update_deal_key_memcache(geo_point,dealID,namespace):
+	'''
+	Updates the memcache namespace used to replace queries
+	Typical use case: a new deal was uploaded and the memcache key (i.e. the new deals geohash) needs to be updated
+	or deleted.
+	@param hashes_and_keys: the mapping of geohash to list of deal keys
+	@type 
+	'''
+	geo_hash = geohash.encode(geo_point.lat,geo_point.lon,precision=6)
+	#create the client
+	client = memcache.Client()
+	#safely update the memcache - while loop allows this to happen all over the place psuedo-concurrently
+	failsafe = 0
+	while True and failsafe <50:
+		failsafe +=1
+		logging.debug('failsafe: '+str(failsafe))
+		if memcache.delete(geo_hash,namespace=namespace):
+			logging.debug('geohash {} was deleted from memcache'.format(geo_hash))
+			break
+	return
+		#=======================================================================
+		#=======================================================================
+		# # This is for actually updating the memcache. 
+		#=======================================================================
+		# # Grab the existing hashes from the memcache
+		# key_list = client.gets(geo_hash,namespace=namespace)
+		# if key_list is not None:
+		#	key_list.append(dealID)
+		#	if client.cas(geo_hash,key_list):#,namespace=namespace):
+		#		logging.debug('memcache update {} success'.format(geo_hash))
+		#		# cas_multi returns a list of keys that could not be updated, ergo if nothing was returned it was successful
+		#		break
+		# else:
+		#	key_list = [dealID]
+		#	if client.add(geo_hash,key_list):#,namespace=namespace):
+		#		logging.debug('memcache add {} success'.format(geo_hash))
+		#		# cas_multi returns a list of keys that could not be updated, ergo if nothing was returned it was successful
+		#		break
+		# logging.debug('to update in memcache: '+str(geo_hash)+' = '+str(key_list))
+		# #replace the new_hash_mappings in the memcache
+		#=======================================================================
+		
+		
+
+
+   #============================================================================
+   # while True: # Retry loop
+   #  counter = client.gets(key)
+   #  assert counter is not None, 'Uninitialized counter'
+   #  if client.cas(key, counter+1):
+   #     break
+   #============================================================================
+
+
 def dealCreate(params,origin,upload_flag=True):
 	'''pass in "self"'''
 	logging.debug('DEAL CREATE')
@@ -379,68 +435,12 @@ def dealCreate(params,origin,upload_flag=True):
 	#get deal information
 	#create deals with appropriate owners
 	
-	'''
-
-	
-	#####merchant_edit
-		params = {
-				'uid'			#uid is businessOwner
-				'business'		#businessID
-				'deal'			#dealID
-				'deal_description'
-				'deal_line1'
-				'deal_line2'
-				}
-		!!! check for uploaded image !!!
-		
-
-	#####merchant_create
-		params = {
-				'uid'			#uid is businessOwner
-				'business'
-				'deal_line1'
-				'deal_line2' 	#optional
-				'deal_description'
-				'img_key'
-				}
-		
-	#####phone_existing_business
-		params = {
-				'uid' 			#uid is ninja
-				'business' 
-				'deal_description'
-				'deal_line1'
-				!!! no deal_line2 !!!
-				}
-	#####phone_new_business
-		params = {
-				'uid'			#uid is ninja
-				'business_name'
-				'geo_point'
-				'vicinity'
-				'types'
-				'deal_description'
-				'deal_line1'
-				}
-	#####admin_review
-		params = {
-				'uid'		#uid is ninja
-				'deal'		#deal id
-				'business'	#business id
-				'deal_line1'
-				'deal_line2'
-				'deal_description'
-				'tags'
-				'end date'
-				!!! other stuff !!!
-				}
-	'''
-	
-	
 	#==== deal information ====#
 	
 	
-	#==== business stuff ====#
+	#===========================================================================
+	# #==== business stuff ====#
+	#===========================================================================
 	if origin == 'phone_new_business':
 		#The business to which a deal is being uploaded is not targeted
 		logging.debug('origin is phone, new business being added')
@@ -473,12 +473,7 @@ def dealCreate(params,origin,upload_flag=True):
 		#types
 		if 'types' in params:
 			types = params['types']
-			logging.debug('start types')
-			logging.debug(types)
-			logging.debug(type(types))
 			types = tagger(types)
-			logging.debug(types)
-			logging.debug('end types')
 		else:
 			raise KeyError('types not in params')
 		#check if business exists - get businessID
@@ -553,13 +548,13 @@ def dealCreate(params,origin,upload_flag=True):
 		
 
 	logging.debug('!!!!!')
-	#====Deal Information Lines ====#
+	#===========================================================================
+	# #====Deal Information Lines ====#
+	#===========================================================================
 	#deal line 1
 	if 'deal_line1' in params:
 		deal_text	= params['deal_line1']
-		logging.debug(deal_text)
 		tags.extend(tagger(deal_text))
-		logging.info(tags)
 	else:
 		raise KeyError('deal_line1 not passed in params')
 	
@@ -588,11 +583,8 @@ def dealCreate(params,origin,upload_flag=True):
 	if 'deal_description' in params:
 		description = params['deal_description']
 		#truncate description to a length of 500 chars
-		logging.debug(description.__len__())
 		description = description[:500]
-		logging.debug(description)
 		tags.extend(tagger(description))
-		logging.info(tags)
 	else:
 		raise KeyError('deal_description not passed in params')
 	
@@ -697,6 +689,13 @@ def dealCreate(params,origin,upload_flag=True):
 	#put the deal
 	deal.put()
 	
+	if deal.deal_status == 'active':
+		namespace = MEMCACHE_ACTIVE_GEOHASH_NAMESPACE
+	elif deal.deal_status == 'test':
+		namespace = MEMCACHE_TEST_GEOHASH_NAMESPACE
+	else:
+		raise Exception('Invalid memcache namespace')
+	update_deal_key_memcache(deal.geo_point,deal.key(),namespace)
 	
 	#dealput is the deal key i.e. dealID
 	logging.debug(log_model_props(deal))

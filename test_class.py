@@ -140,7 +140,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		params = {
 					'uid'				: ethan,
 					'business_name'		: 'Als Sweatshop 2',
-					'geo_point'			: levr.geo_converter('42.4500,-72.5'),
+					'geo_point'			: levr.geo_converter('42.4900,-72.5'),
 					'vicinity'			: '10 Buick St',
 					'types'				: 'Establishment,Food',
 					'deal_description'	: 'This is a description gut guts who why when you buy a shoe with feet',
@@ -155,7 +155,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		params = {
 					'uid'				: ethan,
 					'business_name'		: 'Als Sweatshop 3',
-					'geo_point'			: levr.geo_converter('42.5500,-72.5'),
+					'geo_point'			: levr.geo_converter('42.5100,-72.5'),
 					'vicinity'			: '10 Buick St',
 					'types'				: 'Establishment,Food',
 					'deal_description'	: 'This is a description gut guts who why when you buy a shoe with feet',
@@ -268,7 +268,9 @@ class TestHandler(webapp2.RequestHandler):
 		deal_projection = [
 						'upvotes',
 						'downvotes',
-						'karma'
+						'karma',
+						'geo_point',
+						'geo_hash'
 						]
 		self.response.out.write('\n\n\n Ethan')
 		self.response.out.write(levr.log_model_props(e,projection))
