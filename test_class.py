@@ -758,6 +758,30 @@ class SandboxHandler(webapp2.RequestHandler):
 		geopoint = levr.geo_converter('42.5,-72.5')
 		geohash = geohash.encode(geopoint)
 		
+class DeleteEverythingHandler(webapp2.RequestHandler):
+	def get(self):
+		self.response.out.write('DELETING EVERYTHING')
+		
+		deals = levr.Deal.all().fetch(None)
+		db.delete(deals)
+		businesses = levr.Business.all().fetch(None)
+		db.delete(businesses)
+		
+		users = levr.Customer.all().fetch(None)
+		for user in users:
+			user.upvotes = []
+			user.favorites = []
+			user.downvotes = []
+		db.put(users)
+		
+		notes = levr.Notifications.all().fetch(None)
+		db.delete(notes)
+		
+		floatings = levr.FloatingContent.all().fetch(None)
+		db.delete(floatings)
+		
+		reports = levr.ReportedDeal.all().fetch(None)
+		db.delete(reports)
 		
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload.*', DatabaseUploadHandler),
@@ -779,6 +803,7 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/newUser', NewUserHandler),
 								('/new/floatingContent', FloatingContentHandler),
 								('/new/sandbox', SandboxHandler),
+								('/new/deleteeverything',DeleteEverythingHandler)
 								],debug=True)
 
 

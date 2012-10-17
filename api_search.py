@@ -300,6 +300,8 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			t1 = datetime.now()
 			#toop[3] is the deal
 			#toop[0] is the rank
+			logging.debug(accepted_deals_tuple_list)
+			logging.debug(tuple_list)
 			if is_empty == False:
 				logging.debug('\n\n\t\t NOT EMPTY \n\n')
 				#only package the deals that have a matching tag
