@@ -900,7 +900,8 @@ def filter_deals_by_radius(deals,center,radius):
 
 #######GEO DISTANCES
 Earth_radius_km = 6371.0
-RADIUS = Earth_radius_km
+Earth_radius_mi = 3958.76
+RADIUS = Earth_radius_mi
 def haversine(angle_radians):
 	return sin(angle_radians / 2.0) ** 2
 
@@ -1029,16 +1030,18 @@ def search_foursquare(geo_point,token,already_found=[]):
 	result = urlfetch.fetch(url=url)
 	result = json.loads(result.content)
 	foursquare_deals = result['response']['specials']['items']
-	
-	
-	
-	
+	logging.debug(foursquare_deals)
 	
 	#initialize return array
 	response_deals = []
 	
 	for foursquare_deal in foursquare_deals:
 		logging.info('woo a deal!')
+		
+		logging.debug(foursquare_deal)
+		logging.debug(foursquare_deal['venue'])
+		logging.debug(levr.log_dict(foursquare_deal))
+		logging.debug(levr.log_dict(foursquare_deal['venue']))
 		
 		#sometimes venues do not have categories
 		if len(foursquare_deal['venue']['categories']) == 0:
@@ -1084,10 +1087,26 @@ def search_foursquare(geo_point,token,already_found=[]):
 				logging.info('Foursquare special '+deal.foursquare_id+' found in database but not in search.')
 				#logging.debug(levr.log_model_props(deal))
 				
+			#calculate distance
+			distance = distance_between_points(geo_point.lat, geo_point.lon, business.geo_point.lat, business.geo_point.lon)
+ 			logging.debug('DISTANCE!!!: '+str(distance))
+# 			
+# 			dlat,dlon = bounding_box(geo_point.lat,geo_point.lon,10)
+# 			lat1 = geo_point.lat - dlat
+# 			lon1 = geo_point.lon - dlon
+# 			lat2 = geo_point.lat + dlat
+# 			lon2 = gep_point.lon + dlon
+# 			
+# 			is_in_bounding_box(lat1,lon1,lat2,lon2,testlat,testlon)
 			
-			#package deal
-			packaged_deal = package_deal(deal)
-			response_deals.append(packaged_deal)
+			
+			
+			if distance < 10:
+				#package deal
+				packaged_deal = package_deal(deal)
+				response_deals.append(packaged_deal)
+			else:
+				logging.debug('Deal not added because it was too far away: '+str(distance)+' miles')
 			
 		#end valid deal level
 	#end for loop
@@ -1141,7 +1160,7 @@ def add_foursquare_deal(foursquare_deal,business):
 		foursquare_id	=	foursquare_deal['id'],
 		foursquare_type	=	foursquare_deal['venue']['categories'][0]['name'],
 		deal_text		=	message,
-		description		=	foursquare_deal['description'],
+		description		=	message,
 		geo_point		=	business.geo_point,
 		geo_hash		=	business.geo_hash,
 		pin_color		=	'blue',
@@ -1239,7 +1258,17 @@ def match_foursquare_business(geo_point,query):
 		'query'			:	query
 	}
 	
-	url = 'https://api.foursquare.com/v2/venues/search?'+urllib.urlencode(params)
+	#geocode the vicinity because we don't trust the geoPoint coming back from google (sometimes misleading)
+	# geo_url = 'https://maps.googleapis.com/maps/api/geocode/json?sensor=false&address='+vicinity
+# 	
+# 	result = urlfetch.fetch(url=geo_url)
+# 	result = json.loads(result.content)
+# 	
+# 	logging.debug(result)
+	
+	#url = 'https://api.foursquare.com/v2/venues/search?'+urllib.urlencode(params)
+	
+	url = 'https://api.foursquare.com/v2/venues/search?v='+params['v']+'&intent='+params['intent']+'&ll='+params['ll']+'&query='+urllib.quote(params['query'])+'&client_id='+params['client_id']+'&client_secret='+params['client_secret']
 	
 	#url = 'https://api.foursquare.com/v2/venues/search?v=20120920&intent=match&ll='+str(geo_point)+'&query='+query+'&client_id='+client_id+'&client_secret='+client_secret
 	
@@ -1251,7 +1280,9 @@ def match_foursquare_business(geo_point,query):
 	
 	venues = result['response']['venues']
 	
-	logging.debug(levr.log_dict(venues))
+	logging.debug(result)
+	
+	logging.debug(levr.log_dict(venues[0]))
 	
 	if venues:
 		match = venues[0]

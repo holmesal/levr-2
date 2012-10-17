@@ -69,7 +69,7 @@ class BusinessHarmonizationTaskHandler(webapp2.RequestHandler):
 			
 			key = payload['key']
 			
-			match = api_utils.match_foursquare_business(db.GeoPt(42.16617,-72.54514982),query)
+			match = api_utils.match_foursquare_business(geo_point,query)
 	
 			logging.info(match)
 			
@@ -86,8 +86,9 @@ class BusinessHarmonizationTaskHandler(webapp2.RequestHandler):
 				
 				if duplicate_business:
 					#grab all the deal keys from that business
-					keys = levr.Deal.gql('WHERE businessID = :1',str(duplicate_business.key())).fetch(keys_only=True)
+					keys = levr.Deal.gql('WHERE businessID = :1',str(duplicate_business.key())).fetch(None,keys_only=True)
 					duplicate_business.delete()
+					logging.debug('DELETED ORIGINAL FOURSQUARE BUSINESS')
 				
 				#update business entity
 				business.foursquare_id = match['foursquare_id']
@@ -99,6 +100,7 @@ class BusinessHarmonizationTaskHandler(webapp2.RequestHandler):
 					deal = db.get(key)
 					deal.businessID = str(business.key())
 					deal.put()
+					logging.debug('UPDATED DEAL BUSINESSID')
 				
 			else:
 				#update to show notfound
