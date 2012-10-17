@@ -768,24 +768,23 @@ class DeleteEverythingHandler(webapp2.RequestHandler):
 #		businesses = levr.Business.all().fetch(None)
 #		db.delete(businesses)
 #		
-		users = levr.Customer.all().fetch(None)
-		for user in users:
-			if not user.levr_token:
-				user.levr_token = levr.create_levr_token()
-			user.upvotes = []
-			user.favorites = []
-			user.downvotes = []
-		db.put(users)
-		
-		notes = levr.Notifications.all().fetch(None)
-		db.delete(notes)
-		
-		floatings = levr.FloatingContent.all().fetch(None)
-		db.delete(floatings)
-		
-		reports = levr.ReportedDeal.all().fetch(None)
-		db.delete(reports)
-		
+#		users = levr.Customer.all().fetch(None)
+#		for user in users:
+#			if not user.levr_token:
+#				user.levr_token = levr.create_levr_token()
+#			user.upvotes = []
+#			user.favorites = []
+#			user.downvotes = []
+#		db.put(users)
+#		
+#		notes = levr.Notifications.all().fetch(None)
+#		db.delete(notes)
+#		
+#		floatings = levr.FloatingContent.all().fetch(None)
+#		db.delete(floatings)
+#		
+#		reports = levr.ReportedDeal.all().fetch(None)
+#		db.delete(reports)
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload.*', DatabaseUploadHandler),
 								('/new/find', FilterGeohashHandler),
