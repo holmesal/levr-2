@@ -513,6 +513,9 @@ def dealCreate(params,origin,upload_flag=True):
 				'key'			:	str(business.key())
 			}
 			
+			#if no foursquare business exists in the database, this should try to find a foursquare business and transfer information to it
+			#what if there is already a foursquare business in the database?
+			
 			t = taskqueue.add(url='/tasks/businessHarmonizationTask',payload=json.dumps(task_params))
 			
 			
