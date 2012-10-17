@@ -1221,43 +1221,45 @@ class Deal(polymodel.PolyModel):
 		
 	
 
-
-class CustomerDeal(Deal):
-#Sub-class of deal
-#A deal that has been uploaded by a user
- 
-	gate_requirement= db.IntegerProperty(default = 5) #threshold of redeems that must be passed to earn a gate
-	gate_payment_per= db.IntegerProperty(default = 1) #dollar amount per gate
-	gate_count		= db.IntegerProperty(default = 0) #number of gates passed so far
-	gate_max		= db.IntegerProperty(default = 5) #max number of gates allowed
-	earned_total	= db.FloatProperty(default = 0.0) #amount earned by this deal
-	paid_out		= db.FloatProperty(default = 0.0) #amount paid out by this deal
-	
-	def share_deal(self):
-		if self.has_been_shared == False:
-			#deal has never been shared before
-			#flag that it has been shared
-			self.has_been_shared = True
-			
-			#increase the max payment gates the ninja can earn
-			self.gate_max += 5
-		else:
-			#deal has been shared - do nothing
-			pass
-		return self.has_been_shared
-	
-	def update_earned_total(self):
-		#what was self.earned_total to start with?
-		old = self.earned_total
-		#update
-		self.earned_total = float(self.gate_count*self.gate_payment_per)
-		#if changed, find the difference
-		difference = 0.0
-		if self.earned_total > old:
-			difference = self.earned_total - old
-			logging.info('Earned ' + difference.__str__() + ' dollar!')
-			
-		return difference
+#===============================================================================
+# 
+# class CustomerDeal(Deal):
+# #Sub-class of deal
+# #A deal that has been uploaded by a user
+# 
+#	gate_requirement= db.IntegerProperty(default = 5) #threshold of redeems that must be passed to earn a gate
+#	gate_payment_per= db.IntegerProperty(default = 1) #dollar amount per gate
+#	gate_count		= db.IntegerProperty(default = 0) #number of gates passed so far
+#	gate_max		= db.IntegerProperty(default = 5) #max number of gates allowed
+#	earned_total	= db.FloatProperty(default = 0.0) #amount earned by this deal
+#	paid_out		= db.FloatProperty(default = 0.0) #amount paid out by this deal
+#	
+#	def share_deal(self):
+#		if self.has_been_shared == False:
+#			#deal has never been shared before
+#			#flag that it has been shared
+#			self.has_been_shared = True
+#			
+#			#increase the max payment gates the ninja can earn
+#			self.gate_max += 5
+#		else:
+#			#deal has been shared - do nothing
+#			pass
+#		return self.has_been_shared
+#	
+#	def update_earned_total(self):
+#		#what was self.earned_total to start with?
+#		old = self.earned_total
+#		#update
+#		self.earned_total = float(self.gate_count*self.gate_payment_per)
+#		#if changed, find the difference
+#		difference = 0.0
+#		if self.earned_total > old:
+#			difference = self.earned_total - old
+#			logging.info('Earned ' + difference.__str__() + ' dollar!')
+#			
+#		return difference
+#===============================================================================
 	
 
 class Notification(db.Model):
