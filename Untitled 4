@@ -1,43 +1,8 @@
 User cases
 
-
 Test Cases - deals
 
 
-<<<<<<< HEAD
-Major components:
-
-Sign Up
-	Levr
-	Twitter
-	Fousquare
-	Facebook
-Connect
-	Twitter
-Upload
-	Levr
-	Foursquare Web Wrapper
-Search
-	Relevancy
-	Expando
-Vote
-	Up/downvote own deal
-	Up/downvote other ninja's deal
-Notify
-	New follower
-	Upvote
-	Upload
-	Any others?
-Deeplink
-	Foursquare upload
-	Foursquare view
-	
-
-
-
-
-=======
->>>>>>> memcache
 Alonso creates a levr acct - 
 	-Alonso connects to levr from inside fs
 		:ASSERT:
@@ -58,11 +23,7 @@ Alonso creates a levr acct -
 		ASSERT:
 			One acct for alonso
 			Alonsos fs information is updated
-<<<<<<< HEAD
-			
-=======
 
->>>>>>> memcache
 -Alonso DOES NOT create a levr acct
 	-Alonso connects from levr from inside fs
 		:ASSERT:
@@ -220,6 +181,26 @@ Test upload from phone and web wrapper
 
 
 Test login logic, signup logic
+	validation on signup screen where nothing is entered
+	no
+	
+	
+TESTS
+
+
+Created a levr user
+	/api/login/levr
+	things set properly:
+		alias = releasetest1
+		email
+		dates were created
+		display name
+		pw is encrypted
+		levrToken generated
+		photodefault
+		tester
+		level = 1
+		karma, last_notified = 0
 
 
 

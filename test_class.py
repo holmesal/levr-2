@@ -1,7 +1,7 @@
 #from __future__ import with_statement
 #from google.appengine.api import files
 from datetime import datetime
-from google.appengine.api import taskqueue, urlfetch
+from google.appengine.api import taskqueue, urlfetch, memcache
 from google.appengine.ext import blobstore, db
 from google.appengine.ext.webapp import blobstore_handlers
 from random import randint
@@ -125,7 +125,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		params = {
 					'uid'				: ethan,
 					'business_name'		: 'Als Sweatshop',
-					'geo_point'			: levr.geo_converter('42.5,-72.5'),
+					'geo_point'			: levr.geo_converter('42.5000,-72.5'),
 					'vicinity'			: '10 Buick St',
 					'types'				: 'Establishment,Food',
 					'deal_description'	: 'This is a description gut guts who why when you buy a shoe with feet',
@@ -136,7 +136,35 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 					}
 
 		dealID = levr.dealCreate(params,'phone_new_business')
+		
+		params = {
+					'uid'				: ethan,
+					'business_name'		: 'Als Sweatshop 2',
+					'geo_point'			: levr.geo_converter('42.4900,-72.5'),
+					'vicinity'			: '10 Buick St',
+					'types'				: 'Establishment,Food',
+					'deal_description'	: 'This is a description gut guts who why when you buy a shoe with feet',
+					'deal_line1'		: 'I am a deal',
+					'distance'			: '10', #is -1 if unknown = double
+					'development'		: True,
+					'img_key'			: img_key
+					}
+		
 		dealID = levr.dealCreate(params,'phone_new_business')
+		
+		params = {
+					'uid'				: ethan,
+					'business_name'		: 'Als Sweatshop 3',
+					'geo_point'			: levr.geo_converter('42.5100,-72.5'),
+					'vicinity'			: '10 Buick St',
+					'types'				: 'Establishment,Food',
+					'deal_description'	: 'This is a description gut guts who why when you buy a shoe with feet',
+					'deal_line1'		: 'I am a deal',
+					'distance'			: '10', #is -1 if unknown = double
+					'development'		: True,
+					'img_key'			: img_key
+					}
+		
 		dealID = levr.dealCreate(params,'phone_new_business')
 		logging.debug(dealID)
 		
@@ -241,7 +269,9 @@ class TestHandler(webapp2.RequestHandler):
 		deal_projection = [
 						'upvotes',
 						'downvotes',
-						'karma'
+						'karma',
+						'geo_point',
+						'geo_hash'
 						]
 		self.response.out.write('\n\n\n Ethan')
 		self.response.out.write(levr.log_model_props(e,projection))
@@ -747,16 +777,50 @@ class FloatingContentHandler(webapp2.RequestHandler):
 		
 		#put it in!
 		fc.put()
-		
-
+#		
+#def set_geohash_to_memcache(key,val):
+#	client = memcache.Client()
+#	while True: # Retry loop
+#		counter = client.gets(key)
+#		assert counter is not None, 'Uninitialized counter'
+#		if client.cas(key, counter+1):
+#			break
 class SandboxHandler(webapp2.RequestHandler):
 	'''
 	Dont delete this. This is my dev playground.
 	'''
-
 	def get(self):
-		geopoint = levr.geo_converter('42.5,-72.5')
-		geohash = geohash.encode(geopoint)
+		self.response.headers['Content-Type']= 'text/plain'
+		point = '42.5,-72.5'
+		geopoint = levr.geo_converter(point)
+		hash = geohash.encode(geopoint.lat,geopoint.lon)
+		hash_set = geohash.expand(hash)
+		
+		logging.debug(levr.log_dict(memcache.get_stats()))
+		
+		#reset memcache
+		memcache.delete_multi(hash_set,namespace='geohash')
+		
+		logging.debug(levr.log_dict(memcache.get_stats()))
+		dp = ['one','two','three','four',[5,6,7,54,100],6,7,'eight','nine']
+		
+		for idx,h in enumerate(hash_set):
+			memcache.add(h,dp[idx],namespace='geohash')
+		
+		logging.debug(levr.log_dict(memcache.get_stats()))
+		
+		
+		data = api_utils.get_deal_keys_from_memcache(hash_set)
+		self.response.out.write(levr.log_dict(data))
+		logging.debug(levr.log_dict(memcache.get_stats()))
+		
+		memcache.delete(hash_set[0],namespace='geohash')
+		
+		self.response.out.write(levr.log_dict(api_utils.get_deal_keys_from_memcache(hash_set)))
+		
+		
+		
+		self.response.out.write('done')
 		
 class DeleteEverythingHandler(webapp2.RequestHandler):
 	def get(self):

@@ -49,7 +49,6 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			#variables
 			precision		= 6
 			min_count		= 100
-			deal_keys		= []
 			max_iterations	= 3
 			iterations		= 0
 			query_times		= []
@@ -69,54 +68,52 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			
 			
 			#===================================================================
-			# Find deals - ant query and deal fetch
+			# Build set of geohashes to search
 			#===================================================================
 			
 			#center hash
 			new_hash_set = [geohash.encode(lat1,lon1,precision=precision)]
-			query_start = datetime.now()
+			t1 = datetime.now()
 			#iterate searches the specified number of times
 			for i in range(0,max_iterations):
 				#if the deals fetches are less than the desired minimum, perform another search
-				if deal_keys.__len__() <= min_count:
-					iterations += 1
-#					logging.debug('\n\n\n\n\n\n begin new hashings\n\n\n\n\n\n\n')
-#					logging.debug(searched_hash_set)
-#					logging.debug(new_hash_set)
-					
-					#expand range by one ring
-					hashes = new_hash_set
-					new_hash_set = []
-					for hash in hashes:
-						#get hash neighbors
-						#extend the hashes list with the new hashes
-						new_hash_set.extend(geohash.expand(hash))
-					
-					#remove duplicated
-					new_hash_set = list(set(new_hash_set))
-					#filter out the hashes that have already been searched
-					new_hash_set = filter(lambda h: h not in searched_hash_set,new_hash_set)
-					
-					#new_hash_set is now a ring of geohashes around the last ring that was searched
-					
-					
-					#fetch deals from hash set, and extend the list of deal keys
-					t1 = datetime.now()
-					deal_keys.extend(api_utils.get_deal_keys_from_hash_set(tags,new_hash_set,development=development))
-					t2 = datetime.now()
-					
-					#add new_hash_set to searched_hash_set
-					searched_hash_set.extend(new_hash_set)
-					#reset new_hash_set
-					logging.info('searched_hash_set: '+str(searched_hash_set))
-#					logging.debug('\n\n\n\n\n\n end new hashings\n\n\n\n\n\n\n')
-					#keep track of the times
-					query_times.append((t1,t2))
+				iterations += 1
+				
+				#expand range by one ring
+				hashes = new_hash_set
+				new_hash_set = []
+				for hash in hashes:
+					#get hash neighbors
+					#extend the hashes list with the new hashes
+					new_hash_set.extend(geohash.expand(hash))
+				
+				#remove duplicated
+				new_hash_set = list(set(new_hash_set))
+				#filter out the hashes that have already been searched
+				new_hash_set = filter(lambda h: h not in searched_hash_set,new_hash_set)
+				
+				#new_hash_set is now a ring of geohashes around the last ring that was searched
+				#add new_hash_set to searched_hash_set
+				searched_hash_set.extend(new_hash_set)
+				#reset new_hash_set
+				logging.info('searched_hash_set: '+str(searched_hash_set))
+			# 
+			total_hash_set = searched_hash_set
+			t2 = datetime.now()
+			geo_box_creation_time = t2-t1
+			
+			
+			#===================================================================
+			# Fetch deal keys from memcache or from query
+			#===================================================================
+			logging.debug('\n\n\n \t\t\t START QUERYING \n\n\n')
+			query_start = datetime.now()
+			deal_keys = api_utils.get_deal_keys(total_hash_set,development=development)
 			query_end = datetime.now()
 			
 			total_query_time = query_end-query_start
 			
-			
+			logging.debug('\n\n\n \t\t\t END QUERYING \n\n\n ')
 			#===================================================================
 			# Create Bounding Box
 			#===================================================================
@@ -145,6 +142,8 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			logging.info('total deals fetched: '+str((deal_keys.__len__())))
 			#batch get all of the deals
 			t1 = datetime.now()
+			logging.debug(deal_keys)
+			logging.debug(type(deal_keys))
 			deals = db.get(deal_keys)
 			t2 = datetime.now()
 			
@@ -371,6 +370,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			#===================================================================
 			# Send response
 			#===================================================================
+			logging.debug('geo_box_creation_time'+str(geo_box_creation_time))
 			logging.debug('total_query_time: '+str(total_query_time))
 			logging.debug('fetch_time: '+str(fetch_time))
 			logging.debug('calc_maxes_time: '+str(calc_maxes_time))
@@ -381,6 +381,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			response = {
 					'numResults'		: accepted_deals_count,
 					'total_query_time'	: str(total_query_time),
+					'geo_box_creation_time': str(geo_box_creation_time),
 					'fetch_time'		: str(fetch_time),
 					'calc_maxes_time'	: str(calc_maxes_time),
 					'cals_rank_time'	: str(calc_rank_time),

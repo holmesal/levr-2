@@ -1,7 +1,7 @@
 from common_word_list import blacklist
 from datetime import datetime
 from fnmatch import filter
-from google.appengine.api import images, urlfetch
+from google.appengine.api import images, urlfetch, memcache
 from google.appengine.ext import db
 from math import sin, cos, asin, sqrt, degrees, radians, floor, sqrt
 import geo.geohash as geohash
@@ -782,8 +782,153 @@ def send_img(self,blob_key,size):
 	except Exception,e:
 		levr.log_error()
 		send_error(self,'Server Error')
+
+
+def get_deal_keys(hash_set,**kwargs):
+	'''
+	<bullhorn> Why are we here?!
+	<screams> To get deal keys!!
+	<bullhorn> Why are we here?!
+	<screams> To take what is ours!!
+	<bullhorn> And how are we going to get it?!
+	<screams> First we will search the memcache for all of the requested geohashes.
+				The geohashes that are in the memcache will be returned with a list of deal_keys for that geohash
+				The geohashes that are not in the memcache, we will perform a db query for that geohash and get
+				the deal_keys that way. And then we will burn those motherfuckers to the ground!! Freeeeeeeedoooooooom!!!
+				
+	Returns: list of deal keys
+	Optional kwargs:
+		development = Boolean; if in development, will search for deal_text='test' otherwise deal_text='active'
+	
+	@param hash_set: the geohashes in question
+	@type hash_set: list
+	'''
+	logging.debug('\n\n\n\t\t\t GET DEAL KEYS \n\n\n')
+	development		= kwargs.get('development',False)
+	if development:
+		#developer is searching
+		deal_status = 'test'
+		namespace = levr.MEMCACHE_TEST_GEOHASH_NAMESPACE
+		logging.debug('test deals')
+	else:
+		#a real person is searching!
+		deal_status = 'active'
+		namespace = levr.MEMCACHE_ACTIVE_GEOHASH_NAMESPACE
+		logging.debug('active deals')
+	
+	# search hashes from memcache
+	keys_dict, unresolved_hashes = get_deal_keys_from_memcache(hash_set,namespace)
+	
+	if unresolved_hashes:
+		# search db for hashes, and place the results in the memcache
+		more_keys = get_deal_keys_from_db(unresolved_hashes,deal_status,namespace)
+		keys_dict.update(more_keys)
+	
+	# keys_dict is a dict mapping of hash:[key,]
+	deal_keys = []
+	count = 0
+	for key in keys_dict:
+		deal_keys.extend(keys_dict[key])
+		count +=1
+	logging.debug('total keys: '+str(count))
+	return deal_keys
+		
+	
+
+def get_deal_keys_from_memcache(hash_set,namespace):
+	'''
+	Returns two things: a dict of {geohash:list_of_deal_keys}
+	and a list of ['geohash',] for geohashes that were not found in the memcache
+	
+	@param hash_set: The geohashes that the search is requesting
+	@type hash_set: list
+	@param namespace: the memcache namespace
+	@type namespace: active_geohash or test_geohash
+	'''
+	logging.debug('\n\n\n\t\t\t GET FROM MEMCACHE \n\n\n')
+	logging.debug(hash_set)
+	assert type(hash_set) is list, 'hash_set should be a list'
 	
 	
+	#fetch deal_key lists by geohash
+	key_dict = memcache.get_multi(hash_set,namespace=namespace)
+	
+	#grab the hashes that were not found in the memcache
+	unresolved_hashes = []
+	for hash in hash_set:
+		if hash not in key_dict:
+			unresolved_hashes.append(hash)
+#	unresolved_hashes = filter(lambda hash: hash not in key_dict,hash_set)
+	
+	logging.debug('key_dict:')
+	logging.debug(levr.log_dict(key_dict))
+	logging.debug('unresolved_hashes')
+	logging.debug(unresolved_hashes)
+	return key_dict,unresolved_hashes
+	
+	
+def get_deal_keys_from_db(hash_set,deal_status,namespace):
+	'''
+	Returns a dict mapping of hashes and deal keys
+	
+	tags = list of tags that are strings
+	request point is db.GeoPt format
+	
+	optional parameters:
+	development		default=False
+	
+	'''
+	logging.debug('\n\n\n\t\t\t GET FROM DB \n\n\n')
+	####build search query
+	hashes_and_keys = {}
+	for query_hash in hash_set:
+		#initialize query
+		q = levr.Deal.all(keys_only=True).filter('deal_status',deal_status)
+		
+		#grab all deals in the geohash
+		q.filter('geo_hash >=',query_hash).filter('geo_hash <=',query_hash+"{") #max bound
+		
+		
+		#FETCH DEAL KEYS
+		fetched_deal_keys = q.fetch(None)
+		logging.info('From: '+query_hash+", fetched: "+str(fetched_deal_keys.__len__()))
+		
+		# add deal keys to the dict that will be set to the memcache
+		hashes_and_keys.update({query_hash:fetched_deal_keys})
+		
+		
+	# add keys to memcache
+	logging.debug('keys from db')
+	logging.debug(levr.log_dict(hashes_and_keys))
+	set_deal_keys_to_memcache(hashes_and_keys,namespace)
+	
+	return hashes_and_keys
+
+def set_deal_keys_to_memcache(hashes_and_keys,namespace):
+	'''
+	Takes a mapping of {hash:deal_keys} and adds them to memcache as {key=hash:val=deal_keys}
+	@param hashes_and_keys: {geohash:[deal.key(),]}
+	@type hashes_and_keys: dict
+	'''
+	logging.debug('\n\n\n\t\t\t SET TO MEMCACHE \n\n\n')
+	failsafe = 0
+	test = hashes_and_keys
+	# tries to set the hashes to memcache a max of 5 times
+	while True and failsafe <5:
+		failsafe +=1
+		#set_multi returns a 
+		rejected_keys = memcache.set_multi(hashes_and_keys,namespace=namespace)
+		logging.debug('rejected keys: '+str(rejected_keys))
+		if rejected_keys:
+			#some of the keys were not updated properly
+			hashes_and_keys = {hash:hashes_and_keys[hash] for hash in rejected_keys }
+		else:
+			#nothing was rejected, break loop
+			break
+
+	logging.debug('set_deal_keys_to_memcache iterations: {}'.format(failsafe))
+	return
+
 def get_deal_keys_from_hash_set(tags,hash_set,*args,**kwargs):
 	'''
 	Returns a list of deal keys in the hash sets specified
@@ -857,7 +1002,6 @@ def get_deal_keys_from_hash_set(tags,hash_set,*args,**kwargs):
 		deal_keys.extend(fetched_deals)
 	
 	return deal_keys
-
 def filter_deals_by_radius(deals,center,radius):
 	'''
 	http://stackoverflow.com/questions/3182260/python-geocode-filtering-by-distance
@@ -949,73 +1093,6 @@ def level_check(user):
 	user.level = new_level
 		
 	return user
-
-#===============================================================================
-# def search_yipit(query,geo_point):
-#	#words = ["a la carte","a la mode","appetizer","beef","beverage","bill","bistro","boiled","bowl","braised","bread","breakfast","brunch","butter","cafe","cafeteria","cake","candle","cashier","centerpiece","chair","charge","chef","chicken","coffee","cola","cold","condiments","cook","cooked","course","cream","credit card","cutlery","deli","delicatessen","delicious","dessert","dine","diner","dining","dinner","dish","dishwasher","doggie bag","dressing","eat","eggs","entree","fish","food","fork","French fries","fries","fruit","glass","gourmand","gourmet","grilled","hamburger","head waiter","high tea","hors d'oeuvre","hostess","hot","ice","ice cubes","iced","ingredients","ketchup","kitchen","knife","lemonade","lettuce","lunch","main course","maitre d'","manager","meal","meat","medium","menu","milk","mug","mustard","napkin","noodles","onion","order","party","pasta","pepper","plate","platter","pop","rare","reservation","restaurant","roasted","roll","salad","salt","sandwich","sauce","saucer","seafood","seared","server","side order","silverware","soda","soup","special","spices","spicy","spill","spoon","starters","steak","sugar","supper","table","tablecloth","tasty","tax","tea","tip","toast","to go","tomato","utensils","vegetables","waiter","waitress","water","well-done"]
-#	
-#	#(if query in words used to be here)
-#	
-#	#search for restaurants
-# # 	logging.info(str(geo_point))
-#	#search_lat, search_lng = geo_point.split(',')
-#	search_lat = geo_point.lat
-#	search_lon = geo_point.lon
-#	#url = 'http://api.yipit.com/v1/deals/?key=d9qcYtHgkKcPTAGD&tag=restaurants&lat='+lat+'&lon='+lon
-#	url = 'http://api.yipit.com/v1/deals/?key=d9qcYtHgkKcPTAGD&tag=restaurants&lat='+str(search_lat)+'&lon='+str(search_lon)
-#	logging.debug(url)
-#	result = urlfetch.fetch(url=url)
-#	result = json.loads(result.content)['response']
-#	deals = result['deals']
-# # 	logging.info(deals)
-#	
-#	packaged_deals = []
-#	
-#	for yipit_deal in deals:
-#		
-# # 			logging.info(yipit_deal)
-#		
-#		yipit_business = yipit_deal['business']
-#		
-#		lat = yipit_business['locations'][0]['lat']
-#		lon = yipit_business['locations'][0]['lon']
-#		
-#		if lat==None or lon==None:
-#			pass
-#		else:
-#		
-#			packaged_business = {
-#				'businessID'	: 'yipitdoesnotuseidsforbusinesses',
-#				'businessName'	: yipit_business['name'],
-#				'vicinity'		: yipit_business['locations'][0]['address'] + ', ' + yipit_business['locations'][0]['locality'],
-#				'geoPoint'		: str(db.GeoPt(lat,lon)),
-#				'geoHash'		: geohash.encode(lat,lon)
-#					}
-#			
-#			deal = levr.Deal()
-#			deal.externalID = yipit_deal['id']
-#			deal.deal_text = yipit_deal['yipit_title']
-#			deal.description = ''
-#			deal.large_img = yipit_deal['images']['image_big']
-#			deal.small_img = yipit_deal['images']['image_small']
-#			deal.pin_color = 'orange'
-#			deal.origin = 'externalAPI'
-#			deal.externalURL = yipit_deal['mobile_url']
-# 
-#			#make fake owner
-#			fake_owner = {
-#				'alias'		: 'Powered by Yipit.',
-#				'photoURL'	: 'http://farm6.static.flickr.com/5205/5281647796_c42d9b6a15.jpg',
-#				'karma'		: 42,
-#				'levelText'	: 'Click to see more deals and coupons on Yipit.'
-#			}
-#			
-#			packaged_deal = package_deal_external(deal,packaged_business,fake_owner)
-#			
-#			packaged_deals.append(packaged_deal)
-#			
-#	return packaged_deals	
-#===============================================================================
 
 def search_foursquare(geo_point,token,already_found=[]):
 
@@ -1170,6 +1247,18 @@ def add_foursquare_deal(foursquare_deal,business):
 
 
 	deal.put()
+	
+	#===========================================================================
+	# Update memcache because a deal was created
+	#===========================================================================
+	if deal.deal_status == 'active':
+		namespace = MEMCACHE_ACTIVE_GEOHASH_NAMESPACE
+	elif deal.deal_status == 'test':
+		namespace = MEMCACHE_TEST_GEOHASH_NAMESPACE
+	else:
+		raise Exception('Invalid memcahce namespace')
+	levr.update_deal_key_memcache(deal.geo_point,deal.key(),namespace)
+	
 	logging.info('Foursquare special '+deal.foursquare_id+' added to database.')
 	#logging.debug(levr.log_model_props(deal))
 	
@@ -1367,7 +1456,6 @@ def update_foursquare_business(foursquare_id,token='random'):
 					
 					#add the deal
 					deal = add_foursquare_deal(foursquare_deal,business)
-				
 # 	
 # 	#go grab all the deals from that business
 # 	deals = levr.Deal.gql('WHERE foursquare_id = :1',foursquare_id)
