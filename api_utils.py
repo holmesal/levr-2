@@ -1242,6 +1242,10 @@ def match_foursquare_business(geo_point,query):
 	url = 'https://api.foursquare.com/v2/venues/search?'+urllib.urlencode(params)
 	
 	#url = 'https://api.foursquare.com/v2/venues/search?v=20120920&intent=match&ll='+str(geo_point)+'&query='+query+'&client_id='+client_id+'&client_secret='+client_secret
+	
+	logging.debug(url)
+	
+	
 	result = urlfetch.fetch(url=url)
 	result = json.loads(result.content)
 	
