@@ -55,7 +55,7 @@ def create_pin_color(deal):
 def package_deal(deal,private=False,*args,**kwargs):
 #	logging.debug(deal.businessID)
 #	logging.debug(deal.key())
-#	logging.debug(deal.deal_text)
+	logging.debug('deal_text: '+str(deal.deal_text))
 
 #	logging.debug(str(deal.geo_point))
 	packaged_deal = {
@@ -210,7 +210,7 @@ def create_img_url(entity,size):
 # 	logging.debug(entity.class_name())
 # 	logging.debug(type(entity.kind()))
 	
-	logging.debug(entity.kind())
+#	logging.debug(entity.kind())
 # 	logging.debug(entity.kind() == 'Deal')
  	# if entity.kind() == 'Customer':
 #  		hook = 'api/user/'
@@ -801,7 +801,7 @@ def get_deal_keys_from_memcache(hash_set,namespace):
 			unresolved_hashes.append(hash)
 #	unresolved_hashes = filter(lambda hash: hash not in key_dict,hash_set)
 	
-	logging.debug('key_dict:')
+	logging.debug('key_dict from memcache:')
 	logging.debug(levr.log_dict(key_dict))
 	logging.debug('unresolved_hashes')
 	logging.debug(unresolved_hashes)
@@ -1041,10 +1041,10 @@ def search_foursquare(geo_point,token,already_found=[]):
 	if token == 'random':
 		hardcoded = ['IDMTODCAKR34GOI5MSLEQ1IWDJA5SYU0PGHT4F5CAIMPR4CR','ML4L1LW3SO0SKUXLKWMMBTSOWIUZ34NOTWTWRW41D0ANDBAX','RGTMFLSGVHNMZMYKSMW4HYFNEE0ZRA5PTD4NJE34RHUOQ5LZ']
 		token = random.choice(hardcoded)
-		logging.info('Using token: '+token)
+#		logging.info('Using token: '+token)
 		
 
-	url = 'https://api.foursquare.com/v2/specials/search?v=20120920&ll='+str(geo_point)+'&oauth_token='+token
+	url = 'https://api.foursquare.com/v2/specials/search?v=20120920&ll='+str(geo_point)+'&limit=50&oauth_token='+token
 	result = urlfetch.fetch(url=url)
 	result = json.loads(result.content)
 	foursquare_deals = result['response']['specials']['items']
@@ -1054,12 +1054,12 @@ def search_foursquare(geo_point,token,already_found=[]):
 	response_deals = []
 	
 	for foursquare_deal in foursquare_deals:
-		logging.info('woo a deal!')
+#		logging.info('woo a deal!')
 		
-		logging.debug(foursquare_deal)
-		logging.debug(foursquare_deal['venue'])
-		logging.debug(levr.log_dict(foursquare_deal))
-		logging.debug(levr.log_dict(foursquare_deal['venue']))
+#		logging.debug(foursquare_deal)
+#		logging.debug(foursquare_deal['venue'])
+#		logging.debug(levr.log_dict(foursquare_deal))
+#		logging.debug(levr.log_dict(foursquare_deal['venue']))
 		
 		#sometimes venues do not have categories
 		if len(foursquare_deal['venue']['categories']) == 0:
@@ -1067,16 +1067,25 @@ def search_foursquare(geo_point,token,already_found=[]):
 			foursquare_deal['venue']['categories'] = [{'name':'undefined'}]
 		#logging.info(foursquare_deal['venue'])
 		if not filter_foursquare_deal(foursquare_deal,already_found):
+			venue = foursquare_deal['venue']
 			#logging.debug(foursquare_deal['type'])
 			#logging.debug(foursquare_deal['message'])
 			#logging.debug(foursquare_deal['venue']['categories'][0]['name'])
 			#logging.info(foursquare_deal['id'])
 			#does business already exist?
 			existing_business = levr.Business.gql('WHERE foursquare_id=:1',foursquare_deal['venue']['id']).get()
+			
+			#### DEBUG
+			bs = levr.Business.all().filter('foursquare_id',foursquare_deal['venue']['id']).count()
+			if bs >1: levr.log_error('Multiple businesses have the same foursquare_id: '+ str(foursquare_deal['venue']['id']))
+			
+			#### /DEBUG
+			
 			if not existing_business:
-				venue = foursquare_deal['venue']
+				logging.debug('business does not exist, foursquare_id: '+str(foursquare_deal['venue']['id'])+' business_name: '+str(venue['name']))
+				
 				business = levr.Business(
-					business_name 		= 	venue['name'],
+					business_name 		=	venue['name'],
 					foursquare_name		=	venue['name'],
 					foursquare_id		=	venue['id'],
 					foursquare_linked	=	True,
@@ -1088,7 +1097,8 @@ def search_foursquare(geo_point,token,already_found=[]):
 				business.put()
 				#logging.debug(business.__dict__)
 			else:
-				logging.info('business already exists')
+				logging.info('business already exists:')
+				logging.debug(levr.log_model_props(existing_business,['geo_point','business_name','vicinity','geo_hash']))
 				business = existing_business
 			
 			
@@ -1103,34 +1113,26 @@ def search_foursquare(geo_point,token,already_found=[]):
 			else:
 				deal = existing_deal
 				logging.info('Foursquare special '+deal.foursquare_id+' found in database but not in search.')
+#				logging.debug('foursquare')
 				#logging.debug(levr.log_model_props(deal))
 				
 			#calculate distance
 			distance = distance_between_points(geo_point.lat, geo_point.lon, business.geo_point.lat, business.geo_point.lon)
- 			logging.debug('DISTANCE!!!: '+str(distance))
-# 			
-# 			dlat,dlon = bounding_box(geo_point.lat,geo_point.lon,10)
-# 			lat1 = geo_point.lat - dlat
-# 			lon1 = geo_point.lon - dlon
-# 			lat2 = geo_point.lat + dlat
-# 			lon2 = gep_point.lon + dlon
-# 			
-# 			is_in_bounding_box(lat1,lon1,lat2,lon2,testlat,testlon)
-			
-			
-			
+# 			logging.debug('DISTANCE!!!: '+str(distance))
+			logging.debug('distance: '+str(distance))
 			if distance < 10:
 				#package deal
 				packaged_deal = package_deal(deal)
 				response_deals.append(packaged_deal)
 			else:
-				logging.debug('Deal not added because it was too far away: '+str(distance)+' miles')
+				pass
+#				logging.debug('Deal not added because it was too far away: '+str(distance)+' miles')
 			
 		#end valid deal level
 	#end for loop
-	
-	for deal in response_deals:
-		logging.info(deal['dealText'])
+#	
+#	for deal in response_deals:
+#		logging.info(deal['dealText'])
 	return response_deals
 
 def add_foursquare_deal(foursquare_deal,business):
@@ -1211,20 +1213,21 @@ def filter_foursquare_deal(foursquare_deal,already_found):
 	allowed_categories = ["Afghan Restaurant", "African Restaurant", "American Restaurant", "Arepa Restaurant", "Argentinian Restaurant", "Asian Restaurant", "Australian Restaurant", "BBQ Joint", "Bagel Shop", "Bakery", "Brazilian Restaurant", "Breakfast Spot", "Brewery", "Burger Joint", "Burrito Place", "Caf\u00e9", "Cajun / Creole Restaurant", "Caribbean Restaurant", "Chinese Restaurant", "Coffee Shop", "Cuban Restaurant", "Cupcake Shop", "Deli / Bodega", "Dessert Shop", "Dim Sum Restaurant", "Diner", "Distillery", "Donut Shop", "Dumpling Restaurant", "Eastern European Restaurant", "Ethiopian Restaurant", "Falafel Restaurant", "Fast Food Restaurant", "Filipino Restaurant", "Fish & Chips Shop", "Food Truck", "French Restaurant", "Fried Chicken Joint", "Gastropub", "German Restaurant", "Gluten-free Restaurant", "Greek Restaurant", "Hot Dog Joint", "Ice Cream Shop", "Indian Restaurant", "Indonesian Restaurant", "Italian Restaurant", "Japanese Restaurant", "Juice Bar", "Korean Restaurant", "Latin American Restaurant", "Mac & Cheese Joint", "Malaysian Restaurant", "Mediterranean Restaurant", "Mexican Restaurant", "Middle Eastern Restaurant", "Molecular Gastronomy Restaurant", "Mongolian Restaurant", "Moroccan Restaurant", "New American Restaurant", "Peruvian Restaurant", "Pizza Place", "Portuguese Restaurant", "Ramen / Noodle House", "Restaurant", "Salad Place", "Sandwich Place", "Scandinavian Restaurant", "Seafood Restaurant", "Snack Place", "Soup Place", "South American Restaurant", "Southern / Soul Food Restaurant", "Spanish Restaurant", "Steakhouse", "Sushi Restaurant", "Swiss Restaurant", "Taco Place", "Tapas Restaurant", "Tea Room", "Thai Restaurant", "Turkish Restaurant", "Vegetarian / Vegan Restaurant", "Vietnamese Restaurant", "Winery", "Wings Joint", "Bar", "Beer Garden", "Cocktail Bar", "Dive Bar", "Gay Bar", "Hookah Bar", "Hotel Bar", "Karaoke Bar", "Lounge", "Nightclub", "Other Nightlife", "Pub", "Sake Bar", "Speakeasy", "Sports Bar", "Strip Club", "Whisky Bar", "Wine Bar"]
 	
 	
-	logging.info('---------------------------------------------')
-	logging.info('Type: '+foursquare_deal['type'])
-	logging.info('Message: '+foursquare_deal['message'])
-	logging.info('Description: '+foursquare_deal['description'])
-	logging.info('Category: '+foursquare_deal['venue']['categories'][0]['name'])
+#	logging.info('---------------------------------------------')
+#	logging.info('Type: '+foursquare_deal['type'])
+#	logging.info('Message: '+foursquare_deal['message'])
+#	logging.info('Description: '+foursquare_deal['description'])
+#	logging.info('Category: '+foursquare_deal['venue']['categories'][0]['name'])
 	
 	allowed_types = ['count','regular','flash','swarm','other','frequency']	#not mayor
 	
 	
 	
 	if foursquare_deal['venue']['categories'][0]['name'] not in allowed_categories:
+		pass
 		#logging.info('Special '+foursquare_deal['id']+' filtered out because it was from a non-allowed category: '+foursquare_deal['venue']['categories'][0]['name'])
-		#return True
-		logging.info('Special from category: '+foursquare_deal['venue']['categories'][0]['name']+' allowed because category filter is turned off')
+#		return True
+#		logging.info('Special from category: '+foursquare_deal['venue']['categories'][0]['name']+' allowed because category filter is turned off')
 	elif foursquare_deal['type'] not in allowed_types:
 		logging.info('Special '+foursquare_deal['id']+' filtered out because it was of a non-allowed type: '+foursquare_deal['type'])
 		return True

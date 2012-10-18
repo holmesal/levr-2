@@ -40,7 +40,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			
 			#create tags list from the query
 			tags = levr.tagger(query)
-			logging.info("tags: "+str(tags))
+#			logging.info("tags: "+str(tags))
 			
 			#===================================================================
 			# Init variables
@@ -96,8 +96,9 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				#add new_hash_set to searched_hash_set
 				searched_hash_set.extend(new_hash_set)
 				#reset new_hash_set
-				logging.info('searched_hash_set: '+str(searched_hash_set))
+#				logging.info('searched_hash_set: '+str(searched_hash_set))
 			# 
+			logging.info('searched_hash_set: '+str(searched_hash_set))
 			total_hash_set = searched_hash_set
 			t2 = datetime.now()
 			geo_box_creation_time = t2-t1
@@ -204,7 +205,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				d = toop[2]
 				deal = toop[3]
 				
-				logging.debug('k:'+str(k)+', d: '+str(d)+', max_k: '+str(max_k)+', max_d: '+str(max_d))
+#				logging.debug('k:'+str(k)+', d: '+str(d)+', max_k: '+str(max_k)+', max_d: '+str(max_d))
 				
 				#calculate scaled karma and distance
 				kf = k_coef*k/max_k
@@ -213,7 +214,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				#set minimum d... especially to eliminate division by zero
 				if df < 0.05: df = 0.05
 				
-				logging.debug('kf: '+str(kf)+', df: '+str(df))
+#				logging.debug('kf: '+str(kf)+', df: '+str(df))
 				#===============================================================
 				# #calculate rank
 				# rank = (1+kf)/df
@@ -227,7 +228,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				rank = (1+kf)
 				
 				
-				logging.debug('rank: '+str(rank))
+#				logging.debug('rank: '+str(rank))
 				#add the rank to the deal toop
 #				logging.debug(toop)
 				toop = list(toop)
@@ -238,7 +239,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				ts = datetime.now()
 				tuple_list[idx] = toop
 				te = datetime.now()
-				logging.debug('replacement: '+str(te-ts))
+#				logging.debug('replacement: '+str(te-ts))
 				
 				
 				
@@ -315,7 +316,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			
 			
 			t1= datetime.now()
-			
+			foursquare_deals = []
 			#===================================================================
 			# Foursquare search
 			#===================================================================

@@ -790,48 +790,37 @@ class SandboxHandler(webapp2.RequestHandler):
 	Dont delete this. This is my dev playground.
 	'''
 	def get(self):
-		self.response.headers['Content-Type']= 'text/plain'
-		point = '42.5,-72.5'
-		geopoint = levr.geo_converter(point)
-		hash = geohash.encode(geopoint.lat,geopoint.lon)
-		hash_set = geohash.expand(hash)
+		lons = [x/1000. for x in range(72400,72600,10) if x%10 ==0]
+		lats = [x/1000. for x in range(42400,42600,10) if x%10 ==0]
+		self.response.out.write(lons.__len__()*lats.__len__())
+		self.response.out.write(lats)
 		
-		logging.debug(levr.log_dict(memcache.get_stats()))
+		for lat in lats:
+			for lon in lons:
+				
 		
-		#reset memcache
-		memcache.delete_multi(hash_set,namespace='geohash')
-		
-		logging.debug(levr.log_dict(memcache.get_stats()))
-		dp = ['one','two','three','four',[5,6,7,54,100],6,7,'eight','nine']
-		
-		for idx,h in enumerate(hash_set):
-			memcache.add(h,dp[idx],namespace='geohash')
-		
-		logging.debug(levr.log_dict(memcache.get_stats()))
-		
-		
-		data = api_utils.get_deal_keys_from_memcache(hash_set)
-		self.response.out.write(levr.log_dict(data))
-		logging.debug(levr.log_dict(memcache.get_stats()))
-		
-		memcache.delete(hash_set[0],namespace='geohash')
-		
-		self.response.out.write(levr.log_dict(api_utils.get_deal_keys_from_memcache(hash_set)))
-		
-		
-		
-		self.response.out.write('done')
+				params = {
+							'lat'			:	lat,
+							'lon'			:	lon,
+							'token'			:	token,
+							'foursquare_ids':	foursquare_ids
+						}
+					
+				logging.debug('Sending this to the task: ' + json.dumps(params))
+			
+				#start the task
+				t = taskqueue.add(url='/tasks/searchFoursquareTask',payload=json.dumps(params))
 		
 class DeleteEverythingHandler(webapp2.RequestHandler):
 	def get(self):
 		self.response.out.write('DELETING EVERYTHING - DANGEROUS!')
 		
-#		
-#		deals = levr.Deal.all().fetch(None)
-#		db.delete(deals)
-#		businesses = levr.Business.all().fetch(None)
-#		db.delete(businesses)
-#		
+		
+		deals = levr.Deal.all().fetch(None)
+		db.delete(deals)
+		businesses = levr.Business.all().fetch(None)
+		db.delete(businesses)
+		
 #		users = levr.Customer.all().fetch(None)
 #		for user in users:
 #			if not user.levr_token:
