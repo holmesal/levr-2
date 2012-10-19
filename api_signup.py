@@ -114,7 +114,7 @@ class SignupTwitterHandler(webapp2.RequestHandler):
 						}
 			else:
 				#create new user
-				user = social.Twitter()
+				user = social.Twitter(twitter_token=twitter_token)
 				try:
 					user, new_user_details, new_friends = user.first_time_connect(
 													twitter_id			= twitter_id,
@@ -123,7 +123,6 @@ class SignupTwitterHandler(webapp2.RequestHandler):
 													)
 				except Exception,e:
 					#delete the new user that was created because the signup failed
-					new_user.delete()
 					levr.log_error()
 					assert False, 'Could not connect with foursquare. '.format('')
 				#return the user

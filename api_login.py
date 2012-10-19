@@ -208,10 +208,11 @@ class LoginValidateHandler(webapp2.RequestHandler):
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		try:
+			logging.info('Reporting for dudty, Captain')
 			#grabthe user from the input
 			user = kwargs.get('actor')
 			
-			response = {'user':api_utils.package_user(user,True)}
+			
 			
 			try:
 				data = api_utils.SpoofUndeadNinjaActivity(user).run()
@@ -224,6 +225,7 @@ class LoginValidateHandler(webapp2.RequestHandler):
 			user.date_last_login = datetime.now()
 #			logging.debug(user.date_last_login)
 			user.put()
+			response = {'user':api_utils.package_user(user,True)}
 			api_utils.send_response(self,response,user)
 			
 			

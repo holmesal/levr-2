@@ -55,8 +55,10 @@ def create_pin_color(deal):
 def package_deal(deal,private=False,*args,**kwargs):
 #	logging.debug(deal.businessID)
 #	logging.debug(deal.key())
-	logging.debug('deal_text: '+str(deal.deal_text))
-
+	try:
+		logging.debug('deal_text: '+str(deal.deal_text))
+	except:
+		logging.debug(deal.deal_text)
 #	logging.debug(str(deal.geo_point))
 	packaged_deal = {
 # 			'barcodeImg'	: deal.barcode,
@@ -79,8 +81,10 @@ def package_deal(deal,private=False,*args,**kwargs):
 			}
 	
 	rank = kwargs.get('rank')
-
 	if rank: packaged_deal['rank'] = rank
+	
+	distance = kwargs.get('distance')
+	if distance: packaged_deal['distance'] = distance
 	
 #	logging.debug('rank')
 #	logging.debug(kwargs.get('rank'))
@@ -1035,15 +1039,15 @@ def level_check(user):
 		
 	return user
 
-def search_foursquare(geo_point,token,already_found=[]):
+def search_foursquare(geo_point,token,deal_status,already_found=[],**kwargs):
 
 	#if token is passes as 'random', use a hardcoded token
 	if token == 'random':
 		hardcoded = ['IDMTODCAKR34GOI5MSLEQ1IWDJA5SYU0PGHT4F5CAIMPR4CR','ML4L1LW3SO0SKUXLKWMMBTSOWIUZ34NOTWTWRW41D0ANDBAX','RGTMFLSGVHNMZMYKSMW4HYFNEE0ZRA5PTD4NJE34RHUOQ5LZ']
 		token = random.choice(hardcoded)
 #		logging.info('Using token: '+token)
-		
-
+	
+	
 	url = 'https://api.foursquare.com/v2/specials/search?v=20120920&ll='+str(geo_point)+'&limit=50&oauth_token='+token
 	result = urlfetch.fetch(url=url)
 	result = json.loads(result.content)
@@ -1102,27 +1106,35 @@ def search_foursquare(geo_point,token,already_found=[]):
 				business = existing_business
 			
 			
-			
 			#does deal already exist?
-			existing_deal = levr.Deal.gql('WHERE foursquare_id=:1',foursquare_deal['id']).get()
+			existing_deal = levr.Deal.all().filter('foursquare_id',foursquare_deal['id']
+											).filter('businessID',str(business.key())
+											).filter('deal_status',deal_status
+											).get()
+#			existing_deal = levr.Deal.gql('WHERE foursquare_id=:1',foursquare_deal['id']).get()
+			logging.warning(foursquare_deal['id'])
 			if not existing_deal:
 				
 				#add the foursquare deal
-				deal = add_foursquare_deal(foursquare_deal,business)
-				
+				deal = add_foursquare_deal(foursquare_deal,business,deal_status)
+			
 			else:
 				deal = existing_deal
 				logging.info('Foursquare special '+deal.foursquare_id+' found in database but not in search.')
 #				logging.debug('foursquare')
 				#logging.debug(levr.log_model_props(deal))
-				
+			deal_business = db.get(deal.businessID)
 			#calculate distance
-			distance = distance_between_points(geo_point.lat, geo_point.lon, business.geo_point.lat, business.geo_point.lon)
+			distance = distance_between_points(geo_point.lat, geo_point.lon, deal_business.geo_point.lat, deal_business.geo_point.lon)
+			#calculate distance
+			distance2 = distance_between_points(geo_point.lat, geo_point.lon, business.geo_point.lat, business.geo_point.lon)
+
 # 			logging.debug('DISTANCE!!!: '+str(distance))
-			logging.debug('distance: '+str(distance))
+			logging.debug('distance: '+str(distance)+ ' or '+ str(distance2))
+			logging.warning('geopoint1: '+str(deal_business.geo_point)+', geopoint2: '+ str(business.geo_point))
 			if distance < 10:
 				#package deal
-				packaged_deal = package_deal(deal)
+				packaged_deal = package_deal(deal,distance=distance)
 				response_deals.append(packaged_deal)
 			else:
 				pass
@@ -1135,7 +1147,7 @@ def search_foursquare(geo_point,token,already_found=[]):
 #		logging.info(deal['dealText'])
 	return response_deals
 
-def add_foursquare_deal(foursquare_deal,business):
+def add_foursquare_deal(foursquare_deal,business,deal_status):
 	#grab a random ninja to be the owner of this deal
 	random_dead_ninja = get_random_dead_ninja()
 	
@@ -1173,7 +1185,7 @@ def add_foursquare_deal(foursquare_deal,business):
 	deal = levr.Deal(
 		businessID		=	str(business.key()),
 		business_name	=	foursquare_deal['venue']['name'],
-		deal_status		=	'test',#'active',
+		deal_status		=	deal_status,
 		tags			=	tags,
 		origin			=	'foursquare',
 		external_url	=	'foursquare://venues/'+foursquare_deal['venue']['id'],
@@ -1330,7 +1342,7 @@ def match_foursquare_business(geo_point,query):
 	else:
 		return False
 		
-def update_foursquare_business(foursquare_id,token='random'):
+def update_foursquare_business(foursquare_id,deal_status,token='random'):
 
 	#if token is passes as 'random', use a hardcoded token
 	if token == 'random':
@@ -1363,7 +1375,7 @@ def update_foursquare_business(foursquare_id,token='random'):
 	business_key = business.key()
 	#grab the deals from that business
 	#deals = levr.Deal.gql('WHERE businessID = :1',str(business_key))
-	deals = levr.Deal.gql('WHERE businessID = :1 AND origin = :2 AND deal_status = :3',str(business_key),'foursquare','active')
+	deals = levr.Deal.gql('WHERE businessID = :1 AND origin = :2 AND deal_status = :3',str(business_key),'foursquare',deal_status)
 	
 	for deal in deals:
 		
@@ -1399,7 +1411,7 @@ def update_foursquare_business(foursquare_id,token='random'):
 				if not filter_foursquare_deal(foursquare_deal,already_found):
 					
 					#add the deal
-					deal = add_foursquare_deal(foursquare_deal,business)
+					deal = add_foursquare_deal(foursquare_deal,business,deal_status)
 # 	
 # 	#go grab all the deals from that business
 # 	deals = levr.Deal.gql('WHERE foursquare_id = :1',foursquare_id)
@@ -1436,21 +1448,16 @@ class SpoofUndeadNinjaActivity:
 		self.development = development
 		self.now = datetime.now()
 		self.now_in_seconds = long(levr.unix_time(self.now))
-		#set development params
-		if self.development:
-			deal_status = 'test'
-		else:
-			deal_status = 'active'
-		
+		logging.info(levr.log_model_props(self.user,['first_name','display_name']))
 		#fetch all of the users active deals
-		self.user_deals				= levr.Deal.all().ancestor(self.user.key()).filter('deal_status', deal_status).fetch(None)
+		self.user_deals	= levr.Deal.all().ancestor(self.user.key()).fetch(None)
 		logging.debug(self.user_deals)
 		#calculate the date since last upload
 		logging.debug(self.user.date_last_login)
-		logging.debug(type(self.user.date_last_login))
+#		logging.debug(type(self.user.date_last_login))
 		self.days_since_last_login = self.calc_days_since(self.user.date_last_login)
 		logging.debug(self.days_since_last_login)
-		logging.debug(type(self.days_since_last_login))
+#		logging.debug(type(self.days_since_last_login))
 		
 		#set environment params
 		self.max_likes_per_day		= kwargs.get('max_likes_per_day',3) #a.k.a. the number of chances to like in a day
@@ -1532,6 +1539,7 @@ class SpoofUndeadNinjaActivity:
 										deal				= deal.key(), #default to None,
 										date_in_seconds		= self.now_in_seconds
 										))
+					logging.debug('New notification')
 				else:
 					pass
 			undead_ninjas_set.update(undead_ninjas)

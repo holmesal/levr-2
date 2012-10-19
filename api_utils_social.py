@@ -134,8 +134,8 @@ class SocialClass:
 #			q = levr.Customer.all(projection=['followers']).filter('foursquare_friends',self.user.foursquare_id)
 			foursquare_friends	= levr.Customer.all(keys_only=True
 													).filter('foursquare_friends', self.user.foursquare_id
-															).order('-foursquare_friends'
-																).fetch(None)
+													).order('-foursquare_friends'
+													).fetch(None)
 			levr_friends.extend(foursquare_friends)
 			logging.debug(foursquare_friends)
 		#FACEBOOK
@@ -143,24 +143,24 @@ class SocialClass:
 		if self.user.facebook_id:
 			facebook_friends	= levr.Customer.all(keys_only=True
 												).filter('facebook_friends', self.user.facebook_id
-														).order('-facebook_friends'
-															).fetch(None)
+												).order('-facebook_friends'
+												).fetch(None)
 			levr_friends.extend(facebook_friends)
 		#TWITTER BY ID
 		logging.debug('twitter_id: ' + str(self.user.twitter_id))
 		if self.user.twitter_id:
 			twitter_friends		= levr.Customer.all(keys_only=True
 													).filter('twitter_friends_by_id', self.user.twitter_id
-															).order('-twitter_friends_by_id'
-																).fetch(None)
+													).order('-twitter_friends_by_id'
+													).fetch(None)
 			levr_friends.extend(twitter_friends)
 		#TWITTER BY SCREEN NAME
 		logging.debug('twitter_screen_name: ' + str(self.user.twitter_screen_name))
 		if self.user.twitter_screen_name:
 			twitter_friends		= levr.Customer.all(keys_only=True
 													).filter('twitter_friends_by_sn', self.user.twitter_screen_name
-															).order('-twitter_friends_by_sn'
-																).fetch(None)
+													).order('-twitter_friends_by_sn'
+													).fetch(None)
 			levr_friends.extend(twitter_friends)
 			logging.debug(twitter_friends)
 		#EMAIL
@@ -168,8 +168,8 @@ class SocialClass:
 		if self.user.email:
 			email_friends		= levr.Customer.all(keys_only=True
 													).filter('email_friends', self.user.email
-															).order('-email_friends'
-																).fetch(None)
+													).order('-email_friends'
+													).fetch(None)
 			levr_friends.extend(email_friends)
 		
 		#levr friends is a list of keys of all friends who have indicated connections with the actor
@@ -566,20 +566,23 @@ class Twitter(SocialClass):
 			#user was not passed, check to make sure that the user does not already exist
 			# if the user exists, pass it to SocialClass.__init__
 			# otherwise, create a new user and pass it that
-			twitter_token = kwargs.get('facebook_token')
+			twitter_token = kwargs.get('twitter_token')
 			#make sure foursquare token was passed
-			assert twitter_token, 'Did not pass a user, so must pass facebook_token as kwarg'
+			assert twitter_token, 'Did not pass a user, so must pass twitter_token as kwarg'
 			
 			#assign the foursquare_token so that self.fetch will work
 			self.twitter_token = twitter_token
+			
+			#get the user id
+			twitter_id = int(kwargs.get('twitter_id'))
+			assert twitter_id, 'Did not pass a user, so must pass twitter_id as kwarg'
+			
 			#fetch the user info
 			response = self.fetch('user')
 			logging.debug(levr.log_dict(response))
-			#get the user id
-			twitter_id = int(response['id'])
 			
 			#search for the user by that id
-			user = levr.Customer.all().filter('facebook_id',twitter_id).get()
+			user = levr.Customer.all().filter('twitter_id',twitter_id).get()
 #			logging.debug('\n\n\n\n \t\t\t\t USER \n\n\n\n')
 			logging.debug(user)
 			logging.debug(levr.log_model_props(user))
@@ -593,6 +596,7 @@ class Twitter(SocialClass):
 			# else: user was found and we will init with that user
 		
 		#init all dat social stuff!
+		assert user, 'User is not passed, and it is not being created'
 		SocialClass.__init__(self, user, *args, **kwargs)
 		
 	
@@ -737,7 +741,10 @@ class Twitter(SocialClass):
 			#fetching a users info from twitter
 			endpoint += '/users/show.json'
 			method = "GET"
-			params = {'user_id':self.user.twitter_id}
+			try:
+				params = {'user_id':self.user.twitter_id}
+			except:
+				params = {'user_id':self.twitter_id}
 		else:
 			levr.log_error()
 			raise Exception('Invalid url action')

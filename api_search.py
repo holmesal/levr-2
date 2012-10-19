@@ -9,6 +9,7 @@ import levr_classes as levr
 import levr_encrypt as enc
 import logging
 import webapp2
+import random
 
 
 
@@ -38,6 +39,11 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			development = kwargs.get('development',False)
 			user 		= kwargs.get('actor')
 			
+			
+			if development:
+				deal_status = 'test'
+			else:
+				deal_status = 'active'
 			#create tags list from the query
 			tags = levr.tagger(query)
 #			logging.info("tags: "+str(tags))
@@ -65,6 +71,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			searched_hash_set = [] #hashes that have been searched
 			new_hash_set	= [] #hashes that havent been searched
 			foursquare_ids = []
+			foursquare_deals = []
 			
 			
 			#===================================================================
@@ -305,24 +312,42 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			if is_empty == False:
 				logging.debug('\n\n\t\t NOT EMPTY \n\n')
 				#only package the deals that have a matching tag
-				packaged_deals = [api_utils.package_deal(toop[3],rank=toop[0]) for toop in accepted_deals_tuple_list]
+				packaged_deals = [api_utils.package_deal(toop[3],rank=toop[0],distance=toop[2]) for toop in accepted_deals_tuple_list]
 			else:
 				logging.debug('\n\n\t\t EMPTY\n\n')
 				#package all of the deals
-				packaged_deals = [api_utils.package_deal(toop[3],rank=toop[0]) for toop in tuple_list]
+				packaged_deals = [api_utils.package_deal(toop[3],rank=toop[0],distance=toop[2]) for toop in tuple_list]
 			t2 = datetime.now()
 			
 			package_time = t2-t1
 			
 			
 			t1= datetime.now()
-			foursquare_deals = []
+			
 			#===================================================================
 			# Foursquare search
 			#===================================================================
 			#search foursquare for more results
 			#default token is 'random' - this will cause the search function to use a hardcoded token
-			token = 'random'
+			
+			#===========================================================
+			# grab a foursquare token to access the remote api with
+			# IF the user has a registered foursquare token, then that will be used
+			# otherwise, we will use one of the developers tokens
+			#===========================================================
+			developer_tokens = [
+								'IDMTODCAKR34GOI5MSLEQ1IWDJA5SYU0PGHT4F5CAIMPR4CR',
+								'ML4L1LW3SO0SKUXLKWMMBTSOWIUZ34NOTWTWRW41D0ANDBAX',
+								'RGTMFLSGVHNMZMYKSMW4HYFNEE0ZRA5PTD4NJE34RHUOQ5LZ'
+								]
+			if development	:
+				token = random.choice(developer_tokens)
+			elif user.foursquare_token:
+				token = 'random'
+			else:
+				token = random.choice(developer_tokens)
+			
+			
 			#if this is a registered foursquare user, set it to be an actual token
 			if user:
 				if user.foursquare_token:
@@ -332,11 +357,16 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			#if False:
 				try:
 					#not a lot of results, do the foursquare search in real-time
+					logging.info('no deals.')
+					logging.info(deal_status)
 					ft1 = datetime.now()
 					logging.info('FOURSQUARE IDS::::')
 					logging.info(foursquare_ids)
 					logging.debug('searching foursquare!')
-					foursquare_deals = api_utils.search_foursquare(geo_point,token,foursquare_ids)
+					
+					
+					
+					foursquare_deals = api_utils.search_foursquare(geo_point,token,deal_status,foursquare_ids)
 					logging.info('Levr results found: '+str(len(packaged_deals)))
 					logging.info('Foursquare results found: '+str(len(foursquare_deals)))
 					packaged_deals = packaged_deals + foursquare_deals
@@ -351,7 +381,8 @@ class SearchQueryHandler(webapp2.RequestHandler):
 					'lat'			:	geo_point.lat,
 					'lon'			:	geo_point.lon,
 					'token'			:	token,
-					'foursquare_ids':	foursquare_ids
+					'foursquare_ids':	foursquare_ids,
+					'deal_status'	:	deal_status
 				}
 				
 				logging.debug('Sending this to the task: ' + json.dumps(params))
@@ -383,6 +414,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			logging.debug('total_time: '+str(total_time))
 			
 			response = {
+					'searchPoint'		: str(geo_point),
 					'numResults'		: accepted_deals_count,
 					'total_query_time'	: str(total_query_time),
 					'foursquare_search_time': str(foursquare_search_time),
@@ -400,21 +432,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 					'foursquare_deals'	: foursquare_deals.__len__(),
 					'deals'				: packaged_deals
 					}
-			
-			
-			#add yipit call if no deals are returned
-			# if len(packaged_deals) == 0:
-# 				packaged_deals = packaged_deals + api_utils.search_yipit(query,geo_point)
-# 				#update response
-# 				#this will return a numResults of 0 - meaning all the deals are daily deals
-# 				response.update({
-# 					'deals'		:	packaged_deals
-# 				})
-			
-			
 			api_utils.send_response(self,response,user)
-					
-					
 		except:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')

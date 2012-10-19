@@ -286,7 +286,8 @@ class ReportHandler(webapp2.RequestHandler):
 					'foursquare_id'		:	foursquare_id,
 					'token'				:	token,
 					'deal_id'			:	str(deal.key()),
-					'uid'				:	str(user.key())
+					'uid'				:	str(user.key()),
+					'deal_status'		:	deal.deal_status
 				}
 				t = taskqueue.add(url='/tasks/foursquareDealUpdateTask',payload=json.dumps(task_params))
 			
