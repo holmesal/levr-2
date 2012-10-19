@@ -346,7 +346,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				token = 'random'
 			else:
 				token = random.choice(developer_tokens)
-			
+			logging.info('Using foursquare token: '+str(token))
 			
 			#if this is a registered foursquare user, set it to be an actual token
 			if user:

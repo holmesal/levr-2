@@ -44,25 +44,43 @@ class AuthorizeCompleteHandler(webapp2.RequestHandler):
 			client_id = 'UNHLIF5EYXSKLX50DASZ2PQBGE2HDOIK5GXBWCIRC55NMQ4C'
 			secret = 'VLKDNIT0XSA5FK3XIO05DAWVDVOXTSUHPE4H4WOHNIZV14G3'
 			redirect = 'https://levr-production.appspot.com/foursquare/authorize/complete'
-			code = self.request.get('code')
+			
+			
+			try:
+				logging.info(levr.log_dir(self.request))
+			except:
+				logging.info(self.request)
+			
+			
+			code = self.request.get('code',None)
+			#if no code was passed, then the authorization is happening through the phone.
+			NO_CODE_MESSAGE = 'Code was not passed. Authorization is happening on phone.'
+			assert code, NO_CODE_MESSAGE
+			
+			logging.info(code)
+			logging.info(access_token)
 			
 			#make request for token
 			url = "https://foursquare.com/oauth2/access_token?client_id="+client_id+"&client_secret="+secret+"&grant_type=authorization_code&redirect_uri="+redirect+"&code="+code
 			result = urlfetch.fetch(url=url)
-			token = json.loads(result.content)['access_token']
-			logging.info(token)
+			logging.debug(result.content)
+			foursquare_token = json.loads(result.content)['access_token']
+			logging.info(foursquare_token)
 			
-			#grab more user details
-			url = 'https://api.foursquare.com/v2/users/self?v=20120920&oauth_token='+token
-			result = urlfetch.fetch(url=url)
-			response_dict = json.loads(result.content)
-			
-			logging.debug(levr.log_dict(response_dict))
+#			#grab more user details
+#			url = 'https://api.foursquare.com/v2/users/self?v=20120920&oauth_token='+token
+#			result = urlfetch.fetch(url=url)
+#			response_dict = json.loads(result.content)
+#			
+#			logging.debug(levr.log_dict(response_dict))
 			
 			#let the foursquare parsing code do its thing
-			user = social.Foursquare(foursquare_token=token)
+			user = social.Foursquare(foursquare_token=foursquare_token)
 			
-			user,new_details,new_friends = user.connect_with_content(response_dict,True,foursquare_token=token)
+			user,new_details,new_friends = user.first_time_connect(
+																foursquare_token = foursquare_token
+																)
+#			user.connect_with_content(response_dict,True,foursquare_token=token)
 			
 			logging.debug(levr.log_model_props(user))
 			logging.debug(levr.log_dict(new_details))
@@ -79,7 +97,14 @@ class AuthorizeCompleteHandler(webapp2.RequestHandler):
 			self.response.out.write(template.render())
 			
 			logging.debug(levr.log_dict(user))
-		except:
+		except AssertionError,e:
+			if e.message == NO_CODE_MESSAGE:
+				#this is an expected case. Authorization is happening on the phone
+				self.response.out.write('Success!')
+			else:
+				levr.log_error(e)
+				self.response.out.write('Could not connect with Foursquare')
+		except Exception,e:
 			levr.log_error()
 			self.response.out.write('Could not connect with Foursquare')
 

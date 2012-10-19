@@ -65,7 +65,9 @@ class SignupFoursquareHandler(webapp2.RequestHandler):
 				# this would not recognize that
 				#===============================================================
 				#create new user
-				user = social.Foursquare()
+				user = social.Foursquare(
+										foursquare_token = foursquare_token
+										)
 				try:
 					user, new_user_details, new_friends = user.first_time_connect(
 													foursquare_token = foursquare_token
@@ -93,7 +95,7 @@ class SignupTwitterHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,None,remoteID=True,remoteToken=True,remoteTokenSecret=True)
 	def post(self,*args,**kwargs):
 		try:
-			twitter_id				= int(kwargs.get('remoteID',None))
+			twitter_id				= kwargs.get('remoteID',None)
 			twitter_token			= kwargs.get('remoteToken',None)
 			twitter_token_secret	= kwargs.get('remoteTokenSecret',None)
 			

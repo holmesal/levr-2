@@ -635,7 +635,7 @@ class Twitter(SocialClass):
 			raise Exception('twitter_id or twitter_screen_name required in kwargs')
 		
 		#one of the two is sufficient to access twitter, one or both is acceptable to update
-		if twitter_id			: self.user.twitter_id			= twitter_id
+		if twitter_id			: self.user.twitter_id			= int(twitter_id)
 		if twitter_screen_name	: self.user.twitter_screen_name	= twitter_screen_name
 		
 		#user has the credentials needed to connect to twitter

@@ -1045,7 +1045,7 @@ def search_foursquare(geo_point,token,deal_status,already_found=[],**kwargs):
 	if token == 'random':
 		hardcoded = ['IDMTODCAKR34GOI5MSLEQ1IWDJA5SYU0PGHT4F5CAIMPR4CR','ML4L1LW3SO0SKUXLKWMMBTSOWIUZ34NOTWTWRW41D0ANDBAX','RGTMFLSGVHNMZMYKSMW4HYFNEE0ZRA5PTD4NJE34RHUOQ5LZ']
 		token = random.choice(hardcoded)
-#		logging.info('Using token: '+token)
+	logging.info('Using token: '+token)
 	
 	
 	url = 'https://api.foursquare.com/v2/specials/search?v=20120920&ll='+str(geo_point)+'&limit=50&oauth_token='+token
