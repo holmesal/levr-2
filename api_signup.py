@@ -114,12 +114,14 @@ class SignupTwitterHandler(webapp2.RequestHandler):
 						}
 			else:
 				#create new user
-				user = social.Twitter(twitter_token=twitter_token)
+				user = social.Twitter(
+									twitter_id = twitter_id
+									)
 				try:
 					user, new_user_details, new_friends = user.first_time_connect(
 													twitter_id			= twitter_id,
-													oauth_token			= twitter_token,
-													oauth_token_secret	= twitter_token_secret
+													twitter_token			= twitter_token,
+													twitter_token_secret	= twitter_token_secret
 													)
 				except Exception,e:
 					#delete the new user that was created because the signup failed

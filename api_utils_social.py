@@ -566,25 +566,23 @@ class Twitter(SocialClass):
 			#user was not passed, check to make sure that the user does not already exist
 			# if the user exists, pass it to SocialClass.__init__
 			# otherwise, create a new user and pass it that
-			twitter_token = kwargs.get('twitter_token')
-			#make sure foursquare token was passed
-			assert twitter_token, 'Did not pass a user, so must pass twitter_token as kwarg'
+			twitter_id				= int(kwargs.get('twitter_id'))
+#			twitter_token			= kwargs.get('twitter_token')
+#			twitter_token_secret	= kwargs.get('twitter_token_secret')
 			
-			#assign the foursquare_token so that self.fetch will work
-			self.twitter_token = twitter_token
-			
-			#get the user id
-			twitter_id = int(kwargs.get('twitter_id'))
+			#make sure necessary credentials were passed
 			assert twitter_id, 'Did not pass a user, so must pass twitter_id as kwarg'
-			
-			#fetch the user info
-			response = self.fetch('user')
-			logging.debug(levr.log_dict(response))
+#			assert twitter_token, 'Did not pass a user, so must pass twitter_token as kwarg'
+#			assert twitter_token_secret, 'Did not pass a user, so must pass twitter_token_secret as kwarg'
 			
 			#search for the user by that id
 			user = levr.Customer.all().filter('twitter_id',twitter_id).get()
-#			logging.debug('\n\n\n\n \t\t\t\t USER \n\n\n\n')
-			logging.debug(user)
+			
+#			#fetch the user info
+#			response = self.fetch('user')
+#			logging.debug(levr.log_dict(response))
+#			
+			
 			logging.debug(levr.log_model_props(user))
 			if not user:
 				logging.debug('user doesnt exist')
@@ -620,20 +618,19 @@ class Twitter(SocialClass):
 			self.user.twitter_token_secret = twitter_auth['LevrDevr_oauth_token_secret']
 		else:
 			#pull oauth credentials
-			oauth_token = kwargs.get('oauth_token',None)
-			oauth_token_secret = kwargs.get('oauth_token_secret',None)
+			twitter_token = kwargs.get('twitter_token',None)
+			twitter_token_secret = kwargs.get('twitter_token_secret',None)
 			#assure the credentials exist
-			assert oauth_token, 'oauth_token required in kwargs'
-			assert oauth_token_secret, 'oauth_token_secret required in kwargs'
+			assert twitter_token, 'twitter_token required in kwargs'
+			assert twitter_token_secret, 'twitter_token_secret required in kwargs'
 			#not in debug mode, values are user provided
-			self.user.twitter_token			= oauth_token
-			self.user.twitter_token_secret	= oauth_token_secret
+			self.user.twitter_token			= twitter_token
+			self.user.twitter_token_secret	= twitter_token_secret
 			
 		#updates the users id and/or screen name
 		twitter_id 			= kwargs.get('twitter_id', False)
 		twitter_screen_name	= kwargs.get('twitter_screen_name', False)
-		logging.debug(twitter_id)
-		logging.debug(twitter_screen_name)
+		#assure that the id or the screen name was passed
 		if not twitter_id and not twitter_screen_name:
 			raise Exception('twitter_id or twitter_screen_name required in kwargs')
 		
