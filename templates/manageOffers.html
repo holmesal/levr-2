@@ -15,7 +15,7 @@
 			<td>Views</td>
 			<td>Offer</td>
 			<td>Status</td>
-			<td>Edit</td>
+			<td></td>
 		</tr>
 	</thead>
 	<tbody>
@@ -29,10 +29,13 @@
 			<tr class="warning">
 			{% endif %}
 			
-			<td>924</td>
-			<td>{{deal.deal_text}}</td>
-			<td>{% filter capitalize %}{{deal.deal_status}}{% endfilter %}</td>
-			<td><a href='delete' class="btn btn-primary">Edit</a></td>
+			<td style="width:10%">924</td>
+			<td style="width:50%">{{deal.deal_text}}</td>
+			<td style="width:10%">{% filter capitalize %}{{deal.deal_status}}{% endfilter %}</td>
+			<td style="width:22%; text-align: right;">
+				<a href='/merchants/edit?dealID={{deal.enc_key}}' class="btn btn-primary">Edit</a>
+				<a href='/merchants/deal/delete/{{deal.enc_key}}' style="margin-left: 10px;" class="btn btn-danger">Delete</a>
+			</td>
 
 			
 			</tr>

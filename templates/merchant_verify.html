@@ -1,0 +1,42 @@
+{% extends "templates/merchantsBase.html" %}
+{% block htmlhead %}
+<!--link rel="stylesheet" href="/css/mer.css"-->
+<style type="text/css">
+	.centerBlock{
+		text-align: center;
+		margin-top: 50px;
+	}
+	
+	#callBtn{
+		font-size: 16pt;
+		margin-top: 30px;
+	}
+</style>
+
+
+{% endblock %}
+
+{% block content %}
+
+{% if verfied %}
+	Already verified
+{% else %}
+	<p>
+	<h3>Verify your business in seconds.</h3>
+	<p>To verify that you're the owner of {{business.business_name}}, we're going to call you at your registered number ({{business.phone}})</p>
+	<p>When you get this call, enter your activation code (shown below). That's it!</p>
+	<div class="centerBlock">
+		<h4>Your activation code:</h4>
+		<h1>{{activation_code}}</h1>
+		<a href="/merchants/verify/call" id='callBtn' class="btn btn-success btn-large">Call me at {{business.phone}}</a>
+	</div>
+	
+	
+	
+	
+{% endif %}
+
+{% endblock %}
+{% block javascript %}
+
+{% endblock %}

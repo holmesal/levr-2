@@ -4,7 +4,6 @@ import logging
 import os
 import jinja2
 import levr_classes as levr
-import levr_utils
 import levr_encrypt as enc
 #from levr_encrypt import encrypt_key
 #from google.appengine.ext import db
@@ -18,6 +17,7 @@ from google.appengine.ext import db
 from gaesessions import get_current_session
 import merchant_utils
 import api_utils
+import time
 
 jinja_environment = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
 class MerchantsHandler(webapp2.RequestHandler):
@@ -410,7 +410,6 @@ class DealHandler(webapp2.RequestHandler):
 			logging.debug(headerData)
 			#get the owner information
 			uid = headerData['uid']
-			uid = enc.decrypt_key(uid)
 			user = levr.Customer.get(uid)
 			logging.info(levr.log_model_props(user))
 			#get the business
@@ -448,7 +447,6 @@ class DealUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			logging.debug(headerData)
 			#get the owner information
 			uid = headerData['uid']
-			uid = enc.decrypt_key(uid)
 			user = levr.Customer.get(uid)
 			
 			if self.get_uploads(): #will this work?
@@ -460,25 +458,30 @@ class DealUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 				upload_flag = False
 				raise KeyError('Image was not uploaded')
 				
-			#make yahself a deal shit thing!
+			#initialize the deal - just the stuff from the input here
 			deal = levr.Deal(
-				img			=	img_key,
-				businessID	=	user.owner_of,
-				origin		=	'online',
+				img				=	img_key,
 				deal_text		=	self.request.get('deal_text'),
-				description	=	self.request.get('description'),
-				pin_color		=	'red'
+				description		=	self.request.get('description'),
+				parent			=	user.key()
 			)
 			
 			#add all the properties from the business
 			business = levr.Business.get(user.owner_of)
 			logging.info(levr.log_model_props(business))
 			
+			#kick over to create_deal to finish the deal creation
+			deal = merchant_utils.create_deal(deal,business,user)
+			
+			self.redirect('/merchants/manage')
+			
 			#if not validated set deal status to "pending", otherwise set it to "active"
-			if merchant_utils.validated_check(user):
-				logging.deug('OKAY')
-			else:
-				logging.debug('FUCK ALL')
+		# 	if merchant_utils.validated_check(user):
+# 				logging.deug('OKAY')
+# 			else:
+# 				logging.debug('FUCK ALL')
+			
+			#pass it to the create_deal function to 
 			
 			
 			
@@ -505,23 +508,153 @@ class DealUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			self.redirect('/merchants/manage')'''
 		except:
 			levr.log_error(self.request.body)
-class DeleteDealHandler(webapp2.RequestHandler):
-	def get(self):
+			
+class DealUpdateHandler(blobstore_handlers.BlobstoreUploadHandler):
+#class DealUploadHandler(webapp2.RequestHandler):
+	def post(self):
 		try:
-			logging.debug(self.request)
-			dealID = self.request.get('id')
+			#A merchant is updating an existing deal from the update form
+# 			logging.info('hi there')
+			#check login
+			headerData = merchant_utils.login_check(self)
+			logging.debug(headerData)
+			#get the owner information
+			uid = headerData['uid']
+			user = levr.Customer.get(uid)
+			
+			if self.get_uploads(): #will this work?
+				upload	= self.get_uploads()[0]
+				blob_key= upload.key()
+				img_key = blob_key
+				upload_flag = True
+			else:
+				upload_flag = False
+				
+			#grab the deal
+			dealID = self.request.get('dealID')
 			dealID = enc.decrypt_key(dealID)
-			db.delete(dealID)
+			deal = levr.Deal.get(dealID)
+			
+			#is there an image to update?
+			if upload_flag == True:
+				deal.img = img_key
+			
+			#update all the other fields
+			deal.deal_text = self.request.get('deal_text')
+			deal.description = self.request.get('description')
+			
+			deal.put()
 			
 			self.redirect('/merchants/manage')
+			
+			
+			#initialize the deal - just the stuff from the input here
+# 			deal = levr.Deal(
+# 				img				=	img_key,
+# 				deal_text		=	self.request.get('deal_text'),
+# 				description		=	self.request.get('description'),
+# 				parent			=	user.key()
+# 			)
+# 			
+# 			#add all the properties from the business
+# 			business = levr.Business.get(user.owner_of)
+# 			logging.info(levr.log_model_props(business))
+# 			
+# 			#kick over to create_deal to finish the deal creation
+# 			deal = merchant_utils.create_deal(deal,business,user)
+# 			
+# 			self.redirect('/merchants/manage')
+			
+			#if not validated set deal status to "pending", otherwise set it to "active"
+		# 	if merchant_utils.validated_check(user):
+# 				logging.deug('OKAY')
+# 			else:
+# 				logging.debug('FUCK ALL')
+			
+			#pass it to the create_deal function to 
+			
+			
+			
+			
+			'''
+			#make sure than an image is uploaded
+			# logging.debug(self.get_uploads())
+			if self.get_uploads(): #will this work?
+				upload	= self.get_uploads()[0]
+				blob_key= upload.key()
+				img_key = blob_key
+			else:
+				raise Exception('Image was not uploaded')
+			
+			params = {
+					'uid'				:self.request.get('uid'),
+					'business'			:self.request.get('business'),
+					'deal_description'	:self.request.get('deal_description'),
+					'deal_line1'		:self.request.get('deal_line1'),
+					'deal_line2'		:self.request.get('deal_line2'),
+					'img_key'			:img_key
+					}
+			levr_utils.dealCreate(params, 'merchant_create')
+			self.redirect('/merchants/manage')'''
+		except:
+			levr.log_error(self.request.body)
+			
+class DeleteDealHandler(webapp2.RequestHandler):
+	def get(self,dealID):
+		try:
+			headerData = merchant_utils.login_check(self)
+			dealID = enc.decrypt_key(dealID)
+			owner = levr.Customer.get(headerData['uid'])
+			deal = levr.Deal.get(dealID)
+			#make sure this merchant is the owner of the deal before deleting
+			if deal.key().parent() == owner.key():
+				logging.info('keys match!')
+				#delete the deal
+				deal.delete()
+				#redirect to manage
+				self.redirect('/merchants/manage')
+			else:
+				logging.info('key mismatch')
+				#bounce to login page
+				self.redirect('/merchants/login')
+# 			deal = levr.Deal.get(dealID)
+# 			logging.info(levr.log_model_props(deal))
+			# logging.debug(self.request)
+# 			dealID = self.request.get('id')
+# 			dealID = enc.decrypt_key(dealID)
+# 			db.delete(dealID)
+# 			
+# 			self.redirect('/merchants/manage')
 		except:
 			levr.log_error()
 class EditDealHandler(webapp2.RequestHandler):
 	def get(self):
 		try:
 			#check login
-			headerData = levr_utils.loginCheck(self, True)
+			headerData = merchant_utils.login_check(self)
+			dealID = enc.decrypt_key(self.request.get('dealID'))
+			owner = levr.Customer.get(headerData['uid'])
+			business = levr.Business.get(owner.owner_of)
 			
+			deal = levr.Deal.get(dealID)
+			
+			deal.enc_key = enc.encrypt_key(deal.key())
+			deal.img_url = api_utils.create_img_url(deal,'large')
+			
+			template_values = {
+				'deal'		:	deal,
+				'business'	:	business,
+				'user'		:	owner,
+				"upload_url"	: blobstore.create_upload_url('/merchants/deal/update')
+				
+				
+			}
+			
+			template = jinja_environment.get_template('templates/deal.html')
+			self.response.out.write(template.render(template_values))
+			
+			
+			'''
 			#get the owner information
 			ownerID = headerData['ownerID']
 			ownerID = enc.decrypt_key(ownerID)
@@ -555,7 +688,7 @@ class EditDealHandler(webapp2.RequestHandler):
 							"headerData":headerData
 			}
 			template = jinja_environment.get_template('templates/deal.html')
-			self.response.out.write(template.render(template_values))
+			self.response.out.write(template.render(template_values))'''
 		except:
 			levr.log_error()
 class EditDealUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
@@ -591,6 +724,73 @@ class EditDealUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			self.redirect('/merchants/manage')
 		except:
 			levr.log_error(self.request.body)
+			
+class VerifyHandler(webapp2.RequestHandler):
+	def get(self):
+		
+		#check login
+		headerData = merchant_utils.login_check(self)
+		
+		#get the owner information
+		uid = headerData['uid']
+		user = levr.Customer.get(uid)
+		logging.info(levr.log_model_props(user))
+		
+		#redirect if they've already gone through this activation process
+		if merchant_utils.validated_check(user):
+			verified = True
+		else:
+			verified = False
+		
+		#get the business
+		business = levr.Business.get(enc.decrypt_key(headerData['owner_of']))
+		logging.info(levr.log_model_props(business))
+		
+		#check if the owner already has an activation code
+		if user.activation_code:
+			activation_code = user.activation_code
+		else:
+			activation_code = str(int(time.time()))[-4:]
+			user.activation_code = activation_code
+			user.put()
+		
+		#write out this page
+		template_values = {
+			'business'		:	business,
+			'activation_code'	:	activation_code,
+			'verified'			:	verified
+		}
+		
+		logging.info(template_values)
+		
+		template = jinja_environment.get_template('templates/merchant_verify.html')
+		self.response.out.write(template.render(template_values))
+
+
+class VerifyCallHandler(webapp2.RequestHandler):
+	def get(self):
+		#check login
+		headerData = merchant_utils.login_check(self)
+		
+		#get the owner information
+		uid = headerData['uid']
+		user = levr.Customer.get(uid)
+		logging.info(levr.log_model_props(user))
+		
+		#get the business
+		business = levr.Business.get(enc.decrypt_key(headerData['owner_of']))
+		logging.info(levr.log_model_props(business))
+		
+		#call the business
+		merchant_utils.call_merchant(business)
+
+class VerifyAnswerHandler(webapp2.RequestHandler):
+	def post(self):
+		logging.debug(self.request.body)
+		code = self.request.get('Digits')
+		callto = self.request.get('To')
+
+
 class ManageHandler(webapp2.RequestHandler):
 	def get(self):
 		try:
@@ -599,7 +799,6 @@ class ManageHandler(webapp2.RequestHandler):
 			
 			#get the owner information
 			uid = headerData['uid']
-			uid = enc.decrypt_key(uid)
 			user = levr.Customer.get(uid)
 			logging.info(levr.log_model_props(user))
 			#get the business
@@ -612,8 +811,9 @@ class ManageHandler(webapp2.RequestHandler):
 			#package
 			deals = []
 			for deal in q_deals:
+				deal.enc_key = enc.encrypt_key(deal.key())
 				deals.append(deal)
-				logging.info(deal.deal_status)
+				logging.info(deal.enc_key)
 			
 			
 			template_values = {
@@ -629,7 +829,6 @@ class ManageHandler(webapp2.RequestHandler):
 			logging.info(template_values)
 			
 			template = jinja_environment.get_template('templates/manageOffers.html')
-			#template = jinja_environment.get_template('templates/merchantsBase.html')
 			self.response.out.write(template.render(template_values))
 			
 			'''
@@ -892,9 +1091,12 @@ app = webapp2.WSGIApplication([('/merchants', MerchantsHandler),
 								('/merchants/welcome', WelcomeHandler),
 								('/merchants/deal', DealHandler),
 								('/merchants/deal/upload', DealUploadHandler),
-								('/merchants/deal/delete', DeleteDealHandler),
-								('/merchants/editDeal', EditDealHandler),
+								('/merchants/deal/delete/(.*)', DeleteDealHandler),
+								('/merchants/edit.*', EditDealHandler),
+								('/merchants/deal/update', DealUpdateHandler),
 								('/merchants/editDeal/upload', EditDealUploadHandler),
+								('/merchants/verify', VerifyHandler),
+								('/merchants/verify/call', VerifyCallHandler),
 								('/merchants/manage', ManageHandler),
 								('/merchants/upload', UploadHandler),
 								('/merchants/widget', WidgetHandler),

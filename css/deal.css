@@ -2,3 +2,22 @@ input,textarea{
 	width: 50%;
 	min-width: 200px;
 }
+
+.uploaded_image{
+	width: 90%;
+	background-size: cover;
+	height: 80px;
+	overflow: hidden;
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+	margin-bottom: 50px;
+	-moz-transition: height 1s ease;
+    -webkit-transition: height 1s ease;
+    -o-transition: height 1s ease;
+    transition: height 1s ease;
+}
+
+.uploaded_image:hover{
+	height: 150px;
+}

@@ -803,9 +803,10 @@ class Customer(db.Model):
 	date_last_notified 	= db.DateTimeProperty(auto_now_add=True)
 	last_notified		= db.IntegerProperty(default=0)
 	
-	#only for businesses - this property enables them to create offers for that business, without having verified it
-	#this property is only used up until they have linked a business
+	#only for businesses
 	owner_of		= db.StringProperty()
+	activation_code	= db.StringProperty()
+	verified_owner	= db.BooleanProperty(default=False)
 	
 	#deprecated stuff
 	group			= db.StringProperty(choices=set(["paid","unpaid"]),default="unpaid")
@@ -1084,6 +1085,9 @@ class Deal(polymodel.PolyModel):
 	upvotes			= db.IntegerProperty(default=0)
 	downvotes		= db.IntegerProperty(default=0)
 	karma			= db.IntegerProperty(default=0)
+	
+	#for the merchants
+	deal_views		= db.IntegerProperty(default=0)
 	
 	#date stuff
 	date_created	= db.DateTimeProperty(auto_now_add=True)

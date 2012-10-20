@@ -168,6 +168,13 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		
 		levr.dealCreate(params,'phone_new_business')
 		
+		bus = levr.Business.get(dealID.businessID)
+		
+		ant = levr.Customer.get(alonso)
+		
+		ant.owner_of = str(bus.key())
+		ant.put()
+		
 		
 		
 		

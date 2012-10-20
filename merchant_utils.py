@@ -1,6 +1,10 @@
 from gaesessions import get_current_session
 import logging
 import levr_classes as levr
+import levr_encrypt as enc
+import base64
+from google.appengine.api import urlfetch
+import urllib
 
 def login_check(self):
 	'''	for merchants ONLY
@@ -13,13 +17,14 @@ def login_check(self):
 		self.redirect('/merchants/login')
 		
 	elif session.has_key('loggedIn') == True and session['loggedIn'] == True:
-		#logged in, grab the useful bits
-		#this is a hack. . . forgive meeee
+
 		uid = session['uid']
+		
+		logging.info(uid)
 		
 		headerData = {
 			'loggedIn'	: session['loggedIn'],
-			'uid'		: uid,
+			'uid'		: enc.decrypt_key(uid),
 			'owner_of'	: session['owner_of'],
 			'validated'	: session['validated']
 			}
@@ -37,6 +42,11 @@ def validated_check(user):
 	else:
 		return False
 		
+	'''if user.verified_owner = True:
+		return True
+	else:
+		return False'''
+		
 def create_deal(deal,business,owner):
 	'''deal: a deal object
 	merchant: the merchant to be set as the owner of the deal'''
@@ -45,17 +55,60 @@ def create_deal(deal,business,owner):
 	tags = []
 	#add tags from the merchant
 	tags.extend(business.create_tags())
+	logging.info(tags)
 	#add tags from deal stuff
+	tags.extend(levr.tagger(deal.deal_text))
+	logging.info(tags)
+	tags.extend(levr.tagger(deal.description))
+	logging.info(tags)
 	
-	#create the deal
+	#add some other miscellaneous information
+	deal.origin = 'merchant'
+	deal.pin_color	=	'red'
 	
+	#copy info over from business
+	deal.business_name = business.business_name
+	deal.geo_point = business.geo_point
+	deal.geo_hash = business.geo_hash
 	
 	
 	
 	#get businessID - not encrypted - from database
-	businessID = business.key()
-	logging.debug("businessID: "+str(businessID))
+	#businessID = business.key()
+	#logging.debug("businessID: "+str(businessID))
 	
 	#check if the merchant has validated their business. If so, deploy as active. If not, deploy as pending
 	if validated_check(owner):
-		pass
+		logging.deug('OKAY')
+		#TODO: SET BUSINESS ID
+		deal.deal_status='active'
+	else:
+		logging.debug('FUCK ALL')
+		deal.deal_status='pending'
+		deal.businessID = owner.owner_of
+		
+	deal.put()
+	logging.info(levr.log_model_props(deal))
+	return deal
+	
+def call_merchant(business):
+	#call the business
+	#twilio credentials
+	sid = 'AC4880dbd1ff355288728be2c5f5f7406b'
+	token = 'ea7cce49e3bb805b04d00f76253f9f2b'
+	twiliourl='https://api.twilio.com/2010-04-01/Accounts/AC4880dbd1ff355288728be2c5f5f7406b/Calls.json'
+	
+	auth_header = 'Basic '+base64.b64encode(sid+':'+token)
+	logging.info(auth_header)
+	
+	request = {'From':'+16173608582',
+				'To':'+16052610083',
+				'Url':'http://www.levr.com/api/merchant/twilioanswer',
+				'StatusCallback':'http://www.levr.com/api/merchant/twiliocallback'}
+	
+	result = urlfetch.fetch(url=twiliourl,
+							payload=urllib.urlencode(request),
+							method=urlfetch.POST,
+							headers={'Authorization':auth_header})
+	
+	logging.info(levr.log_dict(result.__dict__))
