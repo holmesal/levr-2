@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 from google.appengine.api import taskqueue, memcache
 from google.appengine.ext import blobstore, db
 from google.appengine.ext.db import polymodel
-from random import randint, randint
 import base_62_converter as converter
 import geo.geohash as geohash
 import json
@@ -15,7 +14,8 @@ import re
 import sys
 import traceback
 import uuid
-from math import floor
+#from random import randint
+#from math import floor
 
 
 
@@ -30,7 +30,6 @@ else:
 	#we are deployed on the server
 	URL = 'http://www.levr.com'
 	development = False
-
 # FUNCTIONS
 
 def build_display_name(user):
@@ -206,7 +205,7 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 		logging.debug(log_model_props(notification))
 		
 	except Exception,e:
-		log_error()
+		log_error(e)
 		return False
 	else:
 		return True
@@ -217,6 +216,7 @@ def geo_converter(geo_str):
 		lat, lng = geo_str.split(',')
 		return db.GeoPt(lat=float(lat), lon=float(lng))
 	except Exception,e:
+		log_error(e)
 		raise TypeError('lat,lon: '+str(geo_str))
 
 def tagger(text): 
@@ -359,7 +359,7 @@ def text_notify(user_string):
 	task_params = {
 		'user_string'	:	user_string
 	}
-	t = taskqueue.add(url='/tasks/newUserTextTask',payload=json.dumps(task_params))
+	taskqueue.add(url='/tasks/newUserTextTask',payload=json.dumps(task_params))
 
 
 MEMCACHE_ACTIVE_GEOHASH_NAMESPACE = 'active_geohash'
@@ -380,7 +380,7 @@ def update_deal_key_memcache(geo_point,dealID,namespace):
 	while True and failsafe <50:
 		failsafe +=1
 		logging.debug('failsafe: '+str(failsafe))
-		if memcache.delete(geo_hash,namespace=namespace):
+		if client.delete(geo_hash,namespace=namespace):
 			logging.debug('geohash {} was deleted from memcache'.format(geo_hash))
 			break
 	return
@@ -409,13 +409,13 @@ def update_deal_key_memcache(geo_point,dealID,namespace):
 		
 
 
-   #============================================================================
-   # while True: # Retry loop
-   #  counter = client.gets(key)
-   #  assert counter is not None, 'Uninitialized counter'
-   #  if client.cas(key, counter+1):
-   #     break
-   #============================================================================
+	#============================================================================
+	# while True: # Retry loop
+	#  counter = client.gets(key)
+	#  assert counter is not None, 'Uninitialized counter'
+	#  if client.cas(key, counter+1):
+	#     break
+	#============================================================================
 
 
 def dealCreate(params,origin,upload_flag=True):
@@ -511,7 +511,7 @@ def dealCreate(params,origin,upload_flag=True):
 			#if no foursquare business exists in the database, this should try to find a foursquare business and transfer information to it
 			#what if there is already a foursquare business in the database?
 			
-			t = taskqueue.add(url='/tasks/businessHarmonizationTask',payload=json.dumps(task_params))
+			taskqueue.add(url='/tasks/businessHarmonizationTask',payload=json.dumps(task_params))
 			
 			
 		else:
