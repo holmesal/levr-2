@@ -84,6 +84,7 @@ class BusinessHarmonizationTaskHandler(webapp2.RequestHandler):
 				#grab a duplicate business
 				duplicate_business = levr.Business.gql('WHERE foursquare_id=:1',match['foursquare_id']).get()
 				
+				keys = []
 				if duplicate_business:
 					#grab all the deal keys from that business
 					keys = levr.Deal.gql('WHERE businessID = :1',str(duplicate_business.key())).fetch(None,keys_only=True)

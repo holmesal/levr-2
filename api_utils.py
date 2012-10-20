@@ -1081,7 +1081,7 @@ def search_foursquare(geo_point,token,deal_status,already_found=[],**kwargs):
 	logging.info('Using token: '+token)
 	
 	
-	url = 'https://api.foursquare.com/v2/specials/search?v=20120920&ll='+str(geo_point)+'&limit=50&oauth_token='+token
+	url = 'https://api.foursquare.com/v2/specials/search?v=20120920&ll='+repr(geo_point)+'&limit=50&oauth_token='+token
 	result = urlfetch.fetch(url=url)
 	result = json.loads(result.content)
 	foursquare_deals = result['response']['specials']['items']
@@ -1114,12 +1114,12 @@ def search_foursquare(geo_point,token,deal_status,already_found=[],**kwargs):
 			
 			#### DEBUG
 			bs = levr.Business.all().filter('foursquare_id',foursquare_deal['venue']['id']).count()
-			if bs >1: levr.log_error('Multiple businesses have the same foursquare_id: '+ str(foursquare_deal['venue']['id']))
+			if bs >1: levr.log_error('Multiple businesses have the same foursquare_id: '+ repr(foursquare_deal['venue']['id']))
 			
 			#### /DEBUG
 			
 			if not existing_business:
-				logging.debug('business does not exist, foursquare_id: '+str(foursquare_deal['venue']['id'])+' business_name: '+str(venue['name']))
+				logging.debug('business does not exist, foursquare_id: '+repr(foursquare_deal['venue']['id'])+' business_name: '+repr(venue['name']))
 				
 				business = levr.Business(
 					business_name 		=	venue['name'],

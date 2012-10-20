@@ -20,6 +20,7 @@ import webapp2
 
 class MainPage(webapp2.RequestHandler):
 	def get(self):
+		logging.info('hello'+'\xe9')
 		refresh = self.request.get('refresh',False)
 		if refresh:
 			self.response.out.write('<b>THIS WILL RESET THE DB. SET REFRESH=FALSE</b><br/>')
