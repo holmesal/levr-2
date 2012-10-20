@@ -1039,6 +1039,92 @@ def level_check(user):
 		
 	return user
 
+def merge_customer_info_from_B_into_A(user,donor,service):
+	'''
+	Merges the donor into the user. Donor can only pass info from one social service at a time.
+	If the donor is connected to more than one social service, you must call this function for each service
+	
+	@param user: the user getting the properties, i.e. the base user
+	@type user: Customer
+	@param donor: The old user that is being deprecated
+	@type donor: Customer
+	@param service: the social service that is being connected (which is why the properties need to be translated)
+	@type service: foursquare, facebook, twitter <str>
+	
+	Returns the altered user and donor entities THAT HAVE BEEN PUT
+	'''
+	#===================================================================
+	# Merge user data from donor to user
+	#===================================================================
+	
+	if donor.tester or user.tester: user.tester = True
+	user.karma += donor.karma
+	api_utils.level_check(user)
+	
+	user.new_notifications += donor.new_notification
+	#===================================================================
+	# Notification references - dont care about actor references
+	#===================================================================
+	notification_references = levr.notifications.all().filter('to_be_notified',donor.key()).fetch(None)
+	for n in notification_references:
+		n.to_be_notified.remove(donor.key())
+	db.put(notification_references)
+	
+	#===================================================================
+	# remove all follower references to the donor - these will be reset with remote api call
+	#===================================================================
+	donor_references = levr.Customer.all().filter('followers',donor.key()).fetch(None)
+	for u in donor_references:
+		u.followers.remove(donor.key())
+	db.put(donor_references)
+	
+	#===================================================================
+	# Point back to the new owner for the sake of that user getting the right upvotes
+	#===================================================================
+	donor.email = 'dummy@levr.com'
+	donor.pw = str(user.key())
+	
+	if service == 'foursquare':
+		logging.info('The user came from foursquare')
+		user = social.Foursquare(user,'verbose')
+		#connect the user using foursquare
+		new_user, new_user_details, new_friends = user.first_time_connect(
+								foursquare_token=donor.foursquare_token
+								)
+		# Wipe donors identifying information
+		donor.foursquare_connected = False
+		donor.foursquare_id = -1
+		donor.foursquare_token = ''
+		donor.foursquare_friends = []
+	if service == 'facebook':
+		logging.info('The user came from facebook')
+		user = social.Facebook(user,'verbose')
+		#connect the user using facebook
+		new_user, new_user_details, new_friends = user.first_time_connect(
+								facebook_token=donor.facebook_token
+								)
+		donor.facebook_connected = False
+		donor.facebook_id = -1
+		donor.facebook_token = ''
+		donor.facebook_friends = []
+	if service == 'twitter':
+		logging.info('The user came from twitter')
+		user = social.Twitter(user,'verbose')
+		#connect the user using facebook
+		new_user, new_user_details, new_friends = user.first_time_connect(
+								twitter_token=donor.twitter_token
+								)
+		donor.twitter_connected = False
+		donor.twitter_token = ''
+		donor.twitter_token_secret = ''
+		donor.twitter_id = -1
+		donor.twitter_screen_name = ''
+		donor.twitter_friends_by_id = []
+		donor.twitter_friends_by_sn = []
+	else:
+		raise Exception('contentID prefix not recognized: '+service)
+	donor.put()
+	return new_user, donor
 def search_foursquare(geo_point,token,deal_status,already_found=[],**kwargs):
 
 	#if token is passes as 'random', use a hardcoded token

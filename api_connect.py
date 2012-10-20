@@ -53,16 +53,31 @@ class ConnectFoursquareHandler(webapp2.RequestHandler):
 			user					= kwargs.get('actor')
 			foursquare_token		= kwargs.get('remoteToken')
 			
-			#create an instance of the Foursquare social connection class
-			user = social.Foursquare(user,'verbose')
-			
-			try:
-				user, new_user_details, new_friends = user.first_time_connect(
-												foursquare_token = foursquare_token
-												)
-			except Exception,e:
-				levr.log_error()
-				assert False, 'Could not connect with foursquare. '.format('')
+			#===================================================================
+			# Check to see if there are multiple accounts
+			# i.e. the user that is connecting w/ foursquare has an existing fs account with levr
+			#===================================================================
+			# check for an existing foursquare user
+			foursquare_user = levr.Customer.all().filter('foursquare_token',foursquare_token).get()
+			# If a user was found in the db with the requested foursquare credentials, 
+			# and that user is not the same user as the one requesting the connection, 
+			# merge the foursquare created account into the requesting user (i.e. the levr account user)
+			if foursquare_user and foursquare_user is not user:
+				#this means the user has multiple accounts that need to be merged
+				user,donor = api_utils.merge_customer_info_from_B_into_A(user,foursquare_user,'foursquare')
+			# Otherwise, act normally. Simply connect. If the user already has foursquare credentials, 
+			# this will refresh their foursquare information
+			else:
+				#create an instance of the Foursquare social connection class
+				user = social.Foursquare(user,'verbose')
+				
+				try:
+					user, new_user_details, new_friends = user.first_time_connect(
+													foursquare_token = foursquare_token
+													)
+				except Exception,e:
+					levr.log_error()
+					assert False, 'Could not connect with foursquare. '.format('')
 			
 			response = {
 					'user'				: api_utils.package_user(user,True),

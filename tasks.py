@@ -201,88 +201,8 @@ class MergeUsersTaskHandler(webapp2.RequestHandler):
 			floating_content = levr.FloatingContent.gql('WHERE contentID=:1',contentID).get()
 			donor = floating_content.user
 			
-			#===================================================================
-			# Merge user data from donor to user
-			#===================================================================
+			new_user, donor = api_utils.merge_customer_info_from_B_into_A(user,donor,service)
 			
-			if donor.tester or user.tester: user.tester = True
-			user.karma += donor.karma
-			api_utils.level_check(user)
-			
-			user.new_notifications += donor.new_notification
-			#===================================================================
-			# Notification references - dont care about actor references
-			#===================================================================
-			notification_references = levr.notifications.all().filter('to_be_notified',donor.key()).fetch(None)
-			for n in notification_references:
-				n.to_be_notified.remove(donor.key())
-			db.put(notification_references)
-			
-			#===================================================================
-			# remove all follower references to the donor - these will be reset with remote api call
-			#===================================================================
-			donor_references = levr.Customer.all().filter('followers',donor.key()).fetch(None)
-			for u in donor_references:
-				u.followers.remove(donor.key())
-			db.put(donor_references)
-			
-			#===================================================================
-			# Point back to the new owner for the sake of that user getting the right upvotes
-			#===================================================================
-			donor.email = 'dummy@levr.com'
-			donor.pw = str(user.key())
-			
-			if service=='foursquare':
-				logging.info('The user came from foursquare')
-				
-				user = social.Foursquare(user,'verbose')
-				#connect the user using foursquare
-				new_user, new_user_details, new_friends = user.first_time_connect(
-										foursquare_token=donor.foursquare_token
-										)
-				#add deals
-				# Wipe donors identifying information
-				donor.foursquare_connected = False
-				donor.foursquare_id = -1
-				donor.foursquare_token = ''
-				donor.foursquare_friends = []
-				
-			elif service=='facebook':
-				logging.info('The user came from facebook')
-				user = social.Facebook(user,'verbose')
-				#connect the user using facebook
-				new_user, new_user_details, new_friends = user.first_time_connect(
-										facebook_token=donor.facebook_token
-										)
-				# Wipe donors identifying information
-				donor.facebook_connected = False
-				donor.facebook_id = -1
-				donor.facebook_token = ''
-				donor.facebook_friends = []
-				
-				
-			elif service=='twitter':
-				logging.info('The user came from twitter')
-				user = social.Twitter(user,'verbose')
-				#connect the user using facebook
-				new_user, new_user_details, new_friends = user.first_time_connect(
-										twitter_token=donor.twitter_token
-										)
-				
-				#wipe donors identifying information
-				donor.twitter_connected = False
-				donor.twitter_token = ''
-				donor.twitter_token_secret = ''
-				donor.twitter_id = -1
-				donor.twitter_screen_name = ''
-				donor.twitter_friends_by_id = []
-				donor.twitter_friends_by_sn = []
-				
-			else:
-				raise Exception('contentID prefix not recognized: '+service)
-			
-			# Set the changes to the donors identity
-			donor.put()
 		except:
 			levr.log_error()
 			
