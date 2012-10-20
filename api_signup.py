@@ -171,6 +171,9 @@ class SignupLevrHandler(webapp2.RequestHandler):
 			user.email = email
 			user.pw 	= enc.encrypt_password(pw)
 			user.alias = alias
+			#put and reply
+			user.put()
+			user = api_utils.level_check(user)
 			
 			#create or refresh the alias
 			user = levr.build_display_name(user)

@@ -762,7 +762,7 @@ class Customer(db.Model):
 	#user meta
 	tester			= db.BooleanProperty(default=False)
 	level			= db.IntegerProperty(default=1)
-	karma			= db.IntegerProperty(default=0)
+	karma			= db.IntegerProperty(default=1)
 	new_notifications = db.IntegerProperty(default=0)
 	
 	# db references
