@@ -1,15 +1,15 @@
-import webapp2
-import logging
-import levr_classes as levr
-import levr_encrypt as enc
-import api_utils
-import json
-from google.appengine.ext import db
 from datetime import datetime
-import base64
 from google.appengine.api import urlfetch
+from google.appengine.ext import db
+import api_utils
+import base64
+import json
+import levr_classes as levr
+import logging
 import urllib
-import api_utils_social as social
+import webapp2
+#import levr_encrypt as enc
+#import api_utils_social as social
 
 
 class SearchFoursquareTaskHandler(webapp2.RequestHandler):
@@ -201,7 +201,7 @@ class MergeUsersTaskHandler(webapp2.RequestHandler):
 			floating_content = levr.FloatingContent.gql('WHERE contentID=:1',contentID).get()
 			donor = floating_content.user
 			
-			new_user, donor = api_utils.merge_customer_info_from_B_into_A(user,donor,service)
+			api_utils.merge_customer_info_from_B_into_A(user,donor,service)
 			
 		except:
 			levr.log_error()

@@ -3,12 +3,12 @@
 from datetime import datetime
 from google.appengine.ext import blobstore, db
 from google.appengine.ext.webapp import blobstore_handlers
-import api_utils
-import json
 import levr_classes as levr
 import levr_encrypt as enc
 import logging
 import webapp2
+#import api_utils
+#import json
 #from google.appengine.api import taskqueue, urlfetch, memcache
 #from random import randint
 #import api_utils_social
@@ -135,7 +135,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 					'img_key'			: img_key
 					}
 
-		dealID = levr.dealCreate(params,'phone_new_business')
+		levr.dealCreate(params,'phone_new_business')
 		
 		params = {
 					'uid'				: ethan,
@@ -150,7 +150,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 					'img_key'			: img_key
 					}
 		
-		dealID = levr.dealCreate(params,'phone_new_business')
+		levr.dealCreate(params,'phone_new_business')
 		
 		params = {
 					'uid'				: ethan,
@@ -165,8 +165,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 					'img_key'			: img_key
 					}
 		
-		dealID = levr.dealCreate(params,'phone_new_business')
-		logging.debug(dealID)
+		levr.dealCreate(params,'phone_new_business')
 		
 		
 		
@@ -425,7 +424,8 @@ class Create100DeadNinjasHandler(webapp2.RequestHandler):
 		
 class HarmonizeVenuesHandler(webapp2.RequestHandler):
 	def get(self):
-		all_businesses = levr.Business.gql('WHERE foursquare_name = :1','notfound')
+		pass
+#		all_businesses = levr.Business.gql('WHERE foursquare_name = :1','notfound')
 		
 		# for business in all_businesses:
 # 			logging.info('launching task for business: ' + business.business_name)
@@ -545,6 +545,7 @@ class FloatingContentHandler(webapp2.RequestHandler):
 		)
 		
 		#put it in!
+		fc2.put()
 		fc.put()
 #		
 class SandboxHandler(webapp2.RequestHandler):

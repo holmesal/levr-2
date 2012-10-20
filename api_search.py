@@ -41,8 +41,8 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			query 			= kwargs.get('query','all')
 			development		= kwargs.get('development',False)
 			user 			= kwargs.get('actor')
-			lon_half_delta	= kwargs.get('longitudeHalfDelta')
-			lat_half_delta	= kwargs.get('latitudeHalfDelta')
+			lon_half_delta	= kwargs.get('longitudeHalfDelta',None)
+#			lat_half_delta	= kwargs.get('latitudeHalfDelta')
 			
 			
 			if development:
@@ -73,45 +73,73 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			lon1			= geo_point.lon
 			tstart			= datetime.now()
 			tuple_list		= []
-			searched_hash_set = [] #hashes that have been searched
-			new_hash_set	= [] #hashes that havent been searched
-			foursquare_ids = []
-			foursquare_deals = []
+			searched_hash_set	= [] #hashes that have been searched
+			new_hash_set		= [] #hashes that havent been searched
+			foursquare_ids		= []
+			foursquare_deals	= []
 			
+			#===================================================================
+			# Calculate the zoom level
+			#===================================================================
+#			top_right_lat = geo_point.lat + lat_half_delta
+#			top_right_lon = geo_point.lon + lon_half_delta
+#			bot_left_lat = geo_point.lat - lat_half_delta
+#			bot_left_lon = geo_point.lon - lon_half_delta
 			
+			# If the zoom level was indicated, adjust the precision and size of the search box
+			if lon_half_delta is not None:
+				center_right_lat = geo_point.lat
+				center_right_lon = geo_point.lon + lon_half_delta
+				center_left_lat = geo_point.lat
+				center_left_lon = geo_point.lon - lon_half_delta
+				
+	#			width_in_degrees = 2 * lat_half_delta
+				width_in_miles = api_utils.distance_between_points(center_right_lat,center_right_lon,center_left_lat,center_left_lon)
+				
+				if width_in_miles < 2:
+					precision = 6
+				else:
+					precision = 5
+			else:
+				precision = 5
 			#===================================================================
 			# Build set of geohashes to search
 			#===================================================================
-			
-			#center hash
-			new_hash_set = [geohash.encode(lat1,lon1,precision=precision)]
+			logging.info('precision: {}'.format(precision))
 			t1 = datetime.now()
-			#iterate searches the specified number of times
-			for i in range(0,max_iterations): #@UnusedVariable
-				#if the deals fetches are less than the desired minimum, perform another search
-				iterations += 1
-				
-				#expand range by one ring
-				hashes = new_hash_set
-				new_hash_set = []
-				for ghash in hashes:
-					#get hash neighbors
-					#extend the hashes list with the new hashes
-					new_hash_set.extend(geohash.expand(ghash))
-				
-				#remove duplicated
-				new_hash_set = list(set(new_hash_set))
-				#filter out the hashes that have already been searched
-				new_hash_set = filter(lambda h: h not in searched_hash_set,new_hash_set)
-				
-				#new_hash_set is now a ring of geohashes around the last ring that was searched
-				#add new_hash_set to searched_hash_set
-				searched_hash_set.extend(new_hash_set)
-				#reset new_hash_set
-#				logging.info('searched_hash_set: '+str(searched_hash_set))
-			# 
-			logging.info('searched_hash_set: '+str(searched_hash_set))
-			total_hash_set = searched_hash_set
+			
+			if precision == 5:
+				new_hash_set = [geohash.encode(lat1,lon1,precision=precision)]
+				total_hash_set = geohash.expand(new_hash_set[0])
+			elif precision == 6:
+				# center hash
+				new_hash_set = [geohash.encode(lat1,lon1,precision=precision)]
+				#iterate searches the specified number of times
+				for i in range(0,max_iterations): #@UnusedVariable
+					iterations += 1
+					
+					#expand range by one ring
+					hashes = new_hash_set
+					new_hash_set = []
+					for ghash in hashes:
+						#get hash neighbors
+						#extend the hashes list with the new hashes
+						new_hash_set.extend(geohash.expand(ghash))
+					
+					#remove duplicated
+					new_hash_set = list(set(new_hash_set))
+					#filter out the hashes that have already been searched
+					new_hash_set = filter(lambda h: h not in searched_hash_set,new_hash_set)
+					
+					#new_hash_set is now a ring of geohashes around the last ring that was searched
+					#add new_hash_set to searched_hash_set
+					searched_hash_set.extend(new_hash_set)
+					#reset new_hash_set
+	#				logging.info('searched_hash_set: '+str(searched_hash_set))
+				# 
+				logging.info('searched_hash_set: '+str(searched_hash_set))
+				total_hash_set = searched_hash_set
+			
 			t2 = datetime.now()
 			geo_box_creation_time = t2-t1
 			
@@ -132,8 +160,8 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			#===================================================================
 			
 			#create bounding box from resulting new_hash_set - this is the outer set
-			points = [geohash.decode(ghash) for ghash in new_hash_set]
-			logging.debug(points)
+			points = [geohash.decode(ghash) for ghash in total_hash_set]
+			logging.info(points)
 			#unzip lat,lons into two separate lists
 			lat,lon = zip(*points)
 			
@@ -290,7 +318,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				logging.debug('All of the deals')
 				accepted_deals_tuple_list = tuple_list
 				
-				
+			
 			logging.debug(accepted_deals_tuple_list)
 			#count the results that matched the query
 			accepted_deals_count = accepted_deals_tuple_list.__len__()

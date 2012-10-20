@@ -45,6 +45,7 @@ class FloatingContentNewHandler(webapp2.RequestHandler):
 		
 class FloatingContentExistingHandler(webapp2.RequestHandler):
 	'''
+	Phone receives a deeplink push from foursquare with a contentID.
 	User is logged into levr. I.e. case where uid and levrToken is available on phone
 	'''
 	@api_utils.validate('contentID','param',user=True,levrToken=True)
@@ -60,13 +61,14 @@ class FloatingContentExistingHandler(webapp2.RequestHandler):
 			
 			logging.debug(kwargs)
 			user = kwargs.get('actor')
+			uid = user.key()
 			contentID = kwargs.get('contentID')
 			assert contentID,'contentID is not being passed'
 #			contentID = args[0]
 			service = contentID[0:3]
 			#grab the floating content and the requesting user
 			floating_content = levr.FloatingContent.gql('WHERE contentID=:1',contentID).get()
-			donor = floating_content.user
+#			donor = floating_content.user
 			
 			if service=='fou':
 				logging.debug('The user came from foursquare')

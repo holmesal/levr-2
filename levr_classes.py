@@ -366,13 +366,19 @@ MEMCACHE_ACTIVE_GEOHASH_NAMESPACE = 'active_geohash'
 MEMCACHE_TEST_GEOHASH_NAMESPACE = 'test_geohash'
 def update_deal_key_memcache(geo_point,dealID,namespace):
 	'''
-	Updates the memcache namespace used to replace queries
+	Updates the geohash+deal_key memcache when one of the geohashes has been updated and the memcache now has stale information
 	Typical use case: a new deal was uploaded and the memcache key (i.e. the new deals geohash) needs to be updated
 	or deleted.
-	@param hashes_and_keys: the mapping of geohash to list of deal keys
-	@type 
+	@param geo_point: the geopoint of the deal
+	@type geo_point: db.GeoPt
+	@param dealID: the deals unencrypted key
+	@type dealID: db.Key
+	@param namespace: the memcaches namespace
+	@type namespace: MEMCACHE_ACTIVE_GEOHASH_NAMESPACE or MEMCACHE_TEST_GEOHASH_NAMESPACE
 	'''
-	geo_hash = geohash.encode(geo_point.lat,geo_point.lon,precision=6)
+	geo_hash_6 = geohash.encode(geo_point.lat,geo_point.lon,precision=6)
+	geo_hash_5 = geohash.encode(geo_point.lat, geo_point.lon, precision=5)
+	geo_hash_list = [geo_hash_5,geo_hash_6]
 	#create the client
 	client = memcache.Client() #@UndefinedVariable
 	#safely update the memcache - while loop allows this to happen all over the place psuedo-concurrently
@@ -380,8 +386,8 @@ def update_deal_key_memcache(geo_point,dealID,namespace):
 	while True and failsafe <50:
 		failsafe +=1
 		logging.debug('failsafe: '+str(failsafe))
-		if client.delete(geo_hash,namespace=namespace):
-			logging.debug('geohash {} was deleted from memcache'.format(geo_hash))
+		if client.delete_multi(geo_hash_list, namespace=namespace):
+			logging.debug('geohashes {} were deleted from memcache'.format(geo_hash_list))
 			break
 	return
 		#=======================================================================

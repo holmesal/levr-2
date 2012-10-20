@@ -44,6 +44,11 @@ blacklist = [
 # Foursquare Words
 #===============================================================================
 'checkin',
+'write',
+'thank',
+'thanks',
+'tip',
+'telling',
 'personcheckin', ## from person/checkin
 'foursquare',
 'unlocked',
@@ -142,7 +147,8 @@ blacklist = [
 "checked", 
 "button", 
 "broadway", 
-"bitlyky0bnw", 
+"bitlyky0bnw",
+"bitly",
 "bh", 
 "bergdorf", 
 "allowed", 

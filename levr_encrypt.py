@@ -3,7 +3,6 @@ from levr_encrypt_data import encryption_key, password_encryption_key
 import base64
 
 
-
 def encrypt_password(pw):
 	pw 			= str(pw)
 	obj3 		= ARC4.new(password_encryption_key)

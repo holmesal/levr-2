@@ -80,7 +80,7 @@ class CallMerchantHandler(webapp2.RequestHandler):
 			api_utils.send_error(self,'Invalid parameter: businessID')
 			return
 		#grab the business
-		business = levr.Business.get(businessID)
+#		business = levr.Business.get(businessID)
 		
 		#call the business
 		#twilio credentials

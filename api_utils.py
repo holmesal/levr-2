@@ -1,6 +1,5 @@
 #from common_word_list import blacklist
 from datetime import datetime
-#from fnmatch import filter
 from google.appengine.api import images, urlfetch, memcache
 from google.appengine.ext import db
 from math import sin, cos, asin, degrees, radians, floor, sqrt
@@ -13,6 +12,7 @@ import logging
 import os
 import random
 import urllib
+#from fnmatch import filter
 
 
 #creates a url for remote or local server
@@ -733,6 +733,22 @@ def send_img(self,blob_key,size):
 		levr.log_error()
 		send_error(self,'Server Error')
 
+def fetch_deals(keys,**kwargs):
+	logging.debug('\n\n\n\t\t\t FETCH DEALS \n\n\n')
+	#set namespace parameter
+	development		= kwargs.get('development',False)
+	if development	:namespace = levr.MEMCACHE_TEST_GEOHASH_NAMESPACE
+	else			:namespace = levr.MEMCACHE_ACTIVE_GEOHASH_NAMESPACE
+	logging.debug(namespace)
+	
+	
+#def fetch_deals(deal_keys):
+#	'''
+#	Fetches deals from a list of deal keys
+#	First tries memcache, and g
+#	@param deal_keys:
+#	@type deal_keys:
+#	'''
 
 def get_deal_keys(hash_set,**kwargs):
 	'''
@@ -767,7 +783,7 @@ def get_deal_keys(hash_set,**kwargs):
 		logging.debug('active deals')
 	
 	# search hashes from memcache
-	keys_dict, unresolved_hashes = get_deal_keys_from_memcache(hash_set,namespace)
+	keys_dict, unresolved_hashes = get_from_memcache(hash_set,namespace)
 	
 	if unresolved_hashes:
 		# search db for hashes, and place the results in the memcache
@@ -785,38 +801,34 @@ def get_deal_keys(hash_set,**kwargs):
 		
 	
 
-def get_deal_keys_from_memcache(hash_set,namespace):
+def get_from_memcache(mem_keys,namespace):
 	'''
-	Returns two things: a dict of {geohash:list_of_deal_keys}
-	and a list of ['geohash',] for geohashes that were not found in the memcache
+	Fetches a list of keys from the memcache with the given namespace
+	Returns a dict of key:val from the memcache, 
+		and a list of keys that were not resolved in the memcache
+	@param mem_keys: list of memcache keys
+	@type mem_keys: list
+	@param namespace: 
+	@type namespace: str
+	'''
 	
-	@param hash_set: The geohashes that the search is requesting
-	@type hash_set: list
-	@param namespace: the memcache namespace
-	@type namespace: active_geohash or test_geohash
-	'''
 	logging.debug('\n\n\n\t\t\t GET FROM MEMCACHE \n\n\n')
-	logging.debug(hash_set)
-	assert type(hash_set) is list, 'hash_set should be a list'
-	
+	logging.debug(mem_keys)
+	assert type(mem_keys) is list, 'mem_keys should be a list'
 	
 	#fetch deal_key lists by geohash
-	key_dict = memcache.get_multi(hash_set,namespace=namespace)
+	key_dict = memcache.get_multi(mem_keys,namespace=namespace) #@UndefinedVariable
 	
-	#grab the hashes that were not found in the memcache
-	unresolved_hashes = []
-	for hash in hash_set:
-		if hash not in key_dict:
-			unresolved_hashes.append(hash)
-#	unresolved_hashes = filter(lambda hash: hash not in key_dict,hash_set)
+	#grab keys that were not successfully fetched from the memcache
+	unresolved_keys = filter(lambda x: x not in key_dict,mem_keys)
 	
 	logging.debug('key_dict from memcache:')
 	logging.debug(levr.log_dict(key_dict))
-	logging.debug('unresolved_hashes')
-	logging.debug(unresolved_hashes)
-	return key_dict,unresolved_hashes
+	logging.debug('unresolved_keys')
+	logging.debug(unresolved_keys)
+	return key_dict,unresolved_keys
 	
-	
+
 def get_deal_keys_from_db(hash_set,deal_status,namespace):
 	'''
 	Returns a dict mapping of hashes and deal keys
@@ -866,11 +878,11 @@ def set_deal_keys_to_memcache(hashes_and_keys,namespace):
 	while True and failsafe <5:
 		failsafe +=1
 		#set_multi returns a 
-		rejected_keys = memcache.set_multi(hashes_and_keys,namespace=namespace)
+		rejected_keys = memcache.set_multi(hashes_and_keys,namespace=namespace) #@UndefinedVariable
 		logging.debug('rejected keys: '+str(rejected_keys))
 		if rejected_keys:
 			#some of the keys were not updated properly
-			hashes_and_keys = {hash:hashes_and_keys[hash] for hash in rejected_keys }
+			hashes_and_keys = {hash:hashes_and_keys[ghash] for ghash in rejected_keys }
 		else:
 			#nothing was rejected, break loop
 			break
@@ -1510,7 +1522,7 @@ class SpoofUndeadNinjaActivity:
 			
 			#add up likes for whole days
 			total_likes = 0
-			for day in range(0,whole_days):
+			for day in range(0,whole_days): #@UnusedVariable
 				total_likes += self.get_likes_per_day(self.chance_of_like, self.max_likes_per_day)
 			
 			#add up likes from the partial day
@@ -1589,7 +1601,7 @@ class SpoofUndeadNinjaActivity:
 		@type max_likes: int
 		'''
 		likes = 0
-		for i in range(0,max_likes): #@PydevCodeAnalysisIgnore
+		for i in range(0,max_likes): #@UnusedVariable
 			num = random.uniform(0,1)
 			if num <= chance_to_like:
 				likes += 1
