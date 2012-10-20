@@ -37,8 +37,12 @@
 			
 			</tr>
 
-			
-			
+		
+		{% else %}
+			<div id='addAlert' class="alert">
+				<strong>It looks like you haven't created any offers yet.</strong>
+				<a href="/merchants/deal">Add one now</a>
+			</div>
 		{% endfor %}
 			
 {% endblock %}

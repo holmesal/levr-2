@@ -417,27 +417,12 @@ class DealHandler(webapp2.RequestHandler):
 			business = levr.Business.get(enc.decrypt_key(headerData['owner_of']))	
 			logging.info(levr.log_model_props(business))
 			
-			'''#create tags from the business
-			tags = business.create_tags()
+			blobstore.create_upload_url('/merchants/upload')
 			
-			#create the upload url
-			url = '/merchants/deal/upload?uid=' + headerData['ownerID'] + '&business=' + enc.encrypt_key(business.key())
-			logging.debug(url)
-			upload_url = blobstore.create_upload_url(url)
-			
-			#consolidate the values
 			template_values = {
-							"tags"			: tags,
-							"upload_url"	: upload_url,
+							"upload_url"	: blobstore.create_upload_url('/merchants/deal/upload'),
 							"deal"			: None,
 							"business"		: business, #TODO need to grab multiple businesses later
-							"owner"			: owner
-			}'''
-			
-			template_values = {
-							"upload_url"	: 'test upload url',
-							"deal"			: None,
-							"business"		: 'test business', #TODO need to grab multiple businesses later
 							"user"			: user
 			}
 			
@@ -445,13 +430,62 @@ class DealHandler(webapp2.RequestHandler):
 			self.response.out.write(template.render(template_values))
 		except:
 			levr.log_error()
+		'''upload_url = blobstore.create_upload_url('/merchants/deal/upload')
+		self.response.out.write('<html><body>')
+		self.response.out.write('<form action="%s" method="POST" enctype="multipart/form-data">' % upload_url)
+		self.response.out.write("""Upload File: <input type="file" name="file"><br> <input type="submit"
+			 name="submit" value="Submit"> </form></body></html>""")'''
+			
+			
 class DealUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
+#class DealUploadHandler(webapp2.RequestHandler):
 	def post(self):
 		try:
 			#A merchant is creating a NEW deal from the online form
+# 			logging.info('hi there')
+			#check login
+			headerData = merchant_utils.login_check(self)
+			logging.debug(headerData)
+			#get the owner information
+			uid = headerData['uid']
+			uid = enc.decrypt_key(uid)
+			user = levr.Customer.get(uid)
 			
+			if self.get_uploads(): #will this work?
+				upload	= self.get_uploads()[0]
+				blob_key= upload.key()
+				img_key = blob_key
+				upload_flag = True
+			else:
+				upload_flag = False
+				raise KeyError('Image was not uploaded')
+				
+			#make yahself a deal shit thing!
+			deal = levr.Deal(
+				img			=	img_key,
+				businessID	=	user.owner_of,
+				origin		=	'online',
+				deal_text		=	self.request.get('deal_text'),
+				description	=	self.request.get('description'),
+				pin_color		=	'red'
+			)
+			
+			#add all the properties from the business
+			business = levr.Business.get(user.owner_of)
+			logging.info(levr.log_model_props(business))
+			
+			#if not validated set deal status to "pending", otherwise set it to "active"
+			if merchant_utils.validated_check(user):
+				logging.deug('OKAY')
+			else:
+				logging.debug('FUCK ALL')
+			
+			
+			
+			
+			'''
 			#make sure than an image is uploaded
-			logging.debug(self.get_uploads())
+			# logging.debug(self.get_uploads())
 			if self.get_uploads(): #will this work?
 				upload	= self.get_uploads()[0]
 				blob_key= upload.key()
@@ -468,7 +502,7 @@ class DealUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 					'img_key'			:img_key
 					}
 			levr_utils.dealCreate(params, 'merchant_create')
-			self.redirect('/merchants/manage')
+			self.redirect('/merchants/manage')'''
 		except:
 			levr.log_error(self.request.body)
 class DeleteDealHandler(webapp2.RequestHandler):
