@@ -374,7 +374,7 @@ def update_deal_key_memcache(geo_point,dealID,namespace):
 	'''
 	geo_hash = geohash.encode(geo_point.lat,geo_point.lon,precision=6)
 	#create the client
-	client = memcache.Client()
+	client = memcache.Client() #@UndefinedVariable
 	#safely update the memcache - while loop allows this to happen all over the place psuedo-concurrently
 	failsafe = 0
 	while True and failsafe <50:

@@ -6,10 +6,9 @@ import api_utils
 import geo.geohash as geohash
 import json
 import levr_classes as levr
-import levr_encrypt as enc
 import logging
-import webapp2
 import random
+import webapp2
 
 
 
@@ -37,8 +36,8 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			#GET PARAMS
 			logging.info(kwargs)
 			geo_point 		= kwargs.get('geoPoint')
-			radius 			= kwargs.get('radius')
-			limit 			= kwargs.get('limit')
+#			radius 			= kwargs.get('radius')
+#			limit 			= kwargs.get('limit')
 			query 			= kwargs.get('query','all')
 			development		= kwargs.get('development',False)
 			user 			= kwargs.get('actor')
@@ -60,10 +59,10 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			
 			#variables
 			precision		= 6
-			min_count		= 100
+#			min_count		= 100
 			max_iterations	= 3
 			iterations		= 0
-			query_times		= []
+#			query_times		= []
 			max_k			= 0.1 #max karma count
 			max_d			= 0.1 #max distance
 			k_coef			= 1
@@ -88,17 +87,17 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			new_hash_set = [geohash.encode(lat1,lon1,precision=precision)]
 			t1 = datetime.now()
 			#iterate searches the specified number of times
-			for i in range(0,max_iterations):
+			for i in range(0,max_iterations): #@UnusedVariable
 				#if the deals fetches are less than the desired minimum, perform another search
 				iterations += 1
 				
 				#expand range by one ring
 				hashes = new_hash_set
 				new_hash_set = []
-				for hash in hashes:
+				for ghash in hashes:
 					#get hash neighbors
 					#extend the hashes list with the new hashes
-					new_hash_set.extend(geohash.expand(hash))
+					new_hash_set.extend(geohash.expand(ghash))
 				
 				#remove duplicated
 				new_hash_set = list(set(new_hash_set))
@@ -133,7 +132,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			#===================================================================
 			
 			#create bounding box from resulting new_hash_set - this is the outer set
-			points = [geohash.decode(hash) for hash in new_hash_set]
+			points = [geohash.decode(ghash) for ghash in new_hash_set]
 			logging.debug(points)
 			#unzip lat,lons into two separate lists
 			lat,lon = zip(*points)
@@ -249,10 +248,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				toop = tuple(toop)
 #				logging.debug(toop)
 				
-				ts = datetime.now()
 				tuple_list[idx] = toop
-				te = datetime.now()
-#				logging.debug('replacement: '+str(te-ts))
 				
 				
 				
@@ -394,7 +390,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				logging.debug('Sending this to the task: ' + json.dumps(params))
 				
 				#start the task
-				t = taskqueue.add(url='/tasks/searchFoursquareTask',payload=json.dumps(params))
+				taskqueue.add(url='/tasks/searchFoursquareTask',payload=json.dumps(params))
 				
 			
 			t2 = datetime.now()
@@ -503,8 +499,8 @@ class SearchPopularHandler(webapp2.RequestHandler):
 			#GET PARAMS
 			logging.debug(kwargs)
 			request_point 	= kwargs.get('geoPoint')
-			radius 		= kwargs.get('radius')
-			limit 		= kwargs.get('limit')
+#			radius 		= kwargs.get('radius')
+#			limit 		= kwargs.get('limit')
 			development = kwargs.get('development',False)
 			
 			logging.debug("request_point type: "+str(type(request_point)))

@@ -564,7 +564,7 @@ class HmacDigestAuthentication(Authentication):
         Authentication.__init__(self, credentials, host, request_uri, headers, response, content, http)
         challenge = _parse_www_authenticate(response, 'www-authenticate')
         self.challenge = challenge['hmacdigest']
-        # TODO: self.challenge['domain']
+        
         self.challenge['reason'] = self.challenge.get('reason', 'unauthorized')
         if self.challenge['reason'] not in ['unauthorized', 'integrity']:
             self.challenge['reason'] = 'unauthorized'

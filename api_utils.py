@@ -1,9 +1,9 @@
-from common_word_list import blacklist
+#from common_word_list import blacklist
 from datetime import datetime
-from fnmatch import filter
+#from fnmatch import filter
 from google.appengine.api import images, urlfetch, memcache
 from google.appengine.ext import db
-from math import sin, cos, asin, sqrt, degrees, radians, floor, sqrt
+from math import sin, cos, asin, degrees, radians, floor, sqrt
 import api_utils_social as social
 import geo.geohash as geohash
 import json
@@ -175,7 +175,7 @@ def package_business(business):
 						
 	if business.owner:
 		packaged_business.update({
-			'owner':	levr_utils.package_user(business.owner)
+			'owner':	package_user(business.owner)
 		})
 	return packaged_business
 	
@@ -216,11 +216,10 @@ def create_img_url(entity,size):
 	
 #	logging.debug(entity.kind())
 # 	logging.debug(entity.kind() == 'Deal')
- 	# if entity.kind() == 'Customer':
+	# if entity.kind() == 'Customer':
 #  		hook = 'api/user/'
- 	if entity.kind() == 'Deal':
- 		hook = 'api/deal/'
- 	# else:
+	if entity.kind() == 'Deal':		hook = 'api/deal/'
+	# else:
 #  		raise KeyError('entity does not have an image: '+entity.kind())
 
 	if entity.img:	
@@ -254,7 +253,7 @@ def private(handler_method):
 			
 			
 		except Exception,e:
-			levr.log_error()
+			levr.log_error(e)
 			send_error(self,'Server Error')
 			
 	return check
@@ -863,7 +862,6 @@ def set_deal_keys_to_memcache(hashes_and_keys,namespace):
 	'''
 	logging.debug('\n\n\n\t\t\t SET TO MEMCACHE \n\n\n')
 	failsafe = 0
-	test = hashes_and_keys
 	# tries to set the hashes to memcache a max of 5 times
 	while True and failsafe <5:
 		failsafe +=1
@@ -880,79 +878,7 @@ def set_deal_keys_to_memcache(hashes_and_keys,namespace):
 	logging.debug('set_deal_keys_to_memcache iterations: {}'.format(failsafe))
 	return
 
-def get_deal_keys_from_hash_set(tags,hash_set,*args,**kwargs):
-	'''
-	Returns a list of deal keys in the hash sets specified
-	
-	tags = list of tags that are strings
-	request point is db.GeoPt format
-	
-	optional parameters:
-	development		default=False
-	
-	'''
-	logging.info(kwargs)
-	#grab variables
-	development		= kwargs.get('development',False)
-	if development:
-		#developer is searching
-		deal_status = 'test'
-		logging.debug('test deals')
-	else:
-		#a real person is searching!
-		deal_status = 'active'
-		logging.debug('active deals')
-	
-	SPECIAL_QUERIES = ['all','popular','new','hot']
-	
-	
-	####build search query
-	deal_keys = []
-	for query_hash in hash_set:
-		#initialize query
-		q = levr.Deal.all(keys_only=True)
-		
-		#if a real deal, status is active
-		if not development:
-			q.filter('deal_status =','active')
-#			logging.debug('flag active')
-		else:
-			q.filter('deal_status =','test')
-#			logging.debug('flag development')
-		
-		
-#		logging.debug("tags: "+str(tags))
-		#FILTER BY TAG
-		#do not filter by tags if the tag is one of the special key words
-		#=======================================================================
-		# EXPERIMENTAL: only filter by tag once the deals have been fetched
-		# 	That way, we will be able to return all deals if nothing is fetched
-		#
-		# if tags and tags[0] not in SPECIAL_QUERIES:
-		#	#grab all deals where primary_cat is in tags
-		#	for tag in tags:
-		#		logging.debug('tag: '+str(tag))
-		#		q.filter('tags =',tag)
-		# else:
-		#	pass
-		#=======================================================================
-#			logging.debug('This is a special case. Not filtering by tags: '+str(tags))
-		
-		
-		#grab all deals in the geohash
-		q.filter('geo_hash >=',query_hash).filter('geo_hash <=',query_hash+"{") #max bound
-#					logging.debug(q)
-#		logging.debug(levr.log_dict(q.__dict__))
-		
-		
-		#FETCH DEAL KEYS
-		fetched_deals = q.fetch(None)
-		logging.info('From: '+query_hash+", fetched: "+str(fetched_deals.__len__()))
-		
-		#add to the list
-		deal_keys.extend(fetched_deals)
-	
-	return deal_keys
+
 def filter_deals_by_radius(deals,center,radius):
 	'''
 	http://stackoverflow.com/questions/3182260/python-geocode-filtering-by-distance
@@ -1663,7 +1589,7 @@ class SpoofUndeadNinjaActivity:
 		@type max_likes: int
 		'''
 		likes = 0
-		for i in range(0,max_likes):
+		for i in range(0,max_likes): #@PydevCodeAnalysisIgnore
 			num = random.uniform(0,1)
 			if num <= chance_to_like:
 				likes += 1

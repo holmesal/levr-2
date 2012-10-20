@@ -1,11 +1,11 @@
-import webapp2
-import logging
-import levr_encrypt as enc
-import levr_classes as levr
-import api_utils
 from api_utils import private
-from datetime import datetime
 from google.appengine.ext import db
+import api_utils
+import levr_classes as levr
+import logging
+import webapp2
+#import levr_encrypt as enc
+#from datetime import datetime
 #from google.appengine.api import mail
 
 
@@ -32,7 +32,7 @@ class UserFavoritesHandler(webapp2.RequestHandler):
 			logging.info(args)
 			
 			user 	= kwargs.get('user')
-			uid 	= user.key()
+#			uid 	= user.key()
 			private = kwargs.get('private')
 			limit 	= kwargs.get('limit')
 			offset 	= kwargs.get('offset')
@@ -140,10 +140,10 @@ class UserGetFollowersHandler(webapp2.RequestHandler):
 			logging.info('GET USER FOLLOWERS\n\n\n')
 			logging.debug(kwargs)
 			user 	= kwargs.get('user')
-			uid 	= user.key()
+#			uid 	= user.key()
 			private = kwargs.get('private')
-			limit 	= kwargs.get('limit')
-			offset 	= kwargs.get('offset')
+#			limit 	= kwargs.get('limit')
+#			offset 	= kwargs.get('offset')
 			
 			
 			
@@ -179,7 +179,7 @@ class UserAddFollowHandler(webapp2.RequestHandler):
 		try:
 			logging.info('\n\n\n\t\t\t USER ADD FOLLOWER\n\n\n')
 			user 	= kwargs.get('user')
-			uid 	= user.key()
+#			uid 	= user.key()
 			actor	= kwargs.get('actor')
 			actorID = actor.key()
 			private = kwargs.get('private')
@@ -222,7 +222,7 @@ class UserUnfollowHandler(webapp2.RequestHandler):
 			logging.info('\n\nUSER REMOVE FOLLOWER')
 			logging.debug(kwargs)
 			user = kwargs.get('user')
-			uid = user.key()
+#			uid = user.key()
 			actor = kwargs.get('actor')
 			actorID = actor.key()
 			private = kwargs.get('private')
@@ -262,7 +262,7 @@ class UserImgHandler(webapp2.RequestHandler):
 		try:
 			logging.info('IMAGE\n\n\n')
 			user	= kwargs.get('user')
-			uid		= user.key()
+#			uid		= user.key()
 			private	= kwargs.get('private')
 			size	= kwargs.get('size')
 			
@@ -301,11 +301,8 @@ class UserNotificationsHandler(webapp2.RequestHandler):
 			
 			
 			user		= kwargs.get('user')
-			uid			= user.key()
 			private		= kwargs.get('private')
 			sinceDate	= kwargs.get('since')
-			limit		= kwargs.get('limit')
-			offset		= kwargs.get('offset')
 
 			logging.debug('sinceDate: '+str(sinceDate))
 			logging.debug('last notified: '+str(user.last_notified))

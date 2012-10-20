@@ -10,7 +10,7 @@ class Cleaner(webapp2.RequestHandler):
 	def get(self):
 		try:
 			now = datetime.now()+datetime.datetime.relativedelta(days=+20)
-			expired = levr.CustomerDeal.gql("WHERE deal_status=:'active' AND date_end <:1",now)
+			expired = levr.Deal.gql("WHERE deal_status=:'active' AND date_end <:1",now)
 			for x in expired:
 				x.deal_status = "expired"
 				x.push()

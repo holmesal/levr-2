@@ -1,12 +1,12 @@
-from google.appengine.ext import db
-from random import randint
+#from google.appengine.ext import db
+#from random import randint
 import api_utils
 import api_utils_social as social
-import json
 import levr_classes as levr
 import levr_encrypt as enc
 import logging
 import webapp2
+#import json
 
 
 class SignupFacebookHandler(webapp2.RequestHandler):
@@ -74,7 +74,7 @@ class SignupFoursquareHandler(webapp2.RequestHandler):
 													)
 				except Exception,e:
 					#remove the entity that was created because the signup failed
-					new_user.delete()
+					user.delete()
 					levr.log_error()
 					assert False, 'Could not connect with foursquare. '.format('')
 				#return the user

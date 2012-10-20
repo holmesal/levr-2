@@ -204,7 +204,7 @@ class LostPasswordHandler(webapp2.RequestHandler):
 #					sent = False
 					logging.error('mail not sent')
 					self.redirect('/merchants/login?action=password&success=false')
-					#TODO: add parameter to login that shows it was not a success because the email was not sent
+					
 				else:
 #					template_values={"sent":sent}
 					self.redirect('/merchants/login?action=password&success=true')
@@ -414,7 +414,7 @@ class DealHandler(webapp2.RequestHandler):
 			user = levr.Customer.get(uid)
 			logging.info(levr.log_model_props(user))
 			#get the business
-			business = levr.Business.get(enc.decrypt_key(headerData['owner_of']))	#TODO: this will be multiple businesses later
+			business = levr.Business.get(enc.decrypt_key(headerData['owner_of']))	
 			logging.info(levr.log_model_props(business))
 			
 			'''#create tags from the business
@@ -496,7 +496,7 @@ class EditDealHandler(webapp2.RequestHandler):
 			logging.debug(owner)
 			
 			#get the business
-			business = owner.businesses.get()#TODO: this will be multiple businesses later
+			business = owner.businesses.get()
 			
 			#get deal
 			dealID = self.request.get('id')
@@ -569,7 +569,7 @@ class ManageHandler(webapp2.RequestHandler):
 			user = levr.Customer.get(uid)
 			logging.info(levr.log_model_props(user))
 			#get the business
-			business = levr.Business.get(enc.decrypt_key(headerData['owner_of']))	#TODO: this will be multiple businesses later
+			business = levr.Business.get(enc.decrypt_key(headerData['owner_of']))
 			logging.info(levr.log_model_props(business))
 			
 			#grab the deals
@@ -648,7 +648,7 @@ class UploadHandler(webapp2.RequestHandler):
 				self.redirect('/merchants')
 			
 			#get the business
-			business = owner.businesses.get()#TODO: this will be multiple businesses later
+			business = owner.businesses.get()
 			
 			
 			template_values = {
@@ -710,7 +710,7 @@ class MyAccountHandler(webapp2.RequestHandler):
 			logging.debug(owner)
 			
 			#get the business
-			business = owner.businesses.get()#TODO: this will be multiple businesses later
+			business = owner.businesses.get()
 			
 			template_values = {
 				'owner'		: owner,
@@ -759,7 +759,7 @@ class MyAccountHandler(webapp2.RequestHandler):
 						self.redirect('/merchants/myAccount?success=true')
 					else:
 						#get the business
-						business = owner.businesses.get()#TODO: this will be multiple businesses later
+						business = owner.businesses.get()
 						
 						template_values = {
 						'owner'		: owner,
@@ -786,7 +786,7 @@ class MyAccountHandler(webapp2.RequestHandler):
 					else:
 						#new passwords do not match
 						#get the business
-						business = owner.businesses.get()#TODO: this will be multiple businesses later
+						business = owner.businesses.get()
 						
 						template_values = {
 						'owner'		: owner,
@@ -804,7 +804,7 @@ class MyAccountHandler(webapp2.RequestHandler):
 			else:
 				#old password is incorrect
 				#get the business
-				business = owner.businesses.get()#TODO: this will be multiple businesses later
+				business = owner.businesses.get()
 				
 				template_values = {
 				'owner'		: owner,

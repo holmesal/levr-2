@@ -1,15 +1,14 @@
-import os
-import webapp2
-import logging
-import levr_encrypt as enc
-import levr_classes as levr
-import api_utils
-import geo.geohash as geohash
-from datetime import datetime
-from google.appengine.ext import db
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
-import json
+import api_utils
+import levr_classes as levr
+import logging
+import os
+import webapp2
+#import geo.geohash as geohash
+#from datetime import datetime
+#from google.appengine.ext import db
+#import json
 
 class UploadRequestHandler(webapp2.RequestHandler):
 	'''

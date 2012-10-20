@@ -1,16 +1,16 @@
 from google.appengine.api import urlfetch
-import api_utils
 import api_utils_social as social
 import jinja2
 import json
 import levr_classes as levr
 import levr_encrypt as enc
 import logging
+import mixpanel_track as mp_track
 import os
+import time
 import urllib
 import webapp2
-import mixpanel_track as mp_track
-import time
+#import api_utils
 #import levr_encrypt as enc
 #import levr_utils
 #from google.appengine.ext import db
@@ -58,7 +58,6 @@ class AuthorizeCompleteHandler(webapp2.RequestHandler):
 			assert code, NO_CODE_MESSAGE
 			
 			logging.info(code)
-			logging.info(access_token)
 			
 			#make request for token
 			url = "https://foursquare.com/oauth2/access_token?client_id="+client_id+"&client_secret="+secret+"&grant_type=authorization_code&redirect_uri="+redirect+"&code="+code

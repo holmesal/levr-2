@@ -1,16 +1,16 @@
-import webapp2
-import logging
+from google.appengine.api import urlfetch
+from google.appengine.ext import db
 import api_utils
-import api_utils_social as social
+import base64
 import levr_classes as levr
 import levr_encrypt as enc
-from random import randint
-from google.appengine.ext import db
-import json
-import urllib
-from google.appengine.api import urlfetch
-import base64
+import logging
 import time
+import urllib
+import webapp2
+#import api_utils_social as social
+#from random import randint
+#import json
 
 
 class InitializeMerchantHandler(webapp2.RequestHandler):

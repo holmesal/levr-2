@@ -1,20 +1,20 @@
 #from __future__ import with_statement
 #from google.appengine.api import files
 from datetime import datetime
-from google.appengine.api import taskqueue, urlfetch, memcache
 from google.appengine.ext import blobstore, db
 from google.appengine.ext.webapp import blobstore_handlers
-from random import randint
 import api_utils
-import api_utils_social
-import base_62_converter as converter
-import geo.geohash as geohash
 import json
 import levr_classes as levr
 import levr_encrypt as enc
 import logging
-import uuid
 import webapp2
+#from google.appengine.api import taskqueue, urlfetch, memcache
+#from random import randint
+#import api_utils_social
+#import base_62_converter as converter
+#import geo.geohash as geohash
+#import uuid
 #import geo.geohash as geohash
 
 
@@ -320,168 +320,7 @@ class AddDealsHandler(webapp2.RequestHandler):
 #		pass
 		self.response.out.write('<br>Done')
 	
-class FilterGeohashHandler(webapp2.RequestHandler):
-	def get(self):
-#		#take in geo_point
-#		#set radius, expand, get all deals
-#		
-#		
-#		
-#		request_point = levr.geo_converter('42.35,-71.110')
-#		center_hash = geohash.encode(request_point.lat,request_point.lon,precision=6)
-#		all_squares = geohash.expand(center_hash)
-#		
-#		all = levr.Business.all().count()
-#		self.response.out.write(all)
-#		self.response.out.write('<br/>')
-#		
-#		keys = []
-#		for query_hash in all_squares:
-#			q = levr.Business.all(keys_only=True).filter('geo_hash >=',query_hash).filter('geo_hash <=',query_hash+"{")
-#			keys.extend(q.fetch(None))
-#		
-#		self.response.out.write(str(keys.__len__())+"<br/>")
-#		
-#		#get all deals
-#		deals = levr.Business.get(keys)
-#		logging.debug(deals)
-#		for deal in deals:
-#			self.response.out.write(deal.geo_hash+"<br/>")
-		pass
 
-class UpdateUsersHandler(webapp2.RequestHandler):
-	def get(self):
-		try:
-			logging.warning('!!!!!!!\n\n\n\n')
-			self.response.out.write('WARNING!')
-#			users = levr.Customer.all().fetch(None)
-#			for user in users:
-#				
-#				user.tester = False
-#			db.put(users)
-#			
-#			for user in users:
-#				self.response.out.write(user.tester)
-#				self.response.out.write('<br/>')
-			
-#			deals = levr.Deal.all().fetch(None)
-#			for deal in deals:
-#				deal.deal_status = 'test'
-#			db.put(deals)
-		except:
-			levr.log_error()
-
-class PullFromLocuHandler(webapp2.RequestHandler):
-	def get(self):
-		try:
-			self.response.out.write('Starting...')
-			logging.debug('\n\n\n\n\n\n\n\n\n\n\n\n\n')
-			
-			api_key = '8649e31244ed249923df84b3aa7855bd87ae6ac7'
-			
-			url='http://api.locu.com/v1_0/menu_item/search/?api_key='+ api_key
-			url+='&category=restaurant'
-			url+='&region=MA'
-			url+='&locality=Boston'
-			url+='&name=pizza'
-			url+='&price__lte=3'
-			
-			menu_items = urlfetch.fetch(url=url)
-			
-			logging.debug(dir(menu_items))
-			content_json = menu_items.content
-			
-			logging.debug(content_json)
-			content = json.loads(content_json)
-			logging.debug(content)
-			
-			#grab the meat of the response
-			objects = content.get('objects')
-			
-			logging.debug(objects)
-			logging.debug(type(objects))
-			
-			self.response.out.write('<br/>parsing...')
-			
-			user = levr.Customer.all().filter('email =','ethan@levr.com').get()
-			uid = user.key()
-			
-			for x in objects:
-				
-				#deal info
-				description = x.get('description')
-				name = x.get('name')
-				price = x.get('price')
-				
-				deal_text = ''
-				if price:
-					deal_text += "$"+str(price)
-				
-				deal_text += " "+name
-				
-				
-				#business info
-				venue = x.get('venue')
-				lat = venue.get('lat')
-				lon = venue.get('long')
-				
-				geo_string = str(lat)+","+str(lon)
-				
-				geo_point = levr.geo_converter(geo_string)
-				
-				business_name = venue.get('name')
-				
-				types = venue.get('categories')
-				#convert list of types to comma delimted string
-				types = reduce(lambda x,y: str(x)+","+str(y),types)
-				
-				#vicinity parsing
-				address = venue.get('street_address')
-				city = venue.get('locality')
-				state = venue.get('region')
-				postal_code = venue.get('postal_code')
-				vicinity = address+" "+city+", "+state
-				
-				
-				
-				params = {
-					'uid'				: uid,
-					'business_name'		: business_name,
-					'geo_point'			: geo_point,
-					'vicinity'			: vicinity,
-					'types'				: types,
-					'deal_description'	: description,
-					'deal_line1'		: deal_text,
-					'distance'			: 0, #is -1 if unknown = double
-					'development'		: True
-					}
-				
-				logging.debug(levr.log_dict(params))
-				
-				#create deal and business entities
-				deal_entity = levr.dealCreate(params,'phone_new_business',False)
-				
-				business_entity = levr.Business.get(deal_entity.businessID)
-				
-				#update business with the locu id
-				venue_id = venue.get('id')
-				business_entity.locu_id = venue_id
-				
-				#update the deal with the locu id
-				deal_id = x.get('id')
-				deal_entity.locu_id = deal_id
-				
-				db.put([deal_entity,business_entity])
-				
-				logging.debug(levr.log_model_props(business_entity))
-				logging.debug(levr.log_model_props(deal_entity))
-				
-				
-			self.response.out.write('<br/>Done!')
-		except:
-			self.response.out.write('<br/>Error...')
-			levr.log_error()
-			
 class TestNotificationHandler(webapp2.RequestHandler):
 	def get(self):
 		
@@ -494,9 +333,6 @@ class TestNotificationHandler(webapp2.RequestHandler):
 		actor = levr.Customer.gql('WHERE email=:1','alonso@levr.com').get()
 		#go get the deal
 		deal = levr.Deal.all().ancestor(user.key()).get()
-		
-		
-		
 		
 		if not deal:
 			deal = levr.Deal.all().get()
@@ -516,43 +352,6 @@ class TestNotificationHandler(webapp2.RequestHandler):
 		levr.create_notification('levelup',user.key(),actor)
 		
 		self.response.out.write('HOLY SHIT NEW NOTIFICATIONS OMG OMG OMG')
-		
-class TestYipitHandler(webapp2.RequestHandler):
-	def get(self):
-		api_utils.search_yipit('sugar')
-		
-class TestCategoryHandler(webapp2.RequestHandler):
-	def get(self):
-		url = 'https://api.foursquare.com/v2/venues/categories?oauth_token=4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0'
-		result = urlfetch.fetch(url=url)
-		#logging.info(str(result))
-		result = json.loads(result.content)
-		
-		tags = []
-		
-		for category in result['response']['categories']:
-			logging.info(category['name'])
-			if category['name'] == 'Food' or category['name'] == 'Nightlife Spot':
-				for subcat in category['categories']:
-					logging.info(subcat['name'])
-					tags.append(subcat['name'])
-		
-		self.response.out.write(json.dumps(tags))
-		
-class UpdatePinsHandler(webapp2.RequestHandler):
-	def get(self):
-		#update all entities
-		deals = levr.Deal.all().get()
-		
-		for deal in deals:
-			if deal.origin == 'foursquare':
-				deal.pin_color = 'blue'
-			else:
-				deal.pin_color = 'red'
-				
-			logging.info(deal.pin_color)
-			deal.put()
-			
 			
 class Create100DeadNinjasHandler(webapp2.RequestHandler):
 	def get(self):
@@ -639,26 +438,6 @@ class HarmonizeVenuesHandler(webapp2.RequestHandler):
 # 			t = taskqueue.add(url='/tasks/businessHarmonizationTask',payload=json.dumps(task_params))
 
 
-class UpdateBusinessHandler(webapp2.RequestHandler):
-	def get(self):
-		api_utils.update_foursquare_business('4b05866ff964a520256222e3')
-		
-class ClearFoursquareHandler(webapp2.RequestHandler):
-	def get(self):
-		deals = levr.Deal.gql('WHERE origin=:1','foursquare')
-
-		# for deal in deals:
-# 		     deal.delete()
-# 		
-# 		businesses = levr.Business.gql('WHERE foursquare_id > :1','')
-# 		
-# 		for business in businesses:
-# 		    business.delete()
-# 		    
-# 		deadNinjas = levr.Customer.gql('WHERE email = :1','deadninja@levr.com')
-# 		
-# 		for ninja in deadNinjas:
-# 			ninja.delete()
 class RefreshQHandler(webapp2.RequestHandler):
 	def get(self):
 		q = levr.Customer.all().filter('email','ethan@levr.com').get()
@@ -667,7 +446,7 @@ class RefreshQHandler(webapp2.RequestHandler):
 		q.upvotes = []
 		q.downvotes = []
 		q.new_notifications = 0
-		q_key = q.put()
+		q.put()
 		self.response.out.write('reset q favroites, upvotes, downvotes')
 		
 		notifications = levr.Notification.all().ancestor(q.key()).fetch(None)
@@ -715,16 +494,6 @@ class TestCronJobHandler(webapp2.RequestHandler):
 			
 		except:
 			levr.log_error()
-		
-class NewUserHandler(webapp2.RequestHandler):
-	def get(self):
-		task_params = {
-			'user_string'	:	'Alonso H.'
-			}
-			
-		t = taskqueue.add(url='/tasks/newUserTextTask',payload=json.dumps(task_params))
-		
-		self.response.out.write('ok')
 		
 class FloatingContentHandler(webapp2.RequestHandler):
 	def get(self):
@@ -778,38 +547,32 @@ class FloatingContentHandler(webapp2.RequestHandler):
 		#put it in!
 		fc.put()
 #		
-#def set_geohash_to_memcache(key,val):
-#	client = memcache.Client()
-#	while True: # Retry loop
-#		counter = client.gets(key)
-#		assert counter is not None, 'Uninitialized counter'
-#		if client.cas(key, counter+1):
-#			break
 class SandboxHandler(webapp2.RequestHandler):
 	'''
 	Dont delete this. This is my dev playground.
 	'''
 	def get(self):
-		lons = [x/1000. for x in range(72400,72600,10) if x%10 ==0]
-		lats = [x/1000. for x in range(42400,42600,10) if x%10 ==0]
-		self.response.out.write(lons.__len__()*lats.__len__())
-		self.response.out.write(lats)
-		
-		for lat in lats:
-			for lon in lons:
-				
-		
-				params = {
-							'lat'			:	lat,
-							'lon'			:	lon,
-							'token'			:	token,
-							'foursquare_ids':	foursquare_ids
-						}
-					
-				logging.debug('Sending this to the task: ' + json.dumps(params))
-			
-				#start the task
-				t = taskqueue.add(url='/tasks/searchFoursquareTask',payload=json.dumps(params))
+		pass
+#		lons = [x/1000. for x in range(72400,72600,10) if x%10 ==0]
+#		lats = [x/1000. for x in range(42400,42600,10) if x%10 ==0]
+#		self.response.out.write(lons.__len__()*lats.__len__())
+#		self.response.out.write(lats)
+#		
+#		for lat in lats:
+#			for lon in lons:
+#				
+#		
+#				params = {
+#							'lat'			:	lat,
+#							'lon'			:	lon,
+#							'token'			:	token,
+#							'foursquare_ids':	foursquare_ids
+#						}
+#					
+#				logging.debug('Sending this to the task: ' + json.dumps(params))
+#			
+#				#start the task
+#				t = taskqueue.add(url='/tasks/searchFoursquareTask',payload=json.dumps(params))
 		
 class DeleteEverythingHandler(webapp2.RequestHandler):
 	def get(self):
@@ -840,22 +603,13 @@ class DeleteEverythingHandler(webapp2.RequestHandler):
 #		db.delete(reports)
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload.*', DatabaseUploadHandler),
-								('/new/find', FilterGeohashHandler),
 								('/new/test', TestHandler),
 								('/new/inundate', AddDealsHandler),
-								('/new/updateUser', UpdateUsersHandler),
-								('/new/locu', PullFromLocuHandler),
 								('/new/notification', TestNotificationHandler),
-								('/new/yipit', TestYipitHandler),
-								('/new/category', TestCategoryHandler),
-								('/new/pins', UpdatePinsHandler),
 								('/new/deadNinjas', Create100DeadNinjasHandler),
 								('/new/harmonizeVenues',HarmonizeVenuesHandler),
-								('/new/updateBusiness',UpdateBusinessHandler),
-								('/new/clearFoursquare',ClearFoursquareHandler),
 								('/new/refreshQ', RefreshQHandler),
 								('/new/testcron', TestCronJobHandler),
-								('/new/newUser', NewUserHandler),
 								('/new/floatingContent', FloatingContentHandler),
 								('/new/sandbox', SandboxHandler),
 								('/new/deleteeverything',DeleteEverythingHandler)

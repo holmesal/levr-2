@@ -1,11 +1,9 @@
 import webapp2
 import logging
-import levr_encrypt as enc
 import levr_classes as levr
 import api_utils
 import json
 #from api_utils import private
-import levr_utils
 from google.appengine.ext import db
 from google.appengine.api import mail
 from google.appengine.api import taskqueue
@@ -60,12 +58,12 @@ class UpvoteHandler(webapp2.RequestHandler):
 				deal.downvotes -= 1
 				
 				#add deal to upvotes
- 				user.upvotes.append(dealID)
+				user.upvotes.append(dealID)
 				#increment the number of upvotes
 				deal.upvotes += 1
 				#add deal to favorites
 				if dealID not in user.favorites:
- 					user.favorites.append(dealID)
+					user.favorites.append(dealID)
 				
 				#do not change the karma of the user who uploaded
 				#do not add notification for the ninja
@@ -103,7 +101,7 @@ class UpvoteHandler(webapp2.RequestHandler):
 				
 				
 				#add to upvote list
- 				user.upvotes.append(dealID)
+				user.upvotes.append(dealID)
 				
 #				#increase the deal upvotes
 				deal.upvotes += 1
@@ -141,7 +139,7 @@ class DownvoteHandler(webapp2.RequestHandler):
 			
 			
 			user 	= kwargs.get('actor')
-			uid 	= user.key()
+#			uid 	= user.key()
 			deal 	= kwargs.get('deal')
 			dealID 	= deal.key()
 			
@@ -220,7 +218,7 @@ class DeleteFavoriteHandler(webapp2.RequestHandler):
 			user 	= kwargs.get('actor')
 			deal 	= kwargs.get('deal')
 			
-			uid 	= user.key()
+#			uid 	= user.key()
 			dealID 	= deal.key()
 			
 			
@@ -265,10 +263,10 @@ class ReportHandler(webapp2.RequestHandler):
 			dealID	= deal.key()
 			
 			#create report Entity
-			report = levr.ReportedDeal(
-									uid = uid,
-									dealID = dealID
-									).put()
+			levr.ReportedDeal(
+							uid = uid,
+							dealID = dealID
+							).put()
 			
 			#is it a foursquare deal that got reported?
 			if deal.origin == 'foursquare':
@@ -289,7 +287,7 @@ class ReportHandler(webapp2.RequestHandler):
 					'uid'				:	str(user.key()),
 					'deal_status'		:	deal.deal_status
 				}
-				t = taskqueue.add(url='/tasks/foursquareDealUpdateTask',payload=json.dumps(task_params))
+				taskqueue.add(url='/tasks/foursquareDealUpdateTask',payload=json.dumps(task_params))
 			
 			#send notification via email
 			message = mail.EmailMessage(
@@ -324,7 +322,6 @@ class DealImgHandler(webapp2.RequestHandler):
 			
 			deal	= kwargs.get('deal')
 			size	= kwargs.get('size')
-			private	= kwargs.get('private')
 			
 			
 			#get the blob
@@ -364,7 +361,7 @@ class DealInfoHandler(webapp2.RequestHandler):
 			private	= kwargs.get('private')
 			
 			response = {
-				'deal'	: api_utils.package_deal(deal)
+				'deal'	: api_utils.package_deal(deal,private)
 			}
 			api_utils.send_response(self,response)
 		except:

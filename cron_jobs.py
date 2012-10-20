@@ -1,12 +1,12 @@
 from datetime import datetime
 from google.appengine.ext import db
 import api_utils
-import json
 import levr_classes as levr
-import levr_encrypt as enc
 import logging
-import random
 import webapp2
+#import json
+#import levr_encrypt as enc
+#import random
 				
 class FoursquareDealUpdateHandler(webapp2.RequestHandler):
 		def get(self):
@@ -57,7 +57,7 @@ class FoursquareDealUpdateHandler(webapp2.RequestHandler):
 				
 			except:
 				levr.log_error()
-class ExpireDealsHandler(webapp2.requestHandler):
+class ExpireDealsHandler(webapp2.RequestHandler):
 	'''
 	A cron job to expire deals that are more than 7 days old
 	'''
@@ -81,8 +81,6 @@ class ExpireDealsHandler(webapp2.requestHandler):
 			
 		except:
 			levr.log_error()
-
-
 
 app = webapp2.WSGIApplication([('/cronjobs/foursquareDealUpdate', FoursquareDealUpdateHandler),
 							('/cronjobs/expireDeals', ExpireDealsHandler)

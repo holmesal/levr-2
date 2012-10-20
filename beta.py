@@ -58,11 +58,11 @@ class MerchantBetaHandler(webapp2.RequestHandler):
 class SendMailHandler(webapp2.RequestHandler):
 	def get(self):
 	
-		noAddressFound = ["brown sugar cafe","campus trolley","first bite cafe","noodle st",]
+#		noAddressFound = ["brown sugar cafe","campus trolley","first bite cafe","noodle st",]
 	
 		targetArr = ["alonso@levr.com","beta@levr.com"]
 		
-		newTargetArr = ["info@tspub.com",""]
+#		newTargetArr = ["info@tspub.com",""]
 		
 		for rec in targetArr:
 			

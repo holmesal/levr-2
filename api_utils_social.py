@@ -1,14 +1,11 @@
 from google.appengine.api import urlfetch
 from google.appengine.ext import db
-from social_data import *
+from social_data import * #@UnusedWildImport
 import json
 import levr_classes as levr
-import levr_encrypt as enc
 import logging
 import oauth2 as oauth
 import time
-import urllib
-import uuid
 #import hmac
 #import hashlib
 #import binascii
@@ -93,7 +90,7 @@ class SocialClass:
 		if to_be_notified:
 			logging.debug(to_be_notified)
 			logging.debug(type(to_be_notified[0]))
-			logging.debug([user.key() for key in to_be_notified])
+			logging.debug([user.key() for user in to_be_notified])
 			#place the list of user entities, and get a list of ids in return
 			to_be_notified = db.put(to_be_notified)
 #			to_be_notified = [friend.key() for friend in to_be_notified]
@@ -494,15 +491,14 @@ class Foursquare(SocialClass):
 		
 		
 		#store the information for the users facebook friends that were just found
-		new_friends = self.extend_friends(
-										twitter_friends_by_sn=twitter_friends_by_sn,
-										facebook_friends=facebook_friends,
-										foursquare_friends=foursquare_friends
-										)
+		self.extend_friends(
+							twitter_friends_by_sn=twitter_friends_by_sn,
+							facebook_friends=facebook_friends,
+							foursquare_friends=foursquare_friends
+							)
 		
 		#Create the connection between the user and their friends
 		new_friends = self.connect_friends()
-		
 		return new_friends
 	
 	def create_url(self, action):
@@ -715,7 +711,7 @@ class Twitter(SocialClass):
 		twitter_friends_by_id = content['ids']
 		
 		#store the information for the users facebook friends that were just found
-		new_friends = self.extend_friends(facebook_friends_by_id=twitter_friends_by_id)
+		self.extend_friends(facebook_friends_by_id=twitter_friends_by_id)
 		
 		#Create levr the connection between the user and their friends
 		new_levr_friends = self.connect_friends()
@@ -918,7 +914,7 @@ class Facebook(SocialClass):
 		facebook_user = self.fetch('user')
 		updated = {}
 		if self.verbose: logging.debug('\n\n\n\t\t\t\t FACEBOOK GET USER DETAILS \n\n\n')
-		name			= facebook_user['name']
+#		name			= facebook_user['name']
 		first_name		= facebook_user['first_name']
 		last_name		= facebook_user['last_name']
 		display_name	= self.build_display_name(first_name, last_name)
@@ -958,7 +954,7 @@ class Facebook(SocialClass):
 			facebook_friends.append(int(f['id']))
 		
 		#store the information for the users facebook friends that were just found
-		new_friends = self.extend_friends(facebook_friends=facebook_friends)
+		self.extend_friends(facebook_friends=facebook_friends)
 		
 		#connect the user to their friends that exist on levr
 		new_levr_friends = self.connect_friends()
