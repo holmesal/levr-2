@@ -1,5 +1,6 @@
 from gaesessions import get_current_session
 import logging
+import levr_classes as levr
 
 def login_check(self):
 	'''	for merchants ONLY
@@ -35,3 +36,26 @@ def validated_check(user):
 		return True
 	else:
 		return False
+		
+def create_deal(deal,business,owner):
+	'''deal: a deal object
+	merchant: the merchant to be set as the owner of the deal'''
+	
+	#init tags
+	tags = []
+	#add tags from the merchant
+	tags.extend(business.create_tags())
+	#add tags from deal stuff
+	
+	#create the deal
+	
+	
+	
+	
+	#get businessID - not encrypted - from database
+	businessID = business.key()
+	logging.debug("businessID: "+str(businessID))
+	
+	#check if the merchant has validated their business. If so, deploy as active. If not, deploy as pending
+	if validated_check(owner):
+		pass
