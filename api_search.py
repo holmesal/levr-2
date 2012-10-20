@@ -14,30 +14,36 @@ import random
 
 
 class SearchQueryHandler(webapp2.RequestHandler):
-	@api_utils.validate('query',None,geoPoint=True,radius=False,user=False)
+	@api_utils.validate('query',None,geoPoint=True,radius=False,user=False,latitudeHalfDelta=False,longitudeHalfDelta=False)
 	def get(self,*args,**kwargs):
 		'''
 		inputs: lat,lon,limit, query
-		Output:{
-			meta:{
-				success
-				errorMsg
-				}
-			response:{
-				[string,string]
-				}
+		response:{
+			[string,string]
+			}
+		/api/search/all?
+		lat=42.357632
+		&lon=-71.089432
+		&limit=50
+		&offset=0
+		&uid=tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fO3GJdErv19TaoeLGNiu51St9sfoYChA=
+		&levrToken=7ALUawsTs1R3_z_pK0YTx4cCkpfSFzuDCOM1XQCXWDM
+		&latitudeHalfDelta=0.023277
+		&longitudeHalfDelta=0.027466
 		'''
 		try:
 			logging.debug('SEARCH BY QUERY\n\n\n')
 	#		logging.debug(kwargs)
 			#GET PARAMS
 			logging.info(kwargs)
-			geo_point 	= kwargs.get('geoPoint')
-			radius 		= kwargs.get('radius')
-			limit 		= kwargs.get('limit')
-			query 		= kwargs.get('query','all')
-			development = kwargs.get('development',False)
-			user 		= kwargs.get('actor')
+			geo_point 		= kwargs.get('geoPoint')
+			radius 			= kwargs.get('radius')
+			limit 			= kwargs.get('limit')
+			query 			= kwargs.get('query','all')
+			development		= kwargs.get('development',False)
+			user 			= kwargs.get('actor')
+			lon_half_delta	= kwargs.get('longitudeHalfDelta')
+			lat_half_delta	= kwargs.get('latitudeHalfDelta')
 			
 			
 			if development:

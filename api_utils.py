@@ -281,12 +281,16 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						'deal'		: levr.Deal,
 						
 						#searching, user info, deal info stuff
-						'limit'		: int,
-						'offset'	: int,
-						'geoPoint'	: db.GeoPt,
-						'radius'	: float,
-						'since'		: int,
-						'size'		: str,
+						'limit'				: int,
+						'offset'			: int,
+						'geoPoint'			: db.GeoPt,
+						'radius'			: float,
+						'since'				: int,
+						'size'				: str,
+						'query'				: str,
+						'latitudeHalfDelta' : float,
+						'longitudeHalfDelta': float,
+						
 						
 						#login and connect stuff
 						'levrToken'			: str,
@@ -316,13 +320,15 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						'deal'		: None,
 						
 						#searching, user info, deal info stuff
-						'limit'		: 50,
-						'offset'	: 0,
-						'geoPoint'	: levr.geo_converter('42.349798,-71.120000'),
-						'radius'	: 2,
-						'since'		: None,
-						'size'		: 'large',
-						'query'		: 'all',
+						'limit'				: 50,
+						'offset'			: 0,
+						'geoPoint'			: levr.geo_converter('42.349798,-71.120000'),
+						'radius'			: 2,
+						'since'				: None,
+						'size'				: 'large',
+						'query'				: 'all',
+						'latitudeHalfDelta'	: None,
+						'longitudeHalfDelta': None,
 						
 						#login and connect stuff
 						'levrToken'			: '',
