@@ -4,6 +4,7 @@ from fnmatch import filter
 from google.appengine.api import images, urlfetch, memcache
 from google.appengine.ext import db
 from math import sin, cos, asin, sqrt, degrees, radians, floor, sqrt
+import api_utils_social as social
 import geo.geohash as geohash
 import json
 import levr_classes as levr
@@ -12,7 +13,6 @@ import logging
 import os
 import random
 import urllib
-
 
 
 #creates a url for remote or local server
@@ -1059,13 +1059,13 @@ def merge_customer_info_from_B_into_A(user,donor,service):
 	
 	if donor.tester or user.tester: user.tester = True
 	user.karma += donor.karma
-	api_utils.level_check(user)
+	level_check(user)
 	
-	user.new_notifications += donor.new_notification
+	user.new_notifications += donor.new_notifications
 	#===================================================================
 	# Notification references - dont care about actor references
 	#===================================================================
-	notification_references = levr.notifications.all().filter('to_be_notified',donor.key()).fetch(None)
+	notification_references = levr.Notification.all().filter('to_be_notified',donor.key()).fetch(None)
 	for n in notification_references:
 		n.to_be_notified.remove(donor.key())
 	db.put(notification_references)
@@ -1096,7 +1096,7 @@ def merge_customer_info_from_B_into_A(user,donor,service):
 		donor.foursquare_id = -1
 		donor.foursquare_token = ''
 		donor.foursquare_friends = []
-	if service == 'facebook':
+	elif service == 'facebook':
 		logging.info('The user came from facebook')
 		user = social.Facebook(user,'verbose')
 		#connect the user using facebook
@@ -1107,7 +1107,7 @@ def merge_customer_info_from_B_into_A(user,donor,service):
 		donor.facebook_id = -1
 		donor.facebook_token = ''
 		donor.facebook_friends = []
-	if service == 'twitter':
+	elif service == 'twitter':
 		logging.info('The user came from twitter')
 		user = social.Twitter(user,'verbose')
 		#connect the user using facebook
@@ -1122,7 +1122,10 @@ def merge_customer_info_from_B_into_A(user,donor,service):
 		donor.twitter_friends_by_id = []
 		donor.twitter_friends_by_sn = []
 	else:
-		raise Exception('contentID prefix not recognized: '+service)
+		raise Exception('social service not recognized: '+service)
+	logging.debug('New friends:, New details:')
+	logging.debug(new_friends)
+	logging.debug(new_user_details)
 	donor.put()
 	return new_user, donor
 def search_foursquare(geo_point,token,deal_status,already_found=[],**kwargs):

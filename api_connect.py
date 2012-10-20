@@ -80,9 +80,9 @@ class ConnectFoursquareHandler(webapp2.RequestHandler):
 					assert False, 'Could not connect with foursquare. '.format('')
 			
 			response = {
-					'user'				: api_utils.package_user(user,True),
-					'new_friends'		: [enc.encrypt_key(f) for f in new_friends],
-					'new_user_details'	: new_user_details
+					'user'				: api_utils.package_user(user,True)
+#					'new_friends'		: [enc.encrypt_key(f) for f in new_friends],
+#					'new_user_details'	: new_user_details
 					}
 			api_utils.send_response(self,response,user)
 		except AssertionError,e:
