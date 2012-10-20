@@ -268,7 +268,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 	def wrapper(handler_method):
 		'''
 		This is the decorator that operates on the function being decorated
-		I dont understand this. Gah!
+		- it is produced by the higher level factory, 'validate'
 		'''
 		def validator(self,*args,**kwargs):
 			logging.debug('Validator')
