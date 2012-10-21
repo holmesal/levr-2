@@ -1281,7 +1281,7 @@ def filter_foursquare_deal(foursquare_deal,already_found):
 		return True
 		
 	#search keywords to weed out more deals
-	types = ['mayor','w/coupon! Text','spg.com/better','topguest.com','www.']
+	types = ['mayor','w/coupon! Text','spg.com/better','topguest.com','www.','gift card','disney on ice']
 	for dealType in types:
 		if dealType in foursquare_deal['message'] or dealType in foursquare_deal['description']:
 			logging.info('Special '+foursquare_deal['id']+' filtered out because the non-allowed keyword "'+dealType+'" was found in the message or description.')
@@ -1379,12 +1379,10 @@ def update_foursquare_business(foursquare_id,deal_status,token='random'):
 
 	logging.info('''
 						
-							Updating the deals at the following business:
+			Updating the deals at the following business:
 							
 	''')
-	logging.info(foursquare_business.business_name)
-	logging.info(foursquare_business.key())
-	logging.info(foursquare_business.foursquare_id)
+	logging.info(foursquare_id)
 
 
 	#if token is passes as 'random', use a hardcoded token
