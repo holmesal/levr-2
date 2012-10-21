@@ -610,6 +610,16 @@ class DeleteEverythingHandler(webapp2.RequestHandler):
 #		
 #		reports = levr.ReportedDeal.all().fetch(None)
 #		db.delete(reports)
+
+class OwnerOfHandler(webapp2.RequestHandler):
+	def get(self):
+		alonso = levr.Customer.gql('WHERE email=:1','alonso@levr.com').get()
+		business = levr.Business.all().get()
+		alonso.owner_of = str(business.key())
+		alonso.put()
+		
+	
+
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload.*', DatabaseUploadHandler),
 								('/new/test', TestHandler),
@@ -621,7 +631,8 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/testcron', TestCronJobHandler),
 								('/new/floatingContent', FloatingContentHandler),
 								('/new/sandbox', SandboxHandler),
-								('/new/deleteeverything',DeleteEverythingHandler)
+								('/new/deleteeverything',DeleteEverythingHandler),
+								('/new/ownerof',OwnerOfHandler)
 								],debug=True)
 
 

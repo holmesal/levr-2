@@ -1081,7 +1081,7 @@ def search_foursquare(geo_point,token,deal_status,already_found=[],**kwargs):
 	logging.info('Using token: '+token)
 	
 	
-	url = 'https://api.foursquare.com/v2/specials/search?v=20120920&ll='+repr(geo_point)+'&limit=50&oauth_token='+token
+	url = 'https://api.foursquare.com/v2/specials/search?v=20120920&ll='+str(geo_point)+'&limit=50&oauth_token='+token
 	result = urlfetch.fetch(url=url)
 	result = json.loads(result.content)
 	foursquare_deals = result['response']['specials']['items']
