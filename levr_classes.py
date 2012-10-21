@@ -165,7 +165,7 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 			user.new_notifications += 1
 			
 			#write line2
-			line2 = 'You are now level 99. Woohoo!'
+			line2 = 'You are now level'+str(user.level)+'. Woohoo!'
 			
 			#replace user
 			user.put()
