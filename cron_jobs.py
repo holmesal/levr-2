@@ -23,6 +23,7 @@ class FoursquareDealUpdateHandler(webapp2.RequestHandler):
 				
 				for foursquare_business in foursquare_businesses:
 					try:
+						#look at doing this on a backend so we don't eat frontend cpu time - then we could do this anytime, not just at 2AM
 						logging.info('Creating a deferred task for the foursquare business: '+foursquare_business.business_name)
 						result = deferred.defer(api_utils.update_foursquare_business,foursquare_business.foursquare_id,'active')
 						logging.debug(result)
