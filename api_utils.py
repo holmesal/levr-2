@@ -1450,6 +1450,10 @@ def update_foursquare_business(foursquare_id,deal_status,token='random'):
 				# logging.info('THE DEAL:')
 # 				logging.info(levr.log_dict(foursquare_deal))
 				if not filter_foursquare_deal(foursquare_deal,already_found):
+					#sometimes there isn't a category
+					if len(foursquare_deal['venue']['categories']) == 0:
+						logging.info('No venue category returned, making it "undefined"')
+						foursquare_deal['venue']['categories'] = [{'name':'undefined'}]
 					
 					#add the deal
 					deal = add_foursquare_deal(foursquare_deal,business,deal_status)
