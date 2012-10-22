@@ -51,7 +51,17 @@ def create_pin_color(deal):
 		
 	return pin_color
 
-
+def package_deal_multi(deals,private=False,*args,**kwargs):
+	'''
+	Batch packages a list of deals
+	
+	@param deals: The deal entities to be packaged for output
+	@type deals: [levr.Deal,]
+	@param private: Determines the privacy level of the information
+	@type private: boolean
+	'''
+	pass
+	
 def package_deal(deal,private=False,*args,**kwargs):
 #	logging.debug(deal.businessID)
 #	logging.debug(deal.key())

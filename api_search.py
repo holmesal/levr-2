@@ -107,7 +107,6 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			#===================================================================
 			logging.info('precision: {}'.format(precision))
 			t1 = datetime.now()
-			
 			if precision == 5:
 				new_hash_set = [geohash.encode(lat1,lon1,precision=precision)]
 				total_hash_set = geohash.expand(new_hash_set[0])
@@ -173,10 +172,25 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			min_lat = min(lat)
 			min_lon = min(lon)
 			
-			#create bounding box
+			bottom_left_hash = geohash.encode(min_lat,min_lon,precision)
+			
+#			levr.geo_converter(str(min_lat)+','+str(min_lon))
+			top_right_hash = geohash.encode(max_lat, max_lon, precision)
+#			levr.geo_converter(str(max_lat)+','+str(max_lon))
+			
+			logging.info(top_right_hash)
+			logging.info(bottom_left_hash)
+			tr = geohash.bbox(top_right_hash)
+			bl = geohash.bbox(bottom_left_hash)
+			top_right = (tr['n'],tr['e'])
+			bottom_left = (bl['s'],bl['w'])
 			bounding_box = {
-						'bottom_left'	: (min_lat,min_lon),
-						'top_right'		: (max_lat,max_lon)
+						'bottom_left'	: bottom_left,
+#						'bot_left'		: (min_lat,min_lon),
+						'top_right'		: top_right
+#						'top_rt'		: (max_lat,max_lon),
+#						'tr'			: tr,
+#						'bl'			: bl
 						}
 			logging.debug(bounding_box)
 			
