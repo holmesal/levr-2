@@ -113,6 +113,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				total_hash_set = geohash.expand(new_hash_set[0])
 			elif precision == 6:
 				# center hash
+				
 				new_hash_set = [geohash.encode(lat1,lon1,precision=precision)]
 				#iterate searches the specified number of times
 				for i in range(0,max_iterations): #@UnusedVariable
@@ -137,9 +138,9 @@ class SearchQueryHandler(webapp2.RequestHandler):
 					#reset new_hash_set
 	#				logging.info('searched_hash_set: '+str(searched_hash_set))
 				# 
-				logging.info('searched_hash_set: '+str(searched_hash_set))
+				
 				total_hash_set = searched_hash_set
-			
+			logging.info('total_hash_set: '+str(total_hash_set))
 			t2 = datetime.now()
 			geo_box_creation_time = t2-t1
 			

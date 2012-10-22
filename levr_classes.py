@@ -403,6 +403,7 @@ def update_deal_key_memcache(geo_point,dealID,namespace):
 	geo_hash_6 = geohash.encode(geo_point.lat,geo_point.lon,precision=6)
 	geo_hash_5 = geohash.encode(geo_point.lat, geo_point.lon, precision=5)
 	geo_hash_list = [geo_hash_5,geo_hash_6]
+	logging.info(geo_hash_list)
 	#create the client
 	client = memcache.Client() #@UndefinedVariable
 	#safely update the memcache - while loop allows this to happen all over the place psuedo-concurrently
@@ -414,30 +415,34 @@ def update_deal_key_memcache(geo_point,dealID,namespace):
 			logging.debug('geohashes {} were deleted from memcache'.format(geo_hash_list))
 			break
 	return
-		#=======================================================================
-		#=======================================================================
-		# # This is for actually updating the memcache. 
-		#=======================================================================
-		# # Grab the existing hashes from the memcache
-		# key_list = client.gets(geo_hash,namespace=namespace)
-		# if key_list is not None:
-		#	key_list.append(dealID)
-		#	if client.cas(geo_hash,key_list):#,namespace=namespace):
-		#		logging.debug('memcache update {} success'.format(geo_hash))
-		#		# cas_multi returns a list of keys that could not be updated, ergo if nothing was returned it was successful
-		#		break
-		# else:
-		#	key_list = [dealID]
-		#	if client.add(geo_hash,key_list):#,namespace=namespace):
-		#		logging.debug('memcache add {} success'.format(geo_hash))
-		#		# cas_multi returns a list of keys that could not be updated, ergo if nothing was returned it was successful
-		#		break
-		# logging.debug('to update in memcache: '+str(geo_hash)+' = '+str(key_list))
-		# #replace the new_hash_mappings in the memcache
-		#=======================================================================
-		
-		
-
+#	
+	# This is for actually updating the memcache. 
+	# Grab the existing hashes from the memcache
+	
+#	
+##	while True and failsafe <50:
+#	for i in range(0,5): #@UnusedVariable
+#		failsafe += 1
+#		logging.debug(failsafe)
+#		#grab existing mappings
+#		existing_mappings = client.get_multi(geo_hash_list, '', namespace, True)
+#		logging.info(existing_mappings)
+##		unresolved_keys = filter(lambda x: x not in existing_mappings,geo_hash_list)
+#		
+#		#update the mappings that exist in the memcache
+#		for key in existing_mappings:
+#			existing_mappings[key].append(dealID)
+#		unresolved_keys = client.cas_multi(existing_mappings, 0, '',0, namespace)
+#		logging.info('unresolved_keys: '+repr(unresolved_keys))
+#		if not unresolved_keys:
+#			# Everything was updated properly
+#			break
+#		else:
+#			# Some keys were not updated. Update list of geo_hashes for next loop
+#			geo_hash_list = unresolved_keys
+#			logging.info('cas_multi failed on keys: {}'.format(unresolved_keys))
+#			break
+#	logging.info(failsafe)
 
 	#============================================================================
 	# while True: # Retry loop
@@ -728,6 +733,8 @@ def dealCreate(params,origin,upload_flag=True):
 		namespace = MEMCACHE_TEST_GEOHASH_NAMESPACE
 	else:
 		raise Exception('Invalid memcache namespace')
+	logging.debug('Updating memcache')
+	logging.info('updating memcahce')
 	update_deal_key_memcache(deal.geo_point,deal.key(),namespace)
 	
 	#dealput is the deal key i.e. dealID
@@ -783,6 +790,8 @@ class Customer(db.Model):
 	display_name	= db.StringProperty()
 	photo			= db.StringProperty(default='http://www.levr.com/img/levr.png')
 	
+	#metadata used for migrations
+	model_version	= db.IntegerProperty(default=1)
 	#user meta
 	tester			= db.BooleanProperty(default=False)
 	level			= db.IntegerProperty(default=0)
@@ -1062,7 +1071,10 @@ class Business(db.Model):
 	activation_code = db.StringProperty()
 	locu_id			= db.StringProperty()
 	karma			= db.IntegerProperty(default=0)
-
+	
+	#metadata used for migrations
+	model_version	= db.IntegerProperty(default=1)
+	
 	def create_tags(self):
 		#create tags list
 		tags = []
@@ -1092,6 +1104,9 @@ class Deal(polymodel.PolyModel):
 	locu_id			= db.StringProperty()
 	foursquare_id	= db.StringProperty()
 	foursquare_type	= db.StringProperty()
+	
+	#metadata used for migrations
+	model_version	= db.IntegerProperty(default=1)
 	
 	#deal display info
 	deal_text		= db.StringProperty(default='')
@@ -1304,7 +1319,8 @@ class Notification(db.Model):
 	to_be_notified		= db.ListProperty(db.Key)
 	deal				= db.ReferenceProperty(Deal,collection_name='notifications')
 	actor				= db.ReferenceProperty(Customer)
-	
+	#metadata used for migrations
+	model_version		= db.IntegerProperty(default=1)
 
 #===============================================================================
 # class CashOutRequest(db.Model):
@@ -1326,6 +1342,8 @@ class ReportedDeal(db.Model):
 	deal			= db.ReferenceProperty(Deal,collection_name='reported_deals')
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	date_last_edited= db.DateTimeProperty(auto_now=True)
+	#metadata used for migrations
+	model_version	= db.IntegerProperty(default=1)
 	
 class BusinessBetaRequest(db.Model):
 	business_name	= db.StringProperty()
@@ -1333,6 +1351,8 @@ class BusinessBetaRequest(db.Model):
 	contact_email	= db.StringProperty()
 	contact_phone	= db.StringProperty()
 	date_created	= db.DateTimeProperty(auto_now_add=True)
+	#metadata used for migrations
+	model_version	= db.IntegerProperty(default=1)
 	
 class FloatingContent(db.Model):
 	#only has outbound references, no inbound
@@ -1342,4 +1362,6 @@ class FloatingContent(db.Model):
 	user				= db.ReferenceProperty(Customer,collection_name='floating_content')
 	deal				= db.ReferenceProperty(Deal,collection_name='floating_content')
 	business			= db.ReferenceProperty(Business,collection_name='floating_content')
+	#metadata used for migrations
+	model_version		= db.IntegerProperty(default=1)
 
