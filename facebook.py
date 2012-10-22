@@ -31,15 +31,18 @@ import webapp2
 
 class AuthorizeBeginHandler(webapp2.RequestHandler):
 	def get(self):
-		logging.debug('\n\n\t\t Hit the Authorize Begin Handler \n\n')
-		client_id		= facebook_auth['client_id']
-		state			= uuid.uuid4()
-		scope			= 'publish_actions'
-		redirect_uri	= 'http://levr-production.appspot.com/facebook/authorize/complete'
-		url = 'https://www.facebook.com/dialog/oauth?client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}&state={scope}'.format(
-													client_id = client_id, redirect_uri= redirect_uri, scope= scope, state= state)
-		logging.debug(url)
-		self.redirect(url)
+		try:
+			logging.debug('\n\n\t\t Hit the Authorize Begin Handler \n\n')
+			client_id		= facebook_auth['client_id']
+			state			= uuid.uuid4()
+			scope			= 'publish_actions'
+			redirect_uri	= 'http://levr-production.appspot.com/facebook/authorize/complete'
+			url = 'https://www.facebook.com/dialog/oauth?client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}&state={scope}'.format(
+														client_id = client_id, redirect_uri= redirect_uri, scope= scope, state= state)
+			logging.debug(url)
+			self.redirect(url)
+		except Exception,e:
+			levr.log_error(e)
 
 class AuthorizeCompleteHandler(webapp2.RequestHandler):
 	def get(self):
