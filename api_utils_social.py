@@ -76,7 +76,7 @@ class SocialClass:
 		to_be_notified = []
 		#if the user has not been stored yet, it will not have a key
 		try:	actor_id = self.user.key()
-		except:	
+		except:
 			raise Exception('User does not exist in db yet. ')
 			actor_id = db.Key()
 		#for each user entity that has been identified as a potential new friend
@@ -305,8 +305,7 @@ class Foursquare(SocialClass):
 			if not user:
 				logging.debug('user doesnt exist')
 				#user does not exist in database - create a new one!
-				user = levr.Customer(levr_token = levr.create_levr_token())
-				user.put()
+				user = levr.create_new_user()
 			else:
 				logging.debug('user exists')
 			# else: user was found and we will init with that user
@@ -583,8 +582,7 @@ class Twitter(SocialClass):
 			if not user:
 				logging.debug('user doesnt exist')
 				#user does not exist in database - create a new one!
-				user = levr.Customer(levr_token = levr.create_levr_token())
-				user.put()
+				user = levr.create_new_user()
 			else:
 				logging.debug('user exists')
 			# else: user was found and we will init with that user
@@ -869,8 +867,7 @@ class Facebook(SocialClass):
 			if not user:
 				logging.debug('user doesnt exist')
 				#user does not exist in database - create a new one!
-				user = levr.Customer(levr_token = levr.create_levr_token())
-				user.put()
+				user = levr.create_new_user()
 			else:
 				logging.debug('user exists')
 			# else: user was found and we will init with that user

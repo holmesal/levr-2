@@ -969,19 +969,7 @@ def bounding_box(lat, lon, distance):
 ##########/GEO DISTANCES
 
 
-def level_check(user):
-	'''updates the level of a user. this function should be run after someone upvotes a user or anything else happens.'''
-	'''square root for the win'''
-	old_level = user.level
-	new_level = int(floor(sqrt(user.karma)))
-	
-	if new_level != old_level:
-		#level up notification
-		levr.create_notification('levelup',user.key(),user.key())
-		
-	user.level = new_level
-		
-	return user
+
 
 def merge_customer_info_from_B_into_A(user,donor,service):
 	'''
@@ -1003,7 +991,7 @@ def merge_customer_info_from_B_into_A(user,donor,service):
 	
 	if donor.tester or user.tester: user.tester = True
 	user.karma += donor.karma
-	level_check(user)
+	levr.level_check(user)
 	
 	user.new_notifications += donor.new_notifications
 	#===================================================================
@@ -1073,7 +1061,7 @@ def merge_customer_info_from_B_into_A(user,donor,service):
 	donor.put()
 	return new_user, donor
 def search_foursquare(geo_point,token,deal_status,already_found=[],**kwargs):
-
+	assert deal_status != 'random', 'Deal status is being set as random'
 	#if token is passes as 'random', use a hardcoded token
 	if token == 'random':
 		hardcoded = ['IDMTODCAKR34GOI5MSLEQ1IWDJA5SYU0PGHT4F5CAIMPR4CR','ML4L1LW3SO0SKUXLKWMMBTSOWIUZ34NOTWTWRW41D0ANDBAX','RGTMFLSGVHNMZMYKSMW4HYFNEE0ZRA5PTD4NJE34RHUOQ5LZ']
@@ -1083,6 +1071,11 @@ def search_foursquare(geo_point,token,deal_status,already_found=[],**kwargs):
 	
 	url = 'https://api.foursquare.com/v2/specials/search?v=20120920&ll='+str(geo_point)+'&limit=50&oauth_token='+token
 	result = urlfetch.fetch(url=url)
+	if result.status_code != 200:
+		# Foursquare request was not successful
+		levr.log_error(result.headers.data)
+		return
+	
 	result = json.loads(result.content)
 	foursquare_deals = result['response']['specials']['items']
 	logging.debug(foursquare_deals)
@@ -1580,7 +1573,7 @@ class SpoofUndeadNinjaActivity:
 					
 		
 		#update the users level
-		level_check(self.user)
+		levr.level_check(self.user)
 		
 		db.put(notifications)
 #		db.put(self.user)

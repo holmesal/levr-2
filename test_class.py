@@ -166,7 +166,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 					'img_key'			: img_key
 					}
 		
-		levr.dealCreate(params,'phone_new_business')
+		dealID = levr.dealCreate(params,'phone_new_business')
 		
 		bus = levr.Business.get(dealID.businessID)
 		
@@ -356,8 +356,9 @@ class TestNotificationHandler(webapp2.RequestHandler):
 		levr.create_notification('favorite',user.key(),actor,deal.key())
 		
 		#levelup notification
-		levr.create_notification('levelup',user.key(),actor)
-		
+		user.new_notifications += 1
+		levr.create_notification('levelup',user.key(),actor,new_level='inf')
+		user.put()
 		self.response.out.write('HOLY SHIT NEW NOTIFICATIONS OMG OMG OMG')
 			
 class Create100DeadNinjasHandler(webapp2.RequestHandler):

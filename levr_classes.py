@@ -14,6 +14,7 @@ import re
 import sys
 import traceback
 import uuid
+from math import floor, sqrt
 #from random import randint
 #from math import floor
 
@@ -51,8 +52,37 @@ upvote_phrases = [
 		'Thinks that your deal is just grand!',
 		'Thinks your deal is absolutely spiffing.'
 		]
+
+def create_new_user(**kwargs):
+	'''
+	A wrapper function to create a new user. performs basic operations like creating a levr token
+	and performing the initial level check
+	puts the user before returning, because otherwise level check will not work
+	'''
+	user = Customer(levr_token=create_levr_token())
+	for key in kwargs:
+		setattr(user, key, kwargs.get(key))
+	user.put()
+	user = level_check(user)
+	user.put()
+	return user
+	
+def level_check(user):
+	'''updates the level of a user. this function should be run after someone upvotes a user or anything else happens.'''
+	'''square root for the win'''
+	old_level = user.level
+
+	new_level = int(floor(sqrt(user.karma)))
+	logging.info('{} != {}: {}'.format(old_level,new_level,str(old_level != new_level)))
+	if new_level != old_level:
+		logging.info('I am here!')
+		#level up notification
+		create_notification('levelup',user.key(),user.key(),new_level=new_level)
+	user.new_notifications += 1
+	user.level = new_level
 		
-def create_notification(notification_type,to_be_notified,actor,deal=None):
+	return user
+def create_notification(notification_type,to_be_notified,actor,deal=None,**kwargs):
 	'''
 	notification_type	= choices: 
 	'thanks',
@@ -86,14 +116,6 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 		if notification_type == 'newFollower':
 			#user is the person that is being followed
 			user = Customer.get(to_be_notified[0])
-			
-			
-			#add the actor to the list of followers
-			# if actor not in user.followers:
-#				user.followers.append(actor)
-# 			else:
-# 				#do nothing
-# 				return True
 			
 			#set the phrase
 			line2 = 'Has subscribed to your offers.'
@@ -159,16 +181,18 @@ def create_notification(notification_type,to_be_notified,actor,deal=None):
 			
 		elif notification_type == 'levelup':
 			#get user,actor
-			user = db.get(to_be_notified[0])
+#			user = db.get(to_be_notified[0])
 			
 			#increment notification count
-			user.new_notifications += 1
+#			user.new_notifications += 1
 			
+			new_level = kwargs.get('new_level')
+			assert new_level,'Must pass new_level as kwarg to create new levelup notification'
 			#write line2
-			line2 = 'You are now level 99. Woohoo!'
-			
+			line2 = 'You are now level {}. Woohoo!'.format(new_level)
+			logging.info(line2)
 			#replace user
-			user.put()
+#			user.put()
 		elif notification_type == 'expired':
 			logging.debug('\n\n\n\n\n\n EXPIRED!!! \n\n\n\n')
 			user = db.get(to_be_notified[0])
@@ -761,7 +785,7 @@ class Customer(db.Model):
 	
 	#user meta
 	tester			= db.BooleanProperty(default=False)
-	level			= db.IntegerProperty(default=1)
+	level			= db.IntegerProperty(default=0)
 	karma			= db.IntegerProperty(default=1)
 	new_notifications = db.IntegerProperty(default=0)
 	

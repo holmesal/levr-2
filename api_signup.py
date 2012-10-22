@@ -53,7 +53,6 @@ class SignupFoursquareHandler(webapp2.RequestHandler):
 			foursquare_token = kwargs.get('remoteToken',None)
 			
 			user = levr.Customer.all().filter('foursquare_token',foursquare_token).get()
-			
 			if user:
 				#fallback to login
 				response = {
@@ -167,19 +166,19 @@ class SignupLevrHandler(webapp2.RequestHandler):
 				return
 			
 			#still here? create a customer, then.
-			user 		= levr.Customer(levr_token=levr.create_levr_token())
-			user.email = email
-			user.pw 	= enc.encrypt_password(pw)
-			user.alias = alias
+			user = levr.create_new_user(
+									email=email,
+									alias=alias,
+									pw=enc.encrypt_password(pw))
 			#put and reply
-			user.put()
-			user = api_utils.level_check(user)
 			
 			#create or refresh the alias
 			user = levr.build_display_name(user)
 			
 			#put and reply
 			user.put()
+			
+			
 			response = {'user':api_utils.package_user(user,True,send_token=True)}
 			api_utils.send_response(self,response,user)
 		except:
