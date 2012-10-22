@@ -7,6 +7,7 @@ import webapp2
 #import json
 #import levr_encrypt as enc
 #import random
+from google.appengine.ext import deferred
 				
 class FoursquareDealUpdateHandler(webapp2.RequestHandler):
 		def get(self):
@@ -22,15 +23,10 @@ class FoursquareDealUpdateHandler(webapp2.RequestHandler):
 				
 				for foursquare_business in foursquare_businesses:
 					try:
-						logging.info('''
-						
-							Updating the deals at the following business:
-							
-						''')
-						logging.info(foursquare_business.business_name)
-						logging.info(foursquare_business.key())
-						logging.info(foursquare_business.foursquare_id)
-						api_utils.update_foursquare_business(foursquare_business.foursquare_id,'random')
+						#look at doing this on a backend so we don't eat frontend cpu time - then we could do this anytime, not just at 2AM
+						logging.info('Creating a deferred task for the foursquare business: '+foursquare_business.business_name)
+						result = deferred.defer(api_utils.update_foursquare_business,foursquare_business.foursquare_id,'active')
+						logging.debug(result)
 					except:
 						levr.log_error()	
 					

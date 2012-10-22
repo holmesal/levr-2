@@ -119,6 +119,7 @@ libraries:
 
 builtins:
 - appstats: on
+- deferred: on
 
 inbound_services:
 - mail
