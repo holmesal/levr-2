@@ -103,6 +103,14 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 			#create the deal using the origin specified
 			deal_entity = levr.dealCreate(params,'phone_new_business',upload_flag)
 			
+			
+			user = levr.Customer.get(uid)
+			#give the user some karma
+			user.karma += 5
+			#level check!
+			user = api_utils.level_check(user)
+			user.put()
+			
 			#grab deal information for sending back to phone
 			deal = api_utils.package_deal(deal_entity,True)
 			

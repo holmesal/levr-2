@@ -2,12 +2,16 @@ import webapp2
 import os
 import logging
 import jinja2
+import json
 import levr_classes as levr
 import levr_encrypt as enc
 from google.appengine.ext import blobstore, db
 from google.appengine.ext.webapp import blobstore_handlers
+from google.appengine.api import taskqueue
 import urllib
 import api_utils
+import mixpanel_track as mp_track
+import time
 
 #create jinja environment
 jinja_environment = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
@@ -54,13 +58,11 @@ class MobileUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		deal_text = self.request.get('deal_text')
 		description = self.request.get('description')
 		contentID = self.request.get('contentID')
-		callback_url = self.request.get('callback_url')
 		
 		logging.info(uid)
 		logging.info(businessID)
 		logging.info(deal_text)
 		logging.info(description)
-		logging.info(callback_url)
 		
 		business = levr.Business.get(businessID)
 		user = levr.Customer.get(uid)
@@ -79,6 +81,31 @@ class MobileUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 					}
 
 		dealID = levr.dealCreate(params,'phone_new_business')
+		
+		#fire off a task to do the image rotation stuff
+		task_params = {
+			'blob_key'	:	str(img_key)
+		}
+		taskqueue.add(url='/tasks/checkImageRotationTask',payload=json.dumps(task_params))
+		
+		#track event via mixpanel (asynchronous)
+		# try:
+# 			properties = {
+# 				'time'				:	time.time(),
+# 				'distinct_id'		:	enc.encrypt_key(user.key()),		
+# 				'mp_name_tag'		:	user.display_name
+# 			}
+# 			mp_track.track('Deal uploaded','ab1137787f393161bd481e2756b77850',properties)
+# 			
+# 			to_increment = {
+# 						"Deals uploaded"	:	1
+# 			}
+# 			
+# 			mp_track.increment(enc.encrypt_key(user.key()),'ab1137787f393161bd481e2756b77850',to_increment)
+# 			
+# 		except:
+# 			levr.log_error()
+		
 		
 		logging.info('/mobile/upload/complete/?uid='+urllib.quote(enc.encrypt_key(uid)))
 		self.redirect('/mobile/upload/complete/?uid='+urllib.quote(enc.encrypt_key(uid)))
@@ -104,8 +131,8 @@ class ContentIDHandler(webapp2.RequestHandler):
 		
 		try:
 			#grab the content ID
-			#contentID = args[0]
-			contentID = self.request.get('contentID')
+			contentID = args[0]
+			#contentID = self.request.get('contentID')
 			logging.debug('ContentID: ' + contentID)
 			
 			#uhh wtf do i do?
@@ -114,7 +141,7 @@ class ContentIDHandler(webapp2.RequestHandler):
 			logging.info(floating_content.action)
 			
 			if floating_content.action == 'upload':
-				'''user = floating_content.user
+				user = floating_content.user
 				
 				#write out upload template
 				template = jinja_environment.get_template('templates/mobileupload.html')
@@ -123,14 +150,16 @@ class ContentIDHandler(webapp2.RequestHandler):
 					'businessID':enc.encrypt_key(str(floating_content.business.key())),
 					'upload_url':blobstore.create_upload_url('/mobile/upload')
 				}
-				logging.debug(template_values)'''
+				logging.debug(template_values)
 				
-				upload_url = blobstore.create_upload_url('/mobile/upload')
-				
-				self.response.out.write('<html><body>')
-				self.response.out.write('<form action="%s" method="POST" enctype="multipart/form-data">' % upload_url)
-				self.response.out.write('''Upload File: <input type="file" name="img"><br> <input type="submit"
-				name="submit" value="Create!"> </form></body></html>''')
+				# upload_url = blobstore.create_upload_url('/mobile/upload')
+# 				
+# 				self.response.out.write('<html><body>')
+# 				self.response.out.write('<form action="%s" method="POST" enctype="multipart/form-data">' % upload_url)
+# 				self.response.out.write('Business ID: <input name="businessID" value="%s">' % enc.encrypt_key(str(floating_content.business.key())))
+# 				self.response.out.write('uid: <input name="uid" value="%s">' % enc.encrypt_key(str(floating_content.user.key())))
+# 				self.response.out.write('''Upload File: <input type="file" name="img"><br> <input type="submit"
+# 				name="submit" value="Create!"> </form></body></html>''')
 				
 			elif floating_content.action == 'deal':
 				#write out deal template
@@ -140,10 +169,8 @@ class ContentIDHandler(webapp2.RequestHandler):
 					'deal':	api_utils.package_deal(floating_content.deal),
 					'user_agent': check_user_agent(self)
 				}
-				
-				
 			
-			#self.response.out.write(template.render(template_values))
+ 			self.response.out.write(template.render(template_values))
 			
 		except:
 			levr.log_error()
@@ -153,4 +180,4 @@ class ContentIDHandler(webapp2.RequestHandler):
 app = webapp2.WSGIApplication([('/mobile/download',MobileDownloadHandler),
 								('/mobile/upload',MobileUploadHandler),
 								('/mobile/upload/complete/(.*)',UploadCompleteHandler),
-								('/mobile',ContentIDHandler)],debug=True)
+								('/mobile/(.*)',ContentIDHandler)],debug=True)

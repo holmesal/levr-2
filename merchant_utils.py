@@ -89,6 +89,14 @@ def create_deal(deal,business,owner):
 		
 	deal.put()
 	logging.info(levr.log_model_props(deal))
+	
+	#fire off a task to do the image rotation stuff
+		task_params = {
+			'blob_key'	:	str(img_key)
+		}
+		taskqueue.add(url='/tasks/checkImageRotationTask',payload=json.dumps(task_params))
+	
+	
 	return deal
 	
 def call_merchant(business):

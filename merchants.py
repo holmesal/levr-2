@@ -2,13 +2,14 @@ import webapp2
 #import json
 import logging
 import os
+import json
 import jinja2
 import levr_classes as levr
 import levr_encrypt as enc
 #from levr_encrypt import encrypt_key
 #from google.appengine.ext import db
 #from google.appengine.api import images
-from google.appengine.api import mail
+from google.appengine.api import mail,taskqueue
 #from datetime import datetime
 #from datetime import timedelta
 from google.appengine.ext import blobstore
@@ -472,6 +473,8 @@ class DealUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			
 			#kick over to create_deal to finish the deal creation
 			deal = merchant_utils.create_deal(deal,business,user)
+			
+			#log via mixpanel
 			
 			self.redirect('/merchants/manage')
 			

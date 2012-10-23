@@ -7,6 +7,8 @@ import levr_classes as levr
 import levr_encrypt as enc
 import logging
 import webapp2
+from google.appengine.api import images
+from google.appengine.api import files
 #import api_utils
 #import json
 #from google.appengine.api import taskqueue, urlfetch, memcache
@@ -168,7 +170,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		
 		dealID = levr.dealCreate(params,'phone_new_business')
 		
-		bus = levr.Business.get(dealID.businessID)
+		bus = levr.Business.gql('WHERE business_name=:1','Als Sweatshop').get()
 		
 		ant = levr.Customer.get(alonso)
 		
@@ -524,34 +526,37 @@ class FloatingContentHandler(webapp2.RequestHandler):
 # 		
 # 		donor.put()
 		
-		owner = levr.Customer.gql('WHERE alias=:1','alonso').get()
+		owner = levr.Customer.gql('WHERE email=:1','alonso@levr.com').get()
 		assert owner, 'no owner'
 		deal = levr.Deal.all().get()#.get('ahFzfmxldnItcHJvZHVjdGlvbnIbCxIIQ3VzdG9tZXIYsuQDDAsSBERlYWwYtG0M')
 		assert deal, 'no deal'
-		user = levr.Customer.gql('WHERE email=:1','q').get()
+		user = levr.Customer.gql('WHERE email=:1','ethan@levr.com').get()
 		assert user, 'no user'
 		business = levr.Business.get(deal.businessID)
 		assert business, 'no business'
-		contentID = levr.create_content_id('foursquare') #or facebook or twitter
-		self.response.out.write('Upload: ' + contentID + '\n')
-		
+
+
 		#floating content for upload
 		fc = levr.FloatingContent(
 				action='upload',
-				contentID=contentID,
+				contentID=levr.create_content_id('foursquare'),
 				user=user,
 				business=business
 		)
 		
+		self.response.out.write('<p>Upload: ' + fc.contentID + '\n</p>')
+		
 		# Floating content for a deal
 		fc2 = levr.FloatingContent(
-				action='upload',
-				contentID=contentID,
+				action='deal',
+				contentID=levr.create_content_id('foursquare'),
 				user=user,
 				deal=deal,
 				origin='foursquare',
 				business=business
 		)
+		
+		self.response.out.write('<p>Deal: ' + fc2.contentID + '\n</p>')
 		
 		#put it in!
 		fc2.put()
@@ -619,6 +624,78 @@ class OwnerOfHandler(webapp2.RequestHandler):
 		alonso.owner_of = str(business.key())
 		alonso.put()
 		
+class ExifHandler(webapp2.RequestHandler):
+	def get(self,blob_key):
+		'''This should be called after an image is uploaded from a source where an ipad or iphone might have been used to add an image inside a web wrapper'''
+		
+		blob = blobstore.BlobInfo.get(blob_key)
+		
+		img = images.Image(blob_key=blob_key)
+		
+		#execute a bullshit transform
+		img.rotate(0)
+		bullshit = img.execute_transforms(output_encoding=images.JPEG,quality=100,parse_source_metadata=True)
+		
+		#self.response.headers['Content-Type'] = 'image/jpeg'
+		orient = img.get_original_metadata()['Orientation']
+		
+		if orient != 1:
+			logging.info('Image not oriented properly')
+			logging.info('Orientation: '+str(orient))
+			if orient == 6:
+				#rotate 270 degrees
+				img.rotate(90)
+			elif orient == 8:
+				img.rotate(270)
+			elif orient == 3:
+				img.rotate(180)
+		
+			#write out the image
+			output_img = img.execute_transforms(output_encoding=images.JPEG,quality=100,parse_source_metadata=True)
+		
+			#figure out how to store this shitttt
+			# Create the file
+			overwrite = files.blobstore.create(mime_type='image/jpeg')
+			
+			# Open the file and write to it
+			with files.open(overwrite, 'a') as f:
+			  f.write(output_img)
+			
+			# Finalize the file. Do this before attempting to read it.
+			files.finalize(overwrite)
+			
+			# Get the file's blob key
+			blob_key = files.blobstore.get_blob_key(overwrite)
+			
+			self.response.out.write(str(blob_key))
+		else:
+			logging.info('Image oriented properly - not rotating')
+			
+		
+			#write image to output
+# 			self.response.headers['Content-Type'] = 'image/jpeg'
+# 			self.response.out.write(output_img)
+			
+			#blob_data = blob_key.open().read()
+				
+			#pass blob data to the image handler
+			#img			= images.Image(blob_data)
+			#img			= images.Image(blob)
+		
+class PreviewHandler(webapp2.RequestHandler):
+	def get(self,blob_key):
+	
+		blob = blobstore.BlobInfo.get(blob_key)
+		
+		img = images.Image(blob_key=blob_key)
+	
+		img.resize(width=800, height=1000)
+		img.im_feeling_lucky()
+		thumbnail = img.execute_transforms(output_encoding=images.JPEG,parse_source_metadata=True)
+		
+		self.response.headers['Content-Type'] = 'image/jpeg'
+		self.response.out.write(thumbnail)
+		
 	
 
 app = webapp2.WSGIApplication([('/new', MainPage),
@@ -633,7 +710,9 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/floatingContent', FloatingContentHandler),
 								('/new/sandbox', SandboxHandler),
 								('/new/deleteeverything',DeleteEverythingHandler),
-								('/new/ownerof',OwnerOfHandler)
+								('/new/ownerof',OwnerOfHandler),
+								('/new/exif/(.*)',ExifHandler),
+								('/new/preview/(.*)',PreviewHandler)
 								],debug=True)
 
 

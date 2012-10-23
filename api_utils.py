@@ -169,6 +169,9 @@ def package_notification(notification):
 		}
 	if notification.deal:
 		packaged_notification['deal'] = package_deal(notification.deal)
+		
+	if notification.notification_type == 'levelup':
+		packaged_notification['user']['alias'] = 'You gained a level!'
 	
 	return packaged_notification
 	
@@ -210,7 +213,7 @@ def send_response(self,response,user=None):
 	#reply
 	logging.debug(levr.log_dict(reply))
 	self.response.out.write(json.dumps(reply))
-	
+	logging.debug(str(self.response.headers))
 
 
 def create_share_url(deal_entity):
@@ -645,7 +648,7 @@ def send_img(self,blob_key,size):
 	try:
 		logging.debug(levr.log_dir(blob_key.properties))
 		
-		
+		logging.debug(str(blob_key.key()))
 		
 		
 		#read the blob data into a string !!!! important !!!!
@@ -665,7 +668,7 @@ def send_img(self,blob_key,size):
 		#define output parameters
 		if size == 'large':
 			#view for top of deal screen
-			aspect_ratio 	= 3. 	#width/height
+			aspect_ratio 	= 2. 	#width/height
 			output_width 	= 640.	#arbitrary standard
 		elif size == 'small':
 			#view for in deal or favorites list
@@ -731,11 +734,12 @@ def send_img(self,blob_key,size):
 		logging.debug(img)
 		
 		#package image
-		output_img = img.execute_transforms(output_encoding=images.JPEG)
+		output_img = img.execute_transforms(output_encoding=images.JPEG,quality=95)
 		
 		#write image to output
 		self.response.headers['Content-Type'] = 'image/jpeg'
 		self.response.out.write(output_img)
+		logging.debug(str(self.response.headers))
 		
 	except KeyError,e:
 		send_error(self,e)
@@ -979,7 +983,23 @@ def bounding_box(lat, lon, distance):
 ##########/GEO DISTANCES
 
 
-
+def level_check(user):
+	'''updates the level of a user. this function should be run after someone upvotes a user or anything else happens.'''
+	'''square root for the win'''
+	old_level = user.level
+	new_level = int(floor(sqrt(user.karma)))
+	
+	logging.debug('Karma: '+str(user.karma))
+	logging.debug('Level: '+str(user.level))
+	
+	if new_level != old_level:
+		#level up notification
+		levr.create_notification('levelup',user.key(),user.key(),new_level=new_level)
+		logging.debug('New level: '+str(user.level+1))
+		
+	user.level = new_level
+		
+	return user
 
 def merge_customer_info_from_B_into_A(user,donor,service):
 	'''
@@ -1477,7 +1497,6 @@ def update_foursquare_business(foursquare_id,deal_status,token='random'):
 
 	
 #delete account and all follower references
-
 
 
 
