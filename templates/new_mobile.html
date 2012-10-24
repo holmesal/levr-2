@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Levr.</title>
+    <!-- Bootstrap -->
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-responsive.min.css" rel="stylesheet">
+	<!--link rel="stylesheet" href="../css/login_mobile.css"-->
+	<script type="text/javascript"
+      src="http://maps.googleapis.com/maps/api/js?key=AIzaSyDA6oSrrTbFLHVqZSt2JGeJWFLVa9F0074&sensor=false&libraries=places"></script>
+	</head>
+	
+	<body>
+		<div class="navbar navbar-inverse navbar-fixed-top">
+	      <div class="navbar-inner">
+	        <div class="container">
+	          <a class="brand" href="#">Levr for Merchants</a>
+	        </div>
+	      </div>
+	    </div>
+	    <form class="form-horizontal">
+		<div class="row">
+			<div class="span12">
+				<div id="whoAreYou">
+				<p id="headerText">Welcome! What's your name?</p>
+				<p class="prompt">Start typing the name of your business:</p>
+				<input class="textIn error_check" type="text" id="business_select" name="business_select" placeholder="Your business name...">
+			</div>
+			<div id="placeDetails" hidden>
+				<img id="icon" >
+				<p id="name" ></p>
+				<p id="address" ></p>
+				<p id="number" ></p>
+				<p id="website" ></p>
+				<div id="results"></div>
+				<a id="btnConfirm" class="btn btn-success btn-large">That's me!</a>
+			</div>
+			<div id="signup" hidden>
+				<div id="placeName"><p id="textName"></p></div>
+				<p class="prompt">Set up your account:</p>
+				
+				<input class="textIn error_check" type="text" id="email" name="email" placeholder="Enter your email...">
+				<input class="textIn error_check" type="password" id="pw" name="pw1" placeholder="Choose a password...">
+				<input class="textIn error_check" type="password" id="pw2" name="pw2" placeholder="Re-enter your password...">
+				<div id="tos">
+					<p class="tos" id="tos1">We respect your email, and will only use it to contact you regarding your account</p>
+					<p id="error_field" class="tos"></p>
+					<form method="POST" class="emptyForm" id="form1"><a id="btnCreate" class="btn btn-large btn-success">Create Account</a></form>
+				</div>
+			</div>
+			</div>
+		</div>
+				
+			
+				
+			</div>
+			</form>
+			<!--form id='loginForm' class="form-horizontal" method="post" action='/merchants/login'>
+									<div class="control-group">
+							<label class="control-label" for="inputEmail">Email</label>
+							<div class="controls">
+								<input type="text" id="inputEmail" placeholder="Email" value="{{email}}" name="email">
+							</div>
+						</div>
+						<div class="control-group">
+							<label class="control-label" for="inputPassword">Password</label>
+							<div class="controls">
+								<input type="password" id="inputPassword" placeholder="Password" value="{{password}}" name="password">
+							</div>
+						</div>
+						<div class="control-group">
+						<div class="controls">
+						<button type="submit" class="btn btn-primary btn-large btn-inputwidth">Sign in</button>
+						</div>
+						</div>
+					</form-->
+			</div>
+		</div>
+	<script src="http://code.jquery.com/jquery-latest.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function() {
+			$('#business_select').focus()
+			
+			function showDetails(){
+				//refocus map on place
+				place = autocomplete.getPlace();
+				//console.log(place)
+				/*var position = new google.maps.LatLng(place.geometry.location.Xa,place.geometry.location.Ya)
+				console.log(position.toString())
+				map.panTo(position)*/
+				//reset previous values from places
+				$('#icon').attr("src",'#')
+				$('#name,#textName,#address,#number,#website').text('')
+				//set values from places
+				$('#icon').attr("src",place.icon)
+				$('#name,#textName').text(place.name)
+				$('#address').text(place.formatted_address)
+				$('#number').text(place.formatted_phone_number)
+				$('#website').text(place.website)
+				
+				$('#placeDetails').show()
+				
+				$(document).keypress(function(e) {
+				    if(e.which == 13) {
+				        $('#btnConfirm').click()
+				    }
+				    if(e.which == 9){
+					    $('#btnConfirm').focus()
+				    }
+				});
+			}
+			
+			function isValidEmailAddress(emailAddress) {
+				console.log(emailAddress)
+			    var pattern = new RegExp(/^((([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+(\.([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+)*)|((\x22)((((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(([\x01-\x08\x0b\x0c\x0e-\x1f\x7f]|\x21|[\x23-\x5b]|[\x5d-\x7e]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(\\([\x01-\x09\x0b\x0c\x0d-\x7f]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))))*(((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(\x22)))@((([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)+(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.?$/i);
+			    return pattern.test(emailAddress);
+			};
+			
+			function showSignup(){
+				$('#placeDetails,#whoAreYou').animate({opacity: 0}).hide()
+				//$('#container').animate({'height': '450px'})
+				$('#signup').show()
+				$('#email').focus()
+				$(document).keypress(function(e) {
+				    if(e.which == 13) {
+				        $('#btnSignup').click()
+				    }
+				});
+			}
+			
+			function checkPW(){
+				if ($('#pw').val() < 5){
+					$('#error_field').text('Please enter a password at least 5 characters long.')
+					return false
+				} else if ($('#pw').val() != $('#pw2').val()) {
+					$('#error_field').text('Passwords must match.')
+					return false
+				} else{
+					return true
+				}
+			}
+			
+			function checkEmail(){
+				
+				console.log('Checking email')
+				
+				var creds = {
+					email:	$('#email').val(),
+					pw:		$('#pw').val()
+				}
+				
+				
+				url_string = 'emailCheck'
+				
+				$.ajax({
+					type:	'POST',
+					url:	url_string,
+					data:	creds,
+					success: function(result){
+						console.log("response: " + result)
+						if (result == 'True'){
+							$('#error_field').text('')
+							emailLock = true;
+						} else{
+							$('#error_field').text('Sorry, that email is already in use.')
+							emailLock = false;
+						}
+					}
+				})
+			}
+			
+	
+			function submitData(destination,place){
+				console.log(place)
+				console.log(place.types)
+				var data = {
+					email:			$('#email').val(),
+					password:		$('#pw').val(),
+					destination:	destination,
+					business_name:	place.name,
+					vicinity:		place.vicinity,
+					geo_point:		place.geometry.location.Xa + "," + place.geometry.location.Ya,
+					types:			place.types,
+					phone:			place.formatted_phone_number
+				}
+				
+				var URLstring = window.location.pathname + '?' + $.param(data)
+				console.log(URLstring)
+				
+				console.log(emailLock)
+				
+				if (checkPW()==true){
+					if (emailLock == true){
+						console.log('Form passed validation!')
+						$('#form1').attr('action',URLstring)
+						$('#form1').submit()
+					} else{
+						console.log('Problem with email')
+					}
+				} else{
+					console.log('not okay')
+					
+				}
+			}
+		
+		
+			
+			//initialize places service
+			var input = document.getElementById('business_select');
+			var options = {types: ['establishment']};
+			autocomplete = new google.maps.places.Autocomplete(input, options);
+			
+			//initialize place_changed listener
+			var place = {};
+			google.maps.event.addListener(autocomplete, 'place_changed', function() {
+				place = autocomplete.getPlace();
+				//if this is an actual place, show the details
+				console.log(place.id)
+				if (place.id != undefined){
+				//show the details
+				showDetails();
+				}
+			})
+			
+			$('#btnConfirm').click(function(){
+				showSignup();
+				place = autocomplete.getPlace()
+				//mixpanel.track("Business Selected",{"name":place.name})
+				console.info("Business Selected")
+			})
+			
+			//initialize a email field blur listener
+			$('#email').blur(function(){
+				if( isValidEmailAddress($('#email').val()) ) {
+					checkEmail()
+				} else{
+					$('#error_field').text('Please enter a valid email address.')
+				}
+			})
+			
+			$('#btnCreate').click(function(){submitData('create',place)})
+
+			
+		})
+	</script>
+	</body>
+</html>
+

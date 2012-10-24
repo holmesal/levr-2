@@ -1,0 +1,89 @@
+{% extends "templates/merchantsBase_mobile.html" %}
+{% block htmlhead %}
+<!--link rel="stylesheet" href="/css/deal.css"-->
+<style type="text/css">
+	#photoInput{
+		display: none;
+	}
+</style>
+
+
+{% endblock %}
+
+{% block content %}
+
+{% if deal %}
+	<div style="background-image: url({{deal['img_url']}}); height:100px; background-position:center,center; background-size:cover; margin-bottom:20px;" class="img-polaroid uploaded_image"></div>
+{% endif %}
+
+<form id="deal_form" class="form-horizontal" action="{{ upload_url }}" method="POST" enctype="multipart/form-data">
+	<div class="control-group">
+		<label class="control-label" for="deal_text">What is your offer?</label>
+		<div class="controls">
+			<input type="text" name='deal_text' id="inputDealText" placeholder="Describe your discount or special" value="{{deal.deal_text}}">
+		</div>
+	</div>
+	<div class="control-group">
+		<label class="control-label" for="description">Anything customers should know?</label>
+		<div class="controls">
+			<textarea type="text" id="inputDealDescription" name='description' placeholder="Special conditions, limitations, etc." rows="4">{{deal.description}}</textarea>
+		</div>
+	</div>
+	<div class="control-group">
+			<label id='photoLabel' class="control-label" for="hello">{%if deal%}Take a new photo?{%else%}Take a photo:{%endif%}</label>
+			<div class="controls">
+			<a id='btnCamera' class="btn btn-info btn-large">Open camera</a>
+			<input id='photoInput' type="file" name='file' onchange="change_text()"></div>
+	</div>
+	<button type="submit" class="btn btn-success btn-large btn-block" disabled>{%if deal%}Update this offer{%else%}Launch this offer{%endif%}</button>
+	
+	{% if deal %}
+	<input type="hidden" name="dealID" value="{{deal.enc_key}}">
+	{% endif %}
+	
+</form>
+
+
+<div style="clear:both"></div>
+{% endblock %}
+{% block javascript %}
+<script type="text/javascript">
+	{% if edit == True %}
+	$('#uploaded_img').css('background-image','url(\'{{ deal.imgURLLarge }}\')');
+	//this needs to be a global variable so that the form validation works correctly
+	isEditing = true;
+	{% else %}
+	isEditing = false;
+	{% endif %}
+	
+	$('#addAlert').hide()
+	
+	{% if deal %}
+	$(':submit').removeAttr("disabled")
+	{% endif %}
+	
+	check_eligibility = function(){
+		if ($('#photoInput').val()!=''){
+			if ($('#inputDealText').val().length>0){
+				$(':submit').removeAttr("disabled")
+			} else{
+				$(':submit').attr("disabled", "disabled");
+			}
+		}
+	}
+	
+	$('#inputDealText').keyup(function(){
+		check_eligibility()
+	})
+	
+	change_text = function(){
+		$('#photoLabel').text('A photo has been taken. Click to take a different photo:')
+		$('#btnCamera').text('Retake photo')
+		check_eligibility()
+	}
+	
+	$('#btnCamera').click(function(){
+		$('#photoInput').trigger('click')
+	})
+</script>
+{% endblock %}

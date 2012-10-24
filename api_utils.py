@@ -46,8 +46,10 @@ def create_pin_color(deal):
 		pin_color = 'red'
 	elif deal.origin == 'foursquare':
 		pin_color = 'blue'
+	elif deal.origin == 'merchant':
+		pin_color = 'green'
 	else:
-		pin_color = 'red'
+		pin_color = 'orange'
 		
 	return pin_color
 
@@ -171,7 +173,7 @@ def package_notification(notification):
 		packaged_notification['deal'] = package_deal(notification.deal)
 		
 	if notification.notification_type == 'levelup':
-		packaged_notification['user']['alias'] = 'You gained a level!'
+		packaged_notification['user']['alias'] = 'Level up!'
 	
 	return packaged_notification
 	
@@ -654,6 +656,8 @@ def send_img(self,blob_key,size):
 		#read the blob data into a string !!!! important !!!!
 		blob_data = blob_key.open().read()
 		
+		logging.info('Blob size: '+str(blob_key.size))
+		
 		#pass blob data to the image handler
 		img			= images.Image(blob_data)
 		#get img dimensions
@@ -1103,6 +1107,7 @@ def search_foursquare(geo_point,token,deal_status,already_found=[],**kwargs):
 	result = urlfetch.fetch(url=url)
 	if result.status_code != 200:
 		# Foursquare request was not successful
+		logging.debug(result.content)
 		levr.log_error(result.headers.data)
 		return
 	

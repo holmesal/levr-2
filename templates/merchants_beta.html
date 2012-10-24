@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <!-- Bootstrap -->
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-responsive.min.css" rel="stylesheet">
+    <link href="/css/merchants_beta.css" rel="stylesheet">
+    <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyDA6oSrrTbFLHVqZSt2JGeJWFLVa9F0074&sensor=false&libraries=places"></script>
+	
+	</head>
+
+	<body>
+		<div class="navbar">
+		  <div class="navbar-inner">
+		    <a class="brand" href="/merchants">Levr.</a>
+		    <ul class="nav">
+		      <li><a href="/merchants/login">Merchant Login</a></li>
+		    </ul>
+		  </div>
+		</div>
+		<div class="container">
+			<div class="row">
+				<div class="span8 offset2">
+					<p id="head">Welcome to the Levr Beta Program.</p>
+					<p id="sub">We've got a couple of questions, and then we'll turn you loose.</p>
+					<form id='beta_form'>
+						<legend>Who are you?</legend>
+						<input type="text" class='typeahead' placeholder="Start typing the name of your business..." data-provide="populateTypeahead(query,process)">
+					</form>
+				</div>
+			</div>
+			
+		</div>
+		<script src="http://code.jquery.com/jquery-latest.js"></script>
+		<script src="/js/bootstrap.min.js"></script>
+		<script src="/js/merchants_beta.js"></script>
+		<script type="text/javascript">
+			$(window).load(function(){
+				$('.typeahead').typeahead({
+				    source: function (query, process) {
+				    	return ["alabama","arkansas"]
+				        //return $.post('/typeahead', { query: query }, function (data) {
+				            //return typeahead.process(data);
+				        //});
+				    }
+				});
+			})
+		</script>
+	</body>
+</html>
+

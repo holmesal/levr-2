@@ -29,12 +29,18 @@
 			<tr class="warning">
 			{% endif %}
 			
-			<td style="width:10%">924</td>
+			<td style="width:10%">{{deal.deal_views}}</td>
 			<td style="width:50%">{{deal.deal_text}}</td>
 			<td style="width:10%">{% filter capitalize %}{{deal.deal_status}}{% endfilter %}</td>
 			<td style="width:22%; text-align: right;">
 				<a href='/merchants/edit?dealID={{deal.enc_key}}' class="btn btn-primary">Edit</a>
-				<a href='/merchants/deal/delete/{{deal.enc_key}}' style="margin-left: 10px;" class="btn btn-danger">Delete</a>
+				{% if deal.deal_status == 'active' %}
+				<a href='/merchants/deal/delete/{{deal.enc_key}}' style="margin-left: 10px;" class="btn btn-danger">Stop</a>
+				{% elif deal.deal_status == 'expired' %}
+				<a href='/merchants/deal/reanimate/{{deal.enc_key}}' style="margin-left: 10px;" class="btn btn-success">Start</a>
+				{% elif deal.deal_status == 'pending' %}
+				<a href='/merchants/deal/delete/{{deal.enc_key}}' style="margin-left: 10px;" class="btn btn-danger">Stop</a>
+				{% endif %}
 			</td>
 
 			
@@ -51,5 +57,5 @@
 {% endblock %}
 
 {% block javascript %}
-<script src="../js/manage.js" type="text/javascript"></script>
+
 {% endblock %}

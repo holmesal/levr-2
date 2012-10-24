@@ -189,7 +189,7 @@ def create_notification(notification_type,to_be_notified,actor,deal=None,**kwarg
 			new_level = kwargs.get('new_level')
 			assert new_level,'Must pass new_level as kwarg to create new levelup notification'
 			#write line2
-			line2 = 'Congratulations! You are now Level {}.'.format(new_level)
+			line2 = 'Good work! You are now Level {}.'.format(new_level)
 			logging.info(line2)
 			#replace user
 #			user.put()

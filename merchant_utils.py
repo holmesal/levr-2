@@ -3,7 +3,8 @@ import logging
 import levr_classes as levr
 import levr_encrypt as enc
 import base64
-from google.appengine.api import urlfetch
+from google.appengine.api import urlfetch,taskqueue
+import json
 import urllib
 
 def login_check(self):
@@ -20,12 +21,14 @@ def login_check(self):
 
 		uid = session['uid']
 		
+		owner_of = session['owner_of']
+		
 		logging.info(uid)
 		
 		headerData = {
 			'loggedIn'	: session['loggedIn'],
 			'uid'		: enc.decrypt_key(uid),
-			'owner_of'	: session['owner_of'],
+			'owner_of'	: enc.decrypt_key(owner_of),
 			'validated'	: session['validated']
 			}
 		#return user metadata.
@@ -35,17 +38,17 @@ def login_check(self):
 def validated_check(user):
 	'''checks if this user has any linked businesses or not. does not yet return these businesses'''
 	
-	num_bus = user.businesses.count()
+	'''num_bus = user.businesses.count()
 	
 	if num_bus > 0:
 		return True
 	else:
-		return False
+		return False'''
 		
-	'''if user.verified_owner = True:
+	if user.verified_owner == True:
 		return True
 	else:
-		return False'''
+		return False
 		
 def create_deal(deal,business,owner):
 	'''deal: a deal object
@@ -61,13 +64,15 @@ def create_deal(deal,business,owner):
 	logging.info(tags)
 	tags.extend(levr.tagger(deal.description))
 	logging.info(tags)
+	deal.tags = tags
 	
 	#add some other miscellaneous information
 	deal.origin = 'merchant'
-	deal.pin_color	=	'red'
+	deal.pin_color	=	'green'
 	
 	#copy info over from business
 	deal.business_name = business.business_name
+	deal.businessID	= str(business.key())
 	deal.geo_point = business.geo_point
 	deal.geo_hash = business.geo_hash
 	
@@ -79,22 +84,21 @@ def create_deal(deal,business,owner):
 	
 	#check if the merchant has validated their business. If so, deploy as active. If not, deploy as pending
 	if validated_check(owner):
-		logging.deug('OKAY')
+		logging.debug('OKAY')
 		#TODO: SET BUSINESS ID
 		deal.deal_status='active'
 	else:
 		logging.debug('FUCK ALL')
 		deal.deal_status='pending'
-		deal.businessID = owner.owner_of
 		
 	deal.put()
 	logging.info(levr.log_model_props(deal))
 	
 	#fire off a task to do the image rotation stuff
-		task_params = {
-			'blob_key'	:	str(img_key)
-		}
-		taskqueue.add(url='/tasks/checkImageRotationTask',payload=json.dumps(task_params))
+	task_params = {
+		'blob_key'	:	str(deal.img.key())
+	}
+	taskqueue.add(url='/tasks/checkImageRotationTask',payload=json.dumps(task_params))
 	
 	
 	return deal
@@ -111,8 +115,8 @@ def call_merchant(business):
 	
 	request = {'From':'+16173608582',
 				'To':'+16052610083',
-				'Url':'http://www.levr.com/api/merchant/twilioanswer',
-				'StatusCallback':'http://www.levr.com/api/merchant/twiliocallback'}
+				'Url':'http://www.levr.com/merchants/verify/answer',
+				'StatusCallback':'http://www.levr.com/merchants/verify/statusCallback'}
 	
 	result = urlfetch.fetch(url=twiliourl,
 							payload=urllib.urlencode(request),
@@ -120,3 +124,16 @@ def call_merchant(business):
 							headers={'Authorization':auth_header})
 	
 	logging.info(levr.log_dict(result.__dict__))
+
+def check_ua(self):
+	uastring = str(self.request.headers['user-agent'])
+	
+	logging.info(uastring)
+		
+	if 'mobile' in uastring.lower():
+		logging.info('Serving mobile version')
+		return 'mobile'
+	else:
+		logging.info('Serving desktop version')
+		return 'desktop'
+

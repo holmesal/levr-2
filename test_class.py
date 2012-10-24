@@ -7,8 +7,7 @@ import levr_classes as levr
 import levr_encrypt as enc
 import logging
 import webapp2
-from google.appengine.api import images
-from google.appengine.api import files
+from google.appengine.api import images, urlfetch, files
 #import api_utils
 #import json
 #from google.appengine.api import taskqueue, urlfetch, memcache
@@ -365,7 +364,31 @@ class TestNotificationHandler(webapp2.RequestHandler):
 			
 class Create100DeadNinjasHandler(webapp2.RequestHandler):
 	def get(self):
-		logging.info('Creating 1000 dead ninjas.')
+		logging.info('Creating 100 dead ninjas.')
+		
+		dead_ninjas = ['Jack Walsh','Jeffrey Kiggins','Elisabeth Austin','Robert Bailey','Nikole Bakopolus','Paul Barry','Will Burnham','Paul Callahan','Izona Fripp','John Glavin','Frank Gatheral','Robert Glasberg','Richard Golden','John Guilderson','John Hagan','Ann Hensey','Patrick Higgins','Alan Hilsinger','Hazel Horn','Iris Howard','Specer Hurtt','Marie Karahalis','Jackie Kelleher','Rich Kraska','Kenneth Lowry','Dan Lucas','Rich Luccio','Kathleen MacGillvray','James Palleschi','Sam Payson','Natalie Rosendorf','Sonia Sahagian','James Sharkey','Mary Sousa','Tony Spadofora','Brian Welch','Victor Ferra','Jesus Fojo','Frank Wood','Evelyn Thomas','Jimmy Babcock','Lynn Clark','Kara Gayer','Kevin Hill','James Holley','Chris Jaquex','Erica Lee','Sophia Pisanos','Dorothy Ralph','Josephine Robeson','Stuart Shore','Ted Young','Vivian Zuest','Leonel Escobar','Fran Jacobs','Toshiko Matoba','Sofiya Milman','Carl Niizawa','Angelo Pappas','Isabel Shibuya','Danny Ventura','Lisa Appleberry-Vining','Jake Bodden','John Bosch','Leah Bourgeois','Ben Goodman','Rita Hoizenthal','Brian Hilkirk','Sidney Kornick','Hal LeBlanc','Charles Lemon','Ben Dover','Alvin Rhodes','Julie Strength','Ted Staton','Rob Tricou','Tyler Wehr','Rob White','Carol Wikerson-Johnson','Alice Pilgrim']
+		
+		undead_ninjas = []
+		
+		for name in dead_ninjas:
+			ninja = levr.Customer(
+					display_name 		=	name,
+					alias				=	name,
+					email				=	'deadninja@levr.com',
+					first_name			=	name.split()[0],
+					last_name			=	name.split()[1],
+					foursquare_token	=	'4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0',
+					pw					=	enc.encrypt_password('Carl123!'),
+					levr_token			=	levr.create_levr_token()
+				)
+			
+			logging.info(levr.log_model_props(ninja))
+			undead_ninjas.append(ninja)
+			
+		logging.info(undead_ninjas)
+		db.put(undead_ninjas)
+		
+		
 #		ninjas = levr.Customer.all().filter('first_name','Dead Ninja').count()
 #		#don't want a bagillion dead ninjas by accident do we?
 #		if ninjas <100:
@@ -390,47 +413,47 @@ class Create100DeadNinjasHandler(webapp2.RequestHandler):
 		# Real undead ninja names'n'shit'stuff yeah
 		#=======================================================================
 		#make sure this script is only run once
-		existing_ninjas = levr.Customer.all().filter('email','deadninja@levr.com').count()
-		assert existing_ninjas == 0, 'This script has already been run.'
-		
-		f	= open('undead_ninja_names.txt','r')
-#		
-		#read whole text file
-		conglomerate	= f.read()
-		logging.debug(conglomerate)
-		#split into name entries
-		names_list	= conglomerate.split('\n')
-		#only take 100 ninjas
-		if names_list.__len__() >100:
-			names_list = names_list[:100]
-		
-		undead_ninjas = []
-		for full_name in names_list:
-			#parse first and last names
-			first_name, last_name = full_name.split(' ')
-			#build display name
-			display_name = '{} {}.'.format(first_name,last_name[0])
-			ninja = levr.Customer(
-					display_name 		=	display_name,
-					alias				=	display_name,
-					email				=	'deadninja@levr.com',
-					first_name			=	first_name,
-					last_name			=	last_name,
-					foursquare_token	=	'4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0',
-					pw					=	enc.encrypt_password('Carl123!'),
-					levr_token			=	levr.create_levr_token()
-				)
-			undead_ninjas.append(ninja)
-		
-		#sanity check
-		self.response.out.headers['Content-Type'] = 'text/plain'
-		self.response.out.write('{} undead ninjas'.format(undead_ninjas.__len__()))
-		for ninja in undead_ninjas:
-			self.response.out.write(levr.log_model_props(ninja,['first_name','last_name','display_name']))
-		
-		#put all the ninjas
-		db.put(undead_ninjas)
-		#how to get a random dead ninja
+	# 	existing_ninjas = levr.Customer.all().filter('email','deadninja@levr.com').count()
+# 		assert existing_ninjas == 0, 'This script has already been run.'
+# 		
+# 		f	= open('undead_ninja_names.txt','r')
+# #		
+# 		#read whole text file
+# 		conglomerate	= f.read()
+# 		logging.debug(conglomerate)
+# 		#split into name entries
+# 		names_list	= conglomerate.split('\n')
+# 		#only take 100 ninjas
+# 		if names_list.__len__() >100:
+# 			names_list = names_list[:100]
+# 		
+# 		undead_ninjas = []
+# 		for full_name in names_list:
+# 			#parse first and last names
+# 			first_name, last_name = full_name.split(' ')
+# 			#build display name
+# 			display_name = '{} {}.'.format(first_name,last_name[0])
+# 			ninja = levr.Customer(
+# 					display_name 		=	display_name,
+# 					alias				=	display_name,
+# 					email				=	'deadninja@levr.com',
+# 					first_name			=	first_name,
+# 					last_name			=	last_name,
+# 					foursquare_token	=	'4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0',
+# 					pw					=	enc.encrypt_password('Carl123!'),
+# 					levr_token			=	levr.create_levr_token()
+# 				)
+# 			undead_ninjas.append(ninja)
+# 		
+# 		#sanity check
+# 		self.response.out.headers['Content-Type'] = 'text/plain'
+# 		self.response.out.write('{} undead ninjas'.format(undead_ninjas.__len__()))
+# 		for ninja in undead_ninjas:
+# 			self.response.out.write(levr.log_model_props(ninja,['first_name','last_name','display_name']))
+# 		
+# 		#put all the ninjas
+# 		db.put(undead_ninjas)
+# 		#how to get a random dead ninja
 		#ninja = api_utils.get_random_dead_ninja()
 		
 class HarmonizeVenuesHandler(webapp2.RequestHandler):

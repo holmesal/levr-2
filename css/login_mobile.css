@@ -1,38 +1,31 @@
 body{
 	background-image: url(../img/classy_fabric.png);
-	background-size: auto;
+	margin: 0px;
+	padding: 0px;
 }
 
-#loginContainer{
-	background-image: url(../img/light_noise_diagonal.png);
-	background-size: 25%;
-	border-radius: 10px;
-	margin-top: 200px;
+.container{
+	padding-top: 100px;
 }
 
-#pin{
-	margin-left: auto;
-	margin-right: auto;
+.mobileIn{
 	display: block;
-	width: 50px;
-	margin-top: 100px;
 }
 
-#loginForm{
-	margin-top: 20px;
+input{
+	display: block;
+	width: 80%;
+	margin-left: 10%;
 }
 
 .btn-inputwidth{
-	width: 220px;
-}
-
-.signup{
-	text-align: center;
+	width: 80%;
+	margin-left: 10%;
 }
 
 .topError{
 	width: 100%;
-	height: 80px;
+	height: 60px;
 	position: absolute;
 	/*background: #DF3B3B url('../img/crisp_paper_ruffles.png') repeat-x top left;*/
 	background-image: -moz-linear-gradient(top,  rgba(0,0,0,1),  rgba(0,0,0,0)), url(../img/crisp_paper_ruffles.png);
@@ -41,7 +34,7 @@ body{
 
 .errorText{
 	text-align: center;
-	margin-top: 30px;
+	margin-top: 10px;
 	color: white;
 	text-shadow: 1px 1px 0px black;
 }

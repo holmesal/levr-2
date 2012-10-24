@@ -1,11 +1,10 @@
-
 $(document).ready(function() {
 	//track loacking time
 	var endTime = (new Date()).getTime();
 	var millisecondsLoading = endTime - startTime;
-	mixpanel.track("Merchants Welcome Page Loaded", {
+	/*mixpanel.track("Merchants Welcome Page Loaded", {
 		"Load Time" : millisecondsLoading
-	})
+	})*/
 	console.info("Merchants Welcome Page Loaded")
 	
 	$('#gmap').click(function(e) { e.preventDefault })
@@ -83,11 +82,9 @@ $(document).ready(function() {
 	    return pattern.test(emailAddress);
 	};
 	
-	var emailLock = false;
-	
 	function attemptSignup(){
 	
-		checkEmail()
+		checkEmail(false)
 	
 		//break if less than 5 characters
 		if ($('#pw').val() < 5){
@@ -101,24 +98,15 @@ $(document).ready(function() {
 			return false
 		} 
 		
+		checkEmail(true)
+		
+		
+		/*$.post(url,data,function(creds){
+			console.log(creds)
+		})*/
 	}
 	
-	function checkPW(){
-		if ($('#pw').val() < 5){
-			$('#error_field').text('Please enter a password at least 5 characters long.')
-			return false
-		} else if ($('#pw').val() != $('#pw2').val()) {
-			$('#error_field').text('Passwords must match.')
-			return false
-		} else{
-			return true
-		}
-	}
-	
-	function checkEmail(){
-		
-		console.log('Checking email')
-		
+	function checkEmail(submit){
 		var creds = {
 			email:	$('#email').val(),
 			pw:		$('#pw').val()
@@ -134,11 +122,11 @@ $(document).ready(function() {
 			success: function(result){
 				console.log("response: " + result)
 				if (result == 'True'){
-					$('#error_field').text('')
-					emailLock = true;
+					if (submit == true){
+						showChoices();
+					}
 				} else{
 					$('#error_field').text('Sorry, that email is already in use.')
-					emailLock = false;
 				}
 			}
 		})
@@ -160,34 +148,18 @@ $(document).ready(function() {
 		var URLstring = window.location.pathname + '?' + $.param(data)
 		console.log(URLstring)
 		
-		console.log(emailLock)
-		
-		if (checkPW()==true){
-			if (emailLock == true){
-				console.log('Form passed validation!')
-				$('#form1').attr('action',URLstring)
-				$('#form1').submit()
-			} else{
-				console.log('Problem iwth email')
-			}
-		} else{
-			console.log('not okay')
-			
-		}
-		
-		
-		
-		//timeEnd = (new Date()).getTime();
-		//timeDeciding = timeEnd-timeStart
+		timeEnd = (new Date()).getTime();
+		timeDeciding = timeEnd-timeStart
 		console.info("Merchant Creates Account")
-		//console.info({"Destination":destination,"Time Deciding":timeDeciding})
-		/*mixpanel.track("Merchant Creates Account",{
+		console.info({"Destination":destination,"Time Deciding":timeDeciding})
+		mixpanel.track("Merchant Creates Account",{
 			"Destination":destination,
 			"Time Deciding":timeDeciding
 			},function(){
 				//set form action
-				
-			})*/
+				$('#form1').attr('action',URLstring)
+				$('#form1').submit()
+			})
 		
 		
 	}
