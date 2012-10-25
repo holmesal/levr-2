@@ -122,6 +122,12 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 			user = api_utils.level_check(user)
 			user.put()
 			
+			#go notify everyone that should be informed
+			try:
+				levr.create_notification('followedUpload',user.followers,user.key(),deal_entity)
+			except:
+				levr.log_error()
+			
 			#grab deal information for sending back to phone
 			deal = api_utils.package_deal(deal_entity,True)
 			

@@ -127,16 +127,17 @@ def create_notification(notification_type,to_be_notified,actor,deal=None,**kwarg
 			db.put(user)
 		elif notification_type == "followedUpload":
 			#user is the person being notified
-			user = Customer.get(to_be_notified[0])
+			users = db.get(to_be_notified)
 			
 			#set the phrase
 			line2 = 'Has uploaded a new offer.'
 			
 			#increment the number of notifications
-			user.new_notifications += 1
+			for user in users:
+				user.new_notifications += 1
 			
 			#replace user
-			db.put(user)
+			db.put(users)
 			
 		elif notification_type == 'favorite':
 			#get actor
@@ -181,10 +182,10 @@ def create_notification(notification_type,to_be_notified,actor,deal=None,**kwarg
 			
 		elif notification_type == 'levelup':
 			#get user,actor
-#			user = db.get(to_be_notified[0])
+			user = db.get(to_be_notified[0])
 			
 			#increment notification count
-#			user.new_notifications += 1
+			user.new_notifications += 1
 			
 			new_level = kwargs.get('new_level')
 			assert new_level,'Must pass new_level as kwarg to create new levelup notification'
@@ -192,7 +193,7 @@ def create_notification(notification_type,to_be_notified,actor,deal=None,**kwarg
 			line2 = 'Good work! You are now Level {}.'.format(new_level)
 			logging.info(line2)
 			#replace user
-#			user.put()
+			user.put()
 		elif notification_type == 'expired':
 			logging.debug('\n\n\n\n\n\n EXPIRED!!! \n\n\n\n')
 			user = db.get(to_be_notified[0])

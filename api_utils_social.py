@@ -915,12 +915,13 @@ class Facebook(SocialClass):
 		first_name		= facebook_user['first_name']
 		last_name		= facebook_user['last_name']
 		display_name	= self.build_display_name(first_name, last_name)
-		pic_data		= facebook_user['picture']['data']
+		photo			= facebook_user['picture']['data']['url']
+		logging.debug(photo)
 		facebook_id		= int(facebook_user['id'])
-		if not pic_data['is_silhouette']:
+# 		if not pic_data['is_silhouette']:
 			#picture is not a silhouette
 			#grab photo url
-			photo = pic_data['url']
+# 			photo = pic_data['url']
 		if not self.user.facebook_id:
 			self.user.facebook_id = facebook_id
 			updated['facebook_id'] = facebook_id
@@ -934,9 +935,9 @@ class Facebook(SocialClass):
 		if not self.user.display_name:
 			self.user.display_name	= display_name
 			updated['display_name']	= display_name
-		if not self.user.photo:
-			self.user.photo			= photo
-			updated['photo']		= photo
+		#if not self.user.photo:
+		self.user.photo			= photo
+		updated['photo']		= photo
 		
 		return updated
 	def update_friends(self):
