@@ -1,7 +1,10 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<link rel="stylesheet" href="../css/new.css">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link href="/css/bootstrap.min.css" rel="stylesheet">
+	    <link href="/css/bootstrap-responsive.min.css" rel="stylesheet">
+		<link rel="stylesheet" href="/css/new.css">
 		<script type="text/javascript" src="https://www.google.com/jsapi"></script>
 		<script> var startTime = (new Date()).getTime();</script>
 		<script type="text/javascript"
@@ -26,7 +29,7 @@ mixpanel.init("bd6d168ba08514f7c1f8d42c0eb8e1ee");
 				<p id="number" ></p>
 				<p id="website" ></p>
 				<div id="results"></div>
-				<a id="btnConfirm" class="button green">That's me!</a>
+				<a id="btnConfirm" class="btn btn-success btn-large">That's me!</a>
 			</div>
 			<div id="signup" hidden>
 				<div id="placeName"><p id="textName"></p></div>
@@ -37,14 +40,29 @@ mixpanel.init("bd6d168ba08514f7c1f8d42c0eb8e1ee");
 				<input class="textIn error_check" type="password" id="pw2" name="pw2" placeholder="Re-enter your password...">
 				<div id="tos">
 					<p class="tos" id="tos1">We respect your email, and will only use it to contact you regarding your account</p>
-					<p class="tos">By clicking "Create Account", you are agreeing to the <a href="http://www.google.com">Levr Terms of Service</a></p>
-					
-					<a id="btnSignup" class="button green">Create Account</a>
+					<form method="POST" class="emptyForm" id="form1"><a id="btnCreate" class="btn btn-large btn-success">Create Account</a></form>
 					<p id="error_field" class="tos"></p>
 				</div>
+				
 			</div>
 			<div id="choices" hidden>
-				<div id="placeName"><p id="textName"></p></div>
+				<p class="prompt">Great! We've got a couple of questions: </p>
+				<div class="row">
+				<div class="span4">
+				<form id='surveyForm'>
+					<label class="radio">
+					  <input type="radio" name="optionsRadios" id="optionsRadios1" value="option1" checked>
+					  Option one is this and that?be sure to include why it's great
+					</label>
+					<label class="radio">
+					  <input type="radio" name="optionsRadios" id="optionsRadios2" value="option2">
+					  Option two can be something else and selecting it will deselect option one
+					</label>
+				</form>
+				</div>
+				</div>
+				<a id="submitMerchant">Submit</a>
+				<!--div id="placeName"><p id="textName"></p></div>
 				<p class="description">Great! There are two ways to launch an offer on Levr.<br /><br />Choose one to get started:</p>
 				<div id="left" class="choice">
 			       <div class="ribbon-wrapper-green">
@@ -61,7 +79,7 @@ mixpanel.init("bd6d168ba08514f7c1f8d42c0eb8e1ee");
 					<p class="choiceHeader">From store</p>
 					<p class="choiceDescription">Send us an offer you're already running via email, text, or carrier pigeon.</p>
 					<form method="POST>" class="emptyForm" id='form2'><a class="button white btnGo" id="btnUpload">Get started</a></form>
-				</div>
+				</div-->
 			</div>
 		</div>
 	<div id="gmap"></div>
@@ -69,6 +87,6 @@ mixpanel.init("bd6d168ba08514f7c1f8d42c0eb8e1ee");
 		google.load("jquery", "1.4.2");
 	</script>
 	<!--script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?libraries=places&sensor=true"></script-->
-	<script src="../js/new.js"></script>
+	<script src="/js/new.js"></script>
 	</body>
 </html>

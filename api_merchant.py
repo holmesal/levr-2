@@ -123,6 +123,8 @@ class TwilioAnswerHandler(webapp2.RequestHandler):
 			</Gather>
 		</Response>''')
 		
+class TwilioStatus
+		
 class TwilioCheckCodeHandler(webapp2.RequestHandler):
 	def post(self):
 		logging.debug(self.request.body)

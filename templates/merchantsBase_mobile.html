@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <!-- Bootstrap -->
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-responsive.min.css" rel="stylesheet">
+	<!--link rel="stylesheet" href="/css/merchantsBase_mobile.css"-->
+	{% block htmlhead %} 
+	
+	<style>
+		body{
+			padding-top:40px;
+		}
+	</style>
+	
+	{% endblock %}
+</head>
+
+<body>
+	<div class="navbar navbar-inverse navbar-fixed-top">
+		   <div class="navbar-inner">
+			 <div class="container">
+			   <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+				 <span class="icon-bar"></span>
+				 <span class="icon-bar"></span>
+				 <span class="icon-bar"></span>
+			   </a>
+			   <a class="brand" href="#">Levr for Merchants</a>
+			   <div class="nav-collapse collapse">
+				 <ul class="nav">
+				   <li><a href="/merchants/manage">Manage your offers</a></li>
+				   <li><a href="/merchants/deal">Add an offer</a></li>
+				   <li><a href="/merchants/verify">Verify your business</a></li>
+				   <li><a href="/merchants/logout">Logout</a></li>
+				   <!--li class="dropdown" id=''>
+					 <a href="#" class="dropdown-toggle" data-toggle="dropdown">Dropdown <b class="caret"></b></a>
+					 <ul class="dropdown-menu">
+					   <li><a href="#">Action</a></li>
+					   <li><a href="#">Another action</a></li>
+					   <li><a href="#">Something else here</a></li>
+					   <li class="divider"></li>
+					   <li class="nav-header">Nav header</li>
+					   <li><a href="#">Separated link</a></li>
+					   <li><a href="#">One more separated link</a></li>
+					 </ul>
+				   </li-->
+				 </ul>
+			   </div><!--/.nav-collapse -->
+			 </div>
+		   </div>
+		 </div>
+	{% if validated==False %}
+		<div id='addAlert' class="alert">
+				Your offers won't be launched until you verify your business: {{business.business_name}}.
+				<a href='/merchants/verify'>Verify now (it's really easy)</a>
+			</div>
+	{% endif %}
+	<div class="container" >
+		{% block content %}
+			<!-- &copy; Copyright  by Levr Inc. -->
+		{% endblock content %}
+	</div>
+		
+		</div>
+		<div id="footer">
+			{% block footer %}
+			<!-- &copy; Copyright  by Levr Inc. -->
+			{% endblock footer %}
+		</div>
+	</div>
+	<script src="http://code.jquery.com/jquery-latest.js"></script>
+	<script type="text/javascript" src="/js/bootstrap.min.js"></script>
+	</script>
+	{% block javascript %}
+	{% endblock %}
+</body>
+</html>

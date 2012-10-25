@@ -1,0 +1,85 @@
+{% extends "templates/merchantsBase_mobile.html" %}
+
+
+	
+{% block htmlhead %}
+
+
+<link href="/css/dropdown.css" rel="stylesheet" />
+
+{% endblock %}
+
+{% block content %}
+
+			
+{% if deals %}
+<table class="table">
+	<thead>
+		<tr>
+			<td></td>
+			<td>Offer</td>
+			<td>Status</td>
+			<td>Views</td>
+		</tr>
+	</thead>
+	<tbody>
+		
+		{% for deal in deals %}
+			{% if deal.deal_status == 'active' %}
+			<tr class="success">
+			{% elif deal.deal_status == 'expired' %}
+			<tr class="error">
+			{% elif deal.deal_status == 'pending' %}
+			<tr class="warning">
+			{% endif %}
+			<td style="width:10%;">
+				<li class="sm-dropdown">
+					<button id='btnDropdown' class="btn btn-info"><i class="icon-list icon-white"></i></button>
+					<ul class="sm-dropdown-menu">
+						<a href='/merchants/edit?dealID={{deal.enc_key}}' class="btn btn-primary btn-large btn-block">Edit</a>
+						{% if deal.deal_status == 'active' %}
+						<a href='/merchants/deal/delete/{{deal.enc_key}}' class="btn btn-danger btn-large btn-block">Stop</a>
+						{% elif deal.deal_status == 'expired' %}
+						<a href='/merchants/deal/reanimate/{{deal.enc_key}}' class="btn btn-success btn-large btn-block">Start</a>
+						{% elif deal.deal_status == 'pending' %}
+						<a href='/merchants/deal/delete/{{deal.enc_key}}' class="btn btn-danger btn-large btn-block">Stop</a>
+						{% endif %}
+					</ul>
+				</li>
+				<!--div class="dropdown">
+				  <a class="dropdown-toggle" data-toggle="dropdown" href="#">Manage</a>
+				  <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+				    <a href='/merchants/edit?dealID={{deal.enc_key}}' class="btn btn-primary btn-large btn-block">Edit</a>
+					{% if deal.deal_status == 'active' %}
+					<a href='/merchants/deal/delete/{{deal.enc_key}}' style="margin-left: 10px;" class="btn btn-danger">Stop</a>
+					{% elif deal.deal_status == 'expired' %}
+					<a href='/merchants/deal/reanimate/{{deal.enc_key}}' style="margin-left: 10px;" class="btn btn-success">Start</a>
+					{% elif deal.deal_status == 'pending' %}
+					<a href='/merchants/deal/delete/{{deal.enc_key}}' style="margin-left: 10px;" class="btn btn-danger">Stop</a>
+					{% endif %}
+				  </ul>
+				</div-->
+				
+			</td>
+			<td style="width:70%">{{deal.deal_text}}</td>
+			<td style="width:10%">{% filter capitalize %}{{deal.deal_status}}{% endfilter %}</td>
+			<td style="width:10%">{{deal.deal_views}}</td>
+
+			
+			</tr>
+
+		
+		{% endfor %}
+			</tbody>
+			</table>
+{% else %}
+<a href="/merchants/deal" class="btn btn-success btn-large btn-block">Add your first offer</a>
+{% endif %}
+
+
+{% endblock %}
+
+{% block javascript %}
+<script src="/js/dropdown.js"></script>
+
+{% endblock %}

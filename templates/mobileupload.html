@@ -28,17 +28,31 @@ mixpanel.init("ab1137787f393161bd481e2756b77850");</script><!-- end Mixpanel -->
   				<input type=hidden name='uid' value="{{uid}}">
   				<input type=hidden name='businessID' value="{{businessID}}">
   				<input type=hidden name='callback_url' value="{{callback_url}}">
-  				<div id='img_group' class="control-group"><a id='fakeImgBtn' href='#' class="btn btn-success btn-large">Launch camera</a><input id='img' type="file" name="img" onchange="previewImage(this);"></div>
+  				<div id='img_group' class="control-group"><input id='img' type="file" name="img" onchange="previewImage(this);"><a id='fakeImgBtn' href='#' class="btn btn-success btn-large">Launch camera</a></div>
 	  			<div class="control-group"><input id='deal_text' type="text" name="deal_text" placeholder="What's the deal?"></div>
 	  			
 	  			<div class="control-group"><textarea id='description' rows="3" name="description" placeholder="Anything else people should know?"></textarea></div>
 	  			
-	  			<button id='submitBtn' type="submit" class="btn btn-primary btn-large" disabled>Upload</button>
+	  			<input id='submitBtn' type="submit" class="btn btn-primary btn-large" disabled>
   			</form>
-  			<img id='pin' src="/img/pin.png">
+  			<!--form class="form" action="{{upload_url}}" method="POST" enctype="multipart/form-data">
+  				<div id='img_group' class="control-group"><a id='fakeImgBtn' href='#' class="btn btn-success btn-large">Launch camera</a><input id="img" type="file" name="img" onchange="previewImage(this);"></div>
+  				<input type="hidden" name="businessID" value="tAv4ZDR8iEAh2w29fBwShIZWks6GJETWXYRvH1GWCU_7g-rjof2xMhOMygholuoWChA=">
+  				<input type="hidden" name="uid" value="tAv4ZDR8iEAh2w29fBwShIZWks6GJETWXYRvH1GWCU_7g-rkof2xchPTrR5ohuoSChA=">
+  				<div class="control-group"><input id='deal_text' type="text" name="deal_text" placeholder="What's the deal?"></div>
+  				<div class="control-group"><textarea id='description' rows="3" name="description" placeholder="Anything else people should know?"></textarea></div>
+  				<input type="submit" id="submitBtn" name="submit" class="btn btn-primary btn-large" disabled value="Create!">
+  			</form-->
+  			
+  			
+  			<img id='pin' src="/img/pin.png" alt="Oh no...">
   		</div>
   	</div>
   </div>
+  
+  
+  
+  
   
     <script src="http://code.jquery.com/jquery-latest.js"></script>
     <script src="/js/bootstrap.min.js"></script>
@@ -60,7 +74,7 @@ mixpanel.init("ab1137787f393161bd481e2756b77850");</script><!-- end Mixpanel -->
 		}
 	    
 	    $(document).ready(function() {
-	    
+
 	    	//identify as the user that generated the contentID
 	    	mixpanel.people.identify("{{ uid }}");
 	    	
@@ -84,7 +98,8 @@ mixpanel.init("ab1137787f393161bd481e2756b77850");</script><!-- end Mixpanel -->
 			    }
 		    })
 		    
-		    mixpanel.track_links("#submitBtn", "Offer submitted");
+		    //THIS BROKE EVERYTHING
+		    //mixpanel.track_links("#submitBtn", "Offer submitted");
 	    })
     </script>
   </body>

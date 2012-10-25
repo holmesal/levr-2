@@ -3,7 +3,7 @@ from google.appengine.api import urlfetch
 import json
 import logging
 
-def track(event, properties=None):
+def track(event,token,properties=None):
 	"""
 		A simple function for asynchronously logging to the mixpanel.com API on App Engine 
 		(Python) using RPC URL Fetch object.
@@ -14,10 +14,9 @@ def track(event, properties=None):
 	"""
 	if properties == None:
 		properties = {}
-	token = "ab1137787f393161bd481e2756b77850"
 	
-	if "token" not in properties:
-		properties["token"] = token
+	if token == None:
+		raise Exception('mixpanel token not passed')
 	
 	params = {"event": event, "properties": properties}
 		
@@ -31,10 +30,11 @@ def track(event, properties=None):
 	
 	return True
 	
-def person(distinct_id,properties,token=None):
-	
-	if token == None:
-		token = "ab1137787f393161bd481e2756b77850"
+def person(distinct_id,token,properties):
+	# 
+# 	if token == None:
+# 		#token = "ab1137787f393161bd481e2756b77850"
+# 		raise Exception('mixpanel token not passed')
 		
 	params = {
 		"$set"		:	properties,
@@ -53,10 +53,11 @@ def person(distinct_id,properties,token=None):
 	
 	return True
 	
-def increment(distinct_id,to_increment,token=None):
+def increment(distinct_id,token,to_increment):
 	
-	if token == None:
-		token = "ab1137787f393161bd481e2756b77850"
+	# if token == None:
+# 		#token = "ab1137787f393161bd481e2756b77850"
+# 		raise Exception('mixpanel token not passed')
 		
 	params = {
 		"$add"		:	to_increment,

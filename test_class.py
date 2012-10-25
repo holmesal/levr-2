@@ -1,13 +1,13 @@
 #from __future__ import with_statement
 #from google.appengine.api import files
 from datetime import datetime
+from google.appengine.api import images, urlfetch, files
 from google.appengine.ext import blobstore, db
 from google.appengine.ext.webapp import blobstore_handlers
 import levr_classes as levr
 import levr_encrypt as enc
 import logging
 import webapp2
-from google.appengine.api import images
 #import api_utils
 #import json
 #from google.appengine.api import taskqueue, urlfetch, memcache
@@ -169,7 +169,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		
 		dealID = levr.dealCreate(params,'phone_new_business')
 		
-		bus = levr.Business.get(dealID.businessID)
+		bus = levr.Business.gql('WHERE business_name=:1','Als Sweatshop').get()
 		
 		ant = levr.Customer.get(alonso)
 		
@@ -364,7 +364,31 @@ class TestNotificationHandler(webapp2.RequestHandler):
 			
 class Create100DeadNinjasHandler(webapp2.RequestHandler):
 	def get(self):
-		logging.info('Creating 1000 dead ninjas.')
+		logging.info('Creating 100 dead ninjas.')
+		
+		dead_ninjas = ['Jack Walsh','Jeffrey Kiggins','Elisabeth Austin','Robert Bailey','Nikole Bakopolus','Paul Barry','Will Burnham','Paul Callahan','Izona Fripp','John Glavin','Frank Gatheral','Robert Glasberg','Richard Golden','John Guilderson','John Hagan','Ann Hensey','Patrick Higgins','Alan Hilsinger','Hazel Horn','Iris Howard','Specer Hurtt','Marie Karahalis','Jackie Kelleher','Rich Kraska','Kenneth Lowry','Dan Lucas','Rich Luccio','Kathleen MacGillvray','James Palleschi','Sam Payson','Natalie Rosendorf','Sonia Sahagian','James Sharkey','Mary Sousa','Tony Spadofora','Brian Welch','Victor Ferra','Jesus Fojo','Frank Wood','Evelyn Thomas','Jimmy Babcock','Lynn Clark','Kara Gayer','Kevin Hill','James Holley','Chris Jaquex','Erica Lee','Sophia Pisanos','Dorothy Ralph','Josephine Robeson','Stuart Shore','Ted Young','Vivian Zuest','Leonel Escobar','Fran Jacobs','Toshiko Matoba','Sofiya Milman','Carl Niizawa','Angelo Pappas','Isabel Shibuya','Danny Ventura','Lisa Appleberry-Vining','Jake Bodden','John Bosch','Leah Bourgeois','Ben Goodman','Rita Hoizenthal','Brian Hilkirk','Sidney Kornick','Hal LeBlanc','Charles Lemon','Ben Dover','Alvin Rhodes','Julie Strength','Ted Staton','Rob Tricou','Tyler Wehr','Rob White','Carol Wikerson-Johnson','Alice Pilgrim']
+		
+		undead_ninjas = []
+		
+		for name in dead_ninjas:
+			ninja = levr.Customer(
+					display_name 		=	name,
+					alias				=	name,
+					email				=	'deadninja@levr.com',
+					first_name			=	name.split()[0],
+					last_name			=	name.split()[1],
+					foursquare_token	=	'4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0',
+					pw					=	enc.encrypt_password('Carl123!'),
+					levr_token			=	levr.create_levr_token()
+				)
+			
+			logging.info(levr.log_model_props(ninja))
+			undead_ninjas.append(ninja)
+			
+		logging.info(undead_ninjas)
+		db.put(undead_ninjas)
+		
+		
 #		ninjas = levr.Customer.all().filter('first_name','Dead Ninja').count()
 #		#don't want a bagillion dead ninjas by accident do we?
 #		if ninjas <100:
@@ -389,47 +413,47 @@ class Create100DeadNinjasHandler(webapp2.RequestHandler):
 		# Real undead ninja names'n'shit'stuff yeah
 		#=======================================================================
 		#make sure this script is only run once
-		existing_ninjas = levr.Customer.all().filter('email','deadninja@levr.com').count()
-		assert existing_ninjas == 0, 'This script has already been run.'
-		
-		f	= open('undead_ninja_names.txt','r')
-#		
-		#read whole text file
-		conglomerate	= f.read()
-		logging.debug(conglomerate)
-		#split into name entries
-		names_list	= conglomerate.split('\n')
-		#only take 100 ninjas
-		if names_list.__len__() >100:
-			names_list = names_list[:100]
-		
-		undead_ninjas = []
-		for full_name in names_list:
-			#parse first and last names
-			first_name, last_name = full_name.split(' ')
-			#build display name
-			display_name = '{} {}.'.format(first_name,last_name[0])
-			ninja = levr.Customer(
-					display_name 		=	display_name,
-					alias				=	display_name,
-					email				=	'deadninja@levr.com',
-					first_name			=	first_name,
-					last_name			=	last_name,
-					foursquare_token	=	'4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0',
-					pw					=	enc.encrypt_password('Carl123!'),
-					levr_token			=	levr.create_levr_token()
-				)
-			undead_ninjas.append(ninja)
-		
-		#sanity check
-		self.response.out.headers['Content-Type'] = 'text/plain'
-		self.response.out.write('{} undead ninjas'.format(undead_ninjas.__len__()))
-		for ninja in undead_ninjas:
-			self.response.out.write(levr.log_model_props(ninja,['first_name','last_name','display_name']))
-		
-		#put all the ninjas
-		db.put(undead_ninjas)
-		#how to get a random dead ninja
+	# 	existing_ninjas = levr.Customer.all().filter('email','deadninja@levr.com').count()
+# 		assert existing_ninjas == 0, 'This script has already been run.'
+# 		
+# 		f	= open('undead_ninja_names.txt','r')
+# #		
+# 		#read whole text file
+# 		conglomerate	= f.read()
+# 		logging.debug(conglomerate)
+# 		#split into name entries
+# 		names_list	= conglomerate.split('\n')
+# 		#only take 100 ninjas
+# 		if names_list.__len__() >100:
+# 			names_list = names_list[:100]
+# 		
+# 		undead_ninjas = []
+# 		for full_name in names_list:
+# 			#parse first and last names
+# 			first_name, last_name = full_name.split(' ')
+# 			#build display name
+# 			display_name = '{} {}.'.format(first_name,last_name[0])
+# 			ninja = levr.Customer(
+# 					display_name 		=	display_name,
+# 					alias				=	display_name,
+# 					email				=	'deadninja@levr.com',
+# 					first_name			=	first_name,
+# 					last_name			=	last_name,
+# 					foursquare_token	=	'4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0',
+# 					pw					=	enc.encrypt_password('Carl123!'),
+# 					levr_token			=	levr.create_levr_token()
+# 				)
+# 			undead_ninjas.append(ninja)
+# 		
+# 		#sanity check
+# 		self.response.out.headers['Content-Type'] = 'text/plain'
+# 		self.response.out.write('{} undead ninjas'.format(undead_ninjas.__len__()))
+# 		for ninja in undead_ninjas:
+# 			self.response.out.write(levr.log_model_props(ninja,['first_name','last_name','display_name']))
+# 		
+# 		#put all the ninjas
+# 		db.put(undead_ninjas)
+# 		#how to get a random dead ninja
 		#ninja = api_utils.get_random_dead_ninja()
 		
 class HarmonizeVenuesHandler(webapp2.RequestHandler):
@@ -525,34 +549,37 @@ class FloatingContentHandler(webapp2.RequestHandler):
 # 		
 # 		donor.put()
 		
-		owner = levr.Customer.gql('WHERE alias=:1','alonso').get()
+		owner = levr.Customer.gql('WHERE email=:1','alonso@levr.com').get()
 		assert owner, 'no owner'
 		deal = levr.Deal.all().get()#.get('ahFzfmxldnItcHJvZHVjdGlvbnIbCxIIQ3VzdG9tZXIYsuQDDAsSBERlYWwYtG0M')
 		assert deal, 'no deal'
-		user = levr.Customer.gql('WHERE email=:1','q').get()
+		user = levr.Customer.gql('WHERE email=:1','ethan@levr.com').get()
 		assert user, 'no user'
 		business = levr.Business.get(deal.businessID)
 		assert business, 'no business'
-		contentID = levr.create_content_id('foursquare') #or facebook or twitter
-		self.response.out.write('Upload: ' + contentID + '\n')
-		
+
+
 		#floating content for upload
 		fc = levr.FloatingContent(
 				action='upload',
-				contentID=contentID,
+				contentID=levr.create_content_id('foursquare'),
 				user=user,
 				business=business
 		)
 		
+		self.response.out.write('<p>Upload: ' + fc.contentID + '\n</p>')
+		
 		# Floating content for a deal
 		fc2 = levr.FloatingContent(
-				action='upload',
-				contentID=contentID,
+				action='deal',
+				contentID=levr.create_content_id('foursquare'),
 				user=user,
 				deal=deal,
 				origin='foursquare',
 				business=business
 		)
+		
+		self.response.out.write('<p>Deal: ' + fc2.contentID + '\n</p>')
 		
 		#put it in!
 		fc2.put()
@@ -629,6 +656,83 @@ class OwnerOfHandler(webapp2.RequestHandler):
 		alonso.owner_of = str(business.key())
 		alonso.put()
 		
+<<<<<<< HEAD
+=======
+class ExifHandler(webapp2.RequestHandler):
+	def get(self,blob_key):
+		'''This should be called after an image is uploaded from a source where an ipad or iphone might have been used to add an image inside a web wrapper'''
+		
+		blob = blobstore.BlobInfo.get(blob_key)
+		
+		img = images.Image(blob_key=blob_key)
+		
+		#execute a bullshit transform
+		img.rotate(0)
+		bullshit = img.execute_transforms(output_encoding=images.JPEG,quality=100,parse_source_metadata=True)
+		
+		#self.response.headers['Content-Type'] = 'image/jpeg'
+		orient = img.get_original_metadata()['Orientation']
+		
+		if orient != 1:
+			logging.info('Image not oriented properly')
+			logging.info('Orientation: '+str(orient))
+			if orient == 6:
+				#rotate 270 degrees
+				img.rotate(90)
+			elif orient == 8:
+				img.rotate(270)
+			elif orient == 3:
+				img.rotate(180)
+		
+			#write out the image
+			output_img = img.execute_transforms(output_encoding=images.JPEG,quality=100,parse_source_metadata=True)
+		
+			#figure out how to store this shitttt
+			# Create the file
+			overwrite = files.blobstore.create(mime_type='image/jpeg')
+			
+			# Open the file and write to it
+			with files.open(overwrite, 'a') as f:
+				f.write(output_img)
+			
+			# Finalize the file. Do this before attempting to read it.
+			files.finalize(overwrite)
+			
+			# Get the file's blob key
+			blob_key = files.blobstore.get_blob_key(overwrite)
+			
+			self.response.out.write(str(blob_key))
+		else:
+			logging.info('Image oriented properly - not rotating')
+			
+		
+			#write image to output
+# 			self.response.headers['Content-Type'] = 'image/jpeg'
+# 			self.response.out.write(output_img)
+			
+			#blob_data = blob_key.open().read()
+				
+			#pass blob data to the image handler
+			#img			= images.Image(blob_data)
+			#img			= images.Image(blob)
+		
+class PreviewHandler(webapp2.RequestHandler):
+	def get(self,blob_key):
+	
+		blob = blobstore.BlobInfo.get(blob_key)
+		
+		img = images.Image(blob_key=blob_key)
+	
+		img.resize(width=800, height=1000)
+		img.im_feeling_lucky()
+		thumbnail = img.execute_transforms(output_encoding=images.JPEG,parse_source_metadata=True)
+		
+		self.response.headers['Content-Type'] = 'image/jpeg'
+		self.response.out.write(thumbnail)
+		
+	
+
+>>>>>>> 4194612823e30747909e313ea804ea1bd0ef16a6
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload', DatabaseUploadHandler),
 								('/new/test', TestHandler),
@@ -642,8 +746,13 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/sandbox', SandboxHandler),
 								('/new/deleteeverything',DeleteEverythingHandler),
 								('/new/ownerof',OwnerOfHandler),
+<<<<<<< HEAD
 								('/new/upload_ninjas',UploadPhotoHandler),
 								('/new/store_upload', StorePhotoHandler)
+=======
+								('/new/exif/(.*)',ExifHandler),
+								('/new/preview/(.*)',PreviewHandler)
+>>>>>>> 4194612823e30747909e313ea804ea1bd0ef16a6
 								],debug=True)
 
 

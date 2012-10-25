@@ -1,5 +1,7 @@
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
+from google.appengine.api import taskqueue
+import json
 import api_utils
 import levr_classes as levr
 import logging
@@ -102,6 +104,23 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 			
 			#create the deal using the origin specified
 			deal_entity = levr.dealCreate(params,'phone_new_business',upload_flag)
+			
+			#fire off a task to rotate the image
+			task_params = {
+				'blob_key'	:	str(deal_entity.img.key())
+			}
+			
+			logging.info('Sending this to the task: '+str(task_params))
+			
+			taskqueue.add(url='/tasks/checkImageRotationTask',payload=json.dumps(task_params))
+				
+			
+			user = levr.Customer.get(uid)
+			#give the user some karma
+			user.karma += 5
+			#level check!
+			user = api_utils.level_check(user)
+			user.put()
 			
 			#grab deal information for sending back to phone
 			deal = api_utils.package_deal(deal_entity,True)

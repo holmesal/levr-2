@@ -130,6 +130,17 @@ indexes:
 - kind: Deal
   ancestor: yes
   properties:
+  - name: deal_views
+
+- kind: Deal
+  ancestor: yes
+  properties:
+  - name: deal_views
+    direction: desc
+
+- kind: Deal
+  ancestor: yes
+  properties:
   - name: is_exclusive
 
 - kind: Notification

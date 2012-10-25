@@ -2,13 +2,14 @@ import webapp2
 #import json
 import logging
 import os
+import json
 import jinja2
 import levr_classes as levr
 import levr_encrypt as enc
 #from levr_encrypt import encrypt_key
 #from google.appengine.ext import db
 #from google.appengine.api import images
-from google.appengine.api import mail
+from google.appengine.api import mail,taskqueue
 #from datetime import datetime
 #from datetime import timedelta
 from google.appengine.ext import blobstore
@@ -18,6 +19,8 @@ from gaesessions import get_current_session
 import merchant_utils
 import api_utils
 import time
+import geo.geohash as geohash
+
 
 jinja_environment = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
 class MerchantsHandler(webapp2.RequestHandler):
@@ -29,25 +32,41 @@ class MerchantsHandler(webapp2.RequestHandler):
 		else:
 			template = jinja_environment.get_template('templates/merchants.html')
 			self.response.out.write(template.render())
+			
+class MerchantsBetaHandler(webapp2.RequestHandler):
+	def get(self):
+		#check if logged in. if so, redirect to the manage page
+		session = get_current_session()
+		if session.has_key('loggedIn') == True and session['loggedIn'] == True:
+			self.redirect("/merchants/manage")
+		else:
+			template = jinja_environment.get_template('templates/merchants_beta.html')
+			self.response.out.write(template.render())
+
 
 class LoginHandler(webapp2.RequestHandler):
 	def get(self):
 		
-		email = self.request.get('email')
+		email = self.request.get('email').lower()
 		password = self.request.get('password')
+		
 		
 		template_values = {
 			'email'		:	email,
 			'password'	:	password
 		}
 		
-		template = jinja_environment.get_template('templates/login.html')
+		if merchant_utils.check_ua(self) == 'mobile':
+			template = jinja_environment.get_template('templates/login_mobile.html')
+		else:
+			template = jinja_environment.get_template('templates/login.html')
+			
 		self.response.out.write(template.render(template_values))
 		
 	def post(self):
 		try:
 		
-			email = self.request.get('email')
+			email = self.request.get('email').lower()
 			password = self.request.get('password')
 			
 			if password != '':
@@ -65,7 +84,8 @@ class LoginHandler(webapp2.RequestHandler):
 					template_values = {
 						'email'		:	email,
 						'password'	:	enc.decrypt_password(password),
-						'error'		:	error
+						'error'		:	error,
+						'layout'	:	merchant_utils.check_ua(self)
 					}
 					
 					template = jinja_environment.get_template('templates/login.html')
@@ -267,12 +287,12 @@ class ResetPasswordHandler(webapp2.RequestHandler):
 class EmailCheckHandler(webapp2.RequestHandler):
 	def post(self):
 		'''This is currently a handler to check whether the email entered by a business on signup is available'''
-		email = self.request.get('email')
+		email = self.request.get('email').lower()
 		#pw = enc.encrypt_password(self.request.get('pw'))
 		
 		#check if email is already in use
-		q = levr.BusinessOwner.gql('WHERE email=:1', email)
-		if q.get():
+		existing_merchant = levr.Customer.gql('WHERE email=:1', email).get()
+		if existing_merchant:
 			#echo that email is in use
 			self.response.out.write(False)
 		else:
@@ -283,9 +303,11 @@ class EmailCheckHandler(webapp2.RequestHandler):
 class WelcomeHandler(webapp2.RequestHandler):
 	def get(self):
 		try:
-			logging.debug('!!!!!!')
-			logging.info('asdasd')
-			template = jinja_environment.get_template('templates/new.html')
+			if merchant_utils.check_ua(self) == 'mobile':
+				template = jinja_environment.get_template('templates/new_mobile.html')
+			else:
+				template = jinja_environment.get_template('templates/new.html')
+				
 			self.response.out.write(template.render())
 		except:
 			levr.log_error()
@@ -296,7 +318,69 @@ class WelcomeHandler(webapp2.RequestHandler):
 			logging.debug(self.request.body)
 			logging.debug(self.request.params)
 			
-			owner = levr.BusinessOwner(
+			#get the business info from the form
+			business_name	= self.request.get('business_name')
+			phone			= self.request.get('phone')
+			geo_point		= levr.geo_converter(self.request.get('geo_point'))
+			vicinity		= self.request.get('vicinity')
+			types			= self.request.get_all('types[]')
+			
+			#check if that business already exists
+			business = levr.Business.all().filter('business_name =', business_name).filter('vicinity =',vicinity).get()
+			
+			if not business:
+				logging.info('business does not exist...creating')
+				#create the business
+				business = levr.Business(
+						business_name=business_name,
+						geo_point = geo_point,
+						geo_hash = geohash.encode(geo_point.lat,geo_point.lon),
+						vicinity = vicinity,
+						types = types,
+						phone = phone
+				)
+				
+				business.put()
+			
+			else:
+				#even if there is a business, grab it and update it if the phone number is null
+				if not business.phone:
+					business.phone = self.request.get('phone')
+					business.put()
+				
+			#at this point, a business should exist
+			logging.debug(levr.log_model_props(business))
+			
+			#create the owner
+			owner = levr.Customer(
+				email=self.request.get('email').lower(),
+				pw=enc.encrypt_password(self.request.get('password')),
+				owner_of=str(business.key()),
+				levr_token=levr.create_levr_token(),
+				display_name=business.business_name,
+				alias=business.business_name
+			)
+			
+			owner.put()
+			
+			logging.debug(levr.log_model_props(owner))
+			
+			#creates new session for the new business
+			session = get_current_session()
+			session['uid']	= enc.encrypt_key(str(owner.key()))
+			session['loggedIn']	= True
+			session['validated']= False
+			session['owner_of']	=	enc.encrypt_key(owner.owner_of)
+			logging.debug(session)
+			
+			
+			self.redirect('/merchants/manage')
+			
+			
+			
+			
+			'''
+			owner = levr.Customer(
 				#create owner with contact info, put and get key
 				email			=self.request.get('email'),
 				pw				=enc.encrypt_password(self.request.get('password')),
@@ -315,13 +399,13 @@ class WelcomeHandler(webapp2.RequestHandler):
 			name_str = levr.tagger(business_name)
 			logging.debug(name_str)
 			#create unique identifier for the business
-			if name_str[0] == 'the' or name_str[0] == 'a' or name_str[0] == 'an':
-				#dont like the word the in front
-				logging.debug('flag the!')
-				identifier = ''.join(name_str[1:3])
-			else:
-				identifier = ''.join(name_str[:2])
-			upload_email = "u+"+identifier+"@levr.com"
+			# if name_str[0] == 'the' or name_str[0] == 'a' or name_str[0] == 'an':
+# 				#dont like the word the in front
+# 				logging.debug('flag the!')
+# 				identifier = ''.join(name_str[1:3])
+# 			else:
+# 				identifier = ''.join(name_str[:2])
+# 			upload_email = "u+"+identifier+"@levr.com"
 			
 			#check if that already exists
 			num = levr.Business.all().filter('upload_email =',upload_email).count()
@@ -347,7 +431,7 @@ class WelcomeHandler(webapp2.RequestHandler):
 				if business.owner == None:
 					#grab this business! 
 					business.owner	= owner
-					upload_email	= upload_email
+# 					upload_email	= upload_email
 					#TODO targeted will be set to false in the future, removing signed businesses from the ninja pool
 #					targeted		= False
 				else:
@@ -391,13 +475,14 @@ class WelcomeHandler(webapp2.RequestHandler):
 			body += "Owner Email:"+str(self.request.get('email'))+"\n\n"
 			message.body = body
 			message.send()
-
+			
 
 			#forward to appropriate page
 			if self.request.get('destination') == 'upload':
 				self.redirect('/merchants/upload')
 			elif self.request.get('destination') == 'create':
 				self.redirect('/merchants/deal')
+			'''
 		except:
 			levr.log_error(self.request.body)
 
@@ -413,7 +498,7 @@ class DealHandler(webapp2.RequestHandler):
 			user = levr.Customer.get(uid)
 			logging.info(levr.log_model_props(user))
 			#get the business
-			business = levr.Business.get(enc.decrypt_key(headerData['owner_of']))	
+			business = levr.Business.get(headerData['owner_of'])	
 			logging.info(levr.log_model_props(business))
 			
 			blobstore.create_upload_url('/merchants/upload')
@@ -425,7 +510,11 @@ class DealHandler(webapp2.RequestHandler):
 							"user"			: user
 			}
 			
-			template = jinja_environment.get_template('templates/deal.html')
+			if merchant_utils.check_ua(self) == 'mobile':
+				template = jinja_environment.get_template('templates/deal_mobile.html')
+			else:
+				template_values.update({'validated'		: merchant_utils.validated_check(user)})
+				template = jinja_environment.get_template('templates/deal.html')
 			self.response.out.write(template.render(template_values))
 		except:
 			levr.log_error()
@@ -472,6 +561,8 @@ class DealUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			
 			#kick over to create_deal to finish the deal creation
 			deal = merchant_utils.create_deal(deal,business,user)
+			
+			#log via mixpanel
 			
 			self.redirect('/merchants/manage')
 			
@@ -535,15 +626,45 @@ class DealUpdateHandler(blobstore_handlers.BlobstoreUploadHandler):
 			dealID = enc.decrypt_key(dealID)
 			deal = levr.Deal.get(dealID)
 			
+			#grab the business
+			business = levr.Business.get(deal.businessID)
+			
 			#is there an image to update?
 			if upload_flag == True:
+				#grab the old blob key
+				old_blob = deal.img
+# 				#grab the old blob
+# 				old_blob = blobstore.BlobInfo.get(old_key)
+				#set the new key
 				deal.img = img_key
+				#delete the old blob
+				old_blob.delete()
 			
 			#update all the other fields
 			deal.deal_text = self.request.get('deal_text')
 			deal.description = self.request.get('description')
 			
+			#update the tags
+			#init tags
+			tags = []
+			#add tags from the merchant
+			tags.extend(business.create_tags())
+			logging.info(tags)
+			#add tags from deal stuff
+			tags.extend(levr.tagger(deal.deal_text))
+			logging.info(tags)
+			tags.extend(levr.tagger(deal.description))
+			logging.info(tags)
+			deal.tags = tags
+			
 			deal.put()
+			
+			#fire off a request to rotate the image if necessary
+			#fire off a task to do the image rotation stuff
+			task_params = {
+				'blob_key'	:	str(deal.img.key())
+			}
+			taskqueue.add(url='/tasks/checkImageRotationTask',payload=json.dumps(task_params))
 			
 			self.redirect('/merchants/manage')
 			
@@ -610,7 +731,8 @@ class DeleteDealHandler(webapp2.RequestHandler):
 			if deal.key().parent() == owner.key():
 				logging.info('keys match!')
 				#delete the deal
-				deal.delete()
+				deal.deal_status = 'expired'
+				deal.put()
 				#redirect to manage
 				self.redirect('/merchants/manage')
 			else:
@@ -627,6 +749,38 @@ class DeleteDealHandler(webapp2.RequestHandler):
 # 			self.redirect('/merchants/manage')
 		except:
 			levr.log_error()
+			
+class ReanimateDealHandler(webapp2.RequestHandler):
+	def get(self,dealID):
+		try:
+			headerData = merchant_utils.login_check(self)
+			dealID = enc.decrypt_key(dealID)
+			owner = levr.Customer.get(headerData['uid'])
+			deal = levr.Deal.get(dealID)
+			#make sure this merchant is the owner of the deal before deleting
+			if deal.key().parent() == owner.key():
+				logging.info('keys match!')
+				#delete the deal
+				deal.deal_status = 'active'
+				deal.put()
+				#redirect to manage
+				self.redirect('/merchants/manage')
+			else:
+				logging.info('key mismatch')
+				#bounce to login page
+				self.redirect('/merchants/login')
+# 			deal = levr.Deal.get(dealID)
+# 			logging.info(levr.log_model_props(deal))
+			# logging.debug(self.request)
+# 			dealID = self.request.get('id')
+# 			dealID = enc.decrypt_key(dealID)
+# 			db.delete(dealID)
+# 			
+# 			self.redirect('/merchants/manage')
+		except:
+			levr.log_error()
+			
+
 class EditDealHandler(webapp2.RequestHandler):
 	def get(self):
 		try:
@@ -646,11 +800,13 @@ class EditDealHandler(webapp2.RequestHandler):
 				'business'	:	business,
 				'user'		:	owner,
 				"upload_url"	: blobstore.create_upload_url('/merchants/deal/update')
-				
-				
 			}
 			
-			template = jinja_environment.get_template('templates/deal.html')
+			if merchant_utils.check_ua(self) == 'mobile':
+				template = jinja_environment.get_template('templates/deal_mobile.html')
+			else:
+				template_values.update({'validated'		: merchant_utils.validated_check(owner)})
+				template = jinja_environment.get_template('templates/deal.html')
 			self.response.out.write(template.render(template_values))
 			
 			
@@ -733,37 +889,33 @@ class VerifyHandler(webapp2.RequestHandler):
 		
 		#get the owner information
 		uid = headerData['uid']
-		user = levr.Customer.get(uid)
-		logging.info(levr.log_model_props(user))
-		
-		#redirect if they've already gone through this activation process
-		if merchant_utils.validated_check(user):
-			verified = True
-		else:
-			verified = False
+		owner = levr.Customer.get(uid)
+		logging.info(levr.log_model_props(owner))
 		
 		#get the business
-		business = levr.Business.get(enc.decrypt_key(headerData['owner_of']))
+		business = levr.Business.get(headerData['owner_of'])
 		logging.info(levr.log_model_props(business))
 		
 		#check if the owner already has an activation code
-		if user.activation_code:
-			activation_code = user.activation_code
+		if owner.activation_code:
+			activation_code = owner.activation_code
 		else:
 			activation_code = str(int(time.time()))[-4:]
-			user.activation_code = activation_code
-			user.put()
+			owner.activation_code = activation_code
+			owner.put()
 		
 		#write out this page
 		template_values = {
-			'business'		:	business,
-			'activation_code'	:	activation_code,
-			'verified'			:	verified
+			'business'			:	business,
+			'activation_code'	:	activation_code
 		}
 		
 		logging.info(template_values)
 		
-		template = jinja_environment.get_template('templates/merchant_verify.html')
+		if merchant_utils.check_ua(self) == 'mobile':
+			template = jinja_environment.get_template('templates/merchant_verify_mobile.html')
+		else:
+			template = jinja_environment.get_template('templates/merchant_verify.html')
 		self.response.out.write(template.render(template_values))
 
 
@@ -774,21 +926,59 @@ class VerifyCallHandler(webapp2.RequestHandler):
 		
 		#get the owner information
 		uid = headerData['uid']
-		user = levr.Customer.get(uid)
-		logging.info(levr.log_model_props(user))
+		owner = levr.Customer.get(uid)
+		logging.info(levr.log_model_props(owner))
 		
 		#get the business
-		business = levr.Business.get(enc.decrypt_key(headerData['owner_of']))
+		business = levr.Business.get(headerData['owner_of'])
 		logging.info(levr.log_model_props(business))
 		
+		#check if the owner already has an activation code
+		if owner.activation_code:
+			activation_code = owner.activation_code
+		else:
+			activation_code = str(int(time.time()))[-4:]
+			owner.activation_code = activation_code
+			owner.put()
+			
 		#call the business
 		merchant_utils.call_merchant(business)
+		
+		#write out this page
+		template_values = {
+			'business'			:	business,
+			'activation_code'	:	activation_code,
+			'call_in_progress'	:	True
+		}
+		
+		logging.info(template_values)
+		
+		if merchant_utils.check_ua(self) == 'mobile':
+			template = jinja_environment.get_template('templates/merchant_verify_mobile.html')
+		else:
+			template = jinja_environment.get_template('templates/merchant_verify.html')
+		self.response.out.write(template.render(template_values))
 
 class VerifyAnswerHandler(webapp2.RequestHandler):
 	def post(self):
+	
+		request = json.loads(self.request.body)
+		logging.debug(request)
+		
+		self.response.out.write('''<?xml version="1.0" encoding="UTF-8"?>
+		<Response>
+			<Gather timeout="10" finishOnKey="*" action="http://www.levr.com/api/merchant/twiliocheckcode">
+				<Say>Thanks for using Levr!</Say>
+				<Say>Please enter your activation code and then press star.</Say>
+			</Gather>
+		</Response>''')
+
+
+class VerifyStatusCallbackHandler(webapp2.RequestHandler):
+	def post(self):
 		logging.debug(self.request.body)
-		code = self.request.get('Digits')
-		callto = self.request.get('To')
+		#code = self.request.get('Digits')
+		#callto = self.request.get('To')
 
 
 class ManageHandler(webapp2.RequestHandler):
@@ -802,18 +992,45 @@ class ManageHandler(webapp2.RequestHandler):
 			user = levr.Customer.get(uid)
 			logging.info(levr.log_model_props(user))
 			#get the business
-			business = levr.Business.get(enc.decrypt_key(headerData['owner_of']))
+			business = levr.Business.get(headerData['owner_of'])
 			logging.info(levr.log_model_props(business))
 			
 			#grab the deals
-			q_deals = levr.Deal.gql('WHERE ANCESTOR IS :1',user.key())
+			q_deals = levr.Deal.gql('WHERE ANCESTOR IS :1 ORDER BY deal_views DESC',user.key())
 			logging.info(q_deals.count())
 			#package
 			deals = []
+			active = []
+			pending = []
+			expired = []
 			for deal in q_deals:
 				deal.enc_key = enc.encrypt_key(deal.key())
-				deals.append(deal)
-				logging.info(deal.enc_key)
+				logging.info(deal.deal_status)
+				if deal.deal_status == 'active':
+					active.append(deal)
+					logging.info('appended to active')
+				elif deal.deal_status == 'pending':
+					pending.append(deal)
+					logging.info('appended to pending')
+				elif deal.deal_status == 'expired':
+					expired.append(deal)
+					logging.info('appended to expired')
+			'''
+			#sort each list based on views
+			sorted_active = sorted(active, key=lambda k: k.deal_views)
+			sorted_pending = sorted(pending, key=lambda k: k.deal_views)
+			for deal in expired:
+				logging.info(deal.deal_views)
+			sorted_expired = sorted(expired, key=lambda k: k.deal_views)
+			logging.info('sorted:')
+			for deal in sorted_expired:
+				logging.info(deal.deal_views)
+			
+			
+			deals = sorted_active + sorted_pending + sorted_expired
+			'''
+			deals = active + pending + expired
+			logging.info(deals)
 			
 			
 			template_values = {
@@ -828,7 +1045,11 @@ class ManageHandler(webapp2.RequestHandler):
 			
 			logging.info(template_values)
 			
-			template = jinja_environment.get_template('templates/manageOffers.html')
+			if merchant_utils.check_ua(self) == 'mobile':
+				template = jinja_environment.get_template('templates/manageOffers_mobile.html')
+			else:
+				template = jinja_environment.get_template('templates/manageOffers.html')
+				
 			self.response.out.write(template.render(template_values))
 			
 			'''
@@ -1083,6 +1304,7 @@ class CheckPasswordHandler(webapp2.RequestHandler):
 
 app = webapp2.WSGIApplication([('/merchants', MerchantsHandler),
 								('/merchants/', MerchantsHandler),
+								('/merchants/beta', MerchantsBetaHandler),
 								('/merchants/login', LoginHandler),
 								('/merchants/logout', LogoutHandler),
 								('/merchants/password/lost', LostPasswordHandler),
@@ -1092,11 +1314,14 @@ app = webapp2.WSGIApplication([('/merchants', MerchantsHandler),
 								('/merchants/deal', DealHandler),
 								('/merchants/deal/upload', DealUploadHandler),
 								('/merchants/deal/delete/(.*)', DeleteDealHandler),
+								('/merchants/deal/reanimate/(.*)', ReanimateDealHandler),
 								('/merchants/edit.*', EditDealHandler),
 								('/merchants/deal/update', DealUpdateHandler),
 								('/merchants/editDeal/upload', EditDealUploadHandler),
 								('/merchants/verify', VerifyHandler),
 								('/merchants/verify/call', VerifyCallHandler),
+								('/merchants/verify/answer', AnswerCallHandler),
+								('/merchants/verify/statusCallback', VerifyStatusCallbackHandler),
 								('/merchants/manage', ManageHandler),
 								('/merchants/upload', UploadHandler),
 								('/merchants/widget', WidgetHandler),

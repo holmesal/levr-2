@@ -40,9 +40,6 @@
 <div style="clear:both"></div>
 {% endblock %}
 {% block javascript %}
-<script type="text/javascript">google.load("jquery", "1.4.2");</script>
-<!--script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?libraries=places&sensor=true"></script-->
-<script src="../js/deal.js"></script>
 <script type="text/javascript">
 	{% if edit == True %}
 	$('#uploaded_img').css('background-image','url(\'{{ deal.imgURLLarge }}\')');

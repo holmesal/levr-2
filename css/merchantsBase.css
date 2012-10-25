@@ -9,7 +9,7 @@ body{
 	height: 80px;
 	position: absolute;
 	/*background: #DF3B3B url('../img/crisp_paper_ruffles.png') repeat-x top left;*/
-	background-image: -moz-linear-gradient(top,  rgba(0,0,0,1),  rgba(0,0,0,0)), url(../img/crisp_paper_ruffles.png);
+	background-image: -moz-linear-gradient(top,  rgba(0,136,204,0.9),  rgba(0,136,204,0.8)), url(../img/crisp_paper_ruffles.png);
 	background-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0,136,204,0.9)), to(rgba(0,136,204,0.8))),url(../img/crisp_paper_ruffles.png);
 }
 
