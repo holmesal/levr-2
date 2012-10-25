@@ -656,8 +656,6 @@ class OwnerOfHandler(webapp2.RequestHandler):
 		alonso.owner_of = str(business.key())
 		alonso.put()
 		
-<<<<<<< HEAD
-=======
 class ExifHandler(webapp2.RequestHandler):
 	def get(self,blob_key):
 		'''This should be called after an image is uploaded from a source where an ipad or iphone might have been used to add an image inside a web wrapper'''
@@ -732,7 +730,6 @@ class PreviewHandler(webapp2.RequestHandler):
 		
 	
 
->>>>>>> 4194612823e30747909e313ea804ea1bd0ef16a6
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload', DatabaseUploadHandler),
 								('/new/test', TestHandler),
@@ -746,13 +743,10 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/sandbox', SandboxHandler),
 								('/new/deleteeverything',DeleteEverythingHandler),
 								('/new/ownerof',OwnerOfHandler),
-<<<<<<< HEAD
 								('/new/upload_ninjas',UploadPhotoHandler),
 								('/new/store_upload', StorePhotoHandler)
-=======
 								('/new/exif/(.*)',ExifHandler),
 								('/new/preview/(.*)',PreviewHandler)
->>>>>>> 4194612823e30747909e313ea804ea1bd0ef16a6
 								],debug=True)
 
 
