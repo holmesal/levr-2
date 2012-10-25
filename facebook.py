@@ -108,15 +108,8 @@ class AuthorizeCompleteHandler(webapp2.RequestHandler):
 			levr.log_error()
 			self.response.out.write('Could not connect with Facebook')
 
-class TestHandler(webapp2.RequestHandler):
-	def get(self):
-		q = levr.Business.all()
-		for business in q:
-			business.foursquare_id = 'undefined'
-			business.put()
 
 app = webapp2.WSGIApplication([
 								('/facebook/authorize', AuthorizeBeginHandler),
-								('/facebook/authorize/complete', AuthorizeCompleteHandler),
-								('/facebook/test', TestHandler)
+								('/facebook/authorize/complete', AuthorizeCompleteHandler)
 								],debug=True)

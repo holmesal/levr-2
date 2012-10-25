@@ -281,7 +281,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 		- it is produced by the higher level factory, 'validate'
 		'''
 		def validator(self,*args,**kwargs):
-			logging.debug('Validator')
+			logging.info('Validator')
 			logging.debug("to_validate: "+str(to_validate))
 			logging.debug("auth_source: "+str(authentication_source))
 			
@@ -433,7 +433,6 @@ def validate(url_param,authentication_source,*a,**to_validate):
 					pass
 				else:
 					raise Exception('Invalid url_param')
-				
 				
 				
 				

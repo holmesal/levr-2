@@ -7,6 +7,7 @@ import levr_classes as levr
 import levr_encrypt as enc
 import logging
 import webapp2
+from google.appengine.api import images
 #import api_utils
 #import json
 #from google.appengine.api import taskqueue, urlfetch, memcache
@@ -563,26 +564,35 @@ class SandboxHandler(webapp2.RequestHandler):
 	'''
 	def get(self):
 		pass
-#		lons = [x/1000. for x in range(72400,72600,10) if x%10 ==0]
-#		lats = [x/1000. for x in range(42400,42600,10) if x%10 ==0]
-#		self.response.out.write(lons.__len__()*lats.__len__())
-#		self.response.out.write(lats)
-#		
-#		for lat in lats:
-#			for lon in lons:
-#				
-#		
-#				params = {
-#							'lat'			:	lat,
-#							'lon'			:	lon,
-#							'token'			:	token,
-#							'foursquare_ids':	foursquare_ids
-#						}
-#					
-#				logging.debug('Sending this to the task: ' + json.dumps(params))
-#			
-#				#start the task
-#				t = taskqueue.add(url='/tasks/searchFoursquareTask',payload=json.dumps(params))
+class UploadPhotoHandler(webapp2.RequestHandler):
+	def get(self):
+		logging.info('hello'+'\xe9')
+		upload_url = blobstore.create_upload_url('/new/store_upload')
+		self.response.out.write('<html><body>')
+		self.response.out.write('<form action="%s" method="POST" enctype="multipart/form-data">' % upload_url)
+		self.response.out.write('<input type="file" id="file_input" webkitdirectory="" directory="">')
+#		for i in range(0,100):
+#			self.response.out.write('Upload File: <input type="file" name="img'+str(i)+'"><br>')
+		self.response.out.write(''' <input type="submit" name="submit" value="Create!"> </form></body></html>''')
+
+class StorePhotoHandler(blobstore_handlers.BlobstoreUploadHandler):
+	def post(self):
+		#get uploaded image
+		logging.info(levr.log_dir(self.request))
+		#list of 100 uploads
+		uploads = self.get_uploads()
+		self.response.out.write(uploads)
+		blob_keys = [u.key() for u in uploads]
+		
+		for key in blob_keys:
+			self.response.out.write(str(key)+'<br/>')
+#		upload = self.request.get('img')
+#		upload = blobstore.Blob(upload)
+#		blob_key= upload.key()
+#		img_key = blob_key
+#		logging.info(upload)
+		
+#		self.response.out.write()
 		
 class DeleteEverythingHandler(webapp2.RequestHandler):
 	def get(self):
@@ -619,10 +629,8 @@ class OwnerOfHandler(webapp2.RequestHandler):
 		alonso.owner_of = str(business.key())
 		alonso.put()
 		
-	
-
 app = webapp2.WSGIApplication([('/new', MainPage),
-								('/new/upload.*', DatabaseUploadHandler),
+								('/new/upload', DatabaseUploadHandler),
 								('/new/test', TestHandler),
 								('/new/inundate', AddDealsHandler),
 								('/new/notification', TestNotificationHandler),
@@ -633,7 +641,9 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/floatingContent', FloatingContentHandler),
 								('/new/sandbox', SandboxHandler),
 								('/new/deleteeverything',DeleteEverythingHandler),
-								('/new/ownerof',OwnerOfHandler)
+								('/new/ownerof',OwnerOfHandler),
+								('/new/upload_ninjas',UploadPhotoHandler),
+								('/new/store_upload', StorePhotoHandler)
 								],debug=True)
 
 

@@ -49,9 +49,10 @@ class ConnectFoursquareHandler(webapp2.RequestHandler):
 			logging.debug('CONNECT FOURSQUARE\n\n\n')
 			logging.debug(kwargs)
 			
-			user					= kwargs.get('actor')
-			foursquare_token		= kwargs.get('remoteToken')
-			
+			user				= kwargs.get('actor')
+			foursquare_token	= kwargs.get('remoteToken')
+			new_user_details	= None
+			new_friends			= None
 			#===================================================================
 			# Check to see if there are multiple accounts
 			# i.e. the user that is connecting w/ foursquare has an existing fs account with levr
