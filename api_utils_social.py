@@ -188,7 +188,7 @@ class SocialClass:
 		Takes in a variable dict of lists of a users new friends. 
 		Extends the users friend lists with friends that do not already exist in them
 		'''
-		
+		logging.debug('\n\n\n\t\t\t EXTEND FRIENDS \n\n\n')
 		facebook_friends		= kwargs.get('facebook_friends',None)
 		foursquare_friends		= kwargs.get('foursquare_friends',None)
 		twitter_friends_by_sn	= kwargs.get('twitter_friends_by_sn',None)
@@ -200,8 +200,7 @@ class SocialClass:
 			self.user.foursquare_friends.extend(new_foursquare_friends)
 			response['new_foursquare_friends'] = new_foursquare_friends
 		if facebook_friends:
-			new_facebook_friends = filter(
-										lambda friend:friend not in self.user.facebook_friends and friend != self.user.facebook_id, facebook_friends)
+			new_facebook_friends = filter(lambda friend:friend not in self.user.facebook_friends and friend != self.user.facebook_id, facebook_friends)
 			self.user.facebook_friends.extend(new_facebook_friends)
 			response['new_facebook_friends'] = new_facebook_friends
 		if twitter_friends_by_sn:
@@ -391,7 +390,6 @@ class Foursquare(SocialClass):
 		
 		logging.debug(levr.log_dict(content))
 		#give preference to facebook and twitter info over foursquare info
-#		if not self.user.facebook_id and not self.user.twitter_id:
 		#grab stuff
 		updated = {}
 		
@@ -709,7 +707,7 @@ class Twitter(SocialClass):
 		twitter_friends_by_id = content['ids']
 		
 		#store the information for the users facebook friends that were just found
-		self.extend_friends(facebook_friends_by_id=twitter_friends_by_id)
+		self.extend_friends(twitter_friends_by_id=twitter_friends_by_id)
 		
 		#Create levr the connection between the user and their friends
 		new_levr_friends = self.connect_friends()

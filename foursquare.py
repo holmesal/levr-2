@@ -102,10 +102,10 @@ class AuthorizeCompleteHandler(webapp2.RequestHandler):
 				self.response.out.write('Success!')
 			else:
 				levr.log_error(e)
-				self.response.out.write('Could not connect with Foursquare')
+				self.response.out.write('Could not connect with Foursquare.')
 		except Exception,e:
 			levr.log_error()
-			self.response.out.write('Could not connect with Foursquare')
+			self.response.out.write('Could not connect with Foursquare.')
 
 class PushHandler(webapp2.RequestHandler):
 	'''
