@@ -263,11 +263,15 @@ class UserImgHandler(webapp2.RequestHandler):
 			logging.info('IMAGE\n\n\n')
 			user	= kwargs.get('user')
 #			uid		= user.key()
-			private	= kwargs.get('private')
 			size	= kwargs.get('size')
 			
-			#get the blob
-			blob_key = user.img
+			# fetch from relational db
+			photo = user.blob_img.get()
+			
+			assert photo, 'Customer does not have an image in the database'
+			# grab img key from blobstore
+			blob_key = photo.img
+			
 			
 			#send image to response output
 			if not api_utils.send_img(self,blob_key,size):

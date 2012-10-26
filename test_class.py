@@ -8,6 +8,7 @@ import levr_classes as levr
 import levr_encrypt as enc
 import logging
 import webapp2
+import api_utils
 #import api_utils
 #import json
 #from google.appengine.api import taskqueue, urlfetch, memcache
@@ -366,28 +367,112 @@ class Create100DeadNinjasHandler(webapp2.RequestHandler):
 	def get(self):
 		logging.info('Creating 100 dead ninjas.')
 		
-		dead_ninjas = ['Jack Walsh','Jeffrey Kiggins','Elisabeth Austin','Robert Bailey','Nikole Bakopolus','Paul Barry','Will Burnham','Paul Callahan','Izona Fripp','John Glavin','Frank Gatheral','Robert Glasberg','Richard Golden','John Guilderson','John Hagan','Ann Hensey','Patrick Higgins','Alan Hilsinger','Hazel Horn','Iris Howard','Specer Hurtt','Marie Karahalis','Jackie Kelleher','Rich Kraska','Kenneth Lowry','Dan Lucas','Rich Luccio','Kathleen MacGillvray','James Palleschi','Sam Payson','Natalie Rosendorf','Sonia Sahagian','James Sharkey','Mary Sousa','Tony Spadofora','Brian Welch','Victor Ferra','Jesus Fojo','Frank Wood','Evelyn Thomas','Jimmy Babcock','Lynn Clark','Kara Gayer','Kevin Hill','James Holley','Chris Jaquex','Erica Lee','Sophia Pisanos','Dorothy Ralph','Josephine Robeson','Stuart Shore','Ted Young','Vivian Zuest','Leonel Escobar','Fran Jacobs','Toshiko Matoba','Sofiya Milman','Carl Niizawa','Angelo Pappas','Isabel Shibuya','Danny Ventura','Lisa Appleberry-Vining','Jake Bodden','John Bosch','Leah Bourgeois','Ben Goodman','Rita Hoizenthal','Brian Hilkirk','Sidney Kornick','Hal LeBlanc','Charles Lemon','Ben Dover','Alvin Rhodes','Julie Strength','Ted Staton','Rob Tricou','Tyler Wehr','Rob White','Carol Wikerson-Johnson','Alice Pilgrim']
+		#=======================================================================
+		# Males
+		#=======================================================================
+		f1 = open('male_undead_ninjas.txt')
+		males = f1.read().split('\n')
 		
-		undead_ninjas = []
+		male_photos = levr.UndeadNinjaBlobImgInfo.all().fetch(None)
 		
-		for name in dead_ninjas:
+		
+		undead_males = []
+		for name in males:
+			first_name = name.split(' ')[0]
+			last_name = name.split(' ')[1]
+			display_name = first_name+last_name[0]+'.'
+			
 			ninja = levr.Customer(
-					display_name 		=	name,
-					alias				=	name,
+					display_name 		=	display_name,
+					alias				=	display_name,
 					email				=	'deadninja@levr.com',
-					first_name			=	name.split()[0],
-					last_name			=	name.split()[1],
+					first_name			=	first_name,
+					last_name			=	last_name,
 					foursquare_token	=	'4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0',
-					pw					=	enc.encrypt_password('Carl123!'),
+					pw					=	enc.encrypt_password('iamnotaninja'),
 					levr_token			=	levr.create_levr_token()
 				)
 			
-			logging.info(levr.log_model_props(ninja))
-			undead_ninjas.append(ninja)
 			
-		logging.info(undead_ninjas)
-		db.put(undead_ninjas)
+			logging.info(levr.log_model_props(ninja))
+			undead_males.append(ninja)
+		db.put(undead_males)
+		display_name
+		#update photo url, and reference table with photo 
+		for idx,ninja in enumerate(undead_males):
+			#update users photourl
+			size = 'small'
+			photo_url = api_utils.create_img_url(ninja, size)
+			ninja.photo = photo_url
+			
+			#update relational db
+			photo_info = male_photos[idx]
+			photo_info.ninja = ninja
 		
+		#=======================================================================
+		# Females
+		#=======================================================================
+		f2 = open('male_undead_ninjas.txt')
+		females = f2.read().split('\n')
+		
+		female_photos = levr.UndeadNinjaBlobImgInfo.all().fetch(None)
+		
+		
+		undead_females = []
+		for name in females:
+			first_name = name.split(' ')[0]
+			last_name = name.split(' ')[1]
+			display_name = first_name+last_name[0]+'.'
+			
+			ninja = levr.Customer(
+					display_name 		=	display_name,
+					alias				=	display_name,
+					email				=	'deadninja1@levr.com',
+					first_name			=	first_name,
+					last_name			=	last_name,
+					foursquare_token	=	'4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0',
+					pw					=	enc.encrypt_password('iamnotaninja'),
+					levr_token			=	levr.create_levr_token()
+				)
+			
+			
+			logging.info(levr.log_model_props(ninja))
+			undead_females.append(ninja)
+		db.put(undead_females)
+		display_name
+		#update photo url, and reference table with photo 
+		for idx,ninja in enumerate(undead_females):
+			#update users photourl
+			size = 'small'
+			photo_url = api_utils.create_img_url(ninja, size)
+			ninja.photo = photo_url
+			
+			#update relational db
+			photo_info = female_photos[idx]
+			photo_info.ninja = ninja
+		
+		#=======================================================================
+		# Replace all the new stuff WOO!
+		#=======================================================================
+		
+		all_ninjas = []
+		for female in undead_females:
+			all_ninjas.append(female)
+		for male in undead_males:
+			all_ninjas.append(male)
+		
+		all_img_objs = []
+		for p in female_photos:
+			all_img_objs.append(p)
+		for p in male_photos:
+			all_img_objs.append(p)
+			
+		
+		db.put(all_ninjas)
+		db.put(all_img_objs)
+		self.response.headers['Content-Type'] = 'text/plain'
+		for user in all_ninjas:
+			self.response.out.write(levr.log_model_props(user))
 		
 #		ninjas = levr.Customer.all().filter('first_name','Dead Ninja').count()
 #		#don't want a bagillion dead ninjas by accident do we?
