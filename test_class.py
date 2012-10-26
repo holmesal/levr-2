@@ -593,26 +593,41 @@ class SandboxHandler(webapp2.RequestHandler):
 		pass
 class UploadPhotoHandler(webapp2.RequestHandler):
 	def get(self):
-		logging.info('hello'+'\xe9')
 		upload_url = blobstore.create_upload_url('/new/store_upload')
 		self.response.out.write('<html><body>')
 		self.response.out.write('<form action="%s" method="POST" enctype="multipart/form-data">' % upload_url)
-		self.response.out.write('<input type="file" id="file_input" webkitdirectory="" directory="">')
-#		for i in range(0,100):
-#			self.response.out.write('Upload File: <input type="file" name="img'+str(i)+'"><br>')
+#		self.response.out.write('<input type="file" id="file_input" webkitdirectory="" directory="">')
+		self.response.out.write('''
+		Gender: <br/>
+		<input type="radio" name="gender" value="male">Male
+		<br/>
+		<input type="radio" name="gender" value="female">Female
+		<br/>
+		<input type="radio" name="gender" value="either">Either
+		<br/>
+		''')
+		for i in range(0,100):
+			self.response.out.write('Upload File: <input type="file" name="img'+str(i)+'"><br>')
 		self.response.out.write(''' <input type="submit" name="submit" value="Create!"> </form></body></html>''')
 
 class StorePhotoHandler(blobstore_handlers.BlobstoreUploadHandler):
 	def post(self):
 		#get uploaded image
-		logging.info(levr.log_dir(self.request))
+#		logging.info(levr.log_dir(self.request))
 		#list of 100 uploads
 		uploads = self.get_uploads()
+		gender = self.request.get('gender')
 		self.response.out.write(uploads)
 		blob_keys = [u.key() for u in uploads]
-		
+		imgs = []
 		for key in blob_keys:
+			imgs.append(levr.UndeadNinjaBlobImgInfo(
+													img = key,
+													gender = gender
+													))
 			self.response.out.write(str(key)+'<br/>')
+		db.put(imgs)
+		self.response.out.write(blob_keys)
 #		upload = self.request.get('img')
 #		upload = blobstore.Blob(upload)
 #		blob_key= upload.key()
@@ -658,7 +673,11 @@ class OwnerOfHandler(webapp2.RequestHandler):
 		
 class ExifHandler(webapp2.RequestHandler):
 	def get(self,blob_key):
-		'''This should be called after an image is uploaded from a source where an ipad or iphone might have been used to add an image inside a web wrapper'''
+		'''
+		This should be called after an image is uploaded from a source 
+		where an ipad or iphone might have been used to add an image 
+		inside a web wrapper
+		'''
 		
 		blob = blobstore.BlobInfo.get(blob_key)
 		
@@ -745,8 +764,8 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/ownerof',OwnerOfHandler),
 								('/new/upload_ninjas',UploadPhotoHandler),
 								('/new/store_upload', StorePhotoHandler)
-								('/new/exif/(.*)',ExifHandler),
-								('/new/preview/(.*)',PreviewHandler)
+#								('/new/exif/(.*)',ExifHandler),
+#								('/new/preview/(.*)',PreviewHandler)
 								],debug=True)
 
 

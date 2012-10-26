@@ -1366,3 +1366,7 @@ class FloatingContent(db.Model):
 	#metadata used for migrations
 	model_version		= db.IntegerProperty(default=1)
 
+
+class UndeadNinjaBlobImgInfo(db.Model):
+	img = blobstore.BlobReferenceProperty()
+	gender = db.StringProperty(choices=set(['male','female','either']))
