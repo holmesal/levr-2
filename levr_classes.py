@@ -648,6 +648,12 @@ def dealCreate(params,origin,upload_flag=True):
 		logging.debug('STOP!')
 		uid = params['uid']
 		
+		# If it is one of the founders uploading a deal, then it should be uploaded by a rando ninja
+		admin_users = ['Carl D.','Patch W.','Alonso H.','Ethan S.']
+		owner = Customer.get(uid)
+		if owner.display_name in admin_users:
+			undead_ninjas = Customer.all(keys_only=True).filter('email',UNDEAD_NINJA_EMAIL).fetch(None)
+			uid = random.choice(undead_ninjas)
 		
 		deal = Deal(
 						parent			= uid,
@@ -777,7 +783,7 @@ def dealCreate(params,origin,upload_flag=True):
 ###################################################
 
 
-
+UNDEAD_NINJA_EMAIL = 'undeadninja@levr.com'
 class Customer(db.Model):
 #root class
 	
@@ -1100,6 +1106,7 @@ class Deal(polymodel.PolyModel):
 	reject_message	= db.StringProperty()
 	tags			= db.ListProperty(str)
 	businessID 		= db.StringProperty() #CHANGE TO REFERENCEPROPERTY
+	business		= db.ReferenceProperty(Business)
 	origin			= db.StringProperty(default='levr')
 	external_url	= db.StringProperty()
 	locu_id			= db.StringProperty()
@@ -1370,4 +1377,4 @@ class FloatingContent(db.Model):
 class UndeadNinjaBlobImgInfo(db.Model):
 	img = blobstore.BlobReferenceProperty()
 	gender = db.StringProperty(choices=set(['male','female','either']))
-	ninja = db.Reference(Customer, collection_name='blob_img')
+	ninja = db.Reference(Customer, collection_name='img_ref')

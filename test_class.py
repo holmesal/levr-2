@@ -1,14 +1,15 @@
 #from __future__ import with_statement
 #from google.appengine.api import files
 from datetime import datetime
-from google.appengine.api import images, urlfetch, files
+from google.appengine.api import images, urlfetch, files, taskqueue
 from google.appengine.ext import blobstore, db
 from google.appengine.ext.webapp import blobstore_handlers
+import api_utils
+import json
 import levr_classes as levr
 import levr_encrypt as enc
 import logging
 import webapp2
-import api_utils
 #import api_utils
 #import json
 #from google.appengine.api import taskqueue, urlfetch, memcache
@@ -362,9 +363,13 @@ class TestNotificationHandler(webapp2.RequestHandler):
 		levr.create_notification('levelup',user.key(),actor,new_level='inf')
 		user.put()
 		self.response.out.write('HOLY SHIT NEW NOTIFICATIONS OMG OMG OMG')
-			
+
+
+FEMALE_EMAIL = 'deadninja2@levr.com'
+MALE_EMAIL = 'deadninja1@levr.com'
 class Create100DeadNinjasHandler(webapp2.RequestHandler):
 	def get(self):
+		
 		logging.info('Creating 100 dead ninjas.')
 		
 		#=======================================================================
@@ -373,19 +378,18 @@ class Create100DeadNinjasHandler(webapp2.RequestHandler):
 		f1 = open('male_undead_ninjas.txt')
 		males = f1.read().split('\n')
 		
-		male_photos = levr.UndeadNinjaBlobImgInfo.all().fetch(None)
-		
+		projection = ['display_name','alias','email']
 		
 		undead_males = []
 		for name in males:
 			first_name = name.split(' ')[0]
 			last_name = name.split(' ')[1]
-			display_name = first_name+last_name[0]+'.'
+			display_name = first_name+' '+last_name[0]+'.'
 			
 			ninja = levr.Customer(
 					display_name 		=	display_name,
 					alias				=	display_name,
-					email				=	'deadninja@levr.com',
+					email				=	MALE_EMAIL,
 					first_name			=	first_name,
 					last_name			=	last_name,
 					foursquare_token	=	'4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0',
@@ -394,40 +398,29 @@ class Create100DeadNinjasHandler(webapp2.RequestHandler):
 				)
 			
 			
-			logging.info(levr.log_model_props(ninja))
+			logging.info(levr.log_model_props(ninja,projection))
 			undead_males.append(ninja)
-		db.put(undead_males)
-		display_name
-		#update photo url, and reference table with photo 
-		for idx,ninja in enumerate(undead_males):
-			#update users photourl
-			size = 'small'
-			photo_url = api_utils.create_img_url(ninja, size)
-			ninja.photo = photo_url
-			
-			#update relational db
-			photo_info = male_photos[idx]
-			photo_info.ninja = ninja
+		
 		
 		#=======================================================================
 		# Females
 		#=======================================================================
-		f2 = open('male_undead_ninjas.txt')
+		f2 = open('female_undead_ninjas.txt')
 		females = f2.read().split('\n')
 		
-		female_photos = levr.UndeadNinjaBlobImgInfo.all().fetch(None)
+		
 		
 		
 		undead_females = []
 		for name in females:
 			first_name = name.split(' ')[0]
 			last_name = name.split(' ')[1]
-			display_name = first_name+last_name[0]+'.'
+			display_name = first_name+' '+last_name[0]+'.'
 			
 			ninja = levr.Customer(
 					display_name 		=	display_name,
 					alias				=	display_name,
-					email				=	'deadninja1@levr.com',
+					email				=	FEMALE_EMAIL,
 					first_name			=	first_name,
 					last_name			=	last_name,
 					foursquare_token	=	'4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0',
@@ -436,24 +429,72 @@ class Create100DeadNinjasHandler(webapp2.RequestHandler):
 				)
 			
 			
-			logging.info(levr.log_model_props(ninja))
+			logging.info(levr.log_model_props(ninja,projection))
 			undead_females.append(ninja)
-		db.put(undead_females)
-		display_name
+		
+		#=======================================================================
+		# Place ninjas
+		#=======================================================================
+		all_ninjas = []
+		for n in undead_males:
+			all_ninjas.append(n)
+		for n in undead_females:
+			all_ninjas.append(n)
+		db.put(all_ninjas)
+		self.response.out.write(all_ninjas.__len__())
 		#update photo url, and reference table with photo 
+		
+		
+		#=======================================================================
+		# Replace all the new stuff WOO!
+		#=======================================================================
+		
+		#=======================================================================
+		# 
+		#=======================================================================
+		
+class CompleteNinjaReferencesHandler(webapp2.RequestHandler):
+	def get(self):
+		host_url = api_utils.host_url
+		hook = 'api/user/'
+		size = 'small'
+		
+		self.response.headers['Content-Type'] = 'text/plain'
+		
+		undead_males = levr.Customer.all().filter('email',MALE_EMAIL).fetch(None)
+		logging.debug(undead_males)
+		male_photos = levr.UndeadNinjaBlobImgInfo.all().filter('gender','male').fetch(None)
+		logging.debug(male_photos)
+		#update photo url, and reference table with photo 
+		for idx,ninja in enumerate(undead_males):
+			#update users photourl
+			
+			img_url = host_url+hook+enc.encrypt_key(ninja.key())+'/img?size='+size
+			self.response.out.write(img_url)
+			ninja.photo = img_url
+			
+			#update relational db
+			photo_info = male_photos[idx]
+			photo_info.ninja = ninja
+		
+		
+		
+		undead_females = levr.Customer.all().filter('email',FEMALE_EMAIL).fetch(None)
+		logging.debug(undead_females)
+		female_photos = levr.UndeadNinjaBlobImgInfo.all().filter('gender','female').fetch(None)
+		female_photos.extend(levr.UndeadNinjaBlobImgInfo.all().filter('gender','either').fetch(None))
+		logging.debug(female_photos)
+		
 		for idx,ninja in enumerate(undead_females):
 			#update users photourl
-			size = 'small'
-			photo_url = api_utils.create_img_url(ninja, size)
-			ninja.photo = photo_url
+			img_url = host_url+hook+enc.encrypt_key(ninja.key())+'/img?size='+size
+			self.response.out.write(img_url)
+			ninja.photo = img_url
 			
 			#update relational db
 			photo_info = female_photos[idx]
 			photo_info.ninja = ninja
 		
-		#=======================================================================
-		# Replace all the new stuff WOO!
-		#=======================================================================
 		
 		all_ninjas = []
 		for female in undead_females:
@@ -468,12 +509,24 @@ class Create100DeadNinjasHandler(webapp2.RequestHandler):
 			all_img_objs.append(p)
 			
 		
-		db.put(all_ninjas)
-		db.put(all_img_objs)
+#		db.put(all_ninjas)
+#		db.put(all_img_objs)
+		
+		all_objs = []
+		for i in all_ninjas:
+			all_objs.append(i)
+		for i in all_img_objs:
+			all_objs.append(i)
+		
+		db.put(all_objs)
+		
+		projection = ['display_name','email']
+		
 		self.response.headers['Content-Type'] = 'text/plain'
 		for user in all_ninjas:
-			self.response.out.write(levr.log_model_props(user))
-		
+			self.response.out.write(levr.log_model_props(user,projection))
+		for img in all_img_objs:
+			self.response.out.write(levr.log_model_props(img))
 #		ninjas = levr.Customer.all().filter('first_name','Dead Ninja').count()
 #		#don't want a bagillion dead ninjas by accident do we?
 #		if ninjas <100:
@@ -675,6 +728,9 @@ class SandboxHandler(webapp2.RequestHandler):
 	Dont delete this. This is my dev playground.
 	'''
 	def get(self):
+		deal = levr.Deal.get('ahFzfmxldnItcHJvZHVjdGlvbnIbCxIIQ3VzdG9tZXIY3-8KDAsSBERlYWwY6QcM')
+		deal.upvotes +=1
+		db.put(deal)
 		pass
 class UploadPhotoHandler(webapp2.RequestHandler):
 	def get(self):
@@ -834,12 +890,46 @@ class PreviewHandler(webapp2.RequestHandler):
 		
 	
 
+
+
+
+class ClearOldNinjasHandler(webapp2.RequestHandler):
+	def get(self):
+		
+#		taskqueue.add(url='/tasks/clearOldNinjas',payload=json.dumps({}))
+#		self.response.out.write('done!')
+#		ninjas = levr.Customer.all().filter('email',levr.UNDEAD_NINJA_EMAIL).fetch()
+		ninjas = levr.Customer.all().filter('email',FEMALE_EMAIL).fetch(None)
+		ninjas2 = levr.Customer.all().filter('email', MALE_EMAIL).fetch(None)
+		
+		all_ninjas = set([])
+		for ninja in ninjas:
+			n = [ninja]
+			all_ninjas.update(n)
+		for ninja in ninjas2:
+			n = [ninja]
+			all_ninjas.update(n)
+		
+		all_ninjas = list(all_ninjas)
+		for ninja in all_ninjas:
+			ninja.email = levr.UNDEAD_NINJA_EMAIL
+		
+		db.put(all_ninjas)
+		self.response.out.write('done!')
+class TransferDealOwnershipToUndeadHandler(webapp2.RedirectHandler):
+	def get(self):
+		pass
+		# Fetch all deals uploaded by pat and alonso the other day
+		alonso = levr.Customer.all().filter('')
+		deals = levr.Deal.all().ancestor()
+		# 
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload', DatabaseUploadHandler),
 								('/new/test', TestHandler),
 								('/new/inundate', AddDealsHandler),
 								('/new/notification', TestNotificationHandler),
 								('/new/deadNinjas', Create100DeadNinjasHandler),
+								('/new/deadNinjas/complete',CompleteNinjaReferencesHandler),
 								('/new/harmonizeVenues',HarmonizeVenuesHandler),
 								('/new/refreshQ', RefreshQHandler),
 								('/new/testcron', TestCronJobHandler),
@@ -848,7 +938,9 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/deleteeverything',DeleteEverythingHandler),
 								('/new/ownerof',OwnerOfHandler),
 								('/new/upload_ninjas',UploadPhotoHandler),
-								('/new/store_upload', StorePhotoHandler)
+								('/new/store_upload', StorePhotoHandler),
+								('/new/clear_old_ninjas', ClearOldNinjasHandler),
+								('/new/transfer_deals', TransferDealOwnershipToUndeadHandler)
 #								('/new/exif/(.*)',ExifHandler),
 #								('/new/preview/(.*)',PreviewHandler)
 								],debug=True)

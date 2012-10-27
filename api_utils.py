@@ -231,20 +231,20 @@ def create_img_url(entity,size):
 	
 #	logging.debug(entity.kind())
 # 	logging.debug(entity.kind() == 'Deal')
-	if entity.kind() == 'Customer':
-		hook = 'api/user/'
-	if entity.kind() == 'Deal':
-		hook = 'api/deal/'
-	else:
-		raise KeyError('entity does not have an image: '+entity.kind())
+	# if entity.kind() == 'Customer':
+#  		hook = 'api/user/'
+	if entity.kind() == 'Deal':		hook = 'api/deal/'
+	# else:
+#  		raise KeyError('entity does not have an image: '+entity.kind())
 
-	# serve default foursquare icon
-	if entity.foursquare_id and size=='small':
-		return 'http://playfoursquare.s3.amazonaws.com/press/logo/icon-512x512.png'
-	# serve levr db img
-	else:
+	if entity.img:	
+		#create one glorious url
 		img_url = host_url+hook+enc.encrypt_key(entity.key())+'/img?size='+size
 		return img_url
+	if entity.foursquare_id and size=='small':
+		return 'http://playfoursquare.s3.amazonaws.com/press/logo/icon-512x512.png'
+	else:
+		return ''
 
 def private(handler_method):
 	'''
@@ -1332,7 +1332,8 @@ def filter_foursquare_deal(foursquare_deal,already_found):
 		
 def get_random_dead_ninja(sample_size=1):
 	#get keys of all the dead ninjas
-	dead_ninjas		= levr.Customer.all(keys_only=True).filter('email','deadninja@levr.com').fetch(None)
+	dead_ninjas		= levr.Customer.all(keys_only=True).filter('email',levr.UNDEAD_NINJA_EMAIL).fetch(None)
+#	dead_ninjas		= levr.Customer.all(keys_only=True).filter('email','deadninja@levr.com').fetch(None)
 	
 	assert dead_ninjas, 'There are no undead ninjas in the database'
 	

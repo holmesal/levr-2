@@ -266,7 +266,7 @@ class UserImgHandler(webapp2.RequestHandler):
 			size	= kwargs.get('size')
 			
 			# fetch from relational db
-			photo = user.blob_img.get()
+			photo = user.img_ref.get()
 			
 			assert photo, 'Customer does not have an image in the database'
 			# grab img key from blobstore

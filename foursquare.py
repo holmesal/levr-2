@@ -99,7 +99,7 @@ class AuthorizeCompleteHandler(webapp2.RequestHandler):
 		except AssertionError,e:
 			if e.message == NO_CODE_MESSAGE:
 				#this is an expected case. Authorization is happening on the phone
-				self.response.out.write('Success!')
+				self.response.out.write('Please wait...')
 			else:
 				levr.log_error(e)
 				self.response.out.write('Could not connect with Foursquare.')

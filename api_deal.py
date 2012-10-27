@@ -120,11 +120,14 @@ class UpvoteHandler(webapp2.RequestHandler):
 				#put actor and ninja and deal back
 			
 			
+			assert deal, 'Deal was not found'
 			response = {
 					'deal':api_utils.package_deal(deal)
 					}
 			api_utils.send_response(self,response,user)
-			
+		except AssertionError,e:
+			levr.log_error(e)
+			api_utils.send_error(self,e)
 		except:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
@@ -190,13 +193,15 @@ class DownvoteHandler(webapp2.RequestHandler):
 				db.put([user,deal])
 				
 				
-			
+			assert deal,'Deal could not be found'
 			
 			response = {
 					'deal':api_utils.package_deal(deal)
 					}
 			api_utils.send_response(self,response,user)
-			
+		except AssertionError,e:
+			levr.log_error()
+			api_utils.send_error(self,e)
 		except:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
@@ -360,10 +365,14 @@ class DealInfoHandler(webapp2.RequestHandler):
 			deal	= kwargs.get('deal')
 			private	= kwargs.get('private')
 			
+			assert deal, 'Deal could not be found'
 			response = {
 				'deal'	: api_utils.package_deal(deal,private)
 			}
 			api_utils.send_response(self,response)
+		except AssertionError,e:
+			levr.log_error()
+			api_utils.send_error(self,e)
 		except:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
