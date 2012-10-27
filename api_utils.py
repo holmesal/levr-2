@@ -221,6 +221,7 @@ def send_response(self,response,user=None):
 def create_share_url(deal_entity):
 	#creates a share url for a deal
 	share_url = host_url+deal_entity.share_id
+	logging.info('share url: '+share_url)
 	return share_url
 	
 def create_img_url(entity,size):

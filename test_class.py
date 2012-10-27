@@ -894,35 +894,79 @@ class PreviewHandler(webapp2.RequestHandler):
 
 
 class ClearOldNinjasHandler(webapp2.RequestHandler):
-	def get(self):
-		
-#		taskqueue.add(url='/tasks/clearOldNinjas',payload=json.dumps({}))
-#		self.response.out.write('done!')
-#		ninjas = levr.Customer.all().filter('email',levr.UNDEAD_NINJA_EMAIL).fetch()
-		ninjas = levr.Customer.all().filter('email',FEMALE_EMAIL).fetch(None)
-		ninjas2 = levr.Customer.all().filter('email', MALE_EMAIL).fetch(None)
-		
-		all_ninjas = set([])
-		for ninja in ninjas:
-			n = [ninja]
-			all_ninjas.update(n)
-		for ninja in ninjas2:
-			n = [ninja]
-			all_ninjas.update(n)
-		
-		all_ninjas = list(all_ninjas)
-		for ninja in all_ninjas:
-			ninja.email = levr.UNDEAD_NINJA_EMAIL
-		
-		db.put(all_ninjas)
-		self.response.out.write('done!')
-class TransferDealOwnershipToUndeadHandler(webapp2.RedirectHandler):
+	'''
+	Used to do two things BECAUSE I AM LAZY OK?! First section clears out the old ninjas and their tendrils,
+	second section resets all of the new ninjas emails to undeadninja@levr.com instead of undeadninja1 and 2 (for gender)
+	'''
 	def get(self):
 		pass
+##		taskqueue.add(url='/tasks/clearOldNinjas',payload=json.dumps({}))
+##		self.response.out.write('done!')
+
+
+
+
+
+##		ninjas = levr.Customer.all().filter('email',levr.UNDEAD_NINJA_EMAIL).fetch()
+#		ninjas = levr.Customer.all().filter('email',FEMALE_EMAIL).fetch(None)
+#		ninjas2 = levr.Customer.all().filter('email', MALE_EMAIL).fetch(None)
+#		
+#		all_ninjas = set([])
+#		for ninja in ninjas:
+#			n = [ninja]
+#			all_ninjas.update(n)
+#		for ninja in ninjas2:
+#			n = [ninja]
+#			all_ninjas.update(n)
+#		
+#		all_ninjas = list(all_ninjas)
+#		for ninja in all_ninjas:
+#			ninja.email = levr.UNDEAD_NINJA_EMAIL
+#		
+#		db.put(all_ninjas)
+#		self.response.out.write('done!')
+class TransferDealOwnershipToUndeadHandler(webapp2.RedirectHandler):
+	def get(self):
 		# Fetch all deals uploaded by pat and alonso the other day
-		alonso = levr.Customer.all().filter('')
-		deals = levr.Deal.all().ancestor()
-		# 
+		alonso = levr.Customer.all().filter('display_name','Carl D.').get()
+		assert alonso ,'Alonso is not there!'
+		deals = levr.Deal.all().ancestor(alonso).fetch(None)
+		assert deals.__len__() >0,'No alonso deals.'
+		
+		pat = levr.Customer.all().filter('display_name','Patrick W.').get()
+		assert pat, 'No Pat!'
+		pat_deals = levr.Deal.all().ancestor(pat).fetch(None)
+		assert pat_deals.__len__()>0, 'No pat deals'
+		
+		#one long list of deals
+		deals.extend(pat_deals)
+		
+		# each ninja has uploaded two deals
+		num = deals.__len__()/2
+		ninjas = api_utils.get_random_dead_ninja(num)
+		ninjas.extend(ninjas)
+		
+		assert ninjas.__len__() == deals.__len__(), 'Array lengths are not equal'
+		
+		new_deals = []
+		for idx, deal in enumerate(deals):
+			# create new deal as child of a ninja
+			ninja = ninjas[idx]
+			new_deal = levr.Deal(parent = ninja)
+			
+			# iterate through properties and set them to the new_deal
+			properties = deal.properties()
+			for prop in properties:
+				value = getattr(deal, prop)
+				setattr(new_deal, prop, value)
+			
+			assert levr.log_model_props(new_deal) == levr.log_model_props(deal), 'Deals are not equal'
+			
+			# add deal to list of new deals
+			new_deals.append(new_deal)
+		
+		
+		
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload', DatabaseUploadHandler),
 								('/new/test', TestHandler),

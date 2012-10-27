@@ -650,7 +650,7 @@ def dealCreate(params,origin,upload_flag=True):
 		uid = params['uid']
 		
 		# If it is one of the founders uploading a deal, then it should be uploaded by a rando ninja
-		admin_users = ['Carl D.','Patch W.','Alonso H.','Ethan S.']
+		admin_users = ['Carl D.','Patch W.','Alonso H.','Ethan S.','Patrick W.','Pat W.']
 		owner = Customer.get(uid)
 		if owner.display_name in admin_users:
 			undead_ninjas = Customer.all(keys_only=True).filter('email',UNDEAD_NINJA_EMAIL).fetch(None)
