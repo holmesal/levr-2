@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <!-- Bootstrap -->
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-responsive.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="/css/login.css">
+	
+	</head>
+
+	<body>
+		{% if error%}
+			<div class="topError">
+				<h4 class="errorText">
+					{{error}}
+				</h4>
+			</div>
+		{% endif %}
+		<div class="container">
+			<div class="row">
+				<div id="loginContainer" class="span6 offset3">
+					<form id='loginForm' class="form-horizontal" method="post" action='/merchants/login'>
+						<div class="control-group">
+							<label class="control-label" for="inputEmail">Email</label>
+							<div class="controls">
+								<input type="text" id="inputEmail" placeholder="Email" value="{{email}}" name="email">
+							</div>
+						</div>
+						<div class="control-group">
+							<label class="control-label" for="inputPassword">Password</label>
+							<div class="controls">
+								<input type="password" id="inputPassword" placeholder="Password" value="{{password}}" name="password">
+							</div>
+						</div>
+						<div class="control-group">
+						<div class="controls">
+						<button type="submit" class="btn btn-primary btn-large btn-inputwidth">Sign in</button>
+						</div>
+						</div>
+					</form>
+					<p class="signup">New to Levr? <a href="/merchants/welcome">Sign up</a> in seconds - it's free.</p>
+				</div>
+				
+			</div>
+			<div class="row">
+				<div class="span12">
+					<img id="pin" src='../img/pin.png'>
+				</div>
+			</div>
+		</div>
+		<script src="http://code.jquery.com/jquery-latest.js"></script>
+		<script src="/js/login.js"></script>
+	</body>
+</html>
+
+
+
+
+<!DOCTYPE html>
+<html>
+	<head prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb# levrinc: http://ogp.me/ns/fb/levrinc#">
+		<meta charset="UTF-8">
+		<meta property="fb:app_id" content="448791615162217" /> 
+		<meta property="og:type"   content="levrinc:deal" /> 
+		<meta property="og:url"    content="{{deal.shareURL}}" /> 
+		<meta property="og:image" content="{{deal.largeImg}}" />
+		<meta property="og:description" content="{{deal.description}}" />
+		<meta property="levrinc:location:latitude" content="{{lat}}" />
+		<meta property="levrinc:location:longitude" content="{{lon}}" />
+		<meta property="og:title"  content="Sweetness! {{deal.deal_text}} at {{deal.business.businessName}}" /> 
+<!-- 		<meta property="og:image"  content="https://s-static.ak.fbcdn.net/images/devsite/attachment_blank.png" /> -->
+		<title>{{alias}} wants to share a deal with you.</title>
+		<link href="../css/share_mobile.css" rel="stylesheet">
+		<link rel="icon" type="image/png" href="img/favicon.png">
+	</head>
+	<body>
+		<p id="shareText">{{ninja}} wants to share a deal with you.</p>
+		<div id="container">
+			<!--img src="http://getlevr.appspot.com/phone/img?size=dealDetail&dealID={{dealID}}"-->
+			<div id="dealImg" style="background-image: url(/phone/img?size=dealDetail&dealID={{deal.dealID}});">&nbsp;</div>
+			<p id='dealText'>{{deal.dealText}}</p>
+			<p id='dealTextExtra'>{{deal.dealTextExtra}}</p>
+			<p id='business_string'>{{deal.businessName}} - {{deal.vicinity}}</p>
+			<p id="description">{{deal.description}}</p>	
+			<img src="../img/divider_faded.png">
+		<div id="app">
+			<img id="phoneImg" src="../img/iphone_map.png"/>
+			<div id="right">
+				<img id="save_money" src="../img/save_money_text.png" style="width:300px;">
+				<img src="../img/earn_money_text.png" style="width:300px;">
+				<a id="download" href="#" class="button green">Download the Levr app for free.</a>
+			</div>
+		</div>
+		</div>
+	</body>
+</html>

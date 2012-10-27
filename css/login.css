@@ -5,7 +5,6 @@ body{
 
 #loginContainer{
 	background-image: url(../img/light_noise_diagonal.png);
-	background-size: 25%;
 	border-radius: 10px;
 	margin-top: 200px;
 }

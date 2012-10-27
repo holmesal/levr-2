@@ -888,6 +888,7 @@ class PreviewHandler(webapp2.RequestHandler):
 		self.response.headers['Content-Type'] = 'image/jpeg'
 		self.response.out.write(thumbnail)
 		
+<<<<<<< HEAD
 	
 
 
@@ -923,6 +924,8 @@ class TransferDealOwnershipToUndeadHandler(webapp2.RedirectHandler):
 		alonso = levr.Customer.all().filter('')
 		deals = levr.Deal.all().ancestor()
 		# 
+=======
+>>>>>>> syncccc
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload', DatabaseUploadHandler),
 								('/new/test', TestHandler),

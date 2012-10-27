@@ -691,8 +691,8 @@ def send_img(self,blob_key,size):
 			output_width	= float(img_width)
 	#			self.response.out.write(deal.img)
 		elif size == 'webShare':
-			aspect_ratio	= 4.
-			output_width	= 600.
+			aspect_ratio	= 1.5
+			output_width	= 800.
 		elif size == 'facebook':
 			aspect_ratio 	= 1.
 			output_width	= 250.
@@ -1662,7 +1662,8 @@ class SpoofUndeadNinjaActivity:
 		days_since = seconds_since/60./60./24.
 		logging.debug('days since: '+str(days_since))
 		return days_since
-
-
-
-
+		
+		
+		
+		
+		

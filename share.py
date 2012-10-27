@@ -1,6 +1,7 @@
 import os
 import webapp2
 import levr_classes as levr
+import levr_encrypt as enc
 #import levr_encrypt as enc
 #import levr_utils
 #from google.appengine.ext import db
@@ -18,16 +19,19 @@ class ShareHandler(webapp2.RequestHandler):
 			logging.debug(identifier)
 			deal = levr.Deal.all().filter('share_id =', identifier).get()
 			
-			
 			if deal:
 				logging.debug(deal)
 				ninjaKey = deal.key().parent()
 				ninja = levr.Customer.get(ninjaKey)
+				#CHANGE THIS:
+				#enc_key = enc.encrypt_key(str(deal.key()))
+				enc_key = enc.encrypt_key(str(deal.key()))
 				template_values = {
 								'deal'	:api_utils.package_deal(deal),
-								'ninja'	:ninja.alias,
+								'ninja'	:ninja.display_name,
 								'lat'	:deal.geo_point.lat,
-								'lon'	:deal.geo_point.lon
+								'lon'	:deal.geo_point.lon,
+								'enc_key':enc_key
 								}
 				logging.debug(template_values)
 				logging.debug(deal.__str__())
