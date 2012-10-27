@@ -948,14 +948,16 @@ class TransferDealOwnershipToUndeadHandler(webapp2.RedirectHandler):
 		
 		assert ninjas.__len__() == deals.__len__(), 'Array lengths are not equal'
 		
-		new_deals = []
+		new_deals = set([])
 		for idx, deal in enumerate(deals):
 			# create new deal as child of a ninja
 			ninja = ninjas[idx]
 			new_deal = levr.Deal(parent = ninja)
 			
 			# iterate through properties and set them to the new_deal
-			properties = deal.properties()
+			properties = filter(lambda x: x[0] != '_',deal.properties())
+			
+			logging.debug(properties)
 			for prop in properties:
 				value = getattr(deal, prop)
 				setattr(new_deal, prop, value)
@@ -963,8 +965,13 @@ class TransferDealOwnershipToUndeadHandler(webapp2.RedirectHandler):
 			assert levr.log_model_props(new_deal) == levr.log_model_props(deal), 'Deals are not equal'
 			
 			# add deal to list of new deals
-			new_deals.append(new_deal)
-		
+			new_deals.update([new_deal])
+			
+			#set old deal to expired
+			deal.deal_status = 'expired'
+			new_deals.update([deal])
+		# finish
+		db.put(new_deals)
 		
 		
 app = webapp2.WSGIApplication([('/new', MainPage),
