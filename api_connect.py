@@ -25,6 +25,8 @@ class ConnectFacebookHandler(webapp2.RequestHandler):
 				levr.log_error()
 				assert False, 'Could not connect with facebook.'
 			
+			logging.debug(levr.log_model_props(user))
+			logging.debug(str(new_user_details))
 			
 			#return the user
 			response = {
