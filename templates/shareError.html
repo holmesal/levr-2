@@ -4,39 +4,51 @@
 	<meta charset="UTF-8">
 	<meta property="fb:app_id" content="448791615162217" /> 
 	<meta property="og:type"   content="levrinc:deal" /> 
-	<meta property="og:url"    content="{{deal.shareURL}}" /> 
-	<meta property="og:image" content="{{deal.largeImg}}" />
-	<meta property="og:description" content="{{deal.description}}" />
-	<meta property="levrinc:location:latitude" content="{{lat}}" />
-	<meta property="levrinc:location:longitude" content="{{lon}}" />
-	<meta property="og:title"  content="Sweetness! {{deal.deal_text}} at {{deal.business.businessName}}" /> 
 <!-- 		<meta property="og:image"  content="https://s-static.ak.fbcdn.net/images/devsite/attachment_blank.png" /> -->
-	<title>{{ninja}} wants to share a deal with you.</title>
+	<title>Ruh-roh.</title>
     <!-- Bootstrap -->
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/bootstrap-responsive.min.css" rel="stylesheet">
 	<link rel="stylesheet" href="/css/share.css">
 	
+	<style type="text/css">
+		.topError{
+	width: 100%;
+	height: 100px;
+	position: absolute;
+	/*background: #DF3B3B url('../img/crisp_paper_ruffles.png') repeat-x top left;*/
+	background-image: -moz-linear-gradient(top,  rgba(0,0,0,1),  rgba(0,0,0,0)), url(../img/crisp_paper_ruffles.png);
+	background-image: -webkit-gradient(linear, left top, left bottom, from(rgba(255,0,0,0.9)), to(rgba(255,0,0,0.8))),url(../img/crisp_paper_ruffles.png);
+}
+
+.errorText{
+	text-align: center;
+	margin-top: 30px;
+	color: white;
+	text-shadow: 1px 1px 0px black;
+	font-size: 20pt;
+}
+
+#smaller{
+	font-size: 12pt;
+	margin-top: 15px;
+}
+
+#levr{
+	margin-top: 200px;
+}
+	</style>
+	
 	</head>
 
 	<body>
+		<div class="topError">
+			<p class="errorText">We can't seem to find what you're looking for.</p>
+				<p id='smaller' class="errorText">A well-trained Patrick has been dispatched to investigate.</p>
+		</div>
 		<div class="container">
 			<div class="row">
 				<div id='top' class="span12">
-					
-				</div>
-			</div>
-			<div class="row">
-				
-				<p id="shareText">{{ninja}} wants to share a deal with you.</p>
-				<div class="span8 offset2" id='imgContainer' style="background-image: url(/api/deal/{{enc_key}}/img?size=webShare);">
-					<div class="bottomBanner">
-						<p id='dealText'>{{deal.dealText}}</p>
-						<p id="description">{{deal.description}}</p>
-						<p id='business_string'>{{deal.business.businessName}} - {{deal.business.vicinity}}</p>
-					</div>
-					
-					
 					
 				</div>
 			</div>

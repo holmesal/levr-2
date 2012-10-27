@@ -38,7 +38,8 @@ class ShareHandler(webapp2.RequestHandler):
 				template = jinja_environment.get_template('templates/share.html')
 				self.response.out.write(template.render(template_values))
 			else:
-				self.redirect('/')
+				template = jinja_environment.get_template('templates/shareError.html')
+				self.response.out.write(template.render())
 		except:
 			levr.log_error()
 
