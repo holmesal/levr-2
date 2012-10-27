@@ -14,6 +14,8 @@ class landing(webapp2.RequestHandler):
 		#get the user-agent
 		uastring = str(self.request.headers['user-agent'])
 		
+		logging.info(uastring)
+		
 		#same template for mobile and desktop (for now)
 		# if 'Mobile' in uastring:
 # 			if 'iPad' in uastring:
@@ -44,7 +46,7 @@ class landing(webapp2.RequestHandler):
 		elif version == 'Version B':
 			template_values.update({'css':'landing_v3_version_b'})
 		
-		template = jinja_environment.get_template('templates/landing_v3.html')
+		template = jinja_environment.get_template('templates/landing_v3_final.html')
 		self.response.out.write(template.render(template_values))
 
 		

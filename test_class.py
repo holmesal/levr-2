@@ -169,7 +169,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 					'img_key'			: img_key
 					}
 		
-		dealID = levr.dealCreate(params,'phone_new_business')
+		levr.dealCreate(params,'phone_new_business')
 		
 		bus = levr.Business.gql('WHERE business_name=:1','Als Sweatshop').get()
 		
