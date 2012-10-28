@@ -40,42 +40,97 @@
     }];*/
     
     
-    var features = [
-    {% for deal in deals %}
-    {
-        "geometry": { "type": "Point", "coordinates": [{{deal.geo_point.lat}}, {{deal.geo_point.lon}}]},
-        "properties": {
-            "image": "{{deal.img}}"
-        }
-    },
-    {% endfor %}
-    ];
-
-    // Create map
-    var map = mapbox.map('map');
-    map.addLayer(mapbox.layer().id('alonsoholmes.map-7b8eyy4m'));
-
-    // Create and add marker layer
-    var markerLayer = mapbox.markers.layer().features(features);
-    var interaction = mapbox.markers.interaction(markerLayer);
-    map.addLayer(markerLayer);
-
-    // Set a custom formatter for tooltips
-    // Provide a function that returns html to be used in tooltip
-    interaction.formatter(function(feature) {
-        var o = '<a target="_blank" href="' + feature.properties.url + '">' +
-            '<img src="' + feature.properties.image + '">' +
-            '<h2>' + feature.properties.city + '</h2>' +
-            '</a>';
-
-        return o;
+    
+    
+/*
+    mapbox.auto('map','http://a.tiles.mapbox.com/v3/alonsoholmes.map-7b8eyy4m.jsonp',function(map){
+	
+    
+	    var features = [
+	    {% for deal in deals %}
+	    {
+	        "geometry": { "type": "Point", "coordinates": [{{deal.business.geoPoint}}]},
+	        "properties": {
+	            "image": "{{deal.largeImg}}"
+	        }
+	    },
+	    {% endfor %}
+	    ];
+	
+	    // Create map
+	    //var map = mapbox.map('map');
+	    //mapbox.auto('map', 'examples.map-vyofok3q');
+	    //var map = mapbox.auto('map','alonsoholmes.map-7b8eyy4m');
+	    //var map = mapbox.load('examples.map-vyofok3q',doStuff())
+	    
+	    map.addLayer(mapbox.layer().id('alonsoholmes.map-7b8eyy4m'));
+	
+	    // Create and add marker layer
+	    var markerLayer = mapbox.markers.layer().features(features);
+	    var interaction = mapbox.markers.interaction(markerLayer);
+	    map.addLayer(markerLayer);
+	
+	    // Set a custom formatter for tooltips
+	    // Provide a function that returns html to be used in tooltip
+	    interaction.formatter(function(feature) {
+	        var o = '<a target="_blank" href="' + feature.properties.url + '">' +
+	            '<img src="' + feature.properties.image + '">' +
+	            '<h2>' + feature.properties.city + '</h2>' +
+	            '</a>';
+	
+	        return o;
+	    });
     });
-
-    // Set iniital center and zoom
+*/
+    
+    mapbox.load('http://a.tiles.mapbox.com/v3/alonsoholmes.map-7b8eyy4m.jsonp', function(o) {
+	    var map = mapbox.map('map');
+	
+    
+	    var features = [
+	    {% for deal in deals %}
+	    {
+	        "geometry": { "type": "Point", "coordinates": [{{deal.business.geoPoint}}]},
+	        "properties": {
+	            "image": "{{deal.largeImg}}"
+	        }
+	    },
+	    {% endfor %}
+	    ];
+	
+	    // Create map
+	    //var map = mapbox.map('map');
+	    //mapbox.auto('map', 'examples.map-vyofok3q');
+	    //var map = mapbox.auto('map','alonsoholmes.map-7b8eyy4m');
+	    //var map = mapbox.load('examples.map-vyofok3q',doStuff())
+	    
+	    map.addLayer(mapbox.layer().id('alonsoholmes.map-7b8eyy4m'));
+	
+	    // Create and add marker layer
+	    var markerLayer = mapbox.markers.layer().features(features);
+	    var interaction = mapbox.markers.interaction(markerLayer);
+	    map.addLayer(markerLayer);
+	
+	    // Set a custom formatter for tooltips
+	    // Provide a function that returns html to be used in tooltip
+	    interaction.formatter(function(feature) {
+	        var o = '<a target="_blank" href="' + feature.properties.url + '">' +
+	            '<img src="' + feature.properties.image + '">' +
+	            '<h2>' + feature.properties.city + '</h2>' +
+	            '</a>';
+	
+	        return o;
+	    });
+	    
+	    // Set iniital center and zoom
     map.centerzoom({
         lat: 45.908,
         lon: -78.525
     }, 5);
+    
+    });
+
+    
 </script>
 </body>
 </html>

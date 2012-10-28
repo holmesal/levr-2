@@ -688,6 +688,10 @@ class LandingTestHandler(webapp2.RequestHandler):
 		deal_keys = deal_q.fetch(20)
 		deals = db.get(deal_keys)
 		
+		packaged_deals = api_utils.package_deal_multi(deals)
+		
+		logging.info(packaged_deals)
+		
 # 		features = []
 # 		
 # 		for deal in deals:
@@ -714,7 +718,7 @@ class LandingTestHandler(webapp2.RequestHandler):
 # 		}
 
 		template_values = {
-			'deals'		: deals
+			'deals'		: packaged_deals
 		}
 		
 		#launch the jinja environment
@@ -735,7 +739,7 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload_ninjas',UploadPhotoHandler),
 								('/new/store_upload', StorePhotoHandler),
 								('/new/clear_old_ninjas', ClearOldNinjasHandler),
-								('/new/transfer_deals', TransferDealOwnershipToUndeadHandler)
+								('/new/transfer_deals', TransferDealOwnershipToUndeadHandler),
 								('/new/landing', LandingTestHandler)
 								],debug=True)
 
