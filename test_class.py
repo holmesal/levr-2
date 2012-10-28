@@ -726,7 +726,8 @@ class LandingTestHandler(webapp2.RequestHandler):
 		
 
 		template_values = {
-			'deals'		: packaged_deals
+			'deals'		: packaged_deals,
+			'version'	: 'desktop'
 		}
 		
 		#launch the jinja environment

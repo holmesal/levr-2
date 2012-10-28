@@ -16,8 +16,18 @@ body {
 #mapContainer{
 	position: absolute;
 	width: 100%;
-	top: 50px;
+	top: 40px;
 	bottom: 0px;
+	z-index: 0;
+}
+
+#content{
+	position: absolute;
+	top: 40px;
+	background-color: rgba(255,255,255,0.8);
+	bottom: 0;
+	right: 0;
+	z-index: 100;
 }
 
 #map{
@@ -28,7 +38,6 @@ body {
 .imgDiv{
 	width: 100%;
 	height: 100%;
-
 	background-size: cover;
 	position: relative;
 }
@@ -85,4 +94,33 @@ body {
 
 .location{
 	margin: 0px;
+}
+
+#appstore{
+	width: 200px;
+	margin-left: auto;
+	margin-right: auto;
+	display: block;
+}
+
+#markerfilters{
+	position: absolute;
+	bottom: 20px !important;
+}
+
+.sectionDiv{
+	margin-top: 50px;
+}
+
+.sectionIcon{
+	width: 100px;
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.sectionText{
+	margin-top: 10px;
+	text-align: center;
+	
 }
