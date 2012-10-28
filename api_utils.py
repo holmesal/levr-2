@@ -113,7 +113,13 @@ def package_prefetched_deal_multi(data,private=False,*args,**kwargs):
 	for point in data:
 		# Unpack data
 		deal,owner,business,rank,distance = point
-		packaged_deal = {
+		
+		packaged_deal = _package_deal(deal, owner, business, private, rank, distance)
+		packaged_deals.append(packaged_deal)
+		
+	return packaged_deals
+def _package_deal(deal,owner,business,private=False,rank=None,distance=None):
+	packaged_deal = {
 	# 			'barcodeImg'	: deal.barcode,
 				'business'		: package_business(business),
 	 			'dateUploaded'	: str(deal.date_uploaded)[:19],
@@ -131,54 +137,27 @@ def package_prefetched_deal_multi(data,private=False,*args,**kwargs):
 				'origin'		: deal.origin,
 				'owner'			: package_user(owner,False,False)
 				}
-		
-		if rank: packaged_deal['rank'] = rank
-		if distance: packaged_deal['distance'] = distance
-		
-		if private == True:
-			packaged_deal.update({})
-		
-		packaged_deals.append(packaged_deal)
-		
-		
-	return packaged_deals
+	
+	if rank: packaged_deal['rank'] = rank
+	if distance: packaged_deal['distance'] = distance
+	
+	if private == True:
+		packaged_deal.update({})
+	
+	return packaged_deal
+	
 def package_deal(deal,private=False,*args,**kwargs):
 #	logging.debug(deal.businessID)
 #	logging.debug(deal.key())
 #	logging.debug(str(deal.geo_point))
-	packaged_deal = {
-# 			'barcodeImg'	: deal.barcode,
-			'business'		: package_business(levr.Business.get(deal.businessID)),
- 			'dateUploaded'	: str(deal.date_uploaded)[:19],
-			'dealID'		: enc.encrypt_key(deal.key()),
-			'dealText'		: deal.deal_text,
-			'description'	: deal.description,
-			'largeImg'		: create_img_url(deal,'large'),
-			'smallImg'		: create_img_url(deal,'small'),
-			'status'		: deal.deal_status,
-			'shareURL'		: create_share_url(deal),
-			'tags'			: deal.tags,
-			'vote'			: deal.upvotes - deal.downvotes,
-			'pinColor'		: create_pin_color(deal),
-			'karma'			: deal.karma,
-			'origin'		: deal.origin,
-			'owner'			: package_user(levr.Customer.get(deal.key().parent()))
-			}
+	rank = kwargs.get('rank',None)
+	distance = kwargs.get('distance',None)
 	
-	rank = kwargs.get('rank')
-	if rank: packaged_deal['rank'] = rank
+	owner = levr.Customer.get(deal.key().parent())
+	business = levr.Business.get(deal.businessID)
 	
-	distance = kwargs.get('distance')
-	if distance: packaged_deal['distance'] = distance
 	
-#	logging.debug('rank')
-#	logging.debug(kwargs.get('rank'))
-	
-	if private == True:
-		packaged_deal.update({
-							})
-		
-	return packaged_deal
+	return _package_deal(deal, owner, business, private, rank, distance)
 	
 def package_deal_external(externalDeal,externalBusiness,fake_owner):
 	
