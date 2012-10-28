@@ -1191,166 +1191,42 @@ class Deal(polymodel.PolyModel):
 	is_exclusive	= db.BooleanProperty(default=False)
 	locu_id			= db.StringProperty()
 	
-#===============================================================================
-	#===========================================================================
-	# DO NOT USE THIS. INCOMPLETE
-	#===========================================================================
-#	def transfer_ownership_to(self,new_owner):
-#		'''
-#		Removes a deal
-#		Transfers all of a deals information to a new deal owned by the new_owner
-#		
-#		@param new_owner: The new owner of the deal; entity, not the key
-#		@type new_owner: Customer
-#		'''
-#		# get deal info
-#		# set new owner
-#		new_deal = Deal(parent=new_owner)
-#		
-#		logging.debug(log_dict(self.properties()))
-#		
-#		for key in self.properties():
-#			# do not attempt to transfer private properties
-#			if key[0] != '_':
-#				val = getattr(self,key)
-#				logging.debug('\n\n key: '+str(key)+'\n val: '+str(val))
-#				setattr(new_deal, key, val)
-#		
-#		new_deal.put()
-#		
-#		self.secure_delete(new_deal)
-#		return new_deal
-#	
-#	def secure_delete(self,new_deal=None):
-#		'''
-#		Deal
-#		Securely deletes a deal entity, removing all of its references to other database entries
-#		'''
-#		old_key = self.key()
-#		new_key = new_deal.key()
-#		to_put = []
-#		#=======================================================================
-#		# Customer: upvotes, downvotes, favorites
-#		#=======================================================================
-#		upvotes = Customer.all().filter('upvotes',old_key).fetch(None)
-#		downvotes = Customer.all().filter('downvotes',old_key).fetch(None)
-#		favorites = Customer.all().filter('favorites',old_key).fetch(None)
-#		
-#		users = set([])
-#		users.update(upvotes)
-#		users.update(downvotes)
-#		users.update(favorites)
-#		
-#		logging.debug(upvotes)
-#		logging.debug(downvotes)
-#		logging.debug(favorites)
-#		
-#		
-#		for user in users:
-#			# upvotes
-#			if old_key in upvotes:
-#				user.upvotes.remove(old_key)
-#				if new_deal:
-#					user.upvotes.append(new_key)
-#			# downvotes
-#			if old_key in downvotes:
-#				user.downvotes.remove(old_key)
-#				if new_deal:
-#					user.downvotes.append(new_key)
-#			# favorites
-#			if old_key in favorites:
-#				user.favorites.remove(old_key)
-#				if new_deal:
-#					user.favorites.append(new_key)
-#		logging.debug(users)
-#		#replace users
-# #		db.put(users)
-#		to_put.extend(users)
-#		#=======================================================================
-#		# Notification
-#		# If new deal is passed, replace the reference, otherwise delete the deal
-#		#=======================================================================
-#		notes = self.notifications.fetch(None)
-#		
-#		if new_deal:
-#			for note in notes:
-#				note.deal = new_deal
-#			db.put(notes)
-#		else:
-#			db.delete(notes)
-#		
-#		#=======================================================================
-#		# ReportedDeal
-#		# If new deal is passed, replace the reference, otherwise delete
-#		#=======================================================================
-#		reported_deals = self.reported_deals.fetch(None)
-#		
-#		if new_deal:
-#			for deal in reported_deals:
-#				deal.deal = new_deal
-#			db.put(reported_deals)
-#		else:
-#			db.delete(reported_deals)
-#		
-#		
-#		#=======================================================================
-#		# FloatingContent
-#		# If new deal is passed, replace reference, otherwise delete
-#		#=======================================================================
-#		floating_content = self.floating_content.fetch(None)
-#		
-#		if new_deal:
-#			for deal in floating_content:
-#				deal.deal = new_deal
-#			db.put(floating_content)
-#		else:
-#			db.delete(floating_content)
-#		
-#		self.delete()
-#===============================================================================
+	@property
+	def views(self):
+		'''
+		Retrieve the number of views for this deal
 		
+		@return: total
+		@rtype: int
+		'''
+		total = 0
+		for counter in DealViewCounter.all().ancestor(self):
+			total += counter.count
+		
+		return total
 	
-
-#===============================================================================
-# 
-# class CustomerDeal(Deal):
-# #Sub-class of deal
-# #A deal that has been uploaded by a user
-# 
-#	gate_requirement= db.IntegerProperty(default = 5) #threshold of redeems that must be passed to earn a gate
-#	gate_payment_per= db.IntegerProperty(default = 1) #dollar amount per gate
-#	gate_count		= db.IntegerProperty(default = 0) #number of gates passed so far
-#	gate_max		= db.IntegerProperty(default = 5) #max number of gates allowed
-#	earned_total	= db.FloatProperty(default = 0.0) #amount earned by this deal
-#	paid_out		= db.FloatProperty(default = 0.0) #amount paid out by this deal
-#	
-#	def share_deal(self):
-#		if self.has_been_shared == False:
-#			#deal has never been shared before
-#			#flag that it has been shared
-#			self.has_been_shared = True
-#			
-#			#increase the max payment gates the ninja can earn
-#			self.gate_max += 5
-#		else:
-#			#deal has been shared - do nothing
-#			pass
-#		return self.has_been_shared
-#	
-#	def update_earned_total(self):
-#		#what was self.earned_total to start with?
-#		old = self.earned_total
-#		#update
-#		self.earned_total = float(self.gate_count*self.gate_payment_per)
-#		#if changed, find the difference
-#		difference = 0.0
-#		if self.earned_total > old:
-#			difference = self.earned_total - old
-#			logging.info('Earned ' + difference.__str__() + ' dollar!')
-#			
-#		return difference
-#===============================================================================
+	@db.transactional
+	def increment_views(self):
+		'''
+		Increments the number of times this deal has been viewed
+		'''
+		# TODO: add shards to memcache
+		index = random.randint(0,NUM_DEAL_VIEW_COUNTERS-1)
+		shard_name = 'shard'+str(index)
+		counter = DealViewCounter.get_by_key_name(shard_name,self)
+		if counter is None:
+			counter = DealViewCounter(key_name=shard_name,parent=self)
+		counter += 1
+		counter.put()
+		
+NUM_DEAL_VIEW_COUNTERS = 10
+class DealViewCounter(db.Model):
+	'''
+	Sharded deal view counters
 	
+	Must be a child of a deal
+	'''
+	count = db.IntegerProperty(required=True,default=0)
 
 class Notification(db.Model):
 	# Only has outbound references, no inbound
@@ -1364,18 +1240,6 @@ class Notification(db.Model):
 	#metadata used for migrations
 	model_version		= db.IntegerProperty(default=1)
 
-#===============================================================================
-# class CashOutRequest(db.Model):
-# #child of ninja
-#	amount			= db.FloatProperty()
-#	date_paid		= db.DateTimeProperty()
-#	status			= db.StringProperty(choices=set(['pending','paid','rejected']))
-#	payKey			= db.StringProperty()
-#	money_available_paytime	= db.FloatProperty()
-#	note			= db.StringProperty()
-#	date_created	= db.DateTimeProperty(auto_now_add=True)
-#	date_last_edited= db.DateTimeProperty(auto_now=True)
-#===============================================================================
 
 
 class ReportedDeal(db.Model):

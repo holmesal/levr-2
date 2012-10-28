@@ -16,10 +16,12 @@ class Approve(webapp2.RequestHandler):
 	@api_utils.validate('deal', None)
 	def get(self,*args,**kwargs):
 		try:
+			self.response.headers['Content-Type'] = 'text/plain'
+			
 			deal = kwargs.get('deal')
 			deal.been_reviewed = True
 			deal.put()
-			self.response.headers['Content-Type'] = 'text/plain'
+			
 			self.response.out.write('Yeah. What it do?')
 			self.response.out.write(levr.log_model_props(deal, ['deal_text','deal_status','been_reviewed']))
 		except Exception,e:
@@ -31,13 +33,17 @@ class Reject(webapp2.RequestHandler):
 	@api_utils.validate('deal', None)
 	def get(self,*args,**kwargs):
 		try:
+			self.response.headers['Content-Type'] = 'text/plain'
 			deal = kwargs.get('deal')
+			assert deal.been_reviewed == False, 'Deal has already been reviewed.'
 			deal.deal_status = 'rejected'
 			deal.been_reviewed = True
 			deal.put()
-			self.response.headers['Content-Type'] = 'text/plain'
+			
 			self.response.out.write('And the Lord said unto his children, "It has been done."\n\n')
 			self.response.out.write(levr.log_model_props(deal, ['deal_text','deal_status','been_reviewed']))
+		except AssertionError,e:
+			self.response.out.write(e)
 		except Exception,e:
 			levr.log_error(e)
 			self.response.out.write('Error rejecting: '+str(e))

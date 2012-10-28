@@ -374,6 +374,13 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				logging.info(distances)
 				logging.info(deals)
 				packaged_deals = api_utils.package_deal_multi(deals,rank=ranks,distance=distances)
+				
+				# add deal views for each deal
+				try:
+					for deal in deals:
+						deal.increment_views()
+				except Exception,e:
+					levr.log_error(e)
 			else:
 				# No deals were found in the db at all!
 				packaged_deals = []
