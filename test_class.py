@@ -706,42 +706,24 @@ class LandingTestHandler(webapp2.RequestHandler):
 		
 		#grab all the deals (for now)
 		deal_q = levr.Deal.all(keys_only=True).filter('origin','levr')
-		deal_keys = deal_q.fetch(20)
+		deal_keys = deal_q.fetch(50)
 		deals = db.get(deal_keys)
+		
+		#TODO:
+		#grab deals from a few specific geohashes that cover boston
+		
+		
 		
 		packaged_deals = api_utils.package_deal_multi(deals)
 		
 		#go through and swap lat and lon
 		for deal in packaged_deals:
+			#separate lat and lon
 			deal['lat'] = deal['business']['geoPoint'].split(',')[0]
 			deal['lon'] = deal['business']['geoPoint'].split(',')[1]
+			#fix image url
+			deal['imgURL'] = deal['largeImg'].split('?')[0]+'?size=webMapView'
 		
-		#logging.info(packaged_deals)
-		
-# 		features = []
-# 		
-# 		for deal in deals:
-# 			#grab the business
-# 			business = levr.Business.get(deal.businessID)
-# 			
-# 			#format in the geojson thingy
-# 			feature = {
-# 				"geometry" 		: {"type":"Point","coordinates":[deal.geo_point.lat,deal.geo_point.lon]},
-# 				"properties" 	: {
-# 					"image"			: "/api/deal/"+enc.encrypt_key(str(deal.key()))+"/img?size=large",
-# 					"deal_text"		:	deal.deal_text,
-# 					"business_name"	:	business.business_name,
-# 					"vicinity"		:	business.vicinity
-# 				}
-# 			}
-# 			
-# 			features.append(feature)
-# 			
-# 			
-# 		
-# 		template_values = {
-# 			'features'	:	features
-# 		}
 
 		template_values = {
 			'deals'		: packaged_deals

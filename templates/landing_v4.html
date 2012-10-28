@@ -1,15 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src='http://api.tiles.mapbox.com/mapbox.js/v0.6.6/mapbox.js'></script>
   <link href='http://api.tiles.mapbox.com/mapbox.js/v0.6.6/mapbox.css' rel='stylesheet' />
-  <style>
-    body { margin:0; padding:0; }
-    #map { position:absolute; top:0; bottom:0; width:100%; }
-  </style>
+  <link href="/css/landing_v4.css" rel='stylesheet' />
 </head>
 <body>
-<div id='map'></div>
+
+<div id="top">
+	Hi there
+</div>
+<div id='mapContainer'>
+<div id='map'>hi</div>
+</div>
+
 <script src="http://code.jquery.com/jquery-latest.js"></script>
 <script>
 
@@ -85,6 +90,9 @@
     
     mapbox.load('http://a.tiles.mapbox.com/v3/alonsoholmes.map-7b8eyy4m.jsonp', function(o) {
 	    var map = mapbox.map('map');
+	    
+	    map.setZoomRange(3,20)
+	    map.ui.zoomer.add()
 	
     
 	    var features = [
@@ -92,7 +100,12 @@
 	    {
 	        "geometry": { "type": "Point", "coordinates": [{{deal.lon}},{{deal.lat}}]},
 	        "properties": {
-	            "image": "{{deal.largeImg}}"
+	            "img"			: 	"{{deal.imgURL}}",
+	            "deal_text"		:	"{{deal.dealText}}",
+	            "description"	:	'"{{deal.description}}"',
+	            "location"		:	"{{deal.business.businessName}} - {{deal.business.vicinity}}",
+	            "userImg"		:	"{{deal.owner.photoURL}}",
+	            "userName"		:	"{{deal.owner.alias}}"
 	        }
 	    },
 	    {% endfor %}
@@ -114,23 +127,29 @@
 	    // Set a custom formatter for tooltips
 	    // Provide a function that returns html to be used in tooltip
 	    interaction.formatter(function(feature) {
-	        var o = '<a target="_blank" href="' + feature.properties.url + '">' +
+	        /*var o = '<a target="_blank" href="' + feature.properties.url + '">' +
 	            '<img src="' + feature.properties.image + '">' +
 	            '<h2>' + feature.properties.city + '</h2>' +
-	            '</a>';
+	            '</a>';*/
+	        
+	        var o = '<div class="imgDiv" style="background-image:url('+feature.properties.img+');"><div class="infoDiv"><p class="deal_text">'+feature.properties.deal_text+'</p><p class="description">'+feature.properties.description+'</p><p class="location">'+feature.properties.location+'</p><div class="userDiv"><div style="background-image:url('+feature.properties.userImg+');" class="userImg"></div><div class="userText"> Found by '+feature.properties.userName+' on Levr for iPhone.</div></div></div></div>'
 	
 	        return o;
 	    });
 	    
 	    // Set iniital center and zoom
     map.centerzoom({
-        lat: 45.908,
-        lon: -78.525
-    }, 5);
+        lat: 42.3583,
+        lon: -71.0603
+    }, 13);
     
     });
 
     
 </script>
+
+<div class="imgDiv"><p class="deal_text"></p><p class="description"></p><p class="business_name"></p><p class="vicinity"></p></div>
+
+
 </body>
 </html>

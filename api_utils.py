@@ -755,6 +755,9 @@ def send_img(self,blob_key,size):
 		elif size == 'widget':
 			aspect_ratio	= 1.
 			output_width	= 150.
+		elif size == 'webMapView':
+			aspect_ratio	= 1.5
+			output_width	= 400.
 		else:
 			raise KeyError('Invalid image size: '+size)
 		

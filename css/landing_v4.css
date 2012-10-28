@@ -1,0 +1,88 @@
+body {
+	margin:0;
+	padding:0; 
+	font:14px/21px arial,helvetica,clean,sans-serif;
+  color: #444;
+  -webkit-font-smoothing:antialiased;
+}
+
+.top{
+	height: 50px;
+	background-color: white;
+}
+
+/*#map { position:absolute; top:0; bottom:0; width:100%; }*/
+
+#mapContainer{
+	position: absolute;
+	width: 100%;
+	top: 50px;
+	bottom: 0px;
+}
+
+#map{
+	width: 100%;
+	height: 100%;
+}
+
+.imgDiv{
+	width: 100%;
+	height: 100%;
+
+	background-size: cover;
+	position: relative;
+}
+
+.infoDiv{
+	position: absolute;
+	bottom: 0px;
+	width: 100%;
+	background-color: rgba(255,255,255,0.96);
+	text-align: center;
+}
+
+.userDiv{
+	position: relative;
+	display: block;
+	float: left;
+	height: 40px;
+	width: 100%;
+}
+
+.userText{
+	text-align: left;
+	margin-left: 55px;
+	margin-top: 12px;
+	color: #565656;
+	font-weight: 600;
+}
+
+.userImg{
+	height: 40px;
+	background-size: cover;
+	width: 40px;
+	background-position: center center;
+	display: block;
+	float: left;
+}
+
+.marker-popup{
+	max-height: 1000px !important;
+	margin: 0px;
+	padding: 0px !important;
+	background-clip: none;
+	width: 400px;
+	height: 300px;
+	
+}
+
+.deal_text{
+	margin-top: 5px;
+	margin-bottom: 0px;
+	font-size: 16pt;
+	font-weight: 300;
+}
+
+.location{
+	margin: 0px;
+}
