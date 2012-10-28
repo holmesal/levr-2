@@ -135,7 +135,7 @@ def _package_deal(deal,owner,business,private=False,rank=None,distance=None):
 				'pinColor'		: create_pin_color(deal),
 				'karma'			: deal.karma,
 				'origin'		: deal.origin,
-				'owner'			: package_user(owner,False,False)
+				'owner'			: package_user(owner,private,False)
 				}
 	
 	if rank: packaged_deal['rank'] = rank
