@@ -10,6 +10,7 @@ import urllib
 import webapp2
 from google.appengine.ext.webapp import blobstore_handlers
 import api_utils
+import api_utils
 #import api_utils_social as social
 #from random import randint
 #import json
@@ -175,23 +176,48 @@ class ConnectMerchantHandler(webapp2.RequestHandler):
 	'''
 	A handler for creating a merchant account
 	'''
-	def post(self):
+	@api_utils.validate(None, 'param',
+					email = True,
+					password = True,
+					businessName = True,
+					vicinity = True,
+					geoPoint = True,
+					types = True,
+					)
+	@api_utils.private
+	def post(self,*args,**kwargs):
 		'''
-		@keyword email: email
-		@keyword password: str
-		@keyword businessName: str
-		@keyword vicinity: str
-		@keyword ll: geo point
-		@keyword types: list
+		Checks for existing account with that business
+		If the account exists, return true
+		
+		@keyword email: required
+		@keyword password: required
+		@keyword business_name: required
+		@keyword vicinity: required
+		@keyword geo_point: required
+		@keyword types: require
+		@keyword development: optional
 		
 		@return: uid
 		@return: levrToken
 		'''
+		email = kwargs.get('email')
+		password = kwargs.get('password')
+		business_name = kwargs.get('business_name')
+		vicinity = kwargs.get('vicinity')
+		geo_point = kwargs.get('geo_point')
+		types = kwargs.get('types')
+		development = kwargs.get('development')
+		
 class MerchantDealsHandler(webapp2.RequestHandler):
 	'''
 	A handler for serving all of a merchants deals for their manage page
 	'''
-	def get(self):
+	@api_utils.validate(None, 'param',
+					user = True
+					)
+	@api_utils.private
+	def get(self,*args,**kwargs):
 		'''
 		@keyword user:
 		
@@ -201,8 +227,13 @@ class RequestUploadURLHandler(webapp2.RequestHandler):
 	'''
 	A handler to serve an upload url for uploading an image to the server
 	'''
-	def get(self):
+	@api_utils.validate(None, 'param',
+					user = True
+					)
+	@api_utils.private
+	def get(self,*args,**kwargs):
 		'''
+		@keyword development: Boolean
 		@return: url
 		@rtype: string
 		'''
@@ -211,7 +242,8 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 	'''
 	A handler to upload a NEW deal to the database
 	'''
-	def post(self):
+	@api_utils.validate(url_param, authentication_source)
+	def post(self,*args,**kwargs):
 		'''
 		@keyword user: required
 		@keyword businessName: required
@@ -221,6 +253,7 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 		@keyword description: required
 		@keyword dealText: required
 		@keyword distance: optional
+		@keyword development: required
 		
 		@requires: an image is uploaded - need the blob_key
 		
@@ -233,11 +266,12 @@ class EditDealHandler(blobstore_handlers.BlobstoreDownloadHandler):
 	A handler to upload new data for an existing deal in the database
 	Will optionally receive an image.
 	'''
-	def post(self):
+	def post(self,*args,**kwargs):
 		'''
 		@keyword user: required
 		@keyword description: optional
 		@keyword dealText: optional
+		@keyword development: 
 		
 		@var blob_key: optional - the blob key of the uploaded image
 		
@@ -248,7 +282,7 @@ class ExpireDealHandler(webapp2.RequestHandler):
 	'''
 	A handler to expire a deal from a merchant
 	'''
-	def post(self):
+	def post(self,*args,**kwargs):
 		'''
 		@keyword user: 
 		@keyword deal: 
@@ -262,7 +296,7 @@ class ReactivateDealHandler(webapp2.RequestHandler):
 	'''
 	A handler to set a deal as active
 	'''
-	def post(self):
+	def post(self,*args,**kwargs):
 		'''
 		@keyword user: required
 		@keyword deal: required
