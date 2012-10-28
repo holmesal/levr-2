@@ -1,5 +1,8 @@
 from google.appengine.api import urlfetch
-from google.appengine.ext import db
+from google.appengine.ext import blobstore, db
+from google.appengine.ext.webapp import blobstore_handlers
+import api_utils
+import api_utils
 import api_utils
 import base64
 import levr_classes as levr
@@ -8,9 +11,6 @@ import logging
 import time
 import urllib
 import webapp2
-from google.appengine.ext.webapp import blobstore_handlers
-import api_utils
-import api_utils
 #import api_utils_social as social
 #from random import randint
 #import json
@@ -219,7 +219,7 @@ class MerchantDealsHandler(webapp2.RequestHandler):
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		'''
-		@keyword user:
+		@keyword actor:
 		
 		@return: array of deal objects
 		'''
@@ -228,30 +228,62 @@ class RequestUploadURLHandler(webapp2.RequestHandler):
 	A handler to serve an upload url for uploading an image to the server
 	'''
 	@api_utils.validate(None, 'param',
-					user = True
+					user = True,
+					action = True,
 					)
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		'''
-		@keyword development: Boolean
+		@keyword actor: 
+		@keyword action: if the deal will be a new deal or if it will be edited
+		
 		@return: url
 		@rtype: string
 		'''
+		user = kwargs.get('actor')
+		action = kwargs.get('action')
+		try:
+			if action == 'add':
+				upload_url = blobstore.create_upload_url(NEW_DEAL_UPLOAD_URL)
+			elif action == 'edit':
+				upload_url = blobstore.create_upload_url(EDIT_DEAL_UPLOAD_URL)
+			else:
+				raise KeyError('Action not recognized: '+str(action))
+			
+			response  = {
+						'uploadURL' : upload_url
+						}
+			
+			api_utils.send_response(self,response,user)
+			
+		except KeyError,e:
+			api_utils.send_error(self,e)
+		except Exception,e:
+			api_utils.send_error(self,'Server Error')
 
 class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 	'''
 	A handler to upload a NEW deal to the database
 	'''
-	@api_utils.validate(url_param, authentication_source)
+	@api_utils.validate(None, 'param',
+					user = True,
+					businessName = True,
+					geoPoint = True,
+					vicinity = True,
+					types = True,
+					description = True,
+					dealText = True,
+					distance = True,
+					)
 	def post(self,*args,**kwargs):
 		'''
-		@keyword user: required
-		@keyword businessName: required
-		@keyword geoPoint: required
+		@keyword actor: required
+		@keyword business_name: required
+		@keyword geo_point: required
 		@keyword vicinity: required
 		@keyword types: required
 		@keyword description: required
-		@keyword dealText: required
+		@keyword deal_text: required
 		@keyword distance: optional
 		@keyword development: required
 		
@@ -260,7 +292,29 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 		@return: the newly created deal object
 		@rtype: dict
 		'''
-		
+		user = kwargs.get('actor')
+		business_name = kwargs.get('businessName')
+		geo_point = kwargs.get('geoPoint')
+		vicinity = kwargs.get('vicinty')
+		types = kwargs.get('types')
+		description = kwargs.get('description')
+		development = kwargs.get('development')
+		try:
+			
+			# Assure that an image was uploaded
+			if self.get_uploads():
+				upload	= self.get_uploads()[0]
+				blob_key= upload.key()
+				img_key = blob_key
+				upload_flag = True
+			else:
+				upload_flag = False
+				raise KeyError('Image was not uploaded')
+		except Exception,e:
+			levr.log_error(e)
+			api_utils.send_error(self,'Server Error')
+			
+			
 class EditDealHandler(blobstore_handlers.BlobstoreDownloadHandler):
 	'''
 	A handler to upload new data for an existing deal in the database
@@ -268,7 +322,7 @@ class EditDealHandler(blobstore_handlers.BlobstoreDownloadHandler):
 	'''
 	def post(self,*args,**kwargs):
 		'''
-		@keyword user: required
+		@keyword actor: required
 		@keyword description: optional
 		@keyword dealText: optional
 		@keyword development: 
@@ -284,7 +338,7 @@ class ExpireDealHandler(webapp2.RequestHandler):
 	'''
 	def post(self,*args,**kwargs):
 		'''
-		@keyword user: 
+		@keyword actor: 
 		@keyword deal: 
 		
 		@requires: user is the owner of the deal
@@ -298,7 +352,7 @@ class ReactivateDealHandler(webapp2.RequestHandler):
 	'''
 	def post(self,*args,**kwargs):
 		'''
-		@keyword user: required
+		@keyword actor: required
 		@keyword deal: required
 		
 		@requires: user is the owner of the deal
@@ -306,12 +360,16 @@ class ReactivateDealHandler(webapp2.RequestHandler):
 		@return: success
 		@rtype: Boolean
 		'''
+
+# Quality Assurance for generating the upload urls
+NEW_DEAL_UPLOAD_URL = '/api/merchant/upload/add'
+EDIT_DEAL_UPLOAD_URL = '/api/merchant/upload/edit'
 app = webapp2.WSGIApplication([
 								('/api/merchant/connect',ConnectMerchantHandler),
 								('/api/merchant/deals',MerchantDealsHandler),
 								('/api/merchant/upload/request',RequestUploadURLHandler),
-								('/api/merchant/upload/add',AddNewDealHandler),
-								('/api/merchant/upload/edit',EditDealHandler),
+								(NEW_DEAL_UPLOAD_URL,AddNewDealHandler),
+								(EDIT_DEAL_UPLOAD_URL,EditDealHandler),
 								('/api/merchant/remove',ExpireDealHandler),
 								('/api/merchant/reactivate',ReactivateDealHandler),
 								##
