@@ -684,13 +684,18 @@ class LandingTestHandler(webapp2.RequestHandler):
 	def get(self):
 		
 		#grab all the deals (for now)
-		deal_q = levr.Deal.all(keys_only=True)
+		deal_q = levr.Deal.all(keys_only=True).filter('origin','levr')
 		deal_keys = deal_q.fetch(20)
 		deals = db.get(deal_keys)
 		
 		packaged_deals = api_utils.package_deal_multi(deals)
 		
-		logging.info(packaged_deals)
+		#go through and swap lat and lon
+		for deal in packaged_deals:
+			deal['lat'] = deal['business']['geoPoint'].split(',')[0]
+			deal['lon'] = deal['business']['geoPoint'].split(',')[1]
+		
+		#logging.info(packaged_deals)
 		
 # 		features = []
 # 		

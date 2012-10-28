@@ -90,7 +90,7 @@
 	    var features = [
 	    {% for deal in deals %}
 	    {
-	        "geometry": { "type": "Point", "coordinates": [{{deal.business.geoPoint}}]},
+	        "geometry": { "type": "Point", "coordinates": [{{deal.lon}},{{deal.lat}}]},
 	        "properties": {
 	            "image": "{{deal.largeImg}}"
 	        }
