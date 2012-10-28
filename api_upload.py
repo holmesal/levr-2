@@ -1,13 +1,14 @@
+from google.appengine.api import mail, taskqueue
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
-from google.appengine.api import taskqueue
-import json
+from tasks import IMAGE_ROTATION_TASK_URL
 import api_utils
+import json
 import levr_classes as levr
 import logging
 import os
 import webapp2
-from tasks import IMAGE_ROTATION_TASK_URL
+import levr_encrypt as enc
 #import geo.geohash as geohash
 #from datetime import datetime
 #from google.appengine.ext import db
@@ -135,6 +136,40 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 			response = {
 					'deal'	: deal
 					}
+			
+			#===================================================================
+			# Send notification to founders
+			#===================================================================
+			try:
+		#		approve_link = 'http://www.levr.com/admin/deal/{}/approve'.format(enc.encrypt_key(deal_entity.key()))
+				reject_link = 'http://www.levr.com/admin/deal/{}/reject'.format(enc.encrypt_key(deal_entity.key()))
+				
+#				message = mail.EmailMessage()
+#				message.to = ['patrick@levr.com','alonso@levr.com']
+				message = mail.AdminEmailMessage()
+				message.sender = 'patrick@levr.com'
+				message.subject = 'New Upload'
+				
+				
+				message.body = levr.log_dict(deal)
+		#		message.body += '\n\n\n\n\n\nApprove: {}'.format(approve_link)
+				message.body += '\n\n\n\n\n\nReject: {}'.format(reject_link)
+				message.check_initialized()
+				message.send()
+				
+				
+#				message = mail.EmailMessage()
+#				message.to = ['patrick@levr.com']
+##				message = mail.AdminEmailMessage()
+#				message.sender = 'new_deal@levr.com'
+#				message.subject = 'This is awkward but... you have a new upload'
+#				
+#				
+#				message.body = levr.log_dict(deal)
+#				message.check_initialized()
+#				message.send()
+			except:
+				levr.log_error()
 			
 			api_utils.send_response(self,response)
 		

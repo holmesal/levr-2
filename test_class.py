@@ -12,6 +12,7 @@ import logging
 import webapp2
 import jinja2
 import os
+from google.appengine.api import mail
 #import api_utils
 #import json
 #from google.appengine.api import taskqueue, urlfetch, memcache
@@ -546,10 +547,30 @@ class SandboxHandler(webapp2.RequestHandler):
 	Dont delete this. This is my dev playground.
 	'''
 	def get(self):
-		deal = levr.Deal.get('ahFzfmxldnItcHJvZHVjdGlvbnIbCxIIQ3VzdG9tZXIY3-8KDAsSBERlYWwY6QcM')
-		deal.upvotes +=1
-		db.put(deal)
-		pass
+		self.response.headers['Content-Type'] = 'text/plain'
+		deal_entity = levr.Deal.all().filter('origin','levr').filter('deal_status','test').get()
+		logging.debug(deal_entity.key())
+		logging.debug(deal_entity.deal_text)
+		
+		deal = api_utils.package_deal(deal_entity, True)
+		
+#		approve_link = 'http://www.levr.com/admin/deal/{}/approve'.format(enc.encrypt_key(deal_entity.key()))
+		reject_link = 'http://www.levr.com/admin/deal/{}/reject'.format(enc.encrypt_key(deal_entity.key()))
+		
+		message = mail.AdminEmailMessage()
+#		message = mail.EmailMessage()
+#		message.to = ['patrick@levr.com','alonso@levr.com']
+#		message = mail.AdminEmailMessage()
+		message.sender = 'patrick@levr.com'
+		message.subject = 'This is awkward but... you have a new upload'
+		
+		
+		message.body = levr.log_dict(deal)
+#		message.body += '\n\n\n\n\n\nApprove: {}'.format(approve_link)
+		message.body += '\n\n\n\n\n\nReject: {}'.format(reject_link)
+		message.check_initialized()
+		message.send()
+		self.response.out.write(message.body)
 class UploadPhotoHandler(webapp2.RequestHandler):
 	'''
 	Form to upload photos for undead ninjas
