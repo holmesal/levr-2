@@ -8,6 +8,8 @@ import logging
 import time
 import urllib
 import webapp2
+from google.appengine.ext.webapp import blobstore_handlers
+import api_utils
 #import api_utils_social as social
 #from random import randint
 #import json
@@ -160,10 +162,133 @@ class TwilioCallbackHandler(webapp2.RequestHandler):
 	def post(self):
 		pass
 
+
+
+
+#===============================================================================
+# SOME NEW AGE MERCHANT SHIT!!
+#===============================================================================
+
+
+
+class ConnectMerchantHandler(webapp2.RequestHandler):
+	'''
+	A handler for creating a merchant account
+	'''
+	def post(self):
+		'''
+		@keyword email: email
+		@keyword password: str
+		@keyword businessName: str
+		@keyword vicinity: str
+		@keyword ll: geo point
+		@keyword types: list
 		
-app = webapp2.WSGIApplication([('/api/merchant/initialize', InitializeMerchantHandler),
+		@return: uid
+		@return: levrToken
+		'''
+class MerchantDealsHandler(webapp2.RequestHandler):
+	'''
+	A handler for serving all of a merchants deals for their manage page
+	'''
+	def get(self):
+		'''
+		@keyword user:
+		
+		@return: array of deal objects
+		'''
+class RequestUploadURLHandler(webapp2.RequestHandler):
+	'''
+	A handler to serve an upload url for uploading an image to the server
+	'''
+	def get(self):
+		'''
+		@return: url
+		@rtype: string
+		'''
+
+class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
+	'''
+	A handler to upload a NEW deal to the database
+	'''
+	def post(self):
+		'''
+		@keyword user: required
+		@keyword businessName: required
+		@keyword geoPoint: required
+		@keyword vicinity: required
+		@keyword types: required
+		@keyword description: required
+		@keyword dealText: required
+		@keyword distance: optional
+		
+		@requires: an image is uploaded - need the blob_key
+		
+		@return: the newly created deal object
+		@rtype: dict
+		'''
+		
+class EditDealHandler(blobstore_handlers.BlobstoreDownloadHandler):
+	'''
+	A handler to upload new data for an existing deal in the database
+	Will optionally receive an image.
+	'''
+	def post(self):
+		'''
+		@keyword user: required
+		@keyword description: optional
+		@keyword dealText: optional
+		
+		@var blob_key: optional - the blob key of the uploaded image
+		
+		@return: the new deal object
+		@rtype: dict
+		'''
+class ExpireDealHandler(webapp2.RequestHandler):
+	'''
+	A handler to expire a deal from a merchant
+	'''
+	def post(self):
+		'''
+		@keyword user: 
+		@keyword deal: 
+		
+		@requires: user is the owner of the deal
+		
+		@return: Success
+		@rtype: Boolean
+		'''
+class ReactivateDealHandler(webapp2.RequestHandler):
+	'''
+	A handler to set a deal as active
+	'''
+	def post(self):
+		'''
+		@keyword user: required
+		@keyword deal: required
+		
+		@requires: user is the owner of the deal
+		
+		@return: success
+		@rtype: Boolean
+		'''
+app = webapp2.WSGIApplication([
+								('/api/merchant/connect',ConnectMerchantHandler),
+								('/api/merchant/deals',MerchantDealsHandler),
+								('/api/merchant/upload/request',RequestUploadURLHandler),
+								('/api/merchant/upload/add',AddNewDealHandler),
+								('/api/merchant/upload/edit',EditDealHandler),
+								('/api/merchant/remove',ExpireDealHandler),
+								('/api/merchant/reactivate',ReactivateDealHandler),
+								##
+								('/api/merchant/initialize', InitializeMerchantHandler),
 								('/api/merchant/call', CallMerchantHandler),
 								('/api/merchant/verify', VerifyMerchantHandler),
 								('/api/merchant/twilioanswer', TwilioAnswerHandler),
 								('/api/merchant/twiliocheckcode', TwilioCheckCodeHandler),
-								('/api/merchant/twiliocallback', TwilioCallbackHandler)],debug=True)
+								('/api/merchant/twiliocallback', TwilioCallbackHandler)
+								],debug=True)
+
+
+
+
