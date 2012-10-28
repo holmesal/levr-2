@@ -10,6 +10,8 @@ import levr_classes as levr
 import levr_encrypt as enc
 import logging
 import webapp2
+import jinja2
+import os
 #import api_utils
 #import json
 #from google.appengine.api import taskqueue, urlfetch, memcache
@@ -676,6 +678,49 @@ class TransferDealOwnershipToUndeadHandler(webapp2.RedirectHandler):
 #			new_deals.update([deal])
 #		# finish
 #		db.put(new_deals)
+		
+
+class LandingTestHandler(webapp2.RequestHandler):
+	def get(self):
+		
+		#grab all the deals (for now)
+		deal_q = levr.Deal.all(keys_only=True)
+		deal_keys = deal_q.fetch(20)
+		deals = db.get(deal_keys)
+		
+# 		features = []
+# 		
+# 		for deal in deals:
+# 			#grab the business
+# 			business = levr.Business.get(deal.businessID)
+# 			
+# 			#format in the geojson thingy
+# 			feature = {
+# 				"geometry" 		: {"type":"Point","coordinates":[deal.geo_point.lat,deal.geo_point.lon]},
+# 				"properties" 	: {
+# 					"image"			: "/api/deal/"+enc.encrypt_key(str(deal.key()))+"/img?size=large",
+# 					"deal_text"		:	deal.deal_text,
+# 					"business_name"	:	business.business_name,
+# 					"vicinity"		:	business.vicinity
+# 				}
+# 			}
+# 			
+# 			features.append(feature)
+# 			
+# 			
+# 		
+# 		template_values = {
+# 			'features'	:	features
+# 		}
+
+		template_values = {
+			'deals'		: deals
+		}
+		
+		#launch the jinja environment
+		jinja_environment = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
+		template = jinja_environment.get_template('templates/landing_v4.html')
+		self.response.out.write(template.render(template_values))
 
 
 app = webapp2.WSGIApplication([('/new', MainPage),
@@ -691,6 +736,7 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/store_upload', StorePhotoHandler),
 								('/new/clear_old_ninjas', ClearOldNinjasHandler),
 								('/new/transfer_deals', TransferDealOwnershipToUndeadHandler)
+								('/new/landing', LandingTestHandler)
 								],debug=True)
 
 
