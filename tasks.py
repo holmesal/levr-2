@@ -404,11 +404,12 @@ class ClearOldNinjasHandler(webapp2.RequestHandler):
 		else:
 			db.delete(all_content)
 		logging.info('done!')
+IMAGE_ROTATION_TASK_URL = '/tasks/checkImageRotationTask'
 app = webapp2.WSGIApplication([('/tasks/searchFoursquareTask', SearchFoursquareTaskHandler),
 								('/tasks/businessHarmonizationTask', BusinessHarmonizationTaskHandler),
 								('/tasks/foursquareDealUpdateTask', FoursquareDealUpdateTaskHandler),
 								('/tasks/newUserTextTask', NewUserTextTaskHandler),
 								('/tasks/mergeUsersTask', MergeUsersTaskHandler),
-								('/tasks/checkImageRotationTask', RotateImageHandler),
+								(IMAGE_ROTATION_TASK_URL, RotateImageHandler),
 								('/tasks/clearOldNinjas', ClearOldNinjasHandler)
 								],debug=True)

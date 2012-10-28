@@ -7,6 +7,7 @@ import levr_classes as levr
 import logging
 import os
 import webapp2
+from tasks import IMAGE_ROTATION_TASK_URL
 #import geo.geohash as geohash
 #from datetime import datetime
 #from google.appengine.ext import db
@@ -112,10 +113,10 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 			
 			logging.info('Sending this to the task: '+str(task_params))
 			
-			taskqueue.add(url='/tasks/checkImageRotationTask',payload=json.dumps(task_params))
+			
+			taskqueue.add(url=IMAGE_ROTATION_TASK_URL,payload=json.dumps(task_params))
 				
 			
-			user = levr.Customer.get(uid)
 			#give the user some karma
 			user.karma += 5
 			#level check!

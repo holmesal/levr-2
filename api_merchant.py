@@ -11,6 +11,9 @@ import logging
 import time
 import urllib
 import webapp2
+import json
+from google.appengine.api import taskqueue
+from tasks import IMAGE_ROTATION_TASK_URL
 #import api_utils_social as social
 #from random import randint
 #import json
@@ -267,24 +270,16 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 	'''
 	@api_utils.validate(None, 'param',
 					user = True,
-					businessName = True,
-					geoPoint = True,
-					vicinity = True,
-					types = True,
+					business = True,
 					description = True,
 					dealText = True,
-					distance = True,
 					)
 	def post(self,*args,**kwargs):
 		'''
 		@keyword actor: required
-		@keyword business_name: required
-		@keyword geo_point: required
-		@keyword vicinity: required
-		@keyword types: required
+		@keyword business: required
 		@keyword description: required
 		@keyword deal_text: required
-		@keyword distance: optional
 		@keyword development: required
 		
 		@requires: an image is uploaded - need the blob_key
@@ -293,15 +288,15 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 		@rtype: dict
 		'''
 		user = kwargs.get('actor')
-		business_name = kwargs.get('businessName')
-		geo_point = kwargs.get('geoPoint')
-		vicinity = kwargs.get('vicinty')
-		types = kwargs.get('types')
+		business = kwargs.get('business')
 		description = kwargs.get('description')
+		deal_text = kwargs.get('dealText')
 		development = kwargs.get('development')
 		try:
 			
+			#===================================================================
 			# Assure that an image was uploaded
+			#===================================================================
 			if self.get_uploads():
 				upload	= self.get_uploads()[0]
 				blob_key= upload.key()
@@ -310,6 +305,59 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 			else:
 				upload_flag = False
 				raise KeyError('Image was not uploaded')
+			
+			#===================================================================
+			# Assemble the deal parameters! And create the deal!!
+			#===================================================================
+			params = {
+					'user'				: user,
+					'uid'				: user.key(),
+					'business'			: business,
+					'deal_description'	: description,
+					'deal_line1'		: deal_text,
+					'development'		: development,
+					'img_key'			: img_key
+					}
+			
+			deal_entity = levr.dealCreate(params, 'phone_existing_business', upload_flag,expires='never')
+			
+			
+			
+			#===================================================================
+			# Send deal to the task param to rotate the image if it needs to be
+			#===================================================================
+			task_params = {
+						'blob_key'	: str(deal_entity.img.key())
+						}
+			taskqueue.add(url = IMAGE_ROTATION_TASK_URL, payload = json.dumps(task_params))
+			
+			#===================================================================
+			# Aw hell.. why not give them some karma too.
+			#===================================================================
+			user.karma += 5
+			# no need to level_check on them though...
+			user.put()
+			
+			#===================================================================
+			# Create some nifty notifications
+			#===================================================================
+			try:
+				levr.create_notification('followedUpload',user.followers,user.key(),deal_entity)
+			except:
+				levr.log_error()
+			
+			#===================================================================
+			# Respond
+			#===================================================================
+			private = True
+			packaged_deal = api_utils.package_deal(deal_entity, private)
+			
+			response = {
+					'deal'	: packaged_deal
+					}
+			
+			api_utils.send_response(self,response, user)
+			
 		except Exception,e:
 			levr.log_error(e)
 			api_utils.send_error(self,'Server Error')
@@ -332,6 +380,7 @@ class EditDealHandler(blobstore_handlers.BlobstoreDownloadHandler):
 		@return: the new deal object
 		@rtype: dict
 		'''
+		
 class ExpireDealHandler(webapp2.RequestHandler):
 	'''
 	A handler to expire a deal from a merchant
