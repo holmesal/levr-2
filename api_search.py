@@ -347,7 +347,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			#===================================================================
 			# Package deals 
 			#===================================================================
-			
+			# TODO: increment view counters for deals
 			#package deals
 			t1 = datetime.now()
 			#toop[3] is the deal

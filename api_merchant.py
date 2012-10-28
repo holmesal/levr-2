@@ -1,19 +1,17 @@
-from google.appengine.api import urlfetch
+from google.appengine.api import taskqueue, urlfetch
 from google.appengine.ext import blobstore, db
+from google.appengine.ext.blobstore import BlobInfo
 from google.appengine.ext.webapp import blobstore_handlers
-import api_utils
-import api_utils
+from tasks import IMAGE_ROTATION_TASK_URL
 import api_utils
 import base64
+import json
 import levr_classes as levr
 import levr_encrypt as enc
 import logging
 import time
 import urllib
 import webapp2
-import json
-from google.appengine.api import taskqueue
-from tasks import IMAGE_ROTATION_TASK_URL
 #import api_utils_social as social
 #from random import randint
 #import json
@@ -172,13 +170,14 @@ class TwilioCallbackHandler(webapp2.RequestHandler):
 #===============================================================================
 # SOME NEW AGE MERCHANT SHIT!!
 #===============================================================================
-
-
+# TODO: make some unit tests for this
 
 class ConnectMerchantHandler(webapp2.RequestHandler):
 	'''
 	A handler for creating a merchant account
 	'''
+
+
 	@api_utils.validate(None, 'param',
 					email = True,
 					password = True,
@@ -186,12 +185,15 @@ class ConnectMerchantHandler(webapp2.RequestHandler):
 					vicinity = True,
 					geoPoint = True,
 					types = True,
+					development = False,
 					)
 	@api_utils.private
 	def post(self,*args,**kwargs):
 		'''
 		Checks for existing account with that business
 		If the account exists, return true
+		
+		@attention: Only handles the case where a single account is tied to no more than one business
 		
 		@keyword email: required
 		@keyword password: required
@@ -201,9 +203,15 @@ class ConnectMerchantHandler(webapp2.RequestHandler):
 		@keyword types: require
 		@keyword development: optional
 		
-		@return: uid
-		@return: levrToken
+		@return: packaged_user with levrToken, packaged_business
 		'''
+		# for invalid credential responses
+		user_doesnt_own_business = 'User does not own that business'
+		# for packaging
+		private = True
+		followers = False
+		
+		# input values
 		email = kwargs.get('email')
 		password = kwargs.get('password')
 		business_name = kwargs.get('business_name')
@@ -211,13 +219,59 @@ class ConnectMerchantHandler(webapp2.RequestHandler):
 		geo_point = kwargs.get('geo_point')
 		types = kwargs.get('types')
 		development = kwargs.get('development')
-		
+		try:
+			user = levr.Customer.all().filter('email',email).get()
+			requested_business = levr.Business.all().filter('business_name',business_name).filter('vicinity',vicinity).get()
+			if user:
+				# check password
+				password = enc.encrypt_password(password)
+				assert user.pw == password, 'Password does not match username'
+				
+				# user should have a business
+				try:
+					business = user.businesses.get()
+				except:
+					# if the 
+					assert False, user_doesnt_own_business
+				
+				# if the user has a business, it should be the business that was requested
+				assert business == requested_business, user_doesnt_own_business
+				
+				
+			else:
+				# Create an account for the user with that business
+				user = levr.create_new_user(tester=development)
+				if not requested_business:
+					business = levr.create_new_business(business_name,vicinity,geo_point,types,owner=user,development=development)
+				else:
+					business = requested_business
+					# 
+					business.owner = user
+					business.put()
+			# package and send
+			packaged_user = api_utils.package_user(user, private, followers,send_token=True)
+			packaged_business = api_utils.package_business(business)
+			response = {
+					'user' : packaged_user,
+					'business' : packaged_business
+					}
+			api_utils.send_response(self,response)
+			# TODO: Merchant connect - handle all cases - new and existing accounts
+		except AssertionError,e:
+			api_utils.send_error(self,e)
+		except Exception,e:
+			levr.log_error(e)
+			api_utils.send_error(self,'Server Error')
+			
+		# TODO: add a property to customer that says whether or not the user is merchant
+		# TODO: send the founders a notification when a business signs up
 class MerchantDealsHandler(webapp2.RequestHandler):
 	'''
 	A handler for serving all of a merchants deals for their manage page
 	'''
 	@api_utils.validate(None, 'param',
-					user = True
+					user = True,
+					levrToken = True
 					)
 	@api_utils.private
 	def get(self,*args,**kwargs):
@@ -226,12 +280,37 @@ class MerchantDealsHandler(webapp2.RequestHandler):
 		
 		@return: array of deal objects
 		'''
+		user = kwargs.get('actor')
+		try:
+			deals = levr.Deal.all().ancestor(user).fetch(None)
+			
+			# Sort the deals
+			creation_dates = [deal.get('date_created') for deal in deals]
+			
+			toop = creation_dates,deals
+			sorted_toop = sorted(toop)
+			sorted_dates,sorted_deals = zip(*sorted_toop) #@UnusedVariable: sorted_dates
+			
+			# package and send
+			private = True
+			packaged_deals = api_utils.package_deal_multi(sorted_deals, private)
+			
+			response = {
+					'deals' : packaged_deals
+					}
+			api_utils.send_response(self,response, user)
+			
+		except Exception,e:
+			levr.log_error(e)
+			api_utils.send_error(self,'Server Error')
+			
 class RequestUploadURLHandler(webapp2.RequestHandler):
 	'''
 	A handler to serve an upload url for uploading an image to the server
 	'''
 	@api_utils.validate(None, 'param',
 					user = True,
+					levrToken = True,
 					action = True,
 					)
 	@api_utils.private
@@ -270,6 +349,7 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 	'''
 	@api_utils.validate(None, 'param',
 					user = True,
+					levrToken = True,
 					business = True,
 					description = True,
 					dealText = True,
@@ -319,7 +399,8 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 					'img_key'			: img_key
 					}
 			
-			deal_entity = levr.dealCreate(params, 'phone_existing_business', upload_flag,expires='never')
+			#TODO: add this case to the create_deal function
+			deal_entity = levr.dealCreate(params, 'phone_merchant', upload_flag,expires='never')
 			
 			
 			
@@ -368,23 +449,81 @@ class EditDealHandler(blobstore_handlers.BlobstoreDownloadHandler):
 	A handler to upload new data for an existing deal in the database
 	Will optionally receive an image.
 	'''
+	@api_utils.validate(None, 'param',
+					user = True,
+					deal = True,
+					levrToken = True,
+					description = False,
+					dealText = False,
+					)
+	@api_utils.private
 	def post(self,*args,**kwargs):
 		'''
 		@keyword actor: required
+		@keyword deal: required
 		@keyword description: optional
 		@keyword dealText: optional
-		@keyword development: 
 		
-		@var blob_key: optional - the blob key of the uploaded image
+		@var new_img_key: optional - the blob key of the uploaded image
 		
 		@return: the new deal object
 		@rtype: dict
 		'''
+		user = kwargs.get('actor')
+		deal = kwargs.get('deal')
+		description = kwargs.get('description',None)
+		deal_text = kwargs.get('deal_text',None)
+		try:
+			# assure that the user is the owner of the deal
+			assert deal.parent_key() == user.key(), 'User does not own that deal'
+			
+			#===================================================================
+			# Check for image upload
+			#===================================================================
+			if self.get_uploads():
+				new_img_key	= self.get_uploads()[0].key()
+				# grab old key so we can delete it
+				old_img_key = deal.img
+				# replace with new key
+				deal.img = new_img_key
+				
+				# delete that old key
+				BlobInfo.get(old_img_key).delete()
+			else:
+				assert description or deal_text, 'Are you trying to edit the deal or what? Send me something to update.'
+			#===================================================================
+			# Update new deal informations
+			#===================================================================
+			if description:
+				deal.description = description
+			if deal_text:
+				deal.deal_text = deal_text
+			
+			deal.put()
+			
+			private = True
+			packaged_deal = api_utils.package_deal(deal, private)
+			response = {
+					'deal'	: packaged_deal
+					}
+			api_utils.send_response(response, user)
+			
+		except AssertionError,e:
+			api_utils.send_error(self,e)
+		except Exception,e:
+			levr.log_error(e)
+			api_utils.send_error(self,'Server Error')
+			
 		
 class ExpireDealHandler(webapp2.RequestHandler):
 	'''
 	A handler to expire a deal from a merchant
 	'''
+	@api_utils.validate(None,'param',
+					user = True,
+					levrToken = True,
+					deal = True
+					)
 	def post(self,*args,**kwargs):
 		'''
 		@keyword actor: 
@@ -395,20 +534,75 @@ class ExpireDealHandler(webapp2.RequestHandler):
 		@return: Success
 		@rtype: Boolean
 		'''
+		user = kwargs.get('actor')
+		deal = kwargs.get('deal')
+		try:
+			# assure that the user is the owner of the deal
+			assert deal.parent_key() == user.key(), 'User does not own that deal'
+			
+			deal.deal_status = 'expired'
+			
+			deal.put()
+			
+			private = True
+			packaged_deal = api_utils.package_deal(deal, private)
+			
+			response = {
+					'deal'	: packaged_deal
+					}
+			
+			api_utils.send_response(self,response, user)
+			
+		except AssertionError,e:
+			api_utils.send_error(self,e)
+		except Exception,e:
+			levr.log_error(e)
+			api_utils.send_error(self,'Server Error')
+		
 class ReactivateDealHandler(webapp2.RequestHandler):
 	'''
 	A handler to set a deal as active
 	'''
+	@api_utils.validate(None,'param',
+					user = True,
+					levrToken = True,
+					deal = True,
+					)
 	def post(self,*args,**kwargs):
 		'''
 		@keyword actor: required
 		@keyword deal: required
-		
+		@keyword development: required
 		@requires: user is the owner of the deal
 		
 		@return: success
 		@rtype: Boolean
 		'''
+		user = kwargs.get('actor')
+		deal = kwargs.get('deal')
+		development = kwargs.get('development')
+		
+		try:
+			#assure that this user does own the deal
+			assert deal.parent_key() == user.key()
+			
+			if development:
+				deal.deal_status = 'test'
+			else:
+				deal.deal_status = 'active'
+			
+			deal.put()
+			
+			private = True
+			packaged_deal = api_utils.package_deal(deal, private)
+			response = {
+					'deal'	: packaged_deal
+					}
+			
+			api_utils.send_response(response, user)
+			
+		except AssertionError,e:
+			api_utils.send_error(self,e)
 
 # Quality Assurance for generating the upload urls
 NEW_DEAL_UPLOAD_URL = '/api/merchant/upload/add'

@@ -66,6 +66,37 @@ def create_new_user(**kwargs):
 	user = level_check(user)
 	user.put()
 	return user
+def create_new_business(business_name,vicinity,geo_point,types,**kwargs):
+	'''
+	Creates a new business entity with an optional owner.
+	Puts the business before returning
+	
+	@type business_name: str
+	@type vicinity: str
+	@type geo_point: db.GeoPt
+	@type types: list
+	
+	@keyword owner: the owner of the business
+	@type owner: Customer
+	'''
+	assert type(geo_point) == db.GeoPt, 'Must pass geo_point as a db.GeoPt property'
+	assert type(types) == list, 'Must pass types as a list'
+	
+	
+	business = Business(
+					business_name = business_name,
+					vicinity = vicinity,
+					geo_point = geo_point,
+					types = types
+					)
+	
+	owner = kwargs.get('owner',None)
+	if owner:
+		business.owner = owner
+		
+	business.put()
+	
+	return business
 	
 def level_check(user):
 	'''updates the level of a user. this function should be run after someone upvotes a user or anything else happens.'''
@@ -1065,24 +1096,27 @@ class Business(db.Model):
 	geo_point		= db.GeoPtProperty() #latitude the longitude
 	geo_hash		= db.StringProperty()
 	types			= db.ListProperty(str)
-	targeted		= db.BooleanProperty(default=False)
+	
 	owner			= db.ReferenceProperty(Customer,collection_name='businesses')
 	upload_email	= db.EmailProperty()
-	creation_date	= db.DateTimeProperty(auto_now_add=True)
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	date_last_edited= db.DateTimeProperty(auto_now=True)
-	widget_id		= db.StringProperty(default=create_unique_id())
 	foursquare_id	= db.StringProperty()
 	foursquare_name	= db.StringProperty()
-	foursquare_linked	=	db.BooleanProperty(default=False)
+	foursquare_linked	= db.BooleanProperty(default=False)
 	phone			= db.StringProperty()
 	activation_code = db.StringProperty()
-	locu_id			= db.StringProperty()
+	# TODO: give a business karma when a deal at the business gets upvotes
 	karma			= db.IntegerProperty(default=0)
 	
 	#metadata used for migrations
 	model_version	= db.IntegerProperty(default=1)
 	
+	# deprecated
+	targeted		= db.BooleanProperty()
+	locu_id			= db.StringProperty()
+	widget_id		= db.StringProperty(default=create_unique_id())
+	creation_date	= db.DateTimeProperty(auto_now_add=True)
 	def create_tags(self):
 		#create tags list
 		tags = []
@@ -1110,7 +1144,6 @@ class Deal(polymodel.PolyModel):
 	business		= db.ReferenceProperty(Business)
 	origin			= db.StringProperty(default='levr')
 	external_url	= db.StringProperty()
-	locu_id			= db.StringProperty()
 	foursquare_id	= db.StringProperty()
 	foursquare_type	= db.StringProperty()
 	
@@ -1152,11 +1185,11 @@ class Deal(polymodel.PolyModel):
 	barcode			= blobstore.BlobReferenceProperty()
 	secondary_name 	= db.StringProperty(default='') #== with purchase of
 	deal_type 		= db.StringProperty(choices=set(["single","bundle"])) #two items or one item
-	count_redeemed 	= db.IntegerProperty(default = 0) 	#total redemptions
+	count_redeemed 	= db.IntegerProperty() 	#total redemptions
 	vicinity		= db.StringProperty()
-	business_name 	= db.StringProperty(default='') #name of business
+	business_name 	= db.StringProperty() #name of business
 	is_exclusive	= db.BooleanProperty(default=False)
-	
+	locu_id			= db.StringProperty()
 	
 #===============================================================================
 	#===========================================================================
