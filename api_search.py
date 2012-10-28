@@ -357,11 +357,27 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			if is_empty == False:
 				logging.debug('\n\n\t\t NOT EMPTY \n\n')
 				#only package the deals that have a matching tag
-				packaged_deals = [api_utils.package_deal(toop[3],rank=toop[0],distance=toop[2]) for toop in accepted_deals_tuple_list]
+				lst = accepted_deals_tuple_list
+				
 			else:
 				logging.debug('\n\n\t\t EMPTY\n\n')
 				#package all of the deals
-				packaged_deals = [api_utils.package_deal(toop[3],rank=toop[0],distance=toop[2]) for toop in tuple_list]
+				lst = tuple_list
+#				packaged_deals = [api_utils.package_deal(toop[3],rank=toop[0],distance=toop[2]) for toop in tuple_list]
+			
+			# Only try to package deals if they are actually there
+			if lst:
+				# unzip list of tuples into various lists
+				ranks,karmas,distances,deals = zip(*lst) #@UnusedVariable
+				logging.info(ranks)
+				logging.info(karmas)
+				logging.info(distances)
+				logging.info(deals)
+				packaged_deals = api_utils.package_deal_multi(deals,rank=ranks,distance=distances)
+			else:
+				# No deals were found in the db at all!
+				packaged_deals = []
+			
 			t2 = datetime.now()
 			
 			package_time = t2-t1

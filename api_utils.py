@@ -55,22 +55,96 @@ def create_pin_color(deal):
 
 def package_deal_multi(deals,private=False,*args,**kwargs):
 	'''
-	Batch packages a list of deals
+	Batch packages a list of deals - prefetching related entities
 	
 	@param deals: The deal entities to be packaged for output
 	@type deals: [levr.Deal,]
 	@param private: Determines the privacy level of the information
 	@type private: boolean
 	'''
-	pass
+#	assert type(deals) == list, 'Must pass deals as a list; type = '+str(type(deals))
 	
+	# Remove deals that do not exist
+	deals = filter(lambda x: x,deals)
+	
+	# deal meta information
+	ranks = kwargs.get('ranks',[None for deal in deals]) #@UnusedVariable
+	distances = kwargs.get('distances',[None for deal in deals]) #@UnusedVariable
+	
+	
+	
+	
+	
+	
+	
+	# prefetch deal owners
+	owner_keys = [deal.key().parent() for deal in deals]
+	owners = db.get(owner_keys)
+	# prefetch deal businesses
+	business_keys = [deal.businessID for deal in deals]
+	businesses = db.get(business_keys)
+	
+	# Remove deals that have bad references...
+	data = zip(deals,owners,businesses,ranks,distances)
+	# Remove deals without valid owners
+	data_sans_Nonetype_owners = filter(lambda x: x[1],data)
+	# Remove deals without valid businesses
+	new_data = filter(lambda x: x[2],data_sans_Nonetype_owners)
+	
+	# Notify the benevolent server monitors that there is some missing shit in here. BAD!
+	if data != new_data:
+		
+		levr.log_error('There are deals with missing references: ')#+str([deal.key() for deal in deals]))
+	
+	
+	# Continue without the filtered deals
+	return package_prefetched_deal_multi(new_data, private)
+	
+def package_prefetched_deal_multi(data,private=False,*args,**kwargs):
+	'''
+	
+	@param data: packaged deal information with prefetched related entities
+	@type data: list of tuples: [(Deal,Customer,Business,int or None, float or None),]
+	@param private: Set the data output level
+	@type private: Boolean
+	'''
+	
+	packaged_deals = []
+	for point in data:
+		# Unpack data
+		deal,owner,business,rank,distance = point
+		packaged_deal = {
+	# 			'barcodeImg'	: deal.barcode,
+				'business'		: package_business(business),
+	 			'dateUploaded'	: str(deal.date_uploaded)[:19],
+				'dealID'		: enc.encrypt_key(deal.key()),
+				'dealText'		: deal.deal_text,
+				'description'	: deal.description,
+				'largeImg'		: create_img_url(deal,'large'),
+				'smallImg'		: create_img_url(deal,'small'),
+				'status'		: deal.deal_status,
+				'shareURL'		: create_share_url(deal),
+				'tags'			: deal.tags,
+				'vote'			: deal.upvotes - deal.downvotes,
+				'pinColor'		: create_pin_color(deal),
+				'karma'			: deal.karma,
+				'origin'		: deal.origin,
+				'owner'			: package_user(owner,False,False)
+				}
+		
+		if rank: packaged_deal['rank'] = rank
+		if distance: packaged_deal['distance'] = distance
+		
+		if private == True:
+			packaged_deal.update({})
+		
+		packaged_deals.append(packaged_deal)
+		
+		
+	return packaged_deals
 def package_deal(deal,private=False,*args,**kwargs):
 #	logging.debug(deal.businessID)
 #	logging.debug(deal.key())
-	try:
-		logging.debug('deal_text: '+str(deal.deal_text))
-	except:
-		logging.debug(deal.deal_text)
 #	logging.debug(str(deal.geo_point))
 	packaged_deal = {
 # 			'barcodeImg'	: deal.barcode,
@@ -84,7 +158,6 @@ def package_deal(deal,private=False,*args,**kwargs):
 			'status'		: deal.deal_status,
 			'shareURL'		: create_share_url(deal),
 			'tags'			: deal.tags,
-# 			'dateEnd'		: str(deal.date_end)[:19],
 			'vote'			: deal.upvotes - deal.downvotes,
 			'pinColor'		: create_pin_color(deal),
 			'karma'			: deal.karma,

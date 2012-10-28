@@ -676,8 +676,8 @@ class TransferDealOwnershipToUndeadHandler(webapp2.RedirectHandler):
 #			new_deals.update([deal])
 #		# finish
 #		db.put(new_deals)
-		
-		
+
+
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload', DatabaseUploadHandler),
 								('/new/test', TestHandler),

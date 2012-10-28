@@ -38,7 +38,7 @@ class FloatingContentNewHandler(webapp2.RequestHandler):
 				deal = floating_content.deal
 				assert deal,'Deal could not be found'
 				#echo bcak the deal
-				packaged_deals = [api_utils.package_deal()]
+				packaged_deals = [api_utils.package_deal(deal)]
 				response.update({'deals':packaged_deals})
 			
 			
@@ -125,17 +125,24 @@ class FloatingContentExistingHandler(webapp2.RequestHandler):
 			response = {'action':action}
 			
 			if action == 'upload':
+				business = floating_content.business
+				assert business, 'Business could not be found'
 				#echo back the business
-				response.update({'business':api_utils.package_business(floating_content.business)})
+				response.update({'business':api_utils.package_business(business)})
 			elif action == 'deal':
+				deal = floating_content.deal
+				assert deal,'Deal could not be found'
 				#echo bcak the deal
-				packaged_deals = [api_utils.package_deal(floating_content.deal)]
+				packaged_deals = [api_utils.package_deal(deal)]
 				response.update({'deals':packaged_deals})
 				
 			#respond, including the token because why the hell not
 			#response.update({'user':api_utils.package_user(user,send_token=True)})
 			
 			api_utils.send_response(self,response)
+		except AssertionError,e:
+			levr.log_error(e)
+			api_utils.send_error(self,e)
 		except Exception,e:
 			levr.log_error(e)
 			api_utils.send_error(self,'Server Error')
