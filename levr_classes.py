@@ -1258,7 +1258,7 @@ class Deal(polymodel.PolyModel):
 			counter = DealViewCounter(key_name=shard_name,parent=self)
 		counter.count += 1
 		counter.put()
-		
+		return
 NUM_DEAL_VIEW_COUNTERS = 10
 class DealViewCounter(db.Model):
 	'''

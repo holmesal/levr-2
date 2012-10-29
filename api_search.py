@@ -9,6 +9,7 @@ import levr_classes as levr
 import logging
 import random
 import webapp2
+from tasks import INCREMENT_DEAL_VIEW_URL
 
 
 
@@ -347,7 +348,6 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			#===================================================================
 			# Package deals 
 			#===================================================================
-			# TODO: increment view counters for deals
 			#package deals
 			t1 = datetime.now()
 			#toop[3] is the deal
@@ -376,13 +376,14 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				packaged_deals = api_utils.package_deal_multi(deals,rank=ranks,distance=distances)
 				
 				# add deal views for each deal
-				# TODO: send this to a task instead
 				try:
-					for deal in deals:
-						deal.increment_views()
-						logging.debug(deal.views)
-				except Exception,e:
-					levr.log_error(e)
+					payload = {
+							'deal_keys' : [str(deal.key()) for deal in deals]
+							}
+					taskqueue.add(url=INCREMENT_DEAL_VIEW_URL,payload=json.dumps(payload))
+				except:
+					levr.log_error()
+				
 			else:
 				# No deals were found in the db at all!
 				packaged_deals = []
@@ -502,6 +503,9 @@ class SearchQueryHandler(webapp2.RequestHandler):
 					'foursquare_deals'	: foursquare_deals.__len__(),
 					'deals'				: packaged_deals
 					}
+			
+			
+			
 			api_utils.send_response(self,response,user)
 		except:
 			levr.log_error()

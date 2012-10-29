@@ -141,7 +141,6 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 			# Send notification to founders
 			#===================================================================
 			try:
-				#TODO: format this email better
 		#		approve_link = 'http://www.levr.com/admin/deal/{}/approve'.format(enc.encrypt_key(deal_entity.key()))
 				reject_link = 'http://www.levr.com/admin/deal/{}/reject'.format(enc.encrypt_key(deal_entity.key()))
 				
@@ -151,10 +150,16 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 				message.sender = 'patrick@levr.com'
 				message.subject = 'New Upload'
 				
+				message.html = '<img src="{}"><br>'.format(deal.get('smallImg'))
+				message.html += '<h2>{}</h2>'.format(deal_entity.deal_text)
+				message.html += '<h3>{}</h3>'.format(deal_entity.description)
+				message.html += '<p>Uploaded by: {}</p>'.format(user.display_name)
+				message.html += '<p>deal_status: {}</p>'.format(deal_entity.deal_status)
+				message.html += '<br>Reject: {}<br><br>'.format(reject_link)
+				message.html += levr.log_dict(deal, None, '<br>')
 				
-				message.body = levr.log_dict(deal)
 		#		message.body += '\n\n\n\n\n\nApprove: {}'.format(approve_link)
-				message.body += '\n\n\n\n\n\nReject: {}'.format(reject_link)
+				
 				message.check_initialized()
 				message.send()
 				

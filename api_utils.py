@@ -299,6 +299,7 @@ def create_img_url(entity,size):
 	else:
 		return ''
 
+
 def private(handler_method):
 	'''
 	Decorator used to reject calls that require private auth and do not have them

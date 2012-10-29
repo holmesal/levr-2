@@ -169,7 +169,6 @@ class TwilioCallbackHandler(webapp2.RequestHandler):
 #===============================================================================
 # SOME NEW AGE MERCHANT SHIT!!
 #===============================================================================
-# TODO: make some unit tests for this
 
 class ConnectMerchantHandler(webapp2.RequestHandler):
 	'''
@@ -307,6 +306,8 @@ class MerchantDealsHandler(webapp2.RequestHandler):
 				
 				# package and send
 				private = True
+				# TODO: Add deal views to the packaged deals
+				# TODO: send promotionID back with the deals
 				packaged_deals = api_utils.package_deal_multi(sorted_deals, private)
 			else:
 				packaged_deals = []
@@ -659,6 +660,8 @@ class ReactivateDealHandler(webapp2.RequestHandler):
 		except Exception,e:
 			api_utils.send_error(self,'Server Error')
 
+
+
 # Quality Assurance for generating the upload urls
 NEW_DEAL_UPLOAD_URL = '/api/merchant/upload/add'
 EDIT_DEAL_UPLOAD_URL = '/api/merchant/upload/edit'
@@ -670,7 +673,9 @@ app = webapp2.WSGIApplication([
 								(EDIT_DEAL_UPLOAD_URL,EditDealHandler),
 								('/api/merchant/remove',ExpireDealHandler),
 								('/api/merchant/reactivate',ReactivateDealHandler),
+								# TODO: add promotion endpoints
 								##
+								
 								('/api/merchant/initialize', InitializeMerchantHandler),
 								('/api/merchant/call', CallMerchantHandler),
 								('/api/merchant/verify', VerifyMerchantHandler),

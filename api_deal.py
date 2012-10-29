@@ -289,7 +289,6 @@ class ReportHandler(webapp2.RequestHandler):
 				}
 				taskqueue.add(url='/tasks/foursquareDealUpdateTask',payload=json.dumps(task_params))
 			
-			# TODO: add user information - display_name
 			#send notification via email
 			message = mail.EmailMessage(
 				sender	="LEVR AUTOMATED <patrick@levr.com>",
