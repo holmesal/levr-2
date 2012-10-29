@@ -141,6 +141,7 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 			# Send notification to founders
 			#===================================================================
 			try:
+				#TODO: format this email better
 		#		approve_link = 'http://www.levr.com/admin/deal/{}/approve'.format(enc.encrypt_key(deal_entity.key()))
 				reject_link = 'http://www.levr.com/admin/deal/{}/reject'.format(enc.encrypt_key(deal_entity.key()))
 				

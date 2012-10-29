@@ -250,11 +250,6 @@ class ReportHandler(webapp2.RequestHandler):
 	def get(self,*args,**kwargs):
 		'''
 		Input: uid
-		Output:{
-			meta:{
-				success
-				errorMsg
-				}
 		'''
 		try:
 			logging.debug("REPORT\n\n\n")
@@ -303,6 +298,7 @@ class ReportHandler(webapp2.RequestHandler):
 			
 			logging.debug(message)
 			body = 'New Reported Deal\n\n'
+			body += levr.log_model_props(user, ['email','display_name',''])
 			body += str(user.email) +' is reporting '+str(deal.deal_text)
 			message.body = body
 			logging.debug(message.body)

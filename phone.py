@@ -727,24 +727,12 @@ class phone(webapp2.RequestHandler):
 				
 				#get human readable info for email
 				deal = levr.Deal.get(dealID)
-				business_name = deal.business_name
-				logging.debug(business_name)
+				business = db.get(deal.businessID)
+				business_name = business.business_name
 				
-				if deal.deal_type == "single":
-					deal_text = deal.deal_text
-				else:
-					deal_text = deal.deal_text +" with purchase of "+deal.secondary_name
-				
+				deal_text = deal.deal_text
 				user = levr.Customer.get(uid)
-				alias = user.alias
-				
-				deal_class = str(deal.class_name())
-				if deal_class == 'CustomerDeal':
-					deal_kind = "Ninja Deal"
-				elif deal_class == 'Deal':
-					deal_kind = "Business Deal"
-				else:
-					raise ValueError('deal class_name not recognized')
+				alias = user.display_name
 				
 				logging.debug(report)
 				
@@ -757,10 +745,10 @@ class phone(webapp2.RequestHandler):
 				logging.debug(message)
 				body = 'New Reported Deal\n\n'
 				body += 'reporter uid: '  +str(uid)+"\n\n"
-				body += 'reporter alias: ' +str(alias)+"\n\n"
+				body += 'reporter display_name: ' +str(alias)+"\n\n"
 				body += 'Business name: '+str(business_name)+"\n\n"
+				body += 'Business vicinity: '+str(business.vicinity)+"\n\n"
 				body += "Deal: "+str(deal_text)+"\n\n"
-				body += "Deal Kind: "+deal_kind+"\n\n"
 				body += "dealID: "+str(dealID)+"\n\n"
 				message.body = body
 				logging.debug(message.body)

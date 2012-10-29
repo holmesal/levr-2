@@ -709,8 +709,7 @@ class LandingTestHandler(webapp2.RequestHandler):
 # 		deal_keys = deal_q.fetch(50)
 # 		deals = db.get(deal_keys)
 		
-		#TODO:
-		#grab deals from a few specific geohashes that cover boston
+		#TODO: grab deals from a few specific geohashes that cover boston
 		geo_hash_set = ['drt3','drmr','drt8','drt0','drt1','drt9','drmx','drmp','drt2']
 		
 		logging.debug('\n\n\n \t\t\t START QUERYING \n\n\n')

@@ -433,7 +433,6 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 					'img_key'			: img_key
 					}
 			
-			#TODO: add this case to the create_deal function
 			deal_entity = levr.dealCreate(params, 'phone_merchant', upload_flag)
 			
 			
