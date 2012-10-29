@@ -273,7 +273,7 @@ def send_response(self,response,user=None):
 def create_share_url(deal_entity):
 	#creates a share url for a deal
 	share_url = host_url+deal_entity.share_id
-	logging.info('share url: '+share_url)
+	#logging.info('share url: '+share_url)
 	return share_url
 	
 def create_img_url(entity,size):
@@ -781,6 +781,9 @@ def send_img(self,blob_key,size):
 		elif size == 'widget':
 			aspect_ratio	= 1.
 			output_width	= 150.
+		elif size == 'webMapView':
+			aspect_ratio	= 1.5
+			output_width	= 400.
 		else:
 			raise KeyError('Invalid image size: '+size)
 		
