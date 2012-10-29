@@ -37,7 +37,7 @@ class ConnectFacebookHandler(webapp2.RequestHandler):
 			api_utils.send_response(self,response,user)
 		except AssertionError,e:
 			levr.log_error()
-			api_utils.send_error(self,'{}'.format(e))
+			api_utils.send_error(self,'{}'.format(e.message))
 		except:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
@@ -92,7 +92,7 @@ class ConnectFoursquareHandler(webapp2.RequestHandler):
 			api_utils.send_response(self,response,user)
 		except AssertionError,e:
 			levr.log_error()
-			api_utils.send_error(self,'{}'.format(e))
+			api_utils.send_error(self,'{}'.format(e.message))
 		except:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')

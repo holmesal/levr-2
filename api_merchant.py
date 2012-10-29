@@ -16,7 +16,6 @@ import webapp2
 #from random import randint
 #import json
 
-
 class InitializeMerchantHandler(webapp2.RequestHandler):
 	def post(self):
 		#curl --data 'businessName=alonsostestbusiness&vicinity=testVicinity&phone=%2B16052610083&geoPoint=-71.234,43.2345' http://www.levr.com/api/merchant/initialize | python -mjson.tool
@@ -180,14 +179,13 @@ class ConnectMerchantHandler(webapp2.RequestHandler):
 
 	@api_utils.validate(None, 'param',
 					email = True,
-					password = True,
+					pw = True,
 					businessName = True,
 					vicinity = True,
-					geoPoint = True,
+					ll = True,
 					types = True,
 					development = False,
 					)
-	@api_utils.private
 	def post(self,*args,**kwargs):
 		'''
 		Checks for existing account with that business
@@ -213,13 +211,14 @@ class ConnectMerchantHandler(webapp2.RequestHandler):
 		
 		# input values
 		email = kwargs.get('email')
-		password = kwargs.get('password')
+		password = kwargs.get('pw')
 		business_name = kwargs.get('business_name')
 		vicinity = kwargs.get('vicinity')
-		geo_point = kwargs.get('geo_point')
+		geo_point = kwargs.get('ll')
 		types = kwargs.get('types')
 		development = kwargs.get('development')
 		try:
+			types = types.split(',')
 			user = levr.Customer.all().filter('email',email).get()
 			requested_business = levr.Business.all().filter('business_name',business_name).filter('vicinity',vicinity).get()
 			if user:
@@ -258,7 +257,7 @@ class ConnectMerchantHandler(webapp2.RequestHandler):
 			api_utils.send_response(self,response)
 			# TODO: Merchant connect - handle all cases - new and existing accounts
 		except AssertionError,e:
-			api_utils.send_error(self,e)
+			api_utils.send_error(self,e.message)
 		except Exception,e:
 			levr.log_error(e)
 			api_utils.send_error(self,'Server Error')
@@ -509,7 +508,7 @@ class EditDealHandler(blobstore_handlers.BlobstoreDownloadHandler):
 			api_utils.send_response(response, user)
 			
 		except AssertionError,e:
-			api_utils.send_error(self,e)
+			api_utils.send_error(self,e.message)
 		except Exception,e:
 			levr.log_error(e)
 			api_utils.send_error(self,'Server Error')
@@ -602,7 +601,9 @@ class ReactivateDealHandler(webapp2.RequestHandler):
 			api_utils.send_response(response, user)
 			
 		except AssertionError,e:
-			api_utils.send_error(self,e)
+			api_utils.send_error(self,e.message)
+		except Exception,e:
+			api_utils.send_error(self,'Server Error')
 
 # Quality Assurance for generating the upload urls
 NEW_DEAL_UPLOAD_URL = '/api/merchant/upload/add'

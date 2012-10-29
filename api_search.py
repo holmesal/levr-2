@@ -376,9 +376,11 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				packaged_deals = api_utils.package_deal_multi(deals,rank=ranks,distance=distances)
 				
 				# add deal views for each deal
+				# TODO: send this to a task instead
 				try:
 					for deal in deals:
 						deal.increment_views()
+						logging.debug(deal.views)
 				except Exception,e:
 					levr.log_error(e)
 			else:

@@ -50,7 +50,7 @@ class FloatingContentNewHandler(webapp2.RequestHandler):
 			api_utils.send_response(self,response)
 		except AssertionError,e:
 			levr.log_error(e)
-			api_utils.send_error(self,e)
+			api_utils.send_error(self,e.message)
 		except Exception,e:
 			levr.log_error(e)
 			api_utils.send_error(self,'Server Error')
@@ -142,7 +142,7 @@ class FloatingContentExistingHandler(webapp2.RequestHandler):
 			api_utils.send_response(self,response)
 		except AssertionError,e:
 			levr.log_error(e)
-			api_utils.send_error(self,e)
+			api_utils.send_error(self,e.message)
 		except Exception,e:
 			levr.log_error(e)
 			api_utils.send_error(self,'Server Error')

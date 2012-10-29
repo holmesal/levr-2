@@ -1210,13 +1210,13 @@ class Deal(polymodel.PolyModel):
 		'''
 		Increments the number of times this deal has been viewed
 		'''
-		# TODO: add shards to memcache
+		# TODO: add shards to memcache?
 		index = random.randint(0,NUM_DEAL_VIEW_COUNTERS-1)
 		shard_name = 'shard'+str(index)
 		counter = DealViewCounter.get_by_key_name(shard_name,self)
 		if counter is None:
 			counter = DealViewCounter(key_name=shard_name,parent=self)
-		counter += 1
+		counter.count += 1
 		counter.put()
 		
 NUM_DEAL_VIEW_COUNTERS = 10

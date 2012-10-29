@@ -127,7 +127,7 @@ class UpvoteHandler(webapp2.RequestHandler):
 			api_utils.send_response(self,response,user)
 		except AssertionError,e:
 			levr.log_error(e)
-			api_utils.send_error(self,e)
+			api_utils.send_error(self,e.message)
 		except:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
@@ -201,7 +201,7 @@ class DownvoteHandler(webapp2.RequestHandler):
 			api_utils.send_response(self,response,user)
 		except AssertionError,e:
 			levr.log_error()
-			api_utils.send_error(self,e)
+			api_utils.send_error(self,e.message)
 		except:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
@@ -372,8 +372,8 @@ class DealInfoHandler(webapp2.RequestHandler):
 			}
 			api_utils.send_response(self,response)
 		except AssertionError,e:
-			levr.log_error()
-			api_utils.send_error(self,e)
+			levr.log_error(e)
+			api_utils.send_error(self,e.message)
 		except:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')

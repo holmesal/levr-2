@@ -344,13 +344,16 @@ def validate(url_param,authentication_source,*a,**to_validate):
 			logging.debug("auth_source: "+str(authentication_source))
 			
 			type_cast = {
-						'user'		: levr.Customer,
-						'deal'		: levr.Deal,
+						'user'			: levr.Customer,
+						'deal'			: levr.Deal,
+						'business'		: levr.Business,
+						'development'	: bool,
 						
 						#searching, user info, deal info stuff
 						'limit'				: int,
 						'offset'			: int,
-						'geoPoint'			: db.GeoPt,
+						'geoPoint'			: db.GeoPt, #want to phase this out
+						'll'				: db.GeoPt,
 						'radius'			: float,
 						'since'				: int,
 						'size'				: str,
@@ -383,13 +386,16 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						}
 			defaults = {
 						#entities
-						'user'		: None,
-						'deal'		: None,
+						'user'			: None,
+						'deal'			: None,
+						'business'		: None,
+						'development'	: False,
 						
 						#searching, user info, deal info stuff
 						'limit'				: 50,
 						'offset'			: 0,
-						'geoPoint'			: levr.geo_converter('42.349798,-71.120000'),
+						'geoPoint'			: levr.geo_converter('42.349798,-71.120000'), #want to phase this out
+						'll'				: levr.geo_converter('42.349798,-71.120000'),
 						'radius'			: 2,
 						'since'				: None,
 						'size'				: 'large',
@@ -467,7 +473,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 				elif url_param == 'query':
 					#a query is passed as part of the url
 					
-					#check that there is a query there
+				#check that there is a query there
 					try:
 						query = args[0]
 						
@@ -582,9 +588,13 @@ def validate(url_param,authentication_source,*a,**to_validate):
 					elif key == 'deal':
 						val = self.request.get('dealID')
 						msg = 'dealID: '+ val
+					elif key == 'business':
+						val = self.request.get('businessID')
+						msg = 'businessID' + val
 					#common mistakes. Youre welcome, debugger.
 					elif key == 'uid'		: raise Exception('In validation declaration, "uid" should be "user".')
 					elif key == 'dealID'	: raise Exception('In validation declaration, "dealID" should be "deal"')
+					elif key == 'businessID': raise Exception('In validation declaration, "businessID" should be "business"')
 					#default case
 					else:
 						val = self.request.get(key)
@@ -628,6 +638,8 @@ def validate(url_param,authentication_source,*a,**to_validate):
 							raise TypeError(msg)
 					elif data_type == db.GeoPt:
 						try:
+							logging.debug(val)
+							logging.debug(type(val))
 							#convert to geopoint
 							val = levr.geo_converter(val)
 						except Exception,e:
@@ -662,6 +674,14 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						except Exception,e:
 							logging.debug(e)
 							raise TypeError(msg)
+					elif data_type == levr.Business:
+						try:
+							val = db.Key(enc.decrypt_key(val))
+							business = levr.Business.get(val)
+							val = business
+						except Exception,e:
+							logging.error(e)
+							raise TypeError(msg)
 					elif data_type == list:
 						try:
 							#convert to list
@@ -669,6 +689,12 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						except Exception,e:
 							logging.debug(e)
 							raise TypeError(msg+"... must be a comma delimited string")
+					elif data_type == bool:
+						try:
+							val = bool(val)
+						except:
+							logging.error(e)
+							raise TypeError(msg)
 					elif data_type == str:
 						#nothing!
 						pass
