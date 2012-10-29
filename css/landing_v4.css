@@ -54,22 +54,26 @@ body {
 	position: relative;
 	display: block;
 	float: left;
-	height: 40px;
+	height: 50px;
 	width: 100%;
+	margin-top: 5px;
 }
 
 .userText{
 	text-align: left;
 	margin-left: 55px;
-	margin-top: 12px;
+	margin-top: 5px;
 	color: #565656;
 	font-weight: 600;
+	line-height: 140%;
+	height: 37px;
+	overflow: hidden;
 }
 
 .userImg{
-	height: 40px;
+	height: 50px;
 	background-size: cover;
-	width: 40px;
+	width: 50px;
 	background-position: center center;
 	display: block;
 	float: left;
@@ -93,6 +97,10 @@ body {
 }
 
 .location{
+	margin: 0px;
+}
+
+.description{
 	margin: 0px;
 }
 

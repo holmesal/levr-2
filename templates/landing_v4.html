@@ -27,8 +27,7 @@
 		  	</div>
 	  	</div>
   	</div>
-  	{% if version == 'desktop' %}
-  	<div id="content"><div class="limiter">
+  	<div id="content"><div class="limiter hidden-phone">
         <div id="about">
         	<h1>Welcome to Levr.</h1>
         	<div class="sectionDiv">
@@ -54,10 +53,6 @@
             <div id='geocode-error'></div>
           </form>
         </div-->
-    </div></div>
-  	{% else %}
-  	<p>Not mobile</p>
-  	{% endif %}
   	
   	
 <div id='mapContainer'>
@@ -181,7 +176,9 @@
 	            '<h2>' + feature.properties.city + '</h2>' +
 	            '</a>';*/
 	        
-	        var o = '<div class="imgDiv" style="background-image:url('+feature.properties.img+');"><div class="infoDiv"><p class="deal_text">'+feature.properties.deal_text+'</p><p class="description">'+feature.properties.description+'</p><p class="location">'+feature.properties.location+'</p><div class="userDiv"><div style="background-image:url('+feature.properties.userImg+');" class="userImg"></div><div class="userText"> Found by '+feature.properties.userName+' on Levr for iPhone.</div></div></div></div>'
+	        //var o = '<div class="imgDiv" style="background-image:url('+feature.properties.img+');"><div class="infoDiv"><p class="deal_text">'+feature.properties.deal_text+'</p><p class="description">'+feature.properties.description+'</p><p class="location">'+feature.properties.location+'</p><div class="userDiv"><div style="background-image:url('+feature.properties.userImg+');" class="userImg"></div><div class="userText"> Found by '+feature.properties.userName+' on Levr for iPhone.</br>At: Some place.</div></div></div></div>'
+	        
+	        var o = '<div class="imgDiv" style="background-image:url('+feature.properties.img+');"><div class="infoDiv"><p class="deal_text">'+feature.properties.deal_text+'</p><p class="description">'+feature.properties.description+'</p><div class="userDiv"><div style="background-image:url('+feature.properties.userImg+');" class="userImg"></div><div class="userText"> Found by '+feature.properties.userName+' on Levr for iPhone at:</br>'+feature.properties.location+'</div></div></div></div>'
 	
 	        return o;
 	    });
@@ -190,7 +187,7 @@
     map.centerzoom({
         lat: 42.3583,
         lon: -71.0603
-    }, 13);
+    }, 15);
     
     });
 

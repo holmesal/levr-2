@@ -705,19 +705,47 @@ class LandingTestHandler(webapp2.RequestHandler):
 	def get(self):
 		
 		#grab all the deals (for now)
-		deal_q = levr.Deal.all(keys_only=True).filter('origin','levr')
-		deal_keys = deal_q.fetch(50)
-		deals = db.get(deal_keys)
+		# deal_q = levr.Deal.all(keys_only=True).filter('origin','levr')
+# 		deal_keys = deal_q.fetch(50)
+# 		deals = db.get(deal_keys)
 		
 		#TODO:
 		#grab deals from a few specific geohashes that cover boston
+		geo_hash_set = ['drt3','drmr','drt8','drt0','drt1','drt9','drmx','drmp','drt2']
 		
+		logging.debug('\n\n\n \t\t\t START QUERYING \n\n\n')
+		query_start = datetime.now()
+		deal_keys = api_utils.get_deal_keys(geo_hash_set)
+		query_end = datetime.now()
 		
+		total_query_time = query_end-query_start
 		
-		packaged_deals = api_utils.package_deal_multi(deals)
+		logging.debug('\n\n\n \t\t\t END QUERYING \n\n\n ')
+		
+		logging.info('Query time: '+str(total_query_time))
+		
+		deals = db.get(deal_keys)
+		
+		sorted_deals = []
+		#remove the non-active and foursquare deals
+		for deal in deals:
+			logging.debug(deal.deal_status)
+			if deal.deal_status in ['active','test']:
+				logging.debug(deal.origin)
+				if deal.origin in ['levr','merchant']:
+					sorted_deals.append(deal)
+				else:
+					logging.info('deal not added because origin was: '+deal.origin)
+			else:
+				logging.info('deal not added because status was:' +deal.deal_status)
+		
+		packaged_deals = api_utils.package_deal_multi(sorted_deals)
+		
+# 		logging.info(packaged_deals)
 		
 		#go through and swap lat and lon
 		for deal in packaged_deals:
+			logging.info(deals)
 			#separate lat and lon
 			deal['lat'] = deal['business']['geoPoint'].split(',')[0]
 			deal['lon'] = deal['business']['geoPoint'].split(',')[1]
