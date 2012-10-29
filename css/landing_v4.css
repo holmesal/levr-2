@@ -161,3 +161,10 @@ body {
 #iphoneButton{
 	font-size: 20pt;
 }
+
+/* MAP UI STYLES */
+#map-ui {
+    position:absolute;
+    top:10px;left:100px;
+    z-index:100;
+    }

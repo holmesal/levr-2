@@ -68,9 +68,17 @@ class landing(webapp2.RequestHandler):
 			
 		#version = 'android'
 		
-		#TODO:
-		#grab deals from a few specific geohashes that cover boston
-		geo_hash_set = ['drt3','drmr','drt8','drt0','drt1','drt9','drmx','drmp','drt2']
+		logging.info(self.request.get('city'))
+		
+		city = self.request.get('city')
+		logging.info(city)
+		
+		if city == 'sanfrancisco':
+			#huge san francisco geohashes (+ palo alto)
+			geo_hash_set = ['9q8z','9q8y','9q8v','9q8p','9q8n','9q8j','9q9h']
+		else:
+			#huge boston geohashes
+			geo_hash_set = ['drt3','drmr','drt8','drt0','drt1','drt9','drmx','drmp','drt2']
 		
 		logging.debug('\n\n\n \t\t\t START QUERYING \n\n\n')
 		query_start = datetime.now()
@@ -114,7 +122,8 @@ class landing(webapp2.RequestHandler):
 
 		template_values = {
 			'deals'		: packaged_deals,
-			'version'	: version
+			'version'	: version,
+			'city'		: city
 		}
 		
 		#launch the jinja environment

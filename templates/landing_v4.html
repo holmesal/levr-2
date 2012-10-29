@@ -79,10 +79,18 @@
   	
   	
 <div id='mapContainer'>
-<div id='map'></div>
+<div id='map'>
+	<div id='map-ui'>
+		<div class="btn-group" data-toggle="buttons-radio">
+		  <a href='/?city=boston' type="button" id='toggleBoston' class="btn btn-success" data-loading-text="Loading...">Boston</a>
+		  <a href='/?city=sanfrancisco' type="button" id='toggleSanFrancisco' class="btn btn-success" data-loading-text="Loading...">San Francisco</a>
+		</div>
+    </div>
+</div>
 </div>
 
 <script src="http://code.jquery.com/jquery-latest.js"></script>
+<script src="/js/bootstrap.min.js"></script>
 <script>
 
     // GeoJSON input features
@@ -205,10 +213,20 @@
 	    });
 	    
 	    // Set iniital center and zoom
-    map.centerzoom({
-        lat: 42.3583,
-        lon: -71.0603
-    }, 15);
+	    {% if city=='sanfrancisco' %}
+	    	$('#toggleSanFrancisco').addClass('active')
+		    map.centerzoom({
+		        lat: 37.794331,
+		        lon: -122.402704
+		    }, 16);
+		 {% else %}
+		 	$('#toggleBoston').addClass('active')
+		 	map.centerzoom({
+		        lat: 42.3583,
+		        lon: -71.0603
+		    }, 15);
+		    
+		 {% endif %}
     
     	/*replace map icons
     	var elems = document.getElementsByTagName('*'),i;
@@ -228,6 +246,12 @@
 </script>
 
 <script type="text/javascript">
+	
+	$('#btnSanFrancisco').click(function(){
+		window.location = '/?city=sanfrancisco'
+	})
+
+
 	$('#buildFaster').click(function(){
 		$('#buildFaster').text("We're on it.").attr('disabled','disabled')
 	});
