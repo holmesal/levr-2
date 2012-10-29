@@ -204,7 +204,7 @@ class ConnectMerchantHandler(webapp2.RequestHandler):
 		@return: packaged_user with levrToken, packaged_business
 		'''
 		# for invalid credential responses
-		user_doesnt_own_business = 'User does not own that business'
+		user_doesnt_own_business_message = 'User does not own that business'
 		# for packaging
 		private = True
 		followers = False
@@ -222,6 +222,7 @@ class ConnectMerchantHandler(webapp2.RequestHandler):
 			user = levr.Customer.all().filter('email',email).get()
 			requested_business = levr.Business.all().filter('business_name',business_name).filter('vicinity',vicinity).get()
 			if user:
+				logging.info('User exists')
 				# check password
 				password = enc.encrypt_password(password)
 				assert user.pw == password, 'Password does not match username'
@@ -229,19 +230,27 @@ class ConnectMerchantHandler(webapp2.RequestHandler):
 				# user should have a business
 				try:
 					business = user.businesses.get()
+					# if the user has a business, it should be the business that was requested
+					assert business == requested_business, user_doesnt_own_business_message
+					
 				except:
-					# if the 
-					assert False, user_doesnt_own_business
+					# if the user does not have a business yet, add this one.
+					business = levr.create_new_business(business_name,vicinity,geo_point,types,owner=user,development=development)
+#					assert False, user_doesnt_own_business_message
 				
-				# if the user has a business, it should be the business that was requested
-				assert business == requested_business, user_doesnt_own_business
+				
 				
 				
 			else:
 				# Create an account for the user with that business
-				user = levr.create_new_user(tester=development)
+				user = levr.create_new_user(
+										tester=development,
+										email=email,
+										display_name=business_name
+										)
+				logging.debug(levr.log_model_props(user))
 				if not requested_business:
-					business = levr.create_new_business(business_name,vicinity,geo_point,types,owner=user,development=development)
+					business = levr.create_new_business(business_name,vicinity,geo_point,types,owner=user)
 				else:
 					business = requested_business
 					# 

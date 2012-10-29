@@ -177,7 +177,7 @@ def package_deal_external(externalDeal,externalBusiness,fake_owner):
 	
 	return packaged_deal
 
-def package_user(user,private=False,followers=True,**kwargs):
+def package_user(user,private=False,followers=False,**kwargs):
 
 	# logging.debug(levr.log_model_props(user))
 	
