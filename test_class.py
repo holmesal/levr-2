@@ -708,10 +708,21 @@ class TransferDealOwnershipToUndeadHandler(webapp2.RedirectHandler):
 class LandingTestHandler(webapp2.RequestHandler):
 	def get(self):
 		
-		#grab all the deals (for now)
-		# deal_q = levr.Deal.all(keys_only=True).filter('origin','levr')
-# 		deal_keys = deal_q.fetch(50)
-# 		deals = db.get(deal_keys)
+		uastring = str(self.request.headers['user-agent'])
+	
+		logging.info(uastring)
+			
+		if 'iphone' in uastring.lower():
+			version = 'iPhone'
+			logging.debug('Serving mobile version - iPhone')
+		elif 'android' in uastring.lower():
+			version = 'android'
+			logging.debug('Serving mobile version - android')
+		else:
+			version = 'desktop'
+			logging.debug('Serving desktop version')
+			
+		#version = 'android'
 		
 		#todo: grab deals from a few specific geohashes that cover boston
 		geo_hash_set = ['drt3','drmr','drt8','drt0','drt1','drt9','drmx','drmp','drt2']
@@ -733,7 +744,7 @@ class LandingTestHandler(webapp2.RequestHandler):
 		#remove the non-active and foursquare deals
 		for deal in deals:
 			logging.debug(deal.deal_status)
-			if deal.deal_status in ['active','test']:
+			if deal.deal_status in ['active']:
 				logging.debug(deal.origin)
 				if deal.origin in ['levr','merchant']:
 					sorted_deals.append(deal)
@@ -758,7 +769,7 @@ class LandingTestHandler(webapp2.RequestHandler):
 
 		template_values = {
 			'deals'		: packaged_deals,
-			'version'	: 'desktop'
+			'version'	: version
 		}
 		
 		#launch the jinja environment

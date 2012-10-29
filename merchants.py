@@ -14,6 +14,7 @@ import merchant_utils
 import os
 import time
 import webapp2
+import mixpanel_track as mp_track
 #import json
 #from levr_encrypt import encrypt_key
 #from google.appengine.ext import db
@@ -42,6 +43,76 @@ class MerchantsBetaHandler(webapp2.RequestHandler):
 		else:
 			template = jinja_environment.get_template('templates/merchants_beta.html')
 			self.response.out.write(template.render())
+
+class MerchantsBetaRequestHandler(webapp2.RequestHandler):
+	def post(self):
+		
+		#grab the inputs
+		business_name = self.request.get('business_name')
+		business_type = self.request.get('business_type')
+		city = self.request.get('city')
+		owner_name = self.request.get('owner_name')
+		owner_email = self.request.get('owner_email')
+		use_case = self.request.get('use_case')
+		
+		#error check
+		if business_name == '':
+			error = 'Please enter the name of your business.'
+		elif business_type == '':
+			error = 'Please enter what your business sells.'
+		elif city == '':
+			error = 'Please enter your city.'
+		elif owner_name == '':
+			error = 'Please enter your name.'
+		elif owner_email == '':
+			error = 'Please enter your email.'
+		else:
+			error = None
+		
+		if error:
+			template_values = {
+				'error'	: error,
+				'business_name' : business_name,
+				'business_type'	: business_type,
+				'city'			: city,
+				'owner_name'	: owner_name,
+				'owner_email'	: owner_email,
+				'use_case'		: use_case
+			}
+			logging.info(template_values)
+			template = jinja_environment.get_template('templates/merchants_beta.html')
+			self.response.out.write(template.render(template_values))
+		else:
+			#create the business beta request object
+			beta = levr.BusinessBetaRequest(
+				business_name=business_name,
+				business_type=business_type,
+				city=city,
+				owner_name=owner_name,
+				owner_email=owner_email,
+				use_case=use_case
+			).put()
+			
+			logging.info(levr.log_model_props(beta))
+			
+			#write out the success page
+			template = jinja_environment.get_template('templates/merchants_beta_success.html')
+			self.response.out.write(template.render())
+			
+			#send to mixpanel
+			
+			properties = {
+				'$business_name' : business_name,
+				'$business_type'	: business_type,
+				'$city'			: city,
+				'$owner_name'	: owner_name,
+				'$email'		: owner_email,
+				'$use_case'		: use_case
+			}
+			
+			#mp_track.track('Business beta request',"70b2a36876730d894bce115f3e89c055",properties)
+			
+			#mp_track.person(owner_email,'70b2a36876730d894bce115f3e89c055',properties)
 
 
 class LoginHandler(webapp2.RequestHandler):
@@ -1305,6 +1376,7 @@ class CheckPasswordHandler(webapp2.RequestHandler):
 app = webapp2.WSGIApplication([('/merchants', MerchantsHandler),
 								('/merchants/', MerchantsHandler),
 								('/merchants/beta', MerchantsBetaHandler),
+								('/merchants/betaRequest', MerchantsBetaRequestHandler),
 								('/merchants/login', LoginHandler),
 								('/merchants/logout', LogoutHandler),
 								('/merchants/password/lost', LostPasswordHandler),

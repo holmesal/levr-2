@@ -1292,15 +1292,23 @@ class ReportedDeal(db.Model):
 	#metadata used for migrations
 	model_version	= db.IntegerProperty(default=REPORTED_DEAL_MODEL_VERSION)
 
-BUSINESS_BETA_REQUEST_MODEL_VERSION = 1
+BUSINESS_BETA_REQUEST_MODEL_VERSION = 2
 class BusinessBetaRequest(db.Model):
 	business_name	= db.StringProperty()
+	business_type	= db.StringProperty()
+	city			= db.StringProperty()
+	owner_name		= db.StringProperty()
+	owner_email		= db.StringProperty()
+	use_case		= db.StringProperty()
+	date_created	= db.DateTimeProperty(auto_now_add=True)
+	
+	#metadata used for migrations
+	model_version	= db.IntegerProperty(default=BUSINESS_BETA_REQUEST_MODEL_VERSION)
+	
+	#deprecated
 	contact_name	= db.StringProperty()
 	contact_email	= db.StringProperty()
 	contact_phone	= db.StringProperty()
-	date_created	= db.DateTimeProperty(auto_now_add=True)
-	#metadata used for migrations
-	model_version	= db.IntegerProperty(default=BUSINESS_BETA_REQUEST_MODEL_VERSION)
 	
 FLOATING_CONTENT_MODEL_VERSION = 1
 class FloatingContent(db.Model):

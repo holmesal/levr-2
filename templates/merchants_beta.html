@@ -7,27 +7,64 @@
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/bootstrap-responsive.min.css" rel="stylesheet">
     <link href="/css/merchants_beta.css" rel="stylesheet">
-    <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyDA6oSrrTbFLHVqZSt2JGeJWFLVa9F0074&sensor=false&libraries=places"></script>
+    <!-- start Mixpanel --><script type="text/javascript">(function(c,a){window.mixpanel=a;var b,d,h,e;b=c.createElement("script");b.type="text/javascript";b.async=!0;b.src=("https:"===c.location.protocol?"https:":"http:")+'//cdn.mxpnl.com/libs/mixpanel-2.1.min.js';d=c.getElementsByTagName("script")[0];d.parentNode.insertBefore(b,d);a._i=[];a.init=function(b,c,f){function d(a,b){var c=b.split(".");2==c.length&&(a=a[c[0]],b=c[1]);a[b]=function(){a.push([b].concat(Array.prototype.slice.call(arguments,0)))}}var g=a;"undefined"!==typeof f?
+g=a[f]=[]:f="mixpanel";g.people=g.people||[];h="disable track track_pageview track_links track_forms register register_once unregister identify name_tag set_config people.identify people.set people.increment".split(" ");for(e=0;e<h.length;e++)d(g,h[e]);a._i.push([b,c,f])};a.__SV=1.1})(document,window.mixpanel||[]);
+mixpanel.init("70b2a36876730d894bce115f3e89c055");</script><!-- end Mixpanel -->
 	
 	</head>
 
 	<body>
-		<div class="navbar">
-		  <div class="navbar-inner">
-		    <a class="brand" href="/merchants">Levr.</a>
-		    <ul class="nav">
-		      <li><a href="/merchants/login">Merchant Login</a></li>
-		    </ul>
-		  </div>
+		<div class="navbar navbar-fixed-top">
+		  	<div class="navbar-inner">
+			  	<div class="container">
+				  	<a class="brand" href='/'>Levr.</a>
+				  	<!a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+				  		<ul class="nav" id='navigation'>
+					  		<li><a href='/'>Offers</a></li>
+					  		<li class="active"><a href='/merchants'>Businesses</a></li>
+					  		<li><a href='http://www.getradi.us'>Developers</a></li>
+				  		</ul>
+				  		<ul class="nav nav-right" id='navigation'>
+					  		<li class="nav-right"><a href='/merchants/login'>Merchant Login</a></li>
+				  		</ul>
+				  	<!/a>
+				  	
+			  	</div>
+		  	</div>
+	  	</div>
+	  	{% if error %}
+		<div class="topError">
+			<h4 class="errorText">
+				{{error}}
+			</h4>
 		</div>
-		<div class="container">
+		{% endif %}
+		<div id="mainmain" class="container">
 			<div class="row">
 				<div class="span8 offset2">
 					<p id="head">Welcome to the Levr Beta Program.</p>
-					<p id="sub">We've got a couple of questions, and then we'll turn you loose.</p>
-					<form id='beta_form'>
-						<legend>Who are you?</legend>
-						<input type="text" class='typeahead' placeholder="Start typing the name of your business..." data-provide="populateTypeahead(query,process)">
+					<p id="sub">We're letting businesses in on a rolling basis.</p>
+					<form id='beta_form' method='POST' action='/merchants/betaRequest'>
+						<legend>Tell us about your business:</legend>
+						<input type="text" name="business_name" placeholder="What's the name of your business?" value="{{business_name}}">
+						<input type="text" name="business_type" placeholder="What do you sell?" value="{{business_type}}">
+						<input type="text" name="city" placeholder="What city are you in?" value="{{city}}">
+						<legend>Tell us about yourself:</legend>
+						<input type="text" name="owner_name" placeholder="What's your name?" value="{{owner_name}}">
+						<input type="text" name="owner_email" placeholder="What's a good email to reach you on?" value="{{owner_email}}">
+						<label class="radio">
+						  <input type="radio" name="use_case" id="useCaseMobile" value="mobile">
+						  	I would prefer to manage my offers by using a mobile app.
+						</label>
+						<label class="radio">
+						  <input type="radio" name="use_case" id="useCaseOnline" value="online">
+						  	I would prefer to manage my offers online.
+						</label>
+						<label class="radio">
+						  <input type="radio" name="use_case" id="useCaseNoPreference" value="nopreference" checked>
+						  	No preference
+						</label>
+						<input type="submit" class="btn btn-success btn-large" id='submitBtn' value="Request invite">
 					</form>
 				</div>
 			</div>
@@ -37,17 +74,15 @@
 		<script src="/js/bootstrap.min.js"></script>
 		<script src="/js/merchants_beta.js"></script>
 		<script type="text/javascript">
-			$(window).load(function(){
-				$('.typeahead').typeahead({
-				    source: function (query, process) {
-				    	return ["alabama","arkansas"]
-				        //return $.post('/typeahead', { query: query }, function (data) {
-				            //return typeahead.process(data);
-				        //});
-				    }
-				});
-			})
+			mixpanel.track('Beta request page loaded')
+			{% if use_case=='mobile' %} $('#useCaseMobile').prop('checked',true) {% endif %}
+			{% if use_case=='online' %} $('#useCaseOnline').prop('checked',true) {% endif %}
+			
+			//mixpanel.track_links('#submitBtn','Submit button clicked')
+			
+			
 		</script>
+		
 	</body>
 </html>
 

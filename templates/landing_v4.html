@@ -1,33 +1,42 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% if version=='iPhone' %}
+<meta name="viewport" content="width=device-width; initial-scale=0.6; user-scalable=0;">
+<style type="text/css">
+	#mapContainer{
+		top: 52px !important;
+	}
+</style>
+{% else %}
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{% endif %}
   <script src='http://api.tiles.mapbox.com/mapbox.js/v0.6.6/mapbox.js'></script>
       <link href="../css/bootstrap.min.css" rel="stylesheet">
     <link href="../css/bootstrap-responsive.min.css" rel="stylesheet">
-    <link href="/css/other.css" rel='stylesheet' />
+    <link href="/css/map.css" rel='stylesheet' />
   
   <link href='http://api.tiles.mapbox.com/mapbox.js/v0.6.6/mapbox.css' rel='stylesheet' />
   <link href="/css/landing_v4.css" rel='stylesheet' />
 </head>
-<body class="right">
+<body>
 
 <div class="navbar navbar-fixed-top">
 	  	<div class="navbar-inner">
 		  	<div class="container">
-			  	<a class="brand" href="#">Levr</a>
+			  	<a class="brand" href='/'>Levr.</a>
 			  	<!a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
 			  		<ul class="nav" id='navigation'>
-				  		<li class="wide"><a href='http://www.levr.com'>Offers</a></li>
-				  		<li class="wide"><a href='http://www.levr.com/merchants'>Merchants</a></li>
-				  		<li class="wide"><a href='http://www.getradi.us'>Developers</a></li>
+				  		<li class="active"><a href='/'>Offers</a></li>
+				  		<li><a href='/merchants'>Businesses</a></li>
+				  		<li><a href='http://www.getradi.us'>Developers</a></li>
 			  		</ul>
 			  	<!/a>
 			  	
 		  	</div>
 	  	</div>
   	</div>
-  	<div id="content"><div class="limiter hidden-phone">
+  	<div id="content" class="hidden-phone"><div class="limiter">
         <div id="about">
         	<h1>Welcome to Levr.</h1>
         	<div class="sectionDiv">
@@ -41,11 +50,25 @@
         	
           <h1 class='map-title'></h1>
           <p class='description'></p>
-          <div id="markerfilters" class="clearfix section">
-            <h3>Download Levr for iPhone:</h3>
+          <div id='downloadDiv' class="clearfix section">
+            <h3>Download Levr for iPhone+iPad:</h3>
             <a href='https://itunes.apple.com/us/app/levr/id564566794?mt=8'><img id='appstore' src="/img/appstore.png"></a>
           </div>
         </div>
+  	</div>
+  	</div>
+  	
+  	{% if version=='iPhone' %}
+  	<div class="bottom-banner">
+	  	<p class="iphone-header">How local offers should be.</p>
+	  	<a id='iphoneButton' class="btn btn-success btn-large" href='https://itunes.apple.com/us/app/levr/id564566794?mt=8'>Download Levr for iPhone+iPad</a>
+  	</div>
+  	{% elif version=='android' %}
+  	<div class="bottom-banner">
+	  	<p class="iphone-header">Levr for Android is coming soon.</p>
+	  	<a id='buildFaster' class="btn btn-success btn-large">Build it faster!</a>
+  	</div>
+  	{% endif %}
         <!--div data-control='geocode' class="clearfix section" id="search">
           <form class="geocode">
             <input placeholder='Search for an address' type="text">
@@ -132,8 +155,9 @@
     });
 */
     
-    mapbox.load('http://a.tiles.mapbox.com/v3/alonsoholmes.map-7b8eyy4m.jsonp', function(o) {
+    //mapbox.load('http://a.tiles.mapbox.com/v3/alonsoholmes.map-7b8eyy4m.jsonp', function(o) {
 	    var map = mapbox.map('map');
+	    
 	    
 	    map.setZoomRange(3,20)
 	    map.ui.zoomer.add()
@@ -149,7 +173,10 @@
 	            "description"	:	"{{deal.description}}",
 	            "location"		:	"{{deal.business.businessName}} - {{deal.business.vicinity}}",
 	            "userImg"		:	"{{deal.owner.photoURL}}",
-	            "userName"		:	"{{deal.owner.alias}}"
+	            "userName"		:	"{{deal.owner.alias}}",
+	            "marker-size"	:	"medium",
+	            "marker-color"	:	"FA6900",
+	            "marker-symbol"	:	"star"
 	        }
 	    },
 	    {% endfor %}
@@ -171,12 +198,6 @@
 	    // Set a custom formatter for tooltips
 	    // Provide a function that returns html to be used in tooltip
 	    interaction.formatter(function(feature) {
-	        /*var o = '<a target="_blank" href="' + feature.properties.url + '">' +
-	            '<img src="' + feature.properties.image + '">' +
-	            '<h2>' + feature.properties.city + '</h2>' +
-	            '</a>';*/
-	        
-	        //var o = '<div class="imgDiv" style="background-image:url('+feature.properties.img+');"><div class="infoDiv"><p class="deal_text">'+feature.properties.deal_text+'</p><p class="description">'+feature.properties.description+'</p><p class="location">'+feature.properties.location+'</p><div class="userDiv"><div style="background-image:url('+feature.properties.userImg+');" class="userImg"></div><div class="userText"> Found by '+feature.properties.userName+' on Levr for iPhone.</br>At: Some place.</div></div></div></div>'
 	        
 	        var o = '<div class="imgDiv" style="background-image:url('+feature.properties.img+');"><div class="infoDiv"><p class="deal_text">'+feature.properties.deal_text+'</p><p class="description">'+feature.properties.description+'</p><div class="userDiv"><div style="background-image:url('+feature.properties.userImg+');" class="userImg"></div><div class="userText"> Found by '+feature.properties.userName+' on Levr for iPhone at:</br>'+feature.properties.location+'</div></div></div></div>'
 	
@@ -189,12 +210,33 @@
         lon: -71.0603
     }, 15);
     
-    });
+    	/*replace map icons
+    	var elems = document.getElementsByTagName('*'),i;
+	    for (i in elems)
+	        {
+	        if((" "+elems[i].className+" ").indexOf(" "+"simplestyle-marker"+" ") > -1)
+	            {
+	            elems[i].src = 'https://tiles.mapbox.com/v3/marker/pin-m-star+FA6900.png';
+	            }
+	        }*/
+
+    	//$('.simplestyle-marker').attr('src','http://tiles.mapbox.com/v3/marker/pin-m-star+FA6900.png');
+    
+    //});
 
     
 </script>
 
-<div class="imgDiv"><p class="deal_text"></p><p class="description"></p><p class="business_name"></p><p class="vicinity"></p></div>
+<script type="text/javascript">
+	$('#buildFaster').click(function(){
+		$('#buildFaster').text("We're on it.").attr('disabled','disabled')
+	});
+</script>
+
+<!--div class="imgDiv"><p class="deal_text"></p><p class="description"></p><p class="business_name"></p><p class="vicinity"></p></div-->
+<!--script type=text/javascript>
+	$('.simplestyle-marker').attr('img','http://tiles.mapbox.com/v3/marker/pin-m-star+FA6900.png');
+</script-->
 
 
 </body>

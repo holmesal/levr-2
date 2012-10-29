@@ -3,13 +3,13 @@ body{
 	text-align: center;
 }
 
-.nav{
+.nav-right{
 	float: right !important;
 	right: 0 !important;
 	left: auto !important;
 }
 
-.container{
+#mainmain{
 	margin-bottom: 100px;
 }
 
@@ -31,6 +31,10 @@ body{
 #about{
 	margin-top: 60px;
 	font-weight: 400;
+}
+
+#free{
+	margin-top: 50px;
 }
 
 #getLevr{
