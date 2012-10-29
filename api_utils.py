@@ -376,6 +376,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						'description'	: str,
 						'dealText'		: str,
 						'distance'		: float,
+						'action'		: str,
 						
 						#business upload stuff
 						'businessName'	: str,
@@ -417,6 +418,7 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						'description'	: '',
 						'dealText'		: '',
 						'distance'		: -1,
+						'action'		: '',
 						
 						#business upload stuff
 						'businessName'	: '',

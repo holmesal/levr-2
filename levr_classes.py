@@ -485,8 +485,20 @@ def update_deal_key_memcache(geo_point,dealID,namespace):
 	#============================================================================
 
 
-def dealCreate(params,origin,upload_flag=True):
-	'''pass in "self"'''
+def dealCreate(params,origin,upload_flag=True,**kwargs):
+	'''
+	
+	@param params:
+	@type params:
+	@param origin:
+	@type origin:
+	@param upload_flag:
+	@type upload_flag:
+	
+	@keyword expires: sets the expiration on a deal. If a merchant uploads,
+	  expiration can be passed as 'never' and the deal will never expire
+	
+	'''
 	logging.debug('DEAL CREATE')
 	
 	logging.debug("origin: "+str(origin))
@@ -596,6 +608,17 @@ def dealCreate(params,origin,upload_flag=True):
 		
 		logging.debug('-------------------------------------------')
 		logging.debug(tags)
+	elif origin == 'phone_merchant':
+		logging.info('phone_merchant, so do not create new business')
+		business = params['business']
+		tags.extend(business.create_tags())
+		
+		#grab all the other information that needs to go into the deals
+		businessID		= str(business.key())
+		business_name 	= business.business_name
+		geo_point		= business.geo_point
+		vicinity		= business.vicinity
+		geo_hash		= business.geo_hash
 	else:
 		#BusinessID was passed, grab the business
 		logging.debug('not oldphoone')
@@ -674,7 +697,24 @@ def dealCreate(params,origin,upload_flag=True):
 		dealID	= params['deal']
 		dealID	= enc.decrypt_key(dealID)
 		deal	= Deal.get(dealID)
-
+	elif origin == 'phone_merchant':
+		logging.info('Origin from phone_merchant')
+		user = params['user']
+		
+		if user.tester:
+			deal_status = 'test'
+		else:
+			deal_status = 'active'
+		
+		
+		
+		deal = Deal(
+				parent = user,
+				is_exclusive = True,
+				deal_status = deal_status,
+				date_end = datetime.now() + timedelta(days=14)
+				)
+		
 	elif origin	=='phone_existing_business' or origin == 'phone_new_business':
 		#phone deals are the child of a ninja
 		logging.debug('STOP!')

@@ -212,19 +212,23 @@ class ConnectMerchantHandler(webapp2.RequestHandler):
 		# input values
 		email = kwargs.get('email')
 		password = kwargs.get('pw')
-		business_name = kwargs.get('business_name')
+		business_name = kwargs.get('businessName')
 		vicinity = kwargs.get('vicinity')
 		geo_point = kwargs.get('ll')
 		types = kwargs.get('types')
 		development = kwargs.get('development')
 		try:
+			# Convert input data
+			password = enc.encrypt_password(password)
 			types = types.split(',')
+			
+			# check for existing entities
 			user = levr.Customer.all().filter('email',email).get()
 			requested_business = levr.Business.all().filter('business_name',business_name).filter('vicinity',vicinity).get()
+			
 			if user:
 				logging.info('User exists')
 				# check password
-				password = enc.encrypt_password(password)
 				assert user.pw == password, 'Password does not match username'
 				
 				# user should have a business
@@ -245,9 +249,11 @@ class ConnectMerchantHandler(webapp2.RequestHandler):
 				# Create an account for the user with that business
 				user = levr.create_new_user(
 										tester=development,
+										pw=password,
 										email=email,
 										display_name=business_name
 										)
+				logging.debug(business_name)
 				logging.debug(levr.log_model_props(user))
 				if not requested_business:
 					business = levr.create_new_business(business_name,vicinity,geo_point,types,owner=user)
@@ -291,18 +297,19 @@ class MerchantDealsHandler(webapp2.RequestHandler):
 		user = kwargs.get('actor')
 		try:
 			deals = levr.Deal.all().ancestor(user).fetch(None)
-			
-			# Sort the deals
-			creation_dates = [deal.get('date_created') for deal in deals]
-			
-			toop = creation_dates,deals
-			sorted_toop = sorted(toop)
-			sorted_dates,sorted_deals = zip(*sorted_toop) #@UnusedVariable: sorted_dates
-			
-			# package and send
-			private = True
-			packaged_deals = api_utils.package_deal_multi(sorted_deals, private)
-			
+			if deals:
+				# Sort the deals
+				creation_dates = [deal.date_created for deal in deals]
+				
+				toop = zip(creation_dates,deals)
+				sorted_toop = sorted(toop)
+				sorted_dates,sorted_deals = zip(*sorted_toop) #@UnusedVariable: sorted_dates
+				
+				# package and send
+				private = True
+				packaged_deals = api_utils.package_deal_multi(sorted_deals, private)
+			else:
+				packaged_deals = []
 			response = {
 					'deals' : packaged_deals
 					}
@@ -355,6 +362,24 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 	'''
 	A handler to upload a NEW deal to the database
 	'''
+	def get(self):
+		'''
+		A test form to test uploading a deal
+		'''
+		upload_url = blobstore.create_upload_url(NEW_DEAL_UPLOAD_URL)
+		logging.info(upload_url)
+		# The method must be "POST" and enctype must be set to "multipart/form-data".
+		self.response.out.write('<html><body>')
+		self.response.out.write('<form action="%s" method="POST" enctype="multipart/form-data">' % upload_url)
+		self.response.out.write('''Upload File: <input type="file" name="img"><br>''')
+		self.response.out.write('uid: 			<input type="text" name="uid" value="{}"> <br>'.format('tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fO3GJdErv19TaoeLGNiu51Stsm8gaChA='))
+		self.response.out.write('levrToken: 	<input type="text" name="levrToken" value="{}"> <br>'.format('tFCBPw9A6gt2-Wq6K0RHxYQDkpPUFWvWD-FhCFSQCjM'))
+		self.response.out.write('businessID:	<input type="text" name="businessID" value="{}"> <br>'.format('tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fO3GJdErvitTapPLKLhLS0Stiw-YaChA='))
+		self.response.out.write('description: 	<input type="text" name="description" value="{}"> <br>'.format('description!!!'))
+		self.response.out.write('dealText:		<input type="text" name="dealText" value="{}"> <br>'.format('dealText!!!'))
+		
+		self.response.out.write('<input type="submit"name="submit" value="Create!"> </form></body></html>')
+	
 	@api_utils.validate(None, 'param',
 					user = True,
 					levrToken = True,
@@ -380,6 +405,7 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 		description = kwargs.get('description')
 		deal_text = kwargs.get('dealText')
 		development = kwargs.get('development')
+		img_key = ''
 		try:
 			
 			#===================================================================
@@ -408,7 +434,7 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 					}
 			
 			#TODO: add this case to the create_deal function
-			deal_entity = levr.dealCreate(params, 'phone_merchant', upload_flag,expires='never')
+			deal_entity = levr.dealCreate(params, 'phone_merchant', upload_flag)
 			
 			
 			
@@ -448,15 +474,34 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 			api_utils.send_response(self,response, user)
 			
 		except Exception,e:
+			
 			levr.log_error(e)
 			api_utils.send_error(self,'Server Error')
 			
 			
-class EditDealHandler(blobstore_handlers.BlobstoreDownloadHandler):
+class EditDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 	'''
 	A handler to upload new data for an existing deal in the database
 	Will optionally receive an image.
 	'''
+	def get(self):
+		'''
+		A test form to test editing a deal
+		'''
+		upload_url = blobstore.create_upload_url(EDIT_DEAL_UPLOAD_URL)
+		logging.info(upload_url)
+		# The method must be "POST" and enctype must be set to "multipart/form-data".
+		self.response.out.write('<html><body>')
+		self.response.out.write('<form action="%s" method="POST" enctype="multipart/form-data">' % upload_url)
+		self.response.out.write('''Upload File: <input type="file" name="img"><br>''')
+		self.response.out.write('uid: 			<input type="text" name="uid" value="{}"> <br>'.format('tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fO3GJdErv19TaoeLGNiu51Stsm8gaChA='))
+		self.response.out.write('levrToken: 	<input type="text" name="levrToken" value="{}"> <br>'.format('tFCBPw9A6gt2-Wq6K0RHxYQDkpPUFWvWD-FhCFSQCjM'))
+		self.response.out.write('dealID:		<input type="text" name="dealID" value="{}"> <br>'.format('tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fC3GJdErv19TaoeLGNiu51Stsm8gaChDyDrrMSui1aMhOG-0X'))
+		self.response.out.write('description: 	<input type="text" name="description" value="{}"> <br>'.format('description!!!'))
+		self.response.out.write('dealText:		<input type="text" name="dealText" value="{}"> <br>'.format('dealText!!!'))
+		
+		self.response.out.write('<input type="submit"name="submit" value="Create!"> </form></body></html>')
+	
 	@api_utils.validate(None, 'param',
 					user = True,
 					deal = True,
@@ -480,7 +525,7 @@ class EditDealHandler(blobstore_handlers.BlobstoreDownloadHandler):
 		user = kwargs.get('actor')
 		deal = kwargs.get('deal')
 		description = kwargs.get('description',None)
-		deal_text = kwargs.get('deal_text',None)
+		deal_text = kwargs.get('dealText',None)
 		try:
 			# assure that the user is the owner of the deal
 			assert deal.parent_key() == user.key(), 'User does not own that deal'
@@ -496,9 +541,10 @@ class EditDealHandler(blobstore_handlers.BlobstoreDownloadHandler):
 				deal.img = new_img_key
 				
 				# delete that old key
-				BlobInfo.get(old_img_key).delete()
+				old_img_key.delete()
+#				BlobInfo.get(old_img_key).delete()
 			else:
-				assert description or deal_text, 'Are you trying to edit the deal or what? Send me something to update.'
+				assert description or deal_text, 'Thanks for sending me something to update.'
 			#===================================================================
 			# Update new deal informations
 			#===================================================================
@@ -514,7 +560,7 @@ class EditDealHandler(blobstore_handlers.BlobstoreDownloadHandler):
 			response = {
 					'deal'	: packaged_deal
 					}
-			api_utils.send_response(response, user)
+			api_utils.send_response(self,response, user)
 			
 		except AssertionError,e:
 			api_utils.send_error(self,e.message)
@@ -607,7 +653,7 @@ class ReactivateDealHandler(webapp2.RequestHandler):
 					'deal'	: packaged_deal
 					}
 			
-			api_utils.send_response(response, user)
+			api_utils.send_response(self,response, user)
 			
 		except AssertionError,e:
 			api_utils.send_error(self,e.message)
