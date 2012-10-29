@@ -1293,12 +1293,18 @@ class ReportedDeal(db.Model):
 	
 class BusinessBetaRequest(db.Model):
 	business_name	= db.StringProperty()
-	contact_name	= db.StringProperty()
-	contact_email	= db.StringProperty()
-	contact_phone	= db.StringProperty()
+	business_type	= db.StringProperty()
+	city			= db.StringProperty()
+	owner_name		= db.StringProperty()
+	owner_email		= db.StringProperty()
+	use_case		= db.StringProperty()
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	#metadata used for migrations
 	model_version	= db.IntegerProperty(default=1)
+	#deprecated
+	contact_name	= db.StringProperty()
+	contact_email	= db.StringProperty()
+	contact_phone	= db.StringProperty()
 	
 class FloatingContent(db.Model):
 	#only has outbound references, no inbound
