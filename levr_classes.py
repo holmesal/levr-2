@@ -787,6 +787,10 @@ def dealCreate(params,origin,upload_flag=True,**kwargs):
 	
 	
 	#add the data
+	try:
+		deal.business = business
+	except:
+		log_error()
 	deal.deal_text 			= deal_text
 	deal.deal_type			= deal_type
 	deal.description 		= description
@@ -1148,7 +1152,7 @@ class Business(db.Model):
 	foursquare_linked	= db.BooleanProperty(default=False)
 	phone			= db.StringProperty()
 	activation_code = db.StringProperty()
-	# TODO: give a business karma when a deal at the business gets upvotes
+	# TODO: give a business karma when a deal at the business gets upvotes - will factor into deal rank
 	karma			= db.IntegerProperty(default=0)
 	
 	#metadata used for migrations
@@ -1183,7 +1187,7 @@ class Deal(polymodel.PolyModel):
 	reject_message	= db.StringProperty()
 	tags			= db.ListProperty(str)
 	businessID 		= db.StringProperty() #CHANGE TO REFERENCEPROPERTY
-	business		= db.ReferenceProperty(Business,default=lambda x: db.Key(x),businessID,collection_name='deals')
+	business		= db.ReferenceProperty(Business,collection_name='deals')
 	origin			= db.StringProperty(default='levr')
 	external_url	= db.StringProperty()
 	foursquare_id	= db.StringProperty()

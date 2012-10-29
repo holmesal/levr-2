@@ -1355,6 +1355,10 @@ def add_foursquare_deal(foursquare_deal,business,deal_status):
 		parent			=	random_dead_ninja.key(),
 		smallImg		=	'http://playfoursquare.s3.amazonaws.com/press/logo/icon-512x512.png'
 	)
+	try:
+		deal.business = business
+	except:
+		levr.log_error()
 
 
 	deal.put()
