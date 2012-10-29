@@ -94,8 +94,13 @@ class AuthorizeCompleteHandler(webapp2.RequestHandler):
 			logging.debug(levr.log_model_props(user))
 			logging.debug(levr.log_dict(new_details))
 			logging.debug(levr.log_dict(new_friends))
-			
-			
+			try:
+				logging.debug(user.display_name)
+				logging.debug(user.first_name)
+				logging.debug(user.last_name)
+				logging.debug(user.facebook_id)
+			except:
+				levr.log_error()
 			#send the founders a text
 			levr.text_notify(user.first_name + ' ' + user.last_name + ' from facebook')
 			

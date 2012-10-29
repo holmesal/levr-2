@@ -415,6 +415,7 @@ def text_notify(user_string):
 	task_params = {
 		'user_string'	:	user_string
 	}
+	logging.debug(user_string)
 	taskqueue.add(url='/tasks/newUserTextTask',payload=json.dumps(task_params))
 
 
@@ -856,6 +857,7 @@ def dealCreate(params,origin,upload_flag=True,**kwargs):
 
 
 UNDEAD_NINJA_EMAIL = 'undeadninja@levr.com'
+CUSTOMER_MODEL_VERSION = 1
 class Customer(db.Model):
 #root class
 	
@@ -870,7 +872,7 @@ class Customer(db.Model):
 	photo			= db.StringProperty(default='http://www.levr.com/img/levr.png')
 	
 	#metadata used for migrations
-	model_version	= db.IntegerProperty(default=1)
+	model_version	= db.IntegerProperty(default=CUSTOMER_MODEL_VERSION)
 	#user meta
 	tester			= db.BooleanProperty(default=False)
 	level			= db.IntegerProperty(default=0)
@@ -1128,7 +1130,7 @@ class Customer(db.Model):
 #	date_last_edited= db.DateTimeProperty(auto_now=True)
 	
 	#psudoproperty: businesses - see business entity - this is a query for all the businesses that list this owner as the owner
-
+BUSINESS_MODEL_VERSION = 1
 class Business(db.Model):
 	#root class
 	business_name 	= db.StringProperty()
@@ -1150,7 +1152,7 @@ class Business(db.Model):
 	karma			= db.IntegerProperty(default=0)
 	
 	#metadata used for migrations
-	model_version	= db.IntegerProperty(default=1)
+	model_version	= db.IntegerProperty(default=BUSINESS_MODEL_VERSION)
 	
 	# deprecated
 	targeted		= db.BooleanProperty()
@@ -1172,7 +1174,7 @@ class Business(db.Model):
 			tags.extend(t)
 		
 		return tags
-
+DEAL_MODEL_VERSION = 2
 class Deal(polymodel.PolyModel):
 #Child of business owner OR customer ninja
 	#deal meta information
@@ -1181,14 +1183,14 @@ class Deal(polymodel.PolyModel):
 	reject_message	= db.StringProperty()
 	tags			= db.ListProperty(str)
 	businessID 		= db.StringProperty() #CHANGE TO REFERENCEPROPERTY
-	business		= db.ReferenceProperty(Business)
+	business		= db.ReferenceProperty(Business,default=lambda x: db.Key(x),businessID,collection_name='deals')
 	origin			= db.StringProperty(default='levr')
 	external_url	= db.StringProperty()
 	foursquare_id	= db.StringProperty()
 	foursquare_type	= db.StringProperty()
 	
 	#metadata used for migrations
-	model_version	= db.IntegerProperty(default=1)
+	model_version	= db.IntegerProperty(default=DEAL_MODEL_VERSION)
 	
 	#deal display info
 	deal_text		= db.StringProperty(default='')
@@ -1206,22 +1208,21 @@ class Deal(polymodel.PolyModel):
 	upvotes			= db.IntegerProperty(default=0)
 	downvotes		= db.IntegerProperty(default=0)
 	karma			= db.IntegerProperty(default=0)
+	promotions		= db.ListProperty(str)
 	
-	#for the merchants
-	deal_views		= db.IntegerProperty(default=0)
 	
 	#date stuff
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	date_last_edited= db.DateTimeProperty(auto_now=True)
 	date_end 		= db.DateTimeProperty(auto_now_add=False)
 	
-	#may be deprecated.. in limbo
+	
+	#deprecated stuff
 	date_uploaded	= db.DateTimeProperty(auto_now_add=True)
 	date_start 		= db.DateTimeProperty(auto_now_add=False) #start date
 	has_been_shared	= db.BooleanProperty(default = False)
 	count_seen 		= db.IntegerProperty(default = 0)  #number seen
-	
-	#deprecated stuff
+	deal_views		= db.IntegerProperty()
 	barcode			= blobstore.BlobReferenceProperty()
 	secondary_name 	= db.StringProperty(default='') #== with purchase of
 	deal_type 		= db.StringProperty(choices=set(["single","bundle"])) #two items or one item
@@ -1267,7 +1268,7 @@ class DealViewCounter(db.Model):
 	Must be a child of a deal
 	'''
 	count = db.IntegerProperty(required=True,default=0)
-
+NOTIFICATION_MODEL_VERSION = 1
 class Notification(db.Model):
 	# Only has outbound references, no inbound
 	date				= db.DateTimeProperty(auto_now_add=True)
@@ -1278,10 +1279,10 @@ class Notification(db.Model):
 	deal				= db.ReferenceProperty(Deal,collection_name='notifications')
 	actor				= db.ReferenceProperty(Customer)
 	#metadata used for migrations
-	model_version		= db.IntegerProperty(default=1)
+	model_version		= db.IntegerProperty(default=NOTIFICATION_MODEL_VERSION)
 
 
-
+REPORTED_DEAL_MODEL_VERSION = 1
 class ReportedDeal(db.Model):
 	# Only has outbound references, no inbound
 	uid				= db.ReferenceProperty(Customer,collection_name='reported_deals')
@@ -1289,8 +1290,9 @@ class ReportedDeal(db.Model):
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	date_last_edited= db.DateTimeProperty(auto_now=True)
 	#metadata used for migrations
-	model_version	= db.IntegerProperty(default=1)
-	
+	model_version	= db.IntegerProperty(default=REPORTED_DEAL_MODEL_VERSION)
+
+BUSINESS_BETA_REQUEST_MODEL_VERSION = 1
 class BusinessBetaRequest(db.Model):
 	business_name	= db.StringProperty()
 	contact_name	= db.StringProperty()
@@ -1298,8 +1300,9 @@ class BusinessBetaRequest(db.Model):
 	contact_phone	= db.StringProperty()
 	date_created	= db.DateTimeProperty(auto_now_add=True)
 	#metadata used for migrations
-	model_version	= db.IntegerProperty(default=1)
+	model_version	= db.IntegerProperty(default=BUSINESS_BETA_REQUEST_MODEL_VERSION)
 	
+FLOATING_CONTENT_MODEL_VERSION = 1
 class FloatingContent(db.Model):
 	#only has outbound references, no inbound
 	action				= db.StringProperty(required=True,choices=set(['upload','deal']))
@@ -1309,7 +1312,7 @@ class FloatingContent(db.Model):
 	deal				= db.ReferenceProperty(Deal,collection_name='floating_content')
 	business			= db.ReferenceProperty(Business,collection_name='floating_content')
 	#metadata used for migrations
-	model_version		= db.IntegerProperty(default=1)
+	model_version		= db.IntegerProperty(default=FLOATING_CONTENT_MODEL_VERSION)
 
 
 class UndeadNinjaBlobImgInfo(db.Model):

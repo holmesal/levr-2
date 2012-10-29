@@ -85,7 +85,7 @@ def create_deal(deal,business,owner):
 	#check if the merchant has validated their business. If so, deploy as active. If not, deploy as pending
 	if validated_check(owner):
 		logging.debug('OKAY')
-		#TODO: SET BUSINESS ID
+		#todo: SET BUSINESS ID
 		deal.deal_status='active'
 	else:
 		logging.debug('FUCK ALL')

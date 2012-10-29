@@ -45,7 +45,10 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			lon_half_delta	= kwargs.get('longitudeHalfDelta',None)
 #			lat_half_delta	= kwargs.get('latitudeHalfDelta')
 			
-			
+			try:
+				logging.info(user.display_name)
+			except:
+				pass
 			if development:
 				deal_status = 'test'
 			else:
@@ -216,8 +219,9 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			t1 = datetime.now()
 			#find the max k and max d out of the deals that have been found
 			for deal in deals:
-				#get deal karma points = upvotes for now
-				k		= deal.upvotes - deal.downvotes
+				# get deal karma points
+				#   karma is added when a business promotes the deal. Adds to rank, but doesnt show in upvotes
+				k		= deal.upvotes - deal.downvotes + deal.karma
 				k_list.append(k)
 #				logging.debug('deal karma: '+str(k))
 				

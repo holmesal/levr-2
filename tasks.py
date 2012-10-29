@@ -156,7 +156,7 @@ class NewUserTextTaskHandler(webapp2.RequestHandler):
 				''')
 			
 			payload = json.loads(self.request.body)
-			
+			logging.info(payload['user_string'])
 			#twilio credentials
 			sid = 'AC4880dbd1ff355288728be2c5f5f7406b'
 			token = 'ea7cce49e3bb805b04d00f76253f9f2b'

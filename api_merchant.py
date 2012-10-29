@@ -215,7 +215,7 @@ class ConnectMerchantHandler(webapp2.RequestHandler):
 		vicinity = kwargs.get('vicinity')
 		geo_point = kwargs.get('ll')
 		types = kwargs.get('types')
-		development = kwargs.get('development')
+		development = kwargs.get('development',False)
 		try:
 			# Convert input data
 			password = enc.encrypt_password(password)
@@ -261,7 +261,29 @@ class ConnectMerchantHandler(webapp2.RequestHandler):
 					# 
 					business.owner = user
 					business.put()
-			# package and send
+			
+			
+			#===================================================================
+			# # Send message to the founders that someone has signed up for the app
+			#===================================================================
+			if not development:
+				try:
+					from google.appengine.api import mail
+					message = mail.AdminEmailMessage(
+													sender = 'patrick@levr.com',
+													subject = 'New Merchant',
+													)
+					message.body = levr.log_model_props(user,['email','display_name',])
+					message.body += levr.log_model_props(business,['business_name','vicinity'])
+					message.check_initialized()
+					message.send()
+					
+				except:
+					levr.log_error()
+			
+			#===================================================================
+			# # package and send
+			#===================================================================
 			packaged_user = api_utils.package_user(user, private, followers,send_token=True)
 			packaged_business = api_utils.package_business(business)
 			response = {
@@ -276,8 +298,6 @@ class ConnectMerchantHandler(webapp2.RequestHandler):
 			levr.log_error(e)
 			api_utils.send_error(self,'Server Error')
 			
-		# TODO: add a property to customer that says whether or not the user is merchant
-		# TODO: send the founders a notification when a business signs up
 class MerchantDealsHandler(webapp2.RequestHandler):
 	'''
 	A handler for serving all of a merchants deals for their manage page
@@ -310,6 +330,9 @@ class MerchantDealsHandler(webapp2.RequestHandler):
 				packaged_deals = api_utils.package_deal_multi(sorted_deals, private)
 			else:
 				packaged_deals = []
+				
+			
+			
 			response = {
 					'deals' : packaged_deals
 					}
@@ -659,7 +682,89 @@ class ReactivateDealHandler(webapp2.RequestHandler):
 		except Exception,e:
 			api_utils.send_error(self,'Server Error')
 
+class FetchPromotionOptionsHandler(webapp2.RequestHandler):
+	'''
+	A handler for fetching the available promotion options for merchants
+	'''
+	@api_utils.validate(None, 'param',
+					user = True,
+					levrToken = True,
+					)
+	def get(self,*args,**kwargs):
+		user = kwargs.get('actor')
+		try:
+			promotion_1 = {
+						'type'	: PROMOTION_HIGHER_RANK,
+						'img'	: '', # TODO: add an image location to the promotion
+						'meta'	: {}
+						}
+			promotion_2 = {
+						'type'	: PROMOTION_MORE_TAGS,
+						'img'	: '',
+						'meta'	: {}
+						}
+			promotion_3 = {
+						'type'	: None,
+						'img'	: '',
+						'meta'	: {}
+						}
+			promotions = [promotion_1,promotion_2,promotion_3]
+			
+			response = {
+					'promotions' : promotions
+					}
+			
+			api_utils.send_response(self,response, user)
+			
+		except AssertionError,e:
+			api_utils.send_error(self,str(e))
+		except Exception,e:
+			levr.log_error(e)
+			api_utils.send_error(self,'Server Error')
 
+PROMOTION_HIGHER_RANK = 'more_karma'
+PROMOTION_MORE_TAGS = 'more_tags'
+
+class ActivatePromotionHandler(webapp2.RequestHandler):
+	'''
+	A handler for activating a promotion. Will accept a users information and
+	an identifier for a promotion. This handler will act according to the type
+	of promotion that is passed. The types of promotions correspond to the
+	identifiers returned in the FetchPromotionOptionsHandler
+	'''
+	@api_utils.validate(None, 'param',
+					user = True,
+					levrToken = True,
+					promotionID = True,
+					deal = True,
+					tags = False
+					)
+	@api_utils.private
+	def post(self,*args,**kwargs):
+		user = kwargs.get('actor')
+		promotionID = kwargs.get('promotionID')
+		deal = kwargs.get('deal')
+		try:
+			if promotionID == PROMOTION_HIGHER_RANK:
+				deal = api_utils.PromoteDeal(deal).increase_karma()
+			elif promotionID == PROMOTION_MORE_TAGS:
+				tags = kwargs.get('tags')
+				deal = api_utils.PromoteDeal(deal).add_tags(tags)
+			else:
+				assert False, 'Did not recognize promotion type.'
+			
+			private = True
+			packaged_deal = api_utils.package_deal(deal, private)
+			
+			response = {
+					'deal' : packaged_deal
+					}
+			api_utils.send_response(self,response, user)
+		except AssertionError,e:
+			api_utils.send_error(self,str(e))
+		except Exception,e:
+			levr.log_error(e)
+			api_utils.send_error(self,'Server Error')
 
 # Quality Assurance for generating the upload urls
 NEW_DEAL_UPLOAD_URL = '/api/merchant/upload/add'
@@ -672,15 +777,16 @@ app = webapp2.WSGIApplication([
 								(EDIT_DEAL_UPLOAD_URL,EditDealHandler),
 								('/api/merchant/remove',ExpireDealHandler),
 								('/api/merchant/reactivate',ReactivateDealHandler),
-								# TODO: add promotion endpoints
-								##
+								('/api/merchant/promote/get',FetchPromotionOptionsHandler),
+								('/api/merchant/promote/set',ActivatePromotionHandler)
 								
-								('/api/merchant/initialize', InitializeMerchantHandler),
-								('/api/merchant/call', CallMerchantHandler),
-								('/api/merchant/verify', VerifyMerchantHandler),
-								('/api/merchant/twilioanswer', TwilioAnswerHandler),
-								('/api/merchant/twiliocheckcode', TwilioCheckCodeHandler),
-								('/api/merchant/twiliocallback', TwilioCallbackHandler)
+								## old...
+#								('/api/merchant/initialize', InitializeMerchantHandler),
+#								('/api/merchant/call', CallMerchantHandler),
+#								('/api/merchant/verify', VerifyMerchantHandler),
+#								('/api/merchant/twilioanswer', TwilioAnswerHandler),
+#								('/api/merchant/twiliocheckcode', TwilioCheckCodeHandler),
+#								('/api/merchant/twiliocallback', TwilioCallbackHandler)
 								],debug=True)
 
 

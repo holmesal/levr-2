@@ -386,7 +386,12 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						#geoPoint ^^ see above
 						'vicinity'		: str,
 						'types'			: str,
-						'shareURL'		: str
+						'shareURL'		: str,
+						
+						#promotion stuff
+						'tags'			: list,
+						'promotionID'	: str
+						
 						}
 			defaults = {
 						#entities
@@ -427,7 +432,11 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						'businessName'	: '',
 						'vicinity'		: '',
 						'types'			: '',
-						'shareURL'		: ''
+						'shareURL'		: '',
+						
+						# Promotion stuff
+						'tags'			: [],
+						'promotionID'	: ''
 						}
 			
 			try:
@@ -1589,7 +1598,44 @@ def update_foursquare_business(foursquare_id,deal_status,token='random'):
 
 	
 #delete account and all follower references
-
+class PromoteDeal:
+	'''
+	Class for promoting deals. Mostly for namespacing.
+	'''
+	def __init__(self,deal):
+		self.deal = deal
+	def put(self):
+		self.deal.put()
+		return self.deal
+	def increase_karma(self,**kwargs):
+		'''
+		Gives the deal preference over other deals so that it is shown before them
+		This is done by adding karma to the deal without increasing the upvotes
+		'''
+		self.deal.karma += 200
+		
+		if kwargs.get('auto_put',True) == True:
+			self.deal.put()
+			return self.deal
+		else:
+			return self
+	def add_tags(self,tags,**kwargs):
+		'''
+		Increases the tags on a deal so that it is more visible
+		
+		@param tags: a list of tags
+		@type tags: list
+		'''
+		assert type(tags) == list, 'tags must be a list'
+		
+		self.deal.tags.extend(tags)
+		
+		if kwargs.get('auto_put',True) == True:
+			self.deal.put()
+			return self.deal
+		else:
+			return self
+	
 
 
 class SpoofUndeadNinjaActivity:
