@@ -116,7 +116,7 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 			
 			
 			taskqueue.add(url=IMAGE_ROTATION_TASK_URL,payload=json.dumps(task_params))
-				
+			
 			
 			#give the user some karma
 			user.karma += 5

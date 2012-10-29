@@ -306,7 +306,6 @@ class MerchantDealsHandler(webapp2.RequestHandler):
 				
 				# package and send
 				private = True
-				# TODO: Add deal views to the packaged deals
 				# TODO: send promotionID back with the deals
 				packaged_deals = api_utils.package_deal_multi(sorted_deals, private)
 			else:

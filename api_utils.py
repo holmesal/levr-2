@@ -142,7 +142,9 @@ def _package_deal(deal,owner,business,private=False,rank=None,distance=None):
 	if distance: packaged_deal['distance'] = distance
 	
 	if private == True:
-		packaged_deal.update({})
+		packaged_deal.update({
+							'views'	: deal.views
+							})
 	
 	return packaged_deal
 	
@@ -252,7 +254,7 @@ def send_response(self,response,user=None):
 	#build meta object
 	meta = {'success':True}
 	
-	#build alerts object		
+	#build alerts object
 	#only send back alerts with private (user-authenticated) responses (optional parameter user)
 	if user != None:
 		alerts = {'newNotifications':user.new_notifications}
