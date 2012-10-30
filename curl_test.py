@@ -1,0 +1,91 @@
+from datetime import datetime
+from pprint import pprint
+import json
+import unittest
+import urllib2 as u
+
+base_url = 'http://test.levr-production.appspot.com'
+
+# Active account info is for CarlD
+
+active_uid = 'tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fO3GJdErv19TaoeLGNiu51Ss4w7UaChA='
+active_levr_token = '5VfXPghB5A90_W3pKxcaloRdnZPaSzPWXeZmUgeXDmE'
+email = 'carl@levr.com'
+pw = 'Carl'
+alias = 'Carl'
+# Test account info is for q
+test_uid = 'tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fO3GJdErv19TaoeLGNiu51SsytLkdChA='
+test_levr_token = 'twfSOF0Xtwhx-GrrKxYVw4cLn5yEQjLTWbFvDATEDTo'
+lat = '42.365468'
+lon = '-71.029486'
+uid = active_uid
+levr_token = active_levr_token
+
+
+
+
+
+
+class TestSequence(unittest.TestCase):
+	def test_search(self):
+		# Test search
+		endpoint = '/api/search/all'
+		url = base_url+endpoint+'?uid={uid}&levrToken={levrToken}&lat={lat}&lon={lon}'.format(uid=uid,levrToken=levr_token,lat=lat,lon=lon)
+		method = 'GET'
+		self._fetch(url,method,endpoint)
+	def test_popular(self):
+		endpoint = '/api/search/popular'
+		url = base_url+endpoint+'?uid={uid}&levrToken={levrToken}&lat={lat}&lon={lon}'.format(uid=uid,levrToken=levr_token,lat=lat,lon=lon)
+		method = 'GET'
+		self._fetch(url,method,endpoint)
+		
+	def test_login_validate(self):
+		endpoint = '/api/login/validate'
+		url = base_url+endpoint+'?uid={uid}&levrToken={levrToken}'.format(
+														uid=uid,
+														levrToken=levr_token)
+		method = 'GET'
+		self._fetch(url,method,endpoint)
+	def test_login_levr(self):
+		# login with email
+		endpoint = '/api/login/levr'
+		url = base_url+endpoint+'?email_or_owner={}&pw={}'.format(email,pw)
+		method = 'GET'
+		self._fetch(url,method,endpoint+' (email)')
+		# login with alias
+		
+		endpoint = '/api/login/levr'
+		url = base_url+endpoint+'?email_or_owner={}&pw={}'.format(alias,pw)
+		method = 'GET'
+		self._fetch(url,method,endpoint+' (owner)')
+		
+	
+	def _fetch(self,url,method,endpoint):
+		if method == 'GET':
+			post_data = None
+		elif method == 'POST':
+			post_data = '{}'
+		
+		
+		req = u.Request(url,post_data,{'Content-Type': 'application/json'})
+		t1 = datetime.now()
+		response = u.urlopen(req)
+		t2 = datetime.now()
+		tdiff = t2-t1
+		print ''
+		print endpoint +': '+ str(tdiff)
+		
+		self.assertEqual(response.code, 200, 'Response code {} on test search'.format(response.code))
+		data = json.loads(response.read())
+		
+#		pprint(data.get('meta',None))
+		
+		meta = data['meta']
+		self.assertEqual(meta['success'], True, 'Call to {} returned error: "{}"'.format(endpoint,meta.get('error','None')))
+		
+#		return data
+	
+if __name__ == '__main__':
+	print 'Running levr curl test...'
+	unittest.main()
+	

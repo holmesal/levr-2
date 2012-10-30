@@ -31,7 +31,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 		&latitudeHalfDelta=0.023277
 		&longitudeHalfDelta=0.027466
 		'''
-		try:
+		try:	
 			logging.debug('SEARCH BY QUERY\n\n\n')
 	#		logging.debug(kwargs)
 			#GET PARAMS
@@ -464,24 +464,11 @@ class SearchQueryHandler(webapp2.RequestHandler):
 							'foursquare_ids':	foursquare_ids,
 							'deal_status'	:	deal_status
 						}
-						
-				try:
-					chance = range(0,100)
 				
-				
-					if chance < 25:
+				logging.debug('Sending this to the task: ' + json.dumps(params))
 						
-						#lots of results, do the foursquare search inside a task
-						
-						logging.debug('Sending this to the task: ' + json.dumps(params))
-						
-						#start the task
-						taskqueue.add(url='/tasks/searchFoursquareTask',payload=json.dumps(params))
-					else:
-						logging.info()
-				except:
-					levr.log_error('task!')
-					taskqueue.add(url='/tasks/searchFoursquareTask',payload=json.dumps(params))
+				#start the task
+				taskqueue.add(url='/tasks/searchFoursquareTask',payload=json.dumps(params))
 			t2 = datetime.now()
 			
 			foursquare_search_time = t2-t1

@@ -7,7 +7,7 @@ from datetime import datetime
 import logging
 import levr_classes as levr
 import levr_encrypt as enc
-import levr_utils
+#import levr_utils
 import geo.geohash as geohash
 from google.appengine.ext import db
 from google.appengine.api import images
