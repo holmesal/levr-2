@@ -538,8 +538,8 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						uid = self.request.get('uid')
 						required = to_validate.get('user')
 						
-						logging.debug(uid)
-						logging.debug(required)
+#						logging.debug(uid)
+#						logging.debug(required)
 						
 						if not uid and required: raise KeyError('uid')
 						if not uid and not required: 
@@ -623,9 +623,9 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						raise Exception()
 					#msg is passed to the exception handler if val fails validation
 					
-					logging.debug(msg)
-					logging.debug(data_type)
-					logging.debug(required)
+#					logging.debug(msg)
+#					logging.debug(data_type)
+#					logging.debug(required)
 					
 					#handle case where input is not passed
 					
@@ -719,14 +719,13 @@ def validate(url_param,authentication_source,*a,**to_validate):
 				logging.debug(kwargs)
 			
 			except AttributeError,e:
-				levr.log_error()
+#				levr.log_error()
 				send_error(self,'Not Authorized, '+str(e))
 			except KeyError,e:
-				levr.log_error()
+#				levr.log_error()
 				send_error(self,'Required paramter not passed, '+str(e))
 			except TypeError,e:
-				levr.log_error()
-				
+#				levr.log_error()
 				send_error(self,'Invalid parameter, '+str(e))
 			except Exception,e:
 				levr.log_error()
