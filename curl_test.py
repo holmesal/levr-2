@@ -8,7 +8,7 @@ import sys
 test_url = 'http://test.levr-production.appspot.com'
 live_url = 'http://www.levr.com'
 local_url = 'http://0.0.0.0:8080'
-base_url = live_url
+base_url = test_url
 # Active account info is for CarlD
 
 active_uid = 'tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fO3GJdErv19TaoeLGNiu51Ss4w7UaChA='
@@ -19,6 +19,11 @@ alias = 'Carl'
 # Test account info is for q
 test_uid = 'tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fO3GJdErv19TaoeLGNiu51SsytLkdChA='
 test_levr_token = 'twfSOF0Xtwhx-GrrKxYVw4cLn5yEQjLTWbFvDATEDTo'
+
+# Deal test
+# deal uploaded by Bill!
+deal_id = 'tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fCHGJdErv19TaoeLGNiu51Sthw-oaChDyDrrMSui1aMhONe5YBg=='
+
 lat = '42.365468'
 lon = '-71.029486'
 uid = active_uid
@@ -36,6 +41,32 @@ class TestSequence(unittest.TestCase):
 		url = base_url+endpoint+'?uid={uid}&levrToken={levrToken}&lat={lat}&lon={lon}'.format(uid=uid,levrToken=levr_token,lat=lat,lon=lon)
 		method = 'GET'
 		self._fetch(url,method,endpoint)
+		
+		
+		
+#	def test_image(self):
+#		dealID = deal_id
+#		endpoint = '/api/deal/{}/img'.format(dealID)
+#		sizes = ['small','dealDetail']
+#		method = 'GET'
+#		for size in sizes:
+#			url = base_url+endpoint+'?uid={uid}&levrToken={levrToken}&size={size}'.format(
+#																	uid = uid,
+#																	levrToken = levr_token,
+#																	size= size
+#																	)
+#			self._fetch_img(url, method, endpoint)
+	def test_deal_info(self):
+		dealID = deal_id
+		endpoint = '/api/deal/{}'.format(dealID)
+		method = 'GET'
+		url = base_url+endpoint+'?uid={uid}&levrToken={levrToken}'
+		self._fetch(url, method, endpoint)
+		
+		url = base_url+endpoint
+		self._fetch(url, method, endpoint)
+		
+		
 	def test_popular(self):
 		endpoint = '/api/search/popular'
 		url = base_url+endpoint+'?uid={uid}&levrToken={levrToken}&lat={lat}&lon={lon}'.format(uid=uid,levrToken=levr_token,lat=lat,lon=lon)
@@ -76,7 +107,7 @@ class TestSequence(unittest.TestCase):
 		t2 = datetime.now()
 		tdiff = t2-t1
 		print ''
-		print base_url+endpoint +': '+ str(tdiff)
+		print base_url+endpoint+': '+str(tdiff)
 		
 		self.assertEqual(response.code, 200, 'Response code {} on test search'.format(response.code))
 		data = json.loads(response.read())
@@ -86,8 +117,26 @@ class TestSequence(unittest.TestCase):
 		meta = data['meta']
 		self.assertEqual(meta['success'], True, 'Call to {} returned error: "{}"'.format(endpoint,meta.get('error','None')))
 		
-#		return data
-	
+		return data
+	def _fetch_img(self,url,method,endpoint):
+		if method == 'GET':
+			post_data = None
+		elif method == 'POST':
+			post_data = '{}'
+		
+		req = u.Request(url,post_data,{'Content-Type': 'application/json'})
+		t1 = datetime.now()
+		response = u.urlopen(req)
+		t2 = datetime.now()
+		tdiff = t2-t1
+		print
+		print
+		print url
+		print
+		print str(tdiff)
+		
+		self.assertEqual(response.code, 200, 'Response code {} on test search'.format(response.code))
+		
 if __name__ == '__main__':
 	print sys.argv
 	if sys.argv.__len__() == 2:

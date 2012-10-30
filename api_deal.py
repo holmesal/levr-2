@@ -339,7 +339,10 @@ class DealImgHandler(webapp2.RequestHandler):
 			
 
 class DealInfoHandler(webapp2.RequestHandler):
-	@api_utils.validate('deal',None)
+	@api_utils.validate('deal',None,
+					user = False,
+					levrToken = False
+					)
 	def get(self,*args,**kwargs):
 		'''
 		Get information about a deal.
