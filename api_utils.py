@@ -1638,6 +1638,7 @@ class PromoteDeal:
 			return self.deal
 		else:
 			return self
+	def radius_alert(self,**kwargs):
 	
 
 

@@ -694,12 +694,12 @@ class FetchPromotionOptionsHandler(webapp2.RequestHandler):
 		user = kwargs.get('actor')
 		try:
 			promotion_1 = {
-						'type'	: PROMOTION_HIGHER_RANK,
+						'type'	: PROMO_BOOST_RANK,
 						'img'	: '', # TODO: add an image location to the promotion
 						'meta'	: {}
 						}
 			promotion_2 = {
-						'type'	: PROMOTION_MORE_TAGS,
+						'type'	: PROMO_MORE_TAGS,
 						'img'	: '',
 						'meta'	: {}
 						}
@@ -722,8 +722,12 @@ class FetchPromotionOptionsHandler(webapp2.RequestHandler):
 			levr.log_error(e)
 			api_utils.send_error(self,'Server Error')
 
-PROMOTION_HIGHER_RANK = 'more_karma'
-PROMOTION_MORE_TAGS = 'more_tags'
+PROMO_BOOST_RANK = 'boost_rank'
+PROMO_MORE_TAGS = 'more_tags'
+PROMO_RADIUS_ALERT = 'radius_alert'
+PROMO_NOTIFY_PREVIOUS_LIKES = 'notify_previous_likes'
+PROMO_NOTIFY_RELATED_LIKES = 'notify_related_likes'
+
 
 class ActivatePromotionHandler(webapp2.RequestHandler):
 	'''
@@ -745,11 +749,17 @@ class ActivatePromotionHandler(webapp2.RequestHandler):
 		promotionID = kwargs.get('promotionID')
 		deal = kwargs.get('deal')
 		try:
-			if promotionID == PROMOTION_HIGHER_RANK:
+			if promotionID == PROMO_BOOST_RANK:
 				deal = api_utils.PromoteDeal(deal).increase_karma()
-			elif promotionID == PROMOTION_MORE_TAGS:
+			elif promotionID == PROMO_MORE_TAGS:
 				tags = kwargs.get('tags')
 				deal = api_utils.PromoteDeal(deal).add_tags(tags)
+			elif promotionID == PROMO_RADIUS_ALERT:
+				deal = api_utils.PromoteDeal(deal).radius_alert()
+			elif promotionID == PROMO_NOTIFY_PREVIOUS_LIKES:
+				deal = api_utils.PromoteDeal(deal)
+			elif promotionID == PROMO_NOTIFY_RELATED_LIKES:
+				pass
 			else:
 				assert False, 'Did not recognize promotion type.'
 			

@@ -180,9 +180,13 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 			api_utils.send_response(self,response)
 		
 		except KeyError,e:
+			logging.info('Key Error')
+			logging.info(str(e))
 			levr.log_error()
 			api_utils.send_error(self,str(e))
 		except:
+			logging.info('Server Error')
+			logging.info(str(e))
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 		

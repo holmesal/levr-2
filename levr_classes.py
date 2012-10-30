@@ -557,7 +557,6 @@ def dealCreate(params,origin,upload_flag=True,**kwargs):
 		else:
 			raise KeyError('types not in params')
 		#check if business exists - get businessID
-#		business= Business.gql("WHERE business_name=:1 and geo_point=:2", business_name, geo_point).get()
 		business = Business.all().filter('business_name =',business_name).filter('vicinity =',vicinity).get()
 		logging.debug('start business info')
 		logging.debug(log_model_props(business))
