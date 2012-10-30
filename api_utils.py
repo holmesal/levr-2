@@ -138,8 +138,10 @@ def _package_deal(deal,owner,business,private=False,rank=None,distance=None):
 				'owner'			: package_user(owner,private,False)
 				}
 	
-	if rank: packaged_deal['rank'] = rank
-	if distance: packaged_deal['distance'] = distance
+	if rank:
+		packaged_deal['rank'] = rank
+	if distance:
+		packaged_deal['distance'] = distance
 	
 	if private == True:
 		packaged_deal.update({
@@ -1639,6 +1641,10 @@ class PromoteDeal:
 		else:
 			return self
 	def radius_alert(self,**kwargs):
+		'''
+		Sends a notification to ALL users within a certain radius when they search 
+		'''
+		pass
 	
 
 

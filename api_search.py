@@ -220,8 +220,15 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			#find the max k and max d out of the deals that have been found
 			for deal in deals:
 				# get deal karma points
-				#   karma is added when a business promotes the deal. Adds to rank, but doesnt show in upvotes
+				#  karma is added when a business promotes the deal. Adds to rank, but doesnt show in upvotes
 				k		= deal.upvotes - deal.downvotes + deal.karma
+				try:
+					if deal.origin == 'levr':
+						k += 5
+					else:
+						pass
+				except:
+					levr.log_error('Deal origin')
 				k_list.append(k)
 #				logging.debug('deal karma: '+str(k))
 				
@@ -245,6 +252,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				#append foursquare id
 				if deal.foursquare_id:
 					foursquare_ids.append(deal.foursquare_id)
+				
 			t2 = datetime.now()
 			
 			calc_maxes_time = t2-t1
@@ -268,7 +276,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 #				logging.debug('k:'+str(k)+', d: '+str(d)+', max_k: '+str(max_k)+', max_d: '+str(max_d))
 				
 				#calculate scaled karma and distance
-				kf = k_coef*k/max_k
+				kf = k#k_coef*k/max_k
 				df = d_coef*d/max_d
 				
 				#set minimum d... especially to eliminate division by zero
@@ -286,8 +294,6 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				# but a certain zoom level implies that the area that is shown is the primary area of interest,
 				# and any point within the visible area is an acceptable point for a deal
 				rank = (1+kf)
-				
-				
 #				logging.debug('rank: '+str(rank))
 				#add the rank to the deal toop
 #				logging.debug(toop)
@@ -377,7 +383,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				logging.info(karmas)
 				logging.info(distances)
 				logging.info(deals)
-				packaged_deals = api_utils.package_deal_multi(deals,rank=ranks,distance=distances)
+				packaged_deals = api_utils.package_deal_multi(deals,ranks=ranks,distances=distances)
 				
 				# add deal views for each deal
 				try:
@@ -451,21 +457,31 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				except:
 					levr.log_error('Error in foursquare call or parsing.')
 			else:
-				#lots of results, do the foursquare search inside a task
 				params = {
-					'lat'			:	geo_point.lat,
-					'lon'			:	geo_point.lon,
-					'token'			:	token,
-					'foursquare_ids':	foursquare_ids,
-					'deal_status'	:	deal_status
-				}
+							'lat'			:	geo_point.lat,
+							'lon'			:	geo_point.lon,
+							'token'			:	token,
+							'foursquare_ids':	foursquare_ids,
+							'deal_status'	:	deal_status
+						}
+						
+				try:
+					chance = range(0,100)
 				
-				logging.debug('Sending this to the task: ' + json.dumps(params))
 				
-				#start the task
-				taskqueue.add(url='/tasks/searchFoursquareTask',payload=json.dumps(params))
-				
-			
+					if chance < 25:
+						
+						#lots of results, do the foursquare search inside a task
+						
+						logging.debug('Sending this to the task: ' + json.dumps(params))
+						
+						#start the task
+						taskqueue.add(url='/tasks/searchFoursquareTask',payload=json.dumps(params))
+					else:
+						logging.info()
+				except:
+					levr.log_error('task!')
+					taskqueue.add(url='/tasks/searchFoursquareTask',payload=json.dumps(params))
 			t2 = datetime.now()
 			
 			foursquare_search_time = t2-t1
@@ -621,6 +637,11 @@ class SearchPopularHandler(webapp2.RequestHandler):
 				tags.extend(deal.tags)
 			logging.debug(tags)
 			
+			# filter tags
+			try:
+				tags = filter(lambda x: x not in blacklist, tags)
+			except:
+				levr.log_error()
 			#convert list of all tags to a dict of key=tag, val=frequency
 			count = {}
 			for tag in tags:
@@ -644,15 +665,20 @@ class SearchPopularHandler(webapp2.RequestHandler):
 			#select only the most popular ones, and convert to list
 			word_list = [x[1] for x in tuple_list if x[1] not in blacklist]
 			
+			
 			####DEBUG
 			#if the popular items list is longer than 6, send entire list, else only send 6
-#			logging.debug(word_list.__len__())
-#			if word_list.__len__()<6:
-#				popular_items = word_list
-#			else:
-#				popular_items = word_list[:6]
-			popular_items = word_list
+			try:
+				logging.debug(word_list.__len__())
+				if word_list.__len__()<6:
+					popular_items = word_list
+				else:
+					popular_items = word_list[:6]
 			
+			### SWITCH
+			except:
+				popular_items = word_list
+				levr.log_error('popular searches')
 			#### /DEBUG
 			
 			#BATCH GET RESULTS
