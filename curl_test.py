@@ -3,9 +3,12 @@ from pprint import pprint
 import json
 import unittest
 import urllib2 as u
+import sys
 
-base_url = 'http://test.levr-production.appspot.com'
-
+test_url = 'http://test.levr-production.appspot.com'
+live_url = 'http://www.levr.com'
+local_url = 'http://0.0.0.0:8080'
+base_url = live_url
 # Active account info is for CarlD
 
 active_uid = 'tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fO3GJdErv19TaoeLGNiu51Ss4w7UaChA='
@@ -73,7 +76,7 @@ class TestSequence(unittest.TestCase):
 		t2 = datetime.now()
 		tdiff = t2-t1
 		print ''
-		print endpoint +': '+ str(tdiff)
+		print base_url+endpoint +': '+ str(tdiff)
 		
 		self.assertEqual(response.code, 200, 'Response code {} on test search'.format(response.code))
 		data = json.loads(response.read())
@@ -86,6 +89,20 @@ class TestSequence(unittest.TestCase):
 #		return data
 	
 if __name__ == '__main__':
-	print 'Running levr curl test...'
+	print sys.argv
+	if sys.argv.__len__() == 2:
+		location = sys.argv.pop()
+		if location == 'local':
+			base_url = local_url
+		elif location == 'test':
+			base_url = test_url
+		elif location == 'live':
+			base_url = live_url
+		else:
+			raise Exception('As a second argument pass: local, test, or live')
+	
+	
+	print 'Running levr curl test on {}...'.format(base_url)
+	
 	unittest.main()
 	
