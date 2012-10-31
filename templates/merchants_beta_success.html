@@ -43,7 +43,14 @@
 		<script src="/js/bootstrap.min.js"></script>
 		<script src="/js/merchants_beta.js"></script>
 		<script type="text/javascript">
-			
+			$(window).load(function(){
+				//track loadtime
+				var endTime = (new Date()).getTime();
+			    var millisecondsLoading = endTime - startTime;
+			    
+			    mixpanel.track("Levr Beta Request Success",{"Load Time":millisecondsLoading})
+				
+			})
 		</script>
 	</body>
 </html>

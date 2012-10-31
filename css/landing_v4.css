@@ -8,8 +8,12 @@ body {
 }
 
 .top{
-	height: 50px;
+	height: 42px;
 	background-color: white;
+}
+
+.navcontent{
+	padding-left: 100px;
 }
 
 /*#map { position:absolute; top:0; bottom:0; width:100%; }*/
