@@ -1,5 +1,4 @@
 from datetime import datetime
-from pprint import pprint
 import json
 import unittest
 import urllib2 as u
@@ -60,11 +59,11 @@ class TestSequence(unittest.TestCase):
 		dealID = deal_id
 		endpoint = '/api/deal/{}'.format(dealID)
 		method = 'GET'
-		url = base_url+endpoint+'?uid={uid}&levrToken={levrToken}'
+		url = base_url+endpoint+'?uid={uid}&levrToken={levrToken}'.format(uid=uid,levrToken=levr_token)
 		self._fetch(url, method, endpoint)
 		
-		url = base_url+endpoint
-		self._fetch(url, method, endpoint)
+#		url = base_url+endpoint
+#		self._fetch(url, method, endpoint)
 		
 		
 	def test_popular(self):
@@ -106,7 +105,9 @@ class TestSequence(unittest.TestCase):
 		response = u.urlopen(req)
 		t2 = datetime.now()
 		tdiff = t2-t1
-		print ''
+		print
+		print
+		print
 		print base_url+endpoint+': '+str(tdiff)
 		
 		self.assertEqual(response.code, 200, 'Response code {} on test search'.format(response.code))
@@ -115,27 +116,9 @@ class TestSequence(unittest.TestCase):
 #		pprint(data.get('meta',None))
 		
 		meta = data['meta']
-		self.assertEqual(meta['success'], True, 'Call to {} returned error: "{}"'.format(endpoint,meta.get('error','None')))
+		self.assertEqual(meta['success'], True, 'Call to {} returned error: "{}"'.format(url,meta.get('error','None')))
 		
 		return data
-	def _fetch_img(self,url,method,endpoint):
-		if method == 'GET':
-			post_data = None
-		elif method == 'POST':
-			post_data = '{}'
-		
-		req = u.Request(url,post_data,{'Content-Type': 'application/json'})
-		t1 = datetime.now()
-		response = u.urlopen(req)
-		t2 = datetime.now()
-		tdiff = t2-t1
-		print
-		print
-		print url
-		print
-		print str(tdiff)
-		
-		self.assertEqual(response.code, 200, 'Response code {} on test search'.format(response.code))
 		
 if __name__ == '__main__':
 	print sys.argv
@@ -148,7 +131,7 @@ if __name__ == '__main__':
 		elif location == 'live':
 			base_url = live_url
 		else:
-			raise Exception('As a second argument pass: local, test, or live')
+			raise Exception('As a second argument pass: local, test, or live e.g. python curl_test.py test')
 	
 	
 	print 'Running levr curl test on {}...'.format(base_url)
