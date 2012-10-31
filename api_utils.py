@@ -1627,9 +1627,18 @@ class PromoteDeal(BaseClass):
 		'''
 		self.deal = deal
 		self.purchaser = purchaser
-		self.business = levr.Business.get(deal.businessID)
+		try:
+			if deal.business:
+				self.business = deal.business
+			else:
+				self.business = levr.Business.get(deal.businessID)
+		except:
+			self.business = levr.Business.get(deal.businessID)
 		
-		
+	def check_self(self):
+		logging.debug(levr.log_model_props(self.deal))
+		logging.debug(levr.log_model_props(self.business))
+		logging.debug(levr.log_model_props(self.purchaser))
 	def put(self):
 		'''
 		Simply puts the deal and returns the deal

@@ -551,8 +551,10 @@ class SandboxHandler(webapp2.RequestHandler):
 		deal = levr.Deal.all().get()
 		w = self.response.out.write
 		w(levr.log_model_props(deal))
+		w("\n\n\n\n\n")
 		w(deal.parent_key())
 		w(type(deal.business))
+		w(levr.log_model_props(deal.business))
 		
 class UploadPhotoHandler(webapp2.RequestHandler):
 	'''

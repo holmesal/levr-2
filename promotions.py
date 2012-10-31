@@ -15,9 +15,18 @@ NOTIFY_RELATED_LIKES = 'notify_related_likes'
 # needs: deal, radius of effect - need to start adding searched_geohashes to a user entity
 
 PROMOTIONS = {
-			BOOST_RANK:{},
-			MORE_TAGS :{},
-			RADIUS_ALERT : {},
+			BOOST_RANK:{
+					'name'	: BOOST_RANK,
+					'img'	: 'IMAGE'
+					},
+			MORE_TAGS :{
+					'name'	: MORE_TAGS,
+					'img'	: 'IMAGE!!'
+					},
+			RADIUS_ALERT : {
+						'name'	: RADIUS_ALERT,
+						'img'	: 'IMAGE'
+						},
 			NOTIFY_PREVIOUS_LIKES:{},
 			NOTIFY_RELATED_LIKES:{}
 			}

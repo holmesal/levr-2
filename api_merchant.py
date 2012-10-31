@@ -171,7 +171,7 @@ class TwilioCallbackHandler(webapp2.RequestHandler):
 # SOME NEW AGE MERCHANT SHIT!!
 #===============================================================================
 
-class ConnectMerchantHandler(webapp2.RequestHandler):
+class ConnectMerchantHandler(api_utils.BaseClass):
 	'''
 	A handler for creating a merchant account
 	'''
@@ -306,7 +306,7 @@ class ConnectMerchantHandler(webapp2.RequestHandler):
 			levr.log_error(e)
 			api_utils.send_error(self,'Server Error')
 			
-class MerchantDealsHandler(webapp2.RequestHandler):
+class MerchantDealsHandler(api_utils.BaseClass):
 	'''
 	A handler for serving all of a merchants deals for their manage page
 	'''
@@ -350,7 +350,7 @@ class MerchantDealsHandler(webapp2.RequestHandler):
 			levr.log_error(e)
 			api_utils.send_error(self,'Server Error')
 			
-class RequestUploadURLHandler(webapp2.RequestHandler):
+class RequestUploadURLHandler(api_utils.BaseClass):
 	'''
 	A handler to serve an upload url for uploading an image to the server
 	'''
@@ -600,7 +600,7 @@ class EditDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 			api_utils.send_error(self,'Server Error')
 			
 		
-class ExpireDealHandler(webapp2.RequestHandler):
+class ExpireDealHandler(api_utils.BaseClass):
 	'''
 	A handler to expire a deal from a merchant
 	'''
