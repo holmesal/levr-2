@@ -12,6 +12,8 @@ import logging
 import os
 import random
 import urllib
+import promotions as promo
+import webapp2
 #from fnmatch import filter
 
 
@@ -23,7 +25,9 @@ else:
 	#we are deployed on the server
 	host_url = 'http://www.levr.com/'
 
-
+class BaseClass(webapp2.RequestHandler):
+	
+	pass
 
 def send_error(self,error):
 	reply = {
@@ -36,10 +40,9 @@ def send_error(self,error):
 	}
 	logging.debug(levr.log_dict(reply))
 	self.response.out.write(json.dumps(reply))
-	
-	
-	
-	
+
+
+
 
 def create_pin_color(deal):
 	if deal.origin == 'levr':
@@ -71,15 +74,20 @@ def package_deal_multi(deals,private=False,*args,**kwargs):
 	ranks = kwargs.get('ranks',[None for deal in deals]) #@UnusedVariable
 	distances = kwargs.get('distances',[None for deal in deals]) #@UnusedVariable
 	
-	
-	
-	
-	
-	
+	# TODO: failsafe for deal fetching - if batch get fails, fall back to one-by-one gets + filter
 	
 	# prefetch deal owners
-	owner_keys = [deal.key().parent() for deal in deals]
-	owners = db.get(owner_keys)
+	try:
+		owner_keys = [deal.key().parent() for deal in deals]
+		owners = db.get(owner_keys)
+	except:
+		# Fetch the deals one-by-one, filtering out the deals that would break the whole transaction
+		# shitty, but at least it will not break the search if one deal fails
+		levr.log_error()
+		owners = []
+		for deal in deals:
+			owners.append(levr.Customer.get(deal.parent_key()))
+			
 	# prefetch deal businesses
 	business_keys = [deal.businessID for deal in deals]
 	businesses = db.get(business_keys)
@@ -1599,31 +1607,78 @@ def update_foursquare_business(foursquare_id,deal_status,token='random'):
 	#pull the specials
 	#logging.info(foursquare_deals)
 
-
-
 	
 #delete account and all follower references
-class PromoteDeal:
+class PromoteDeal(BaseClass):
 	'''
 	Class for promoting deals. Mostly for namespacing.
 	'''
-	def __init__(self,deal):
+	def __init__(self,deal,purchaser,**kwargs):
+		'''
+		
+		@param deal: The deal being promoted
+		@type deal: Deal
+		@param purchaser: The Customer who purchased the promotion
+		@type purchaser: Customer
+		
+		@keyword development: A flag to run this in development mode
+			If true, will only affect test deals and test people
+		@type development: bool
+		'''
 		self.deal = deal
+		self.purchaser = purchaser
+		self.business = levr.Business.get(deal.businessID)
+		
+		
 	def put(self):
+		'''
+		Simply puts the deal and returns the deal
+		Useful for stacking promotions where it is undesirable to
+			put the deal every time a promotion is applied
+		'''
 		self.deal.put()
 		return self.deal
-	def increase_karma(self,**kwargs):
+	def get_sans_put(self):
 		'''
-		Gives the deal preference over other deals so that it is shown before them
-		This is done by adding karma to the deal without increasing the upvotes
+		Returns the deal as-is
 		'''
-		self.deal.karma += 200
+		return self.deal
+	def _add_promo(self,promo_type):
+		self.deal.promotions.append(promo_type)
 		
+		# TODO: create a promotion object
+		
+		return
+	def _return(self,kwargs):
+		'''
+		Wrapper for the return function
+		simply for determining if the deal or the PromoteDeal object should be returned
+		@param kwargs:
+		@type kwargs:
+		'''
 		if kwargs.get('auto_put',True) == True:
 			self.deal.put()
 			return self.deal
 		else:
 			return self
+		
+	#===========================================================================
+	# Promotions
+	#===========================================================================
+	def increase_karma(self,**kwargs):
+		'''
+		Gives the deal preference over other deals so that it is shown before them
+		This is done by adding karma to the deal without increasing the upvotes
+		'''
+		# increase the unseen karma of the deal
+		self.deal.karma += 200
+		
+		# log new promo type to the deal
+		self._add_promo(promo.BOOST_RANK)
+		
+		return self._return(kwargs)
+		
+
 	def add_tags(self,tags,**kwargs):
 		'''
 		Increases the tags on a deal so that it is more visible
@@ -1631,21 +1686,69 @@ class PromoteDeal:
 		@param tags: a list of tags
 		@type tags: list
 		'''
-		assert type(tags) == list, 'tags must be a list'
 		
+		# append new deal tags to the list of tags
+		assert type(tags) == list, 'tags must be a list'
 		self.deal.tags.extend(tags)
 		
-		if kwargs.get('auto_put',True) == True:
-			self.deal.put()
-			return self.deal
-		else:
-			return self
+		# add the new promo type to the deal
+		self._add_promo(promo.MORE_TAGS)
+		
+		return self._return(kwargs)
+		
+
 	def radius_alert(self,**kwargs):
 		'''
 		Sends a notification to ALL users within a certain radius when they search 
 		'''
-		pass
+		
+		assert promo.RADIUS_ALERT not in self.deal.promotions, \
+			'Deal has already used promotion: ' + promo.RADIUS_ALERT
+		
+		# add the new promo type to the deal
+		self._add_promo(promo.RADIUS_ALERT)
+		
+		return self._return(kwargs)
+		
+
+	def notify_previous_likes(self,**kwargs):
+		'''
+		Sends a notification to everyone who has liked a deal at that business before
+		'''
+		
+		assert promo.NOTIFY_PREVIOUS_LIKES not in self.deal.promotions, \
+			'Deal has already used promotion: ' + promo.NOTIFY_PREVIOUS_LIKES
+		
+		# add the new promo type to the deal
+		self._add_promo(promo.NOTIFY_PREVIOUS_LIKES)
+		
+		return self._return(kwargs)
+		
+
+	def notify_related_likes(self,**kwargs):
+		'''
+		Sends a notification to everyone who has likes a deal that is similar to this one
+		This will probably done with a complex series of ropes
+		This will probably be done by finding deals that have similar tags
+			and finding people who have liked them
+		'''
+		assert promo.NOTIFY_RELATED_LIKES not in self.deal.promotions, \
+			'Deal has already used promotion: ' + promo.NOTIFY_RELATED_LIKES
+		
+		return self._return(kwargs)
 	
+#===============================================================================
+# New deal properties...
+# promotions = StringListProperty(choices=set(['increase_karma',etc..])
+# 
+# New Class:
+# Promotion(db.Model):
+# purchaser
+# deal
+# type
+# date
+# 
+#===============================================================================
 
 
 class SpoofUndeadNinjaActivity:

@@ -9,6 +9,7 @@ import json
 import levr_classes as levr
 import levr_encrypt as enc
 import logging
+import promotions as promo
 import time
 import urllib
 import webapp2
@@ -216,10 +217,13 @@ class ConnectMerchantHandler(webapp2.RequestHandler):
 		geo_point = kwargs.get('ll')
 		types = kwargs.get('types')
 		development = kwargs.get('development',False)
+		# TODO: accept phone number as well
 		try:
 			# Convert input data
 			password = enc.encrypt_password(password)
 			types = types.split(',')
+			
+			logging.debug('{}\n{}\n{}\n{}'.format(business_name,vicinity,geo_point,types))
 			
 			# check for existing entities
 			user = levr.Customer.all().filter('email',email).get()
@@ -234,13 +238,15 @@ class ConnectMerchantHandler(webapp2.RequestHandler):
 				try:
 					business = user.businesses.get()
 					# if the user has a business, it should be the business that was requested
-					assert business == requested_business, user_doesnt_own_business_message
-					
+					assert business, 'User does not own any businesses yet'
 				except:
+					logging.debug('user does not have a business yet')
 					# if the user does not have a business yet, add this one.
 					business = levr.create_new_business(business_name,vicinity,geo_point,types,owner=user,development=development)
 #					assert False, user_doesnt_own_business_message
-				
+				else:
+					if requested_business:
+						assert business == requested_business, user_doesnt_own_business_message
 				
 				
 				
@@ -255,14 +261,16 @@ class ConnectMerchantHandler(webapp2.RequestHandler):
 				logging.debug(business_name)
 				logging.debug(levr.log_model_props(user))
 				if not requested_business:
+					logging.debug('requested business was not found')
 					business = levr.create_new_business(business_name,vicinity,geo_point,types,owner=user)
 				else:
+					logging.debug('requested business was found')
 					business = requested_business
 					# 
 					business.owner = user
 					business.put()
 			
-			
+			logging.debug('business: '+repr(business))
 			#===================================================================
 			# # Send message to the founders that someone has signed up for the app
 			#===================================================================
@@ -326,7 +334,7 @@ class MerchantDealsHandler(webapp2.RequestHandler):
 				
 				# package and send
 				private = True
-				# TODO: send promotionID back with the deals
+				# TODO: send promotion object back with the deals
 				packaged_deals = api_utils.package_deal_multi(sorted_deals, private)
 			else:
 				packaged_deals = []
@@ -455,7 +463,8 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 					'development'		: development,
 					'img_key'			: img_key
 					}
-			
+			# TODO: add time variation to the deal expiration
+			#   i.e. merchant deals last longer than the default 7 days
 			deal_entity = levr.dealCreate(params, 'phone_merchant', upload_flag)
 			
 			
@@ -617,7 +626,7 @@ class ExpireDealHandler(webapp2.RequestHandler):
 			assert deal.parent_key() == user.key(), 'User does not own that deal'
 			
 			deal.deal_status = 'expired'
-			
+			# TODO: set date_expired to now 
 			deal.put()
 			
 			private = True
@@ -693,22 +702,7 @@ class FetchPromotionOptionsHandler(webapp2.RequestHandler):
 	def get(self,*args,**kwargs):
 		user = kwargs.get('actor')
 		try:
-			promotion_1 = {
-						'type'	: PROMO_BOOST_RANK,
-						'img'	: '', # TODO: add an image location to the promotion
-						'meta'	: {}
-						}
-			promotion_2 = {
-						'type'	: PROMO_MORE_TAGS,
-						'img'	: '',
-						'meta'	: {}
-						}
-			promotion_3 = {
-						'type'	: None,
-						'img'	: '',
-						'meta'	: {}
-						}
-			promotions = [promotion_1,promotion_2,promotion_3]
+			promotions = [key for key in promo.PROMOTIONS]
 			
 			response = {
 					'promotions' : promotions
@@ -722,14 +716,9 @@ class FetchPromotionOptionsHandler(webapp2.RequestHandler):
 			levr.log_error(e)
 			api_utils.send_error(self,'Server Error')
 
-PROMO_BOOST_RANK = 'boost_rank'
-PROMO_MORE_TAGS = 'more_tags'
-PROMO_RADIUS_ALERT = 'radius_alert'
-PROMO_NOTIFY_PREVIOUS_LIKES = 'notify_previous_likes'
-PROMO_NOTIFY_RELATED_LIKES = 'notify_related_likes'
 
 
-class ActivatePromotionHandler(webapp2.RequestHandler):
+class ActivatePromotionHandler(api_utils.PromoteDeal):
 	'''
 	A handler for activating a promotion. Will accept a users information and
 	an identifier for a promotion. This handler will act according to the type
@@ -749,16 +738,20 @@ class ActivatePromotionHandler(webapp2.RequestHandler):
 		promotionID = kwargs.get('promotionID')
 		deal = kwargs.get('deal')
 		try:
-			if promotionID == PROMO_BOOST_RANK:
+			if promotionID == promo.BOOST_RANK:
 				deal = api_utils.PromoteDeal(deal).increase_karma()
-			elif promotionID == PROMO_MORE_TAGS:
+				
+			elif promotionID == promo.MORE_TAGS:
 				tags = kwargs.get('tags')
 				deal = api_utils.PromoteDeal(deal).add_tags(tags)
-			elif promotionID == PROMO_RADIUS_ALERT:
+				
+			elif promotionID == promo.RADIUS_ALERT:
 				deal = api_utils.PromoteDeal(deal).radius_alert()
-			elif promotionID == PROMO_NOTIFY_PREVIOUS_LIKES:
+				
+			elif promotionID == promo.NOTIFY_PREVIOUS_LIKES:
 				deal = api_utils.PromoteDeal(deal)
-			elif promotionID == PROMO_NOTIFY_RELATED_LIKES:
+				
+			elif promotionID == promo.NOTIFY_RELATED_LIKES:
 				pass
 			else:
 				assert False, 'Did not recognize promotion type.'

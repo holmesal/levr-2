@@ -15,6 +15,7 @@ import sys
 import traceback
 import uuid
 from math import floor, sqrt
+import promotions as promo
 #from random import randint
 #from math import floor
 
@@ -1177,8 +1178,12 @@ class Business(db.Model):
 			tags.extend(t)
 		
 		return tags
-DEAL_MODEL_VERSION = 2
+DEAL_MODEL_VERSION = 3
 class Deal(polymodel.PolyModel):
+	'''
+	Changelog:
+	v3: added promotions property - for identifying what promotions the deal is affected by
+	'''
 #Child of business owner OR customer ninja
 	#deal meta information
 	deal_status		= db.StringProperty(choices=set(["pending","active","rejected","expired","test"]),default="active")
@@ -1254,7 +1259,7 @@ class Deal(polymodel.PolyModel):
 		'''
 		Increments the number of times this deal has been viewed
 		'''
-		# TODO: add shards to memcache?
+		# TODO: add shards to memcache? low priority
 		index = random.randint(0,NUM_DEAL_VIEW_COUNTERS-1)
 		shard_name = 'shard'+str(index)
 		counter = DealViewCounter.get_by_key_name(shard_name,self)
@@ -1263,6 +1268,7 @@ class Deal(polymodel.PolyModel):
 		counter.count += 1
 		counter.put()
 		return
+	
 NUM_DEAL_VIEW_COUNTERS = 10
 class DealViewCounter(db.Model):
 	'''
@@ -1271,6 +1277,29 @@ class DealViewCounter(db.Model):
 	Must be a child of a deal
 	'''
 	count = db.IntegerProperty(required=True,default=0)
+
+PROMOTION_MODEL_VERSION = 1
+class Promotion(db.Model):
+	'''
+	A record for a promotion that has been bought
+	Changelog:
+	v1:
+	
+	'''
+	purchaser = db.ReferenceProperty(Customer,required=True,collection_name='purchased_promotions_history')
+	deal = db.ReferenceProperty(Deal,required=True,collection_name='purchased_promotions_history')
+	date = db.DateTimeProperty(auto_now_add=True)
+	type = db.StringProperty(required=True,choices=set([
+													promo.BOOST_RANK,
+													promo.MORE_TAGS,
+													promo.NOTIFY_PREVIOUS_LIKES,
+													promo.NOTIFY_RELATED_LIKES,
+													promo.RADIUS_ALERT
+													])
+							)
+	model_version = db.IntegerProperty(default=PROMOTION_MODEL_VERSION)
+
+
 NOTIFICATION_MODEL_VERSION = 1
 class Notification(db.Model):
 	# Only has outbound references, no inbound

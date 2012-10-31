@@ -547,34 +547,13 @@ class SandboxHandler(webapp2.RequestHandler):
 	Dont delete this. This is my dev playground.
 	'''
 	def get(self):
-#		self.response.headers['Content-Type'] = 'text/plain'
-		deal_entity = levr.Deal.all().filter('origin','levr').filter('deal_status','test').get()
-		logging.debug(deal_entity.key())
-		logging.debug(deal_entity.deal_text)
-		user = db.get(deal_entity.parent_key())
+		self.response.headers['Content-Type'] = 'text/plain'
+		deal = levr.Deal.all().get()
+		w = self.response.out.write
+		w(levr.log_model_props(deal))
+		w(deal.parent_key())
+		w(type(deal.business))
 		
-		deal = api_utils.package_deal(deal_entity, True)
-		
-		reject_link = 'http://www.levr.com/admin/deal/{}/reject'.format(enc.encrypt_key(deal_entity.key()))
-		message = mail.EmailMessage()
-		message.to = ['patrick@levr.com']
-#		message = mail.AdminEmailMessage()
-		message.sender = 'patrick@levr.com'
-		message.subject = 'New Upload'
-		
-		message.html = '<img src="{}"><br>'.format(deal.get('smallImg'))
-		message.html += '<h1>{}</h1><br>'.format(deal_entity.deal_text)
-		message.html += '<h3>{}</h3><br>'.format(deal_entity.description)
-		message.html += '<h4>Uploaded by: {}</h4>'.format(user.display_name)
-		message.html += '<p>deal_status: {}</p>'.format(deal_entity.deal_status)
-		message.html += '<br><br><br>Reject: {}<br><br><br>'.format(reject_link)
-		message.html += levr.log_dict(deal, None, '<br>')
-		
-#		message.body += '\n\n\n\n\n\nApprove: {}'.format(approve_link)
-		
-		message.check_initialized()
-		message.send()
-		self.response.out.write(message.html)
 class UploadPhotoHandler(webapp2.RequestHandler):
 	'''
 	Form to upload photos for undead ninjas
