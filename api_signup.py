@@ -35,6 +35,11 @@ class SignupFacebookHandler(webapp2.RequestHandler):
 					'new_user_details'	: new_user_details
 					}
 			
+			try:
+				levr.text_notify(new_user.display_name + 'from Facebook')
+			except:
+				levr.log_error()
+			
 			api_utils.send_response(self,response,new_user)
 		except AssertionError,e:
 			levr.log_error()
@@ -63,16 +68,17 @@ class SignupFoursquareHandler(webapp2.RequestHandler):
 				# NOTE: there is a remote chance that the users foursquare oauth_token would change.
 				# this would not recognize that
 				#===============================================================
-				#create new user
-				user = social.Foursquare(
+				
+				
+				try:
+					#create new user
+					user = social.Foursquare(
 										foursquare_token = foursquare_token
 										)
-				try:
 					user, new_user_details, new_friends = user.first_time_connect(
-													foursquare_token = foursquare_token
+													foursquare_token = foursquare_token,
 													)
 				except Exception,e:
-					#remove the entity that was created because the signup failed
 					levr.log_error()
 					assert False, 'Could not connect with foursquare. '.format('')
 				#return the user
@@ -81,6 +87,11 @@ class SignupFoursquareHandler(webapp2.RequestHandler):
 						'new_friends'		: [enc.encrypt_key(f) for f in new_friends],
 						'new_user_details'	: new_user_details
 						}
+			try:
+				levr.text_notify(user.display_name+' from Foursquare!')
+			except:
+				levr.log_error()
+				
 			api_utils.send_response(self,response,user)
 		except AssertionError,e:
 			levr.log_error()
@@ -133,6 +144,12 @@ class SignupTwitterHandler(webapp2.RequestHandler):
 						'new_friends'		: [enc.encrypt_key(f) for f in new_friends],
 						'new_user_details'	: new_user_details
 						}
+			try:
+				levr.text_notify(user.display_name+' from Twitter!')
+			except:
+				levr.log_error()
+				
+				
 			api_utils.send_response(self,response,user)
 		except AssertionError,e:
 			levr.log_error()
@@ -173,6 +190,12 @@ class SignupLevrHandler(webapp2.RequestHandler):
 			
 			#create or refresh the alias
 			user = levr.build_display_name(user)
+			
+			try:
+				levr.text_notify(user.display_name+' from Levr!')
+			except:
+				levr.log_error()
+			
 			
 			#put and reply
 			user.put()
