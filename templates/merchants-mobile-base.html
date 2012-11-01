@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+
+<html>
+	
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1,user-scalable=no">
+		<title>{{title}}</title>
+		<!-- Le Bootstrap -->
+	    <link href="/css/bootstrap.min.css" rel="stylesheet">
+	    <!-- Navbar fix for top-fixed-->
+	    <style type="text/css">body{padding-top: 40px;}</style>
+	    <link href="/css/bootstrap-responsive.min.css" rel="stylesheet">
+		<!-- Le base styles -->
+		<link rel="stylesheet" href="/css/merchants-mobile-base.css">
+		<!-- Styles applied by subtemplates -->
+		{% block htmlhead %} {% endblock %}
+	</head>
+	
+	<body>
+		<!--Bootstrap navbar -->
+		<div class="navbar navbar-fixed-top">
+			<div class="navbar-inner">
+				<a class="brand" href="#">{{title}}</a>
+			</div>
+	    </div>
+	    
+	    {% block content %} {% endblock %}
+		
+		<!-- Bootstrap and jquery -->
+		<script src="http://code.jquery.com/jquery-latest.js"></script>
+		<script src="/js/bootstrap.min.js"></script>
+		<!--additional scripts-->
+		{% block javascript %} {% endblock %}
+	</body>
+	
+</html>

@@ -1,0 +1,23 @@
+{% extends "templates/merchants-mobile-base.html" %}
+
+{% block htmlhead %}{% endblock %}
+
+
+
+{% block content %}
+	{%if error%}
+		{{error}}
+	{%endif%}
+	<form action="/merchants/mobile/signup?reference={{reference}}" method="post">
+		<fieldset>
+			<input id="email" name="email" placeholder="Email" type="text" value="{{email}}">
+			<input id="pw1" name="pw1" placeholder="Password" type="password" value="{{pw1}}">
+			<input id="pw2" name="pw2" placeholder="Confirm Password" type="password" value="{{pw2}}">
+			<input type="submit" class="btn" value="Sign Up">
+		</fieldset>
+	</form>
+{% endblock %}
+
+
+
+{% block javascript %}{% endblock %}

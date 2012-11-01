@@ -1,0 +1,13 @@
+.navbar-inner{
+	text-align: center;
+}
+
+.title{
+	color: rgb(119, 119, 119);
+	
+}
+
+.brand{
+	float: right !important;
+	text-align: right !important;
+}

@@ -651,7 +651,7 @@ def dealCreate(params,origin,upload_flag=True,**kwargs):
 	#===========================================================================
 	#deal line 1
 	if 'deal_line1' in params:
-		deal_text	= params['deal_line1']
+		deal_text	= params['deal_line1'].decode()
 		tags.extend(tagger(deal_text))
 	else:
 		raise KeyError('deal_line1 not passed in params')
@@ -679,7 +679,7 @@ def dealCreate(params,origin,upload_flag=True,**kwargs):
 	
 	#description
 	if 'deal_description' in params:
-		description = params['deal_description']
+		description = params['deal_description'].decode()
 		#truncate description to a length of 500 chars
 		description = description[:500]
 		tags.extend(tagger(description))

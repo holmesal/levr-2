@@ -1,0 +1,29 @@
+{% extends "templates/merchants-mobile-base.html" %}
+
+{% block htmlhead %}{% endblock %}
+
+
+
+{% block content %}
+<p>(map goes here)</p>
+<p>{{name}}</p>
+<p>{{address}}</p>
+<p>{{vicinity}}</p>
+<p>{{phone}}</p>
+<a id="verify" class="btn">Yes, that's me</a>
+<a class="btn" href="/merchants/mobile/businessselect?query={{query}}">That's not me - go back</a>
+{% endblock %}
+
+
+
+{% block javascript %}
+<script type="text/javascript">
+
+	$("#verify").on('click',function(){
+		window.location = '/merchants/mobile/signup?reference={{reference}}'
+	})
+	
+</script>
+
+
+{% endblock %}
