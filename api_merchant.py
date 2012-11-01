@@ -330,6 +330,8 @@ class MerchantDealsHandler(api_utils.BaseClass):
 		user = kwargs.get('actor')
 		try:
 			deals = levr.Deal.all().ancestor(user).fetch(None)
+			# TODO: remove rejected deals
+			
 			if deals:
 				# Sort the deals
 				creation_dates = [deal.date_created for deal in deals]
@@ -337,6 +339,8 @@ class MerchantDealsHandler(api_utils.BaseClass):
 				toop = zip(creation_dates,deals)
 				sorted_toop = sorted(toop)
 				sorted_dates,sorted_deals = zip(*sorted_toop) #@UnusedVariable: sorted_dates
+				
+				
 				
 				# package and send
 				private = True

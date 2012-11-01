@@ -73,7 +73,6 @@ class SignupFoursquareHandler(webapp2.RequestHandler):
 													)
 				except Exception,e:
 					#remove the entity that was created because the signup failed
-					user.delete()
 					levr.log_error()
 					assert False, 'Could not connect with foursquare. '.format('')
 				#return the user
