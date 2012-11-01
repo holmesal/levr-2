@@ -15,6 +15,11 @@ import os
 import time
 import webapp2
 import mixpanel_track as mp_track
+
+#New alonso additions
+import re
+from google.appengine.api import urlfetch
+import urllib
 #import json
 #from levr_encrypt import encrypt_key
 #from google.appengine.ext import db
@@ -24,6 +29,313 @@ import mixpanel_track as mp_track
 
 
 jinja_environment = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
+class MobileLandingHandler(webapp2.RequestHandler):
+	def get(self):
+		#check if the merchant is logged in
+		session = get_current_session()
+		if session.has_key('loggedIn') == True and session['loggedIn'] == True:
+			self.redirect("/merchants/mobile/manage")
+		else:
+			
+			template_values = {
+				"title"		:	"Welcome to Levr.",
+				"title_link":	"/merchants/mobile"
+			}
+			
+			template = jinja_environment.get_template('templates/merchants-mobile-landing.html')
+			self.response.out.write(template.render(template_values))
+
+class MobileLoginHandler(webapp2.RequestHandler):
+	def get(self):
+		#check if the merchant is logged in
+		session = get_current_session()
+		if session.has_key('loggedIn') == True and session['loggedIn'] == True:
+			self.redirect("/merchants/mobile/manage")
+		else:
+			
+			template_values = {
+				"title"		:	"Welcome back."
+			}
+			
+			template = jinja_environment.get_template('templates/merchants-mobile-login.html')
+			self.response.out.write(template.render(template_values))
+	def post(self):
+		o_email = self.request.get('email')
+		email = o_email.lower()
+		pw = enc.encrypt_password(self.request.get('pw'))
+		
+		user = levr.Customer.gql('WHERE email=:1 AND pw=:2',email,pw).get()
+		
+		if email == "":
+			error = "Please enter your email"
+		elif pw == "":
+			error = "Please enter your password"
+		elif not user:
+			error = "Incorrect email or password"
+		else:
+			error = None
+		
+		if error:
+			template_values = {
+				"email"		:	o_email,
+				"pw"		:	pw,
+				"error"		:	error,
+				"title"		:	"Welcome back."
+			}
+			
+			template = jinja_environment.get_template('templates/merchants-mobile-login.html')
+			self.response.out.write(template.render(template_values))
+			
+		else:
+			#logged in, start a session and all that jazz
+			session = get_current_session()
+			session['uid'] = enc.encrypt_key(user.key())
+			session['loggedIn'] = True
+			session['owner_of']	=	enc.encrypt_key(user.owner_of)
+			
+			#send to the merchants page
+			self.redirect('/merchants/manage')
+			
+class MobileBusinessSelectHandler(webapp2.RequestHandler):
+	def get(self):
+		#check if the merchant is logged in
+		session = get_current_session()
+		if session.has_key('loggedIn') == True and session['loggedIn'] == True:
+			self.redirect("/merchants/mobile/manage")
+		else:
+			
+			#grab the query input if it's there
+			query = self.request.get('query')
+			
+			template_values = {
+				"title"		:	"Find your business.",
+				"query"		:	query
+			}
+			
+			template = jinja_environment.get_template('templates/merchants-mobile-business-select.html')
+			self.response.out.write(template.render(template_values))
+			
+class MobileAutocompleteHandler(webapp2.RequestHandler):
+	def get(self):
+		query = self.request.get('query')
+		
+		url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?sensor=false&key=AIzaSyCjddKUEHrVcCDqA9fqLMPUBXH0mrWPpgI&types=establishment&input='+urllib.quote(query)
+		
+		response = urlfetch.fetch(url)
+		
+		#if response.status_code == 200:
+		logging.debug(response.content)
+		reply = json.loads(response.content)
+		
+		predictions = reply['predictions']
+		
+		
+		self.response.out.write(json.dumps(predictions))
+				
+		#else:
+		#	api_utils.send_error(self,'There was an error finding your business. Please try again later.')
+		
+		
+class MobileBusinessDetailsHandler(webapp2.RequestHandler):
+	def get(self):
+		reference = self.request.get('reference')
+		query = self.request.get('query')
+		
+		url = 'https://maps.googleapis.com/maps/api/place/details/json?sensor=false&key=AIzaSyCjddKUEHrVcCDqA9fqLMPUBXH0mrWPpgI&types=establishment&reference='+reference
+		
+		response = urlfetch.fetch(url)
+		reply = json.loads(response.content)
+		logging.debug(reply)
+		deets = reply['result']
+		
+		template_values = {
+			"vicinity"	:	deets["vicinity"],
+			"phone"		:	deets["formatted_phone_number"],
+			"name"		:	deets["name"],
+			"lat"		:	deets["geometry"]["location"]["lat"],
+			"lon"		:	deets["geometry"]["location"]["lng"],
+			"reference"	:	reference,
+			"query"		:	query,
+			"title"		:	"Is this you?"
+		}
+		
+		template = jinja_environment.get_template('templates/merchants-mobile-business-details.html')
+		self.response.out.write(template.render(template_values))
+			
+
+class MobileSignupHandler(webapp2.RequestHandler):
+	def get(self):
+		#check if the merchant is logged in
+		session = get_current_session()
+		if session.has_key('loggedIn') == True and session['loggedIn'] == True:
+			self.redirect("/merchants/mobile/manage")
+		else:
+			
+			reference = self.request.get('reference')
+			
+			template_values = {
+				"title"		:	"Sign up.",
+				"reference":	reference
+			}
+			
+			template = jinja_environment.get_template('templates/merchants-mobile-signup.html')
+			self.response.out.write(template.render(template_values))
+	def post(self):
+		#grab le inputs
+		email = self.request.get('email')
+		pw1 = self.request.get('pw1')
+		pw2 = self.request.get('pw2')
+		reference = self.request.get('reference')
+		
+		#email regex
+		email_regex = re.compile(r"^[A-Za-z0-9\.\+_-]+@[A-Za-z0-9\._-]+\.[a-zA-Z]*$")
+		
+		#email db check
+		existing_user = levr.Customer.gql('WHERE email=:1',email).get()
+		
+		#error-check
+		if email=="":
+			error = "Please enter an email"
+		if not email_regex.match(email):
+			error = "Please enter a valid email address"
+		if existing_user:
+			error = "That email already exists"
+		elif pw1=="":
+			error = "Please enter a password"
+		elif pw2=="":
+			error = "Please confirm your password"
+		elif pw1!=pw2:
+			error = "Passwords didn't match. Please try again."
+			pw1=""
+			pw2=""
+		else:
+			error = None
+		
+		if error:
+			template_values = {
+				"email"		:	email,
+				"pw1"		:	pw1,
+				"pw2"		:	pw2,
+				"reference"	:	reference,
+				"error"		:	error
+			}
+			
+			template = jinja_environment.get_template('templates/merchants-mobile-signup.html')
+			self.response.out.write(template.render(template_values))
+		
+		else:
+			#grab the business from google places
+			url = 'https://maps.googleapis.com/maps/api/place/details/json?sensor=false&key=AIzaSyCjddKUEHrVcCDqA9fqLMPUBXH0mrWPpgI&types=establishment&reference='+reference
+			response = urlfetch.fetch(url)
+			reply = json.loads(response.content)
+			logging.debug(reply)
+			deets = reply['result']
+			
+			#pull out the business information
+			business_name 	= deets["name"]
+			phone			= deets["formatted_phone_number"]
+			vicinity		= deets["vicinity"]
+			geo_point		= db.GeoPt(lat=deets["geometry"]["location"]["lat"],lon=deets["geometry"]["location"]["lng"])
+			types			= deets["types"]
+			
+			#check if that business already exists
+			business = levr.Business.all().filter('business_name =', business_name).filter('vicinity =',vicinity).get()
+			
+			if not business:
+				logging.info('business does not exist...creating')
+				#create the business
+				business = levr.Business(
+						business_name=business_name,
+						geo_point = geo_point,
+						geo_hash = geohash.encode(geo_point.lat,geo_point.lon),
+						vicinity = vicinity,
+						types = types,
+						phone = phone
+				)
+				
+				business.put()
+			
+			else:
+				logging.info('business already exists... pulling')
+				#even if there is a business, grab it and update it if the phone number is null
+				if not business.phone:
+					business.phone = self.request.get('phone')
+					business.put()
+					
+			#at this point, a business should exist
+			logging.debug(levr.log_model_props(business))	
+			
+			#create the owner
+			owner = levr.Customer(
+				email=email.lower(),
+				pw=enc.encrypt_password(pw1),
+				owner_of=str(business.key()),
+				levr_token=levr.create_levr_token(),
+				display_name=business.business_name,
+				alias=business.business_name
+			)
+			
+			owner.put()
+			
+			logging.debug(levr.log_model_props(owner))
+			
+			#log the owner in
+			session = get_current_session()
+			session['uid']	= enc.encrypt_key(str(owner.key()))
+			session['loggedIn']	= True
+			session['validated']= False
+			session['owner_of']	=	enc.encrypt_key(owner.owner_of)
+			logging.debug(session)
+			
+			self.response.out.write(session)
+
+class MobileManageHandler(webapp2.RequestHandler):
+	def get(self):
+		
+		meta = merchant_utils.login_check_mobile(self)
+		
+		owner = levr.Customer.get(meta['uid'])
+		
+		#grab the deals
+		q_deals = levr.Deal.gql('WHERE ANCESTOR IS :1 ORDER BY deal_views DESC',owner.key())
+		logging.info(q_deals.count())
+		#package
+		deals = []
+		active = []
+		pending = []
+		expired = []
+		for deal in q_deals:
+			deal.enc_key = enc.encrypt_key(deal.key())
+			logging.info(deal.deal_status)
+			if deal.deal_status == 'active':
+				active.append(deal)
+				logging.info('appended to active')
+			elif deal.deal_status == 'pending':
+				pending.append(deal)
+				logging.info('appended to pending')
+			elif deal.deal_status == 'expired':
+				expired.append(deal)
+				logging.info('appended to expired')
+		
+		deals = active + pending + expired
+		logging.info(deals)
+		
+		
+		template_values = {
+			"title"		:	"Manage your offers",
+			"deals"		:	deals
+		}
+		
+		template = jinja_environment.get_template('templates/merchants-mobile-manage.html')
+		self.response.out.write(template.render(template_values))
+			
+		
+class MobileCreateHandler(webapp2.RequestHandler):
+	def get(self):
+		meta = merchant_utils.login_check_mobile(self)
+		
+
+
 class MerchantsHandler(webapp2.RequestHandler):
 	def get(self):
 		#check if logged in. if so, redirect to the manage page
@@ -175,7 +487,7 @@ class LoginHandler(webapp2.RequestHandler):
 						session['owner_of']	=	enc.encrypt_key(user.owner_of)
 						
 						#send to the merchants page
-						self.redirect('/merchants/manage')
+						self.redirect('/merchants/mobile/manage')
 				
 				
 			else:
@@ -436,7 +748,7 @@ class WelcomeHandler(webapp2.RequestHandler):
 			
 			logging.debug(levr.log_model_props(owner))
 			
-			#creates new session for the new business
+			#log the owner in
 			session = get_current_session()
 			session['uid']	= enc.encrypt_key(str(owner.key()))
 			session['loggedIn']	= True
@@ -1373,7 +1685,14 @@ class CheckPasswordHandler(webapp2.RequestHandler):
 			levr.log_error()
 		
 
-app = webapp2.WSGIApplication([('/merchants', MerchantsHandler),
+app = webapp2.WSGIApplication([('/merchants/mobile',MobileLandingHandler),
+								('/merchants/mobile/login',MobileLoginHandler),
+								('/merchants/mobile/businessselect',MobileBusinessSelectHandler),
+								('/merchants/mobile/autocomplete',MobileAutocompleteHandler),
+								('/merchants/mobile/businessdetails',MobileBusinessDetailsHandler),
+								('/merchants/mobile/signup',MobileSignupHandler),
+								('/merchants/mobile/manage',MobileManageHandler),
+								('/merchants', MerchantsHandler),
 								('/merchants/', MerchantsHandler),
 								('/merchants/beta', MerchantsBetaHandler),
 								('/merchants/betaRequest', MerchantsBetaRequestHandler),

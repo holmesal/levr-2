@@ -1,0 +1,22 @@
+{% extends "templates/merchants-mobile-base.html" %}
+
+{% block htmlhead %}{% endblock %}
+
+
+
+{% block content %}
+	{%if error%}
+		{{error}}
+	{%endif%}
+	<form action="/merchants/mobile/login" method="post">
+		<fieldset>
+			<input id="email" name="email" placeholder="Email" type="text" value="{{email}}">
+			<input id="pw1" name="pw" placeholder="Password" type="password" value="{{pw}}">
+			<input type="submit" class="btn" value="Log in">
+		</fieldset>
+	</form>
+{% endblock %}
+
+
+
+{% block javascript %}{% endblock %}

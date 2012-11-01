@@ -35,6 +35,30 @@ def login_check(self):
 		return headerData
 	return
 	
+def login_check_mobile(self):
+	session = get_current_session()
+	logging.debug(session)
+	if session.has_key('loggedIn') == False or session['loggedIn'] == False:
+		#not logged in, bounce to login page
+		logging.info('Not logged in. . .Bouncing!')
+		self.redirect('/merchants/mobile/login')
+		
+	elif session.has_key('loggedIn') == True and session['loggedIn'] == True:
+		uid = session['uid']
+		
+		owner_of = session['owner_of']
+		
+		meta = {
+			'uid'		: enc.decrypt_key(uid),
+			'owner_of'	: enc.decrypt_key(owner_of)
+			}
+		
+		logging.info(meta)
+		#return user metadata.
+		return meta
+		
+		
+	
 def validated_check(user):
 	'''checks if this user has any linked businesses or not. does not yet return these businesses'''
 	
