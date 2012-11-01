@@ -73,6 +73,7 @@ def create_deal(deal,business,owner):
 	#copy info over from business
 	deal.business_name = business.business_name
 	deal.businessID	= str(business.key())
+	deal.business = business
 	deal.geo_point = business.geo_point
 	deal.geo_hash = business.geo_hash
 	

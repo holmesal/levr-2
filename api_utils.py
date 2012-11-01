@@ -26,9 +26,38 @@ else:
 	host_url = 'http://www.levr.com/'
 
 class BaseClass(webapp2.RequestHandler):
+	'''
+	Base class for webapp request handlers
+	Mostly used for basic i/o
+	'''
+	def send_error(self,error):
+		'''
+		Just being used as a wrapper while code is migrating
+		'''
+		send_error(self,error)
+		
 	
-	pass
+	def send_response(self,response,user=None):
+		'''
+		This is just being used as a wrapper until all classes can be migrated
+		to using a BaseClass inheritance
+		'''
+		send_response(self,response, user)
+		
+	
+def deprecated(handler_method):
+	'''
+	Decorator used to warn the coder that the function they are using is deprecated
+	'''
+	
+	def call(*args,**kwargs):
+		logging.warning('Call to deprecated function: {}'.format(handler_method.__name__))
+		handler_method(*args,**kwargs)
+	return call
+	
 
+
+@deprecated
 def send_error(self,error):
 	reply = {
 			'meta':{
@@ -40,8 +69,29 @@ def send_error(self,error):
 	}
 	logging.debug(levr.log_dict(reply))
 	self.response.out.write(json.dumps(reply))
-
-
+@deprecated
+def send_response(self,response,user=None):
+	'''The optional third argument should be passed a user object if this is a private response
+		and left out if a public response '''
+	#build meta object
+	meta = {'success':True}
+	
+	#build alerts object
+	#only send back alerts with private (user-authenticated) responses (optional parameter user)
+	if user != None:
+		alerts = {'newNotifications':user.new_notifications}
+	else:
+		alerts = {'newNotifications':0}
+	
+	#build reply object
+	reply = {'meta':meta,
+				'alerts':alerts,
+				'response':response}
+				
+	#reply
+	logging.debug(levr.log_dict(reply))
+	self.response.out.write(json.dumps(reply))
+	logging.debug(str(self.response.headers))
 
 
 def create_pin_color(deal):
@@ -153,7 +203,9 @@ def _package_deal(deal,owner,business,private=False,rank=None,distance=None):
 	
 	if private == True:
 		packaged_deal.update({
-							'views'	: deal.views
+							'views'	: deal.views,
+							'promotions' : deal.promotions,
+							'status': deal.deal_status
 							})
 	
 	return packaged_deal
@@ -258,28 +310,7 @@ def package_business(business):
 		})
 	return packaged_business
 	
-def send_response(self,response,user=None):
-	'''The optional third argument should be passed a user object if this is a private response
-		and left out if a public response '''
-	#build meta object
-	meta = {'success':True}
-	
-	#build alerts object
-	#only send back alerts with private (user-authenticated) responses (optional parameter user)
-	if user != None:
-		alerts = {'newNotifications':user.new_notifications}
-	else:
-		alerts = {'newNotifications':0}
-	
-	#build reply object
-	reply = {'meta':meta,
-				'alerts':alerts,
-				'response':response}
-				
-	#reply
-	logging.debug(levr.log_dict(reply))
-	self.response.out.write(json.dumps(reply))
-	logging.debug(str(self.response.headers))
+
 
 
 def create_share_url(deal_entity):
@@ -1349,6 +1380,7 @@ def add_foursquare_deal(foursquare_deal,business,deal_status):
 	
 	deal = levr.Deal(
 		businessID		=	str(business.key()),
+		business		=	business,
 		business_name	=	foursquare_deal['venue']['name'],
 		deal_status		=	deal_status,
 		tags			=	tags,
@@ -1613,8 +1645,12 @@ class PromoteDeal(BaseClass):
 	'''
 	Class for promoting deals. Mostly for namespacing.
 	'''
-	def __init__(self,deal,purchaser,**kwargs):
+	def __initialize__(self,deal,user):
 		'''
+		This is named _initialize__ instead of init because of the
+		way that webapp2 creates an instance of the class before the
+		actual rpc call to my handler.
+		
 		
 		@param deal: The deal being promoted
 		@type deal: Deal
@@ -1626,14 +1662,24 @@ class PromoteDeal(BaseClass):
 		@type development: bool
 		'''
 		self.deal = deal
-		self.purchaser = purchaser
+		self.user = user # user is the purchaser of the promotion
+		logging.debug(type(deal))
+		logging.debug(type(user))
+		logging.debug(levr.log_model_props(deal))
 		try:
-			if deal.business:
-				self.business = deal.business
+			logging.debug(deal.business)
+			if self.deal.business:
+				self.business = self.deal.business
 			else:
-				self.business = levr.Business.get(deal.businessID)
+				self.business = levr.Business.get(self.deal.businessID)
 		except:
-			self.business = levr.Business.get(deal.businessID)
+			
+			logging.debug(levr.log_model_props(deal))
+			self.business = levr.Business.get(self.deal.businessID)
+		
+		
+		# if the purchaser is a development account, then act in development mode
+		self.development = user.tester
 		
 	def check_self(self):
 		logging.debug(levr.log_model_props(self.deal))
@@ -1653,17 +1699,29 @@ class PromoteDeal(BaseClass):
 		'''
 		return self.deal
 	def _add_promo(self,promo_type):
+		'''
+		Adds the promotion to the list of promotions
+		Also creates a promotion entity to log the event
+		
+		@param promo_type: one of the available promotions
+		@type promo_type: str
+		'''
 		self.deal.promotions.append(promo_type)
 		
-		# TODO: create a promotion object
-		
+		promo = levr.DealPromotion(
+							purchaser = self.user,
+							deal = self.deal,
+							type = promo_type
+							)
+		promo.put()
 		return
 	def _return(self,kwargs):
 		'''
 		Wrapper for the return function
 		simply for determining if the deal or the PromoteDeal object should be returned
-		@param kwargs:
-		@type kwargs:
+		
+		@keyword auto_put: if true, will return the deal
+		@type auto_put: bool
 		'''
 		if kwargs.get('auto_put',True) == True:
 			self.deal.put()
@@ -1671,10 +1729,25 @@ class PromoteDeal(BaseClass):
 		else:
 			return self
 		
+#	def run_promo(self,promo_type):
+#		'''
+#		Runs the promotion that is specified by the promo_type
+#		
+#		@param promo_type: the promotion that is being run
+#		@type promo_type: str
+#		'''
+#		options = {
+#				promo.BOOST_RANK : self.boost_rank,
+#				promo.MORE_TAGS : self.more_tags,
+#				promo.NOTIFY_PREVIOUS_LIKES : self.notify_previous_likes,
+#				promo.NOTIFY_RELATED_LIKES : self.notify_related_likes,
+#				promo.RADIUS_ALERT : self.radius_alert
+#				}
+#		action = options[promo_type]
 	#===========================================================================
 	# Promotions
 	#===========================================================================
-	def increase_karma(self,**kwargs):
+	def boost_rank(self,**kwargs):
 		'''
 		Gives the deal preference over other deals so that it is shown before them
 		This is done by adding karma to the deal without increasing the upvotes
@@ -1688,7 +1761,7 @@ class PromoteDeal(BaseClass):
 		return self._return(kwargs)
 		
 
-	def add_tags(self,tags,**kwargs):
+	def more_tags(self,tags,**kwargs):
 		'''
 		Increases the tags on a deal so that it is more visible
 		
@@ -1714,12 +1787,14 @@ class PromoteDeal(BaseClass):
 		assert promo.RADIUS_ALERT not in self.deal.promotions, \
 			'Deal has already used promotion: ' + promo.RADIUS_ALERT
 		
+		# all actions are handled dynamically at the search, so do nothing here!
+		
 		# add the new promo type to the deal
 		self._add_promo(promo.RADIUS_ALERT)
 		
 		return self._return(kwargs)
-		
-
+	
+	
 	def notify_previous_likes(self,**kwargs):
 		'''
 		Sends a notification to everyone who has liked a deal at that business before
@@ -1728,36 +1803,89 @@ class PromoteDeal(BaseClass):
 		assert promo.NOTIFY_PREVIOUS_LIKES not in self.deal.promotions, \
 			'Deal has already used promotion: ' + promo.NOTIFY_PREVIOUS_LIKES
 		
-		# add the new promo type to the deal
+		
+		# grab the business from the deal - already have self.business
+		# self.business
+		
+		# get all deals that reference the business
+		deal_keys = levr.Deal.all(keys_only=True).filter('businessID',str(self.business.key())).order('-deal_status').fetch(None)
+		# deals = self.deal.buinsess.deals.fetch(None)
+		logging.debug(deal_keys)
+		# get all customers that have ever liked anything at that business before
+		# TODO: change upvote mechanism so that more than 30 queries can be run
+		deal_keys = self._reduce_queries(deal_keys)
+		
+#		user_keys = levr.Customer.all(keys_only=True).filter('upvotes',deal_keys).fetch(None)
+		# This sucks.
+		user_keys = set([])
+		for dk in deal_keys:
+			user_keys.update(levr.Customer.all(keys_only=True).filter('upvotes',dk).fetch(None))
+		user_keys = list(user_keys)
+		logging.debug(user_keys)
+		
+		# add a notification for each of the users
+		assert levr.create_notification('followedUpload', user_keys, self.user.key(), self.deal.key()), \
+			'Notifications could not be created'
+		
+		
+		
+		# everything worked? the new promo object to the deal
 		self._add_promo(promo.NOTIFY_PREVIOUS_LIKES)
 		
 		return self._return(kwargs)
 		
-
+	
 	def notify_related_likes(self,**kwargs):
 		'''
 		Sends a notification to everyone who has likes a deal that is similar to this one
-		This will probably done with a complex series of ropes
-		This will probably be done by finding deals that have similar tags
-			and finding people who have liked them
+		
 		'''
 		assert promo.NOTIFY_RELATED_LIKES not in self.deal.promotions, \
 			'Deal has already used promotion: ' + promo.NOTIFY_RELATED_LIKES
 		
+		# get deal tags
+		tags = list(set(self.deal.tags))
+		# get all deals with similar tags
+		tags = self._reduce_queries(tags)
+#		deal_keys = levr.Deal.all(keys_only=True).filter('tags',tags).order('-date_created').fetch(None)
+		deal_keys = set([])
+		for tag in tags:
+			deal_keys.update(levr.Deal.all(keys_only=True).filter('tags',tag))
+		deal_keys = list(deal_keys)
+		# TODO: order the deal keys so that when the list is clipped, naughty deals are removed
+		# get all customers that have liked any of the businesses before
+		deal_keys = self._reduce_queries(deal_keys)
+#		user_keys = levr.Customer.all(keys_only=True).filter('upvotes',deal_keys).fetch(None)
+		user_keys = set([])
+		for dk in deal_keys:
+			user_keys.update(levr.Customer.all(keys_only=True).filter('upvotes',dk).fetch(None))
+		user_keys = list(user_keys)
+		# add a notification for all of the users
+		assert levr.create_notification('followedUpload', user_keys, self.user.key(), self.deal.key()), \
+			'Notifications could not be created'
+		
+		# everything worked? set the promo 
+		self._add_promo(promo.NOTIFY_RELATED_LIKES)
+		
 		return self._return(kwargs)
-	
-#===============================================================================
-# New deal properties...
-# promotions = StringListProperty(choices=set(['increase_karma',etc..])
-# 
-# New Class:
-# Promotion(db.Model):
-# purchaser
-# deal
-# type
-# date
-# 
-#===============================================================================
+		
+	_max_sub_query_length = 30
+	def _reduce_queries(self,lst):
+		'''
+		When a query like db.Model.all().filter(ListProperty,<type 'list'>).fetch(None)
+		  is run, it creates a number of sub-queries equal to the number of list items
+		  in the filter.
+		
+		It can only support a maximum of _max_sub_query_length.
+		To prevent our promotion calls from failing, we limit the number of sub-queries
+		  that are generated by reducing the length of the list we use to query
+		
+		@param lst: The list of properties that are being queried
+		@type lst: list
+		'''
+		if lst and lst.__len__() > self._max_sub_query_length:
+			lst = lst[:self._max_sub_query_length]
+		return lst
 
 
 class SpoofUndeadNinjaActivity:

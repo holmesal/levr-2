@@ -13,6 +13,8 @@ import promotions as promo
 import time
 import urllib
 import webapp2
+from datetime import datetime
+from datetime import timedelta
 #import api_utils_social as social
 #from random import randint
 #import json
@@ -216,7 +218,7 @@ class ConnectMerchantHandler(api_utils.BaseClass):
 		vicinity = kwargs.get('vicinity')
 		geo_point = kwargs.get('ll')
 		types = kwargs.get('types')
-		development = kwargs.get('development',False)
+		development = kwargs.get('development',True) # TODO: switch this to False by default when changing to live
 		# TODO: accept phone number as well
 		try:
 			# Convert input data
@@ -245,12 +247,16 @@ class ConnectMerchantHandler(api_utils.BaseClass):
 					business = levr.create_new_business(business_name,vicinity,geo_point,types,owner=user,development=development)
 #					assert False, user_doesnt_own_business_message
 				else:
+					logging.debug('User owns a business')
+#					logging.debug(levr.log_model_props(business.owner))
+#					logging.debug(levr.log_model_props(requested_business.owner))
 					if requested_business:
-						assert business == requested_business, user_doesnt_own_business_message
+						assert business.key() == requested_business.key(), user_doesnt_own_business_message
 				
 				
 				
 			else:
+				logging.debug('User does not exist. Create a new one!!')
 				# Create an account for the user with that business
 				user = levr.create_new_user(
 										tester=development,
@@ -334,7 +340,6 @@ class MerchantDealsHandler(api_utils.BaseClass):
 				
 				# package and send
 				private = True
-				# TODO: send promotion object back with the deals
 				packaged_deals = api_utils.package_deal_multi(sorted_deals, private)
 			else:
 				packaged_deals = []
@@ -403,9 +408,9 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 		self.response.out.write('<html><body>')
 		self.response.out.write('<form action="%s" method="POST" enctype="multipart/form-data">' % upload_url)
 		self.response.out.write('''Upload File: <input type="file" name="img"><br>''')
-		self.response.out.write('uid: 			<input type="text" name="uid" value="{}"> <br>'.format('tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fO3GJdErv19TaoeLGNiu51Stsm8gaChA='))
-		self.response.out.write('levrToken: 	<input type="text" name="levrToken" value="{}"> <br>'.format('tFCBPw9A6gt2-Wq6K0RHxYQDkpPUFWvWD-FhCFSQCjM'))
-		self.response.out.write('businessID:	<input type="text" name="businessID" value="{}"> <br>'.format('tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fO3GJdErvitTapPLKLhLS0Stiw-YaChA='))
+		self.response.out.write('uid: 			<input type="text" name="uid" value="{}"> <br>'.format('tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fO3GJdErv19TaoeLGNiu51StjnMAaChA='))
+		self.response.out.write('levrToken: 	<input type="text" name="levrToken" value="{}"> <br>'.format('4QeGPF4WtlUlpG7pKxAXl90LyZGBFT6ECLdvCwPJXDI'))
+		self.response.out.write('businessID:	<input type="text" name="businessID" value="{}"> <br>'.format('tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fO3GJdErvitTapPLKLhLS0Ss_1-IaChA='))
 		self.response.out.write('description: 	<input type="text" name="description" value="{}"> <br>'.format('description!!!'))
 		self.response.out.write('dealText:		<input type="text" name="dealText" value="{}"> <br>'.format('dealText!!!'))
 		
@@ -617,7 +622,7 @@ class ExpireDealHandler(api_utils.BaseClass):
 		@requires: user is the owner of the deal
 		
 		@return: Success
-		@rtype: Boolean
+		@rtype: bool
 		'''
 		user = kwargs.get('actor')
 		deal = kwargs.get('deal')
@@ -626,7 +631,10 @@ class ExpireDealHandler(api_utils.BaseClass):
 			assert deal.parent_key() == user.key(), 'User does not own that deal'
 			
 			deal.deal_status = 'expired'
-			# TODO: set date_expired to now 
+			
+			# set the deal expiration date to... now!
+			deal.date_end = datetime.now()
+			
 			deal.put()
 			
 			private = True
@@ -644,7 +652,7 @@ class ExpireDealHandler(api_utils.BaseClass):
 			levr.log_error(e)
 			api_utils.send_error(self,'Server Error')
 		
-class ReactivateDealHandler(webapp2.RequestHandler):
+class ReactivateDealHandler(api_utils.BaseClass):
 	'''
 	A handler to set a deal as active
 	'''
@@ -676,6 +684,11 @@ class ReactivateDealHandler(webapp2.RequestHandler):
 			else:
 				deal.deal_status = 'active'
 			
+			
+			# set the date of expiration to the future!
+			deal.date_end = datetime.now() + timedelta(days=levr.MERCHANT_DEAL_LENGTH)
+			
+			
 			deal.put()
 			
 			private = True
@@ -691,24 +704,19 @@ class ReactivateDealHandler(webapp2.RequestHandler):
 		except Exception,e:
 			api_utils.send_error(self,'Server Error')
 
-class FetchPromotionOptionsHandler(webapp2.RequestHandler):
+class FetchPromotionOptionsHandler(api_utils.BaseClass):
 	'''
 	A handler for fetching the available promotion options for merchants
 	'''
-	@api_utils.validate(None, 'param',
-					user = True,
-					levrToken = True,
-					)
 	def get(self,*args,**kwargs):
-		user = kwargs.get('actor')
 		try:
-			promotions = [key for key in promo.PROMOTIONS]
+			promotions = [promo.PROMOTIONS[key] for key in promo.PROMOTIONS]
 			
 			response = {
 					'promotions' : promotions
 					}
 			
-			api_utils.send_response(self,response, user)
+			api_utils.send_response(self,response)
 			
 		except AssertionError,e:
 			api_utils.send_error(self,str(e))
@@ -721,9 +729,8 @@ class FetchPromotionOptionsHandler(webapp2.RequestHandler):
 class ActivatePromotionHandler(api_utils.PromoteDeal):
 	'''
 	A handler for activating a promotion. Will accept a users information and
-	an identifier for a promotion. This handler will act according to the type
-	of promotion that is passed. The types of promotions correspond to the
-	identifiers returned in the FetchPromotionOptionsHandler
+		an identifier for a promotion. The types of promotions correspond to the
+		identifiers returned in the FetchPromotionOptionsHandler
 	'''
 	@api_utils.validate(None, 'param',
 					user = True,
@@ -737,22 +744,33 @@ class ActivatePromotionHandler(api_utils.PromoteDeal):
 		user = kwargs.get('actor')
 		promotionID = kwargs.get('promotionID')
 		deal = kwargs.get('deal')
+#		development = kwargs.get('development')
+		
+		# init the PromoteDeal class
+		logging.debug(type(deal))
+		logging.debug(type(user))
+		
+		super(ActivatePromotionHandler,self).__initialize__(deal,user)
+		
 		try:
+			assert promotionID not in self.deal.promotions, \
+				'Deal already has promotion: '+promotionID
 			if promotionID == promo.BOOST_RANK:
-				deal = api_utils.PromoteDeal(deal).increase_karma()
+				deal = self.boost_rank()
 				
 			elif promotionID == promo.MORE_TAGS:
-				tags = kwargs.get('tags')
-				deal = api_utils.PromoteDeal(deal).add_tags(tags)
+				tags = kwargs.get('tags',[])
+				assert tags, 'Required parameter not passed, tags: '+str(tags)
+				deal = self.more_tags(tags)
 				
 			elif promotionID == promo.RADIUS_ALERT:
-				deal = api_utils.PromoteDeal(deal).radius_alert()
+				deal = self.radius_alert()
 				
 			elif promotionID == promo.NOTIFY_PREVIOUS_LIKES:
-				deal = api_utils.PromoteDeal(deal)
+				deal = self.notify_previous_likes()
 				
 			elif promotionID == promo.NOTIFY_RELATED_LIKES:
-				pass
+				deal = self.notify_related_likes()
 			else:
 				assert False, 'Did not recognize promotion type.'
 			
@@ -768,7 +786,34 @@ class ActivatePromotionHandler(api_utils.PromoteDeal):
 		except Exception,e:
 			levr.log_error(e)
 			api_utils.send_error(self,'Server Error')
-
+class RemovePromotionHandler(api_utils.PromoteDeal):
+	@api_utils.validate(None, 'param',
+					promotionID = True,
+					deal = True,
+					)
+	def post(self,*args,**kwargs):
+		user = kwargs.get('actor')
+		promotionID = kwargs.get('promotionID')
+		deal = kwargs.get('deal')
+#		development = kwargs.get('development')
+		
+		# init the PromoteDeal class
+		logging.debug(type(deal))
+		logging.debug(type(user))
+		
+		if promotionID == 'all':
+			deal.promotions = []
+		elif promotionID in deal.promotions:
+			deal.promotions.remove(promotionID)
+		
+		deal.put()
+		private = True
+		response = {
+				'deal' : api_utils.package_deal(deal, private)
+				}
+		self.send_response(response)
+		
+		
 # Quality Assurance for generating the upload urls
 NEW_DEAL_UPLOAD_URL = '/api/merchant/upload/add'
 EDIT_DEAL_UPLOAD_URL = '/api/merchant/upload/edit'
@@ -781,7 +826,8 @@ app = webapp2.WSGIApplication([
 								('/api/merchant/remove',ExpireDealHandler),
 								('/api/merchant/reactivate',ReactivateDealHandler),
 								('/api/merchant/promote/get',FetchPromotionOptionsHandler),
-								('/api/merchant/promote/set',ActivatePromotionHandler)
+								('/api/merchant/promote/set',ActivatePromotionHandler),
+								('/api/merchant/promote/remove',RemovePromotionHandler)
 								
 								## old...
 #								('/api/merchant/initialize', InitializeMerchantHandler),

@@ -162,7 +162,7 @@ def create_notification(notification_type,to_be_notified,actor,deal=None,**kwarg
 			users = db.get(to_be_notified)
 			
 			#set the phrase
-			line2 = 'Has uploaded a new offer.'
+			line2 = 'has uploaded a new offer.'
 			
 			#increment the number of notifications
 			for user in users:
@@ -486,6 +486,10 @@ def update_deal_key_memcache(geo_point,dealID,namespace):
 	#     break
 	#============================================================================
 
+def create_deal():
+	'''
+	Non-shit version of the dealCreate function
+	'''
 
 def dealCreate(params,origin,upload_flag=True,**kwargs):
 	'''
@@ -1178,6 +1182,8 @@ class Business(db.Model):
 			tags.extend(t)
 		
 		return tags
+	
+MERCHANT_DEAL_LENGTH = 14 # days
 DEAL_MODEL_VERSION = 3
 class Deal(polymodel.PolyModel):
 	'''
@@ -1279,7 +1285,7 @@ class DealViewCounter(db.Model):
 	count = db.IntegerProperty(required=True,default=0)
 
 PROMOTION_MODEL_VERSION = 1
-class Promotion(db.Model):
+class DealPromotion(db.Model):
 	'''
 	A record for a promotion that has been bought
 	Changelog:

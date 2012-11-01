@@ -62,6 +62,12 @@ indexes:
 
 - kind: Deal
   properties:
+  - name: businessID
+  - name: deal_status
+    direction: desc
+
+- kind: Deal
+  properties:
   - name: deal_status
   - name: date_end
 
