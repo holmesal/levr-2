@@ -52,11 +52,12 @@ mixpanel.init("70b2a36876730d894bce115f3e89c055");</script><!-- end Mixpanel -->
 	        	<h3 class="sectionText">Offers on Levr are uploaded and curated by your community.</h3>
         	</div>
         	
-          <h1 class='map-title'></h1>
+          
           <p class='description'></p>
-          <div id='downloadDiv' class="clearfix section">
-            <h3>Download Levr for iPhone+iPad:</h3>
-            <a id='appstorebtn' href='https://itunes.apple.com/us/app/levr/id564566794?mt=8'><img id='appstore' src="/img/appstore.png"></a>
+          <div id='downloadDiv' class="sectionDiv">
+          	<h2 class="sectionText">Want to see more offers, and add offers you discover?</h2>
+          	<a href='https://itunes.apple.com/us/app/levr/id564566794?mt=8'><img id='appstore' src="/img/appstore.png"></a>
+            <p id="downloadPrompt">Become a member of the Levr community. Click to download for iPhone+iPad</p>
           </div>
         </div>
   	</div>
@@ -181,11 +182,11 @@ mixpanel.init("70b2a36876730d894bce115f3e89c055");</script><!-- end Mixpanel -->
 	        "geometry": { "type": "Point", "coordinates": [{{deal.lon}},{{deal.lat}}]},
 	        "properties": {
 	            "img"			: 	"{{deal.imgURL}}",
-	            "deal_text"		:	"{{deal.dealText}}",
-	            "description"	:	"{{deal.description}}",
-	            "location"		:	"{{deal.business.businessName}} - {{deal.business.vicinity}}",
+	            "deal_text"		:	"{{deal.dealText|escape}}",
+	            "description"	:	"{{deal.description|escape}}",
+	            "location"		:	"{{deal.business.businessName|escape}} - {{deal.business.vicinity|escape}}",
 	            "userImg"		:	"{{deal.owner.photoURL}}",
-	            "userName"		:	"{{deal.owner.alias}}",
+	            "userName"		:	"{{deal.owner.alias|escape}}",
 	            "marker-size"	:	"medium",
 	            "marker-color"	:	"FA6900",
 	            "marker-symbol"	:	"star"

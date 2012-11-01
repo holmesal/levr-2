@@ -5,6 +5,7 @@ import urllib2 as u
 import sys
 
 test_url = 'http://test.levr-production.appspot.com'
+fuckery_url = 'http://fuckery.levr-production.appspot.com'
 live_url = 'http://www.levr.com'
 local_url = 'http://0.0.0.0:8080'
 base_url = test_url
@@ -128,6 +129,8 @@ if __name__ == '__main__':
 			base_url = local_url
 		elif location == 'test':
 			base_url = test_url
+		elif location == 'fuckery':
+			base_url = fuckery_url
 		elif location == 'live':
 			base_url = live_url
 		else:

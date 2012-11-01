@@ -119,9 +119,13 @@ body {
 #downloadDiv{
 	/*position: absolute;
 	bottom: 20px !important;*/
-	margin-top: 50px;
+	margin-top: 70px;
 	text-align: center;
 	background-color: transparent !important;
+}
+
+#downloadPrompt{
+	margin-top: 8px;
 }
 
 .sectionDiv{
