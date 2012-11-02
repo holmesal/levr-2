@@ -1312,7 +1312,7 @@ def search_foursquare(geo_point,token,deal_status,already_found=[],**kwargs):
 			logging.info('No venue category returned, making it "undefined"')
 			foursquare_deal['venue']['categories'] = [{'name':'undefined'}]
 		#logging.info(foursquare_deal['venue'])
-		if not filter_foursquare_deal(foursquare_deal,already_found):
+		if not filter_foursquare_deal(foursquare_deal,already_found): # returns True if the deal is filtered out
 			venue = foursquare_deal['venue']
 			#logging.debug(foursquare_deal['type'])
 			#logging.debug(foursquare_deal['message'])
@@ -1356,13 +1356,13 @@ def search_foursquare(geo_point,token,deal_status,already_found=[],**kwargs):
 #			existing_deal = levr.Deal.gql('WHERE foursquare_id=:1',foursquare_deal['id']).get()
 			logging.warning(foursquare_deal['id'])
 			if not existing_deal:
-				
+				logging.info('Foursquare special '+foursquare_deal['id']+' NOT found in database'+ str(' '))
 				#add the foursquare deal
 				deal = add_foursquare_deal(foursquare_deal,business,deal_status)
 			
 			else:
 				deal = existing_deal
-				logging.info('Foursquare special '+deal.foursquare_id+' found in database but not in search.')
+				logging.info('Foursquare special '+deal.foursquare_id+' found in database but not in search. '+ str(deal.deal_text))
 #				logging.debug('foursquare')
 				#logging.debug(levr.log_model_props(deal))
 			deal_business = db.get(deal.businessID)
@@ -1442,13 +1442,12 @@ def add_foursquare_deal(foursquare_deal,business,deal_status):
 		parent			=	random_dead_ninja.key(),
 		smallImg		=	'http://playfoursquare.s3.amazonaws.com/press/logo/icon-512x512.png'
 	)
-	try:
-		deal.business = business
-	except:
-		levr.log_error()
 
 
 	deal.put()
+	
+	logging.debug(levr.log_model_props(deal, ['deal_text','foursquare_id','businessID','deal_text']))
+	
 	
 	#===========================================================================
 	# Update memcache because a deal was created

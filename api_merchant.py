@@ -227,7 +227,7 @@ class ConnectMerchantHandler(api_utils.BaseClass):
 			password = enc.encrypt_password(password)
 			types = types.split(',')
 			
-			logging.debug('{}\n{}\n{}\n{}'.format(business_name,vicinity,geo_point,types))
+			logging.debug('{}\n{}\n{}\n{}'.format(repr(business_name),repr(vicinity),geo_point,repr(types)))
 			
 			# check for existing entities
 			user = levr.Customer.all().filter('email',email).get()
