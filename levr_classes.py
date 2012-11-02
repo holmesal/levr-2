@@ -67,7 +67,7 @@ def create_new_user(**kwargs):
 	user = level_check(user)
 	user.put()
 	return user
-def create_new_business(business_name,vicinity,geo_point,types,**kwargs):
+def create_new_business(business_name,vicinity,geo_point,types,phone_number,**kwargs):
 	'''
 	Creates a new business entity with an optional owner.
 	Puts the business before returning
@@ -91,10 +91,15 @@ def create_new_business(business_name,vicinity,geo_point,types,**kwargs):
 					types = types
 					)
 	
+	if phone_number:
+		business.phone = phone_number
+	
 	owner = kwargs.get('owner',None)
 	if owner:
 		business.owner = owner
-		
+	
+	
+	
 	business.put()
 	
 	return business
@@ -671,7 +676,7 @@ def dealCreate(params,origin,upload_flag=True,**kwargs):
 			deal_type = 'bundle'
 		else:
 			#deal is not bundled
-			'deal is NOT bundled'
+#			'deal is NOT bundled'
 			deal_type = 'single'
 	else:
 		#phone uploaded deals do not pass deal_line2
@@ -717,7 +722,7 @@ def dealCreate(params,origin,upload_flag=True,**kwargs):
 				parent = user,
 				is_exclusive = True,
 				deal_status = deal_status,
-				date_end = datetime.now() + timedelta(days=14)
+				date_end = datetime.now() + timedelta(days=MERCHANT_DEAL_LENGTH)
 				)
 		
 	elif origin	=='phone_existing_business' or origin == 'phone_new_business':
@@ -1183,7 +1188,12 @@ class Business(db.Model):
 		
 		return tags
 	
-MERCHANT_DEAL_LENGTH = 14 # days
+MERCHANT_DEAL_LENGTH = 21 # days
+DEAL_STATUS_ACTIVE = 'active'
+DEAL_STATUS_TEST = 'test'
+DEAL_STATUS_REJECTED = 'rejected'
+DEAL_STATUS_EXPIRED = 'expired'
+DEAL_STATUS_PENDING = 'pending'
 DEAL_MODEL_VERSION = 3
 class Deal(polymodel.PolyModel):
 	'''
@@ -1196,7 +1206,7 @@ class Deal(polymodel.PolyModel):
 	been_reviewed	= db.BooleanProperty(default=False)
 	reject_message	= db.StringProperty()
 	tags			= db.ListProperty(str)
-	businessID 		= db.StringProperty() #CHANGE TO REFERENCEPROPERTY
+	businessID 		= db.StringProperty()
 	business		= db.ReferenceProperty(Business,collection_name='deals')
 	origin			= db.StringProperty(default='levr')
 	external_url	= db.StringProperty()
@@ -1265,7 +1275,6 @@ class Deal(polymodel.PolyModel):
 		'''
 		Increments the number of times this deal has been viewed
 		'''
-		# TODO: add shards to memcache? low priority
 		index = random.randint(0,NUM_DEAL_VIEW_COUNTERS-1)
 		shard_name = 'shard'+str(index)
 		counter = DealViewCounter.get_by_key_name(shard_name,self)

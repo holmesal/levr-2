@@ -30,11 +30,11 @@ class BaseClass(webapp2.RequestHandler):
 	Base class for webapp request handlers
 	Mostly used for basic i/o
 	'''
-	def send_error(self,error):
+	def send_error(self,message='Server Error'):
 		'''
 		Just being used as a wrapper while code is migrating
 		'''
-		send_error(self,error)
+		send_error(self,message)
 		
 	
 	def send_response(self,response,user=None):
@@ -57,7 +57,7 @@ def deprecated(handler_method):
 	
 
 
-@deprecated
+#@deprecated
 def send_error(self,error):
 	reply = {
 			'meta':{
@@ -116,7 +116,7 @@ def package_deal_multi(deals,private=False,*args,**kwargs):
 	@type private: boolean
 	'''
 #	assert type(deals) == list, 'Must pass deals as a list; type = '+str(type(deals))
-	
+	logging.info(' PACKAGE DEAL MULTI')
 	# Remove deals that do not exist
 	deals = filter(lambda x: x,deals)
 	
@@ -124,38 +124,50 @@ def package_deal_multi(deals,private=False,*args,**kwargs):
 	ranks = kwargs.get('ranks',[None for deal in deals]) #@UnusedVariable
 	distances = kwargs.get('distances',[None for deal in deals]) #@UnusedVariable
 	
-	# TODO: failsafe for deal fetching - if batch get fails, fall back to one-by-one gets + filter
 	
+	
+	
+	bad_deals = []
 	# prefetch deal owners
-	try:
-		owner_keys = [deal.key().parent() for deal in deals]
-		owners = db.get(owner_keys)
-	except:
-		# Fetch the deals one-by-one, filtering out the deals that would break the whole transaction
-		# shitty, but at least it will not break the search if one deal fails
-		levr.log_error()
-		owners = []
-		for deal in deals:
-			owners.append(levr.Customer.get(deal.parent_key()))
-			
+	
+	logging.info('Owners')
+	owner_keys = [deal.key().parent() for deal in deals]
+	owners = db.get(owner_keys)
+	logging.debug(owners)
+	logging.debug(owner_keys)
+	
+	
 	# prefetch deal businesses
 	business_keys = [deal.businessID for deal in deals]
 	businesses = db.get(business_keys)
+	logging.debug('Businesses')
+	logging.debug(businesses)
+	logging.debug(business_keys)
 	
 	# Remove deals that have bad references...
 	data = zip(deals,owners,businesses,ranks,distances)
+	logging.debug('data:')
+	logging.debug(data)
 	# Remove deals without valid owners
-	data_sans_Nonetype_owners = filter(lambda x: x[1],data)
+	data_sans_Nonetype_owners = filter(lambda x: x[1] is not None,data)
 	# Remove deals without valid businesses
-	new_data = filter(lambda x: x[2],data_sans_Nonetype_owners)
+	new_data = filter(lambda x: x[2] is not None,data_sans_Nonetype_owners)
+	
+	logging.debug('postdata: ')
+	logging.debug(new_data)
 	
 	# Notify the benevolent server monitors that there is some missing shit in here. BAD!
 	if data != new_data:
-		
-		levr.log_error('There are deals with missing references: ')#+str([deal.key() for deal in deals]))
+		bad_deals = filter(lambda x: x not in new_data,data)
+		logging.error('There are deals with missing references: ')#+str([deal.key() for deal in deals]))
+		for bd in bad_deals:
+			logging.error(bd[0].deal_text)
+			logging.error(bd[0].key())
+			
 	
-	
+	# if there were any bad references, log them
 	# Continue without the filtered deals
+	logging.info(new_data)
 	return package_prefetched_deal_multi(new_data, private)
 	
 def package_prefetched_deal_multi(data,private=False,*args,**kwargs):
@@ -341,7 +353,37 @@ def create_img_url(entity,size):
 		return 'http://playfoursquare.s3.amazonaws.com/press/logo/icon-512x512.png'
 	else:
 		return ''
-
+def fetch_all_users_deals(user):
+	deals = levr.Deal.all().ancestor(user).fetch(None)
+	logging.debug('deals length: '+str(deals.__len__()))
+	
+	if user.tester:
+		deal_status = 'test'
+	else:
+		deal_status = 'active'
+	
+	# separate the two kinds of deals
+	active_deals = filter(lambda x: x.deal_status == deal_status,deals)
+	expired_deals = filter(lambda x: x.deal_status == 'expired',deals)
+	
+	# sort the active and expired deals by their respecive sort properties
+	active_deals = sort_deals_by_property(active_deals, 'date_created')
+	expired_deals = sort_deals_by_property(expired_deals, 'date_expired')
+	
+	# combine the two lists of deals into one
+	all_deals = []
+	all_deals.extend(active_deals)
+	all_deals.extend(expired_deals)
+	
+	return all_deals
+	
+def sort_deals_by_property(deals,prop):
+	if deals:
+		extracted_props = [getattr(deal,prop) for deal in deals]
+		toop = zip(extracted_props,deals)
+		sorted_toop = sorted(toop)
+		sorted_props, deals = zip(*sorted_toop) #@UnusedVariable: sorted_props
+	return deals
 
 def private(handler_method):
 	'''
@@ -428,10 +470,12 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						'vicinity'		: str,
 						'types'			: str,
 						'shareURL'		: str,
+						'phoneNumber'	: str,
 						
 						#promotion stuff
 						'tags'			: list,
-						'promotionID'	: str
+						'promotionID'	: str,
+						'receipt'		: str
 						
 						}
 			defaults = {
@@ -474,10 +518,12 @@ def validate(url_param,authentication_source,*a,**to_validate):
 						'vicinity'		: '',
 						'types'			: '',
 						'shareURL'		: '',
+						'phoneNumber'	: '',
 						
 						# Promotion stuff
 						'tags'			: [],
-						'promotionID'	: ''
+						'promotionID'	: '',
+						'receipt'		: ''
 						}
 			
 			try:
@@ -1812,7 +1858,6 @@ class PromoteDeal(BaseClass):
 		# deals = self.deal.buinsess.deals.fetch(None)
 		logging.debug(deal_keys)
 		# get all customers that have ever liked anything at that business before
-		# TODO: change upvote mechanism so that more than 30 queries can be run
 		deal_keys = self._reduce_queries(deal_keys)
 		
 #		user_keys = levr.Customer.all(keys_only=True).filter('upvotes',deal_keys).fetch(None)
@@ -1853,6 +1898,9 @@ class PromoteDeal(BaseClass):
 			deal_keys.update(levr.Deal.all(keys_only=True).filter('tags',tag))
 		deal_keys = list(deal_keys)
 		# TODO: order the deal keys so that when the list is clipped, naughty deals are removed
+		deals = db.get(deal_keys)
+		deals = sort_deals_by_property(deals, 'date_created')
+		
 		# get all customers that have liked any of the businesses before
 		deal_keys = self._reduce_queries(deal_keys)
 #		user_keys = levr.Customer.all(keys_only=True).filter('upvotes',deal_keys).fetch(None)

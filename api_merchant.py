@@ -15,6 +15,7 @@ import urllib
 import webapp2
 from datetime import datetime
 from datetime import timedelta
+from tasks import IMAGE_ROTATION_TASK_URL
 #import api_utils_social as social
 #from random import randint
 #import json
@@ -219,6 +220,7 @@ class ConnectMerchantHandler(api_utils.BaseClass):
 		geo_point = kwargs.get('ll')
 		types = kwargs.get('types')
 		development = kwargs.get('development',True) # TODO: switch this to False by default when changing to live
+		phone_number = kwargs.get('phoneNumber','')
 		# TODO: accept phone number as well
 		try:
 			# Convert input data
@@ -242,9 +244,11 @@ class ConnectMerchantHandler(api_utils.BaseClass):
 					# if the user has a business, it should be the business that was requested
 					assert business, 'User does not own any businesses yet'
 				except:
-					logging.debug('user does not have a business yet')
+					logging.debug('user does not have a business yet - create one')
 					# if the user does not have a business yet, add this one.
-					business = levr.create_new_business(business_name,vicinity,geo_point,types,owner=user,development=development)
+					business = levr.create_new_business(business_name,vicinity,geo_point,types,phone_number,
+													owner=user
+													)
 #					assert False, user_doesnt_own_business_message
 				else:
 					logging.debug('User owns a business')
@@ -268,7 +272,9 @@ class ConnectMerchantHandler(api_utils.BaseClass):
 				logging.debug(levr.log_model_props(user))
 				if not requested_business:
 					logging.debug('requested business was not found')
-					business = levr.create_new_business(business_name,vicinity,geo_point,types,owner=user)
+					business = levr.create_new_business(business_name,vicinity,geo_point,types,phone_number,
+													owner=user
+													)
 				else:
 					logging.debug('requested business was found')
 					business = requested_business
@@ -329,36 +335,23 @@ class MerchantDealsHandler(api_utils.BaseClass):
 		'''
 		user = kwargs.get('actor')
 		try:
-			deals = levr.Deal.all().ancestor(user).fetch(None)
-			# TODO: remove rejected deals
+			deals = api_utils.fetch_all_users_deals(user)
 			
-			if deals:
-				# Sort the deals
-				creation_dates = [deal.date_created for deal in deals]
-				
-				toop = zip(creation_dates,deals)
-				sorted_toop = sorted(toop)
-				sorted_dates,sorted_deals = zip(*sorted_toop) #@UnusedVariable: sorted_dates
-				
-				
-				
-				# package and send
-				private = True
-				packaged_deals = api_utils.package_deal_multi(sorted_deals, private)
-			else:
-				packaged_deals = []
-				
+			# package deals
+			private = True
+			packaged_deals = api_utils.package_deal_multi(deals, private)
 			
-			
+			# return
 			response = {
 					'deals' : packaged_deals
 					}
-			api_utils.send_response(self,response, user)
+			self.send_response(response, user)
 			
 		except Exception,e:
 			levr.log_error(e)
-			api_utils.send_error(self,'Server Error')
-			
+			self.send_error()
+		
+	
 class RequestUploadURLHandler(api_utils.BaseClass):
 	'''
 	A handler to serve an upload url for uploading an image to the server
@@ -456,6 +449,13 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 				blob_key= upload.key()
 				img_key = blob_key
 				upload_flag = True
+				
+				# send the image to the img rotation task que
+				task_params = {
+								'blob_key'	:	str(img_key)
+								}
+				logging.info('Sending this to the img rotation task: '+str(task_params))
+				taskqueue.add(url=IMAGE_ROTATION_TASK_URL,payload=json.dumps(task_params))
 			else:
 				upload_flag = False
 				raise KeyError('Image was not uploaded')
@@ -472,8 +472,6 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 					'development'		: development,
 					'img_key'			: img_key
 					}
-			# TODO: add time variation to the deal expiration
-			#   i.e. merchant deals last longer than the default 7 days
 			deal_entity = levr.dealCreate(params, 'phone_merchant', upload_flag)
 			
 			
@@ -502,19 +500,19 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 				levr.log_error()
 			
 			#===================================================================
-			# Respond
+			# Respond with all of the users deals
 			#===================================================================
 			private = True
-			packaged_deal = api_utils.package_deal(deal_entity, private)
+			deals = api_utils.fetch_all_users_deals(user)
+			packaged_deals = api_utils.package_deal_multi(deals, private)
 			
 			response = {
-					'deal'	: packaged_deal
+					'deals'	: packaged_deals
 					}
 			
 			api_utils.send_response(self,response, user)
 			
 		except Exception,e:
-			
 			levr.log_error(e)
 			api_utils.send_error(self,'Server Error')
 			
@@ -593,12 +591,19 @@ class EditDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 			if deal_text:
 				deal.deal_text = deal_text
 			
+			deal.date_end = datetime.now() + timedelta(days=levr.MERCHANT_DEAL_LENGTH)
+			
+			
 			deal.put()
 			
+			
 			private = True
-			packaged_deal = api_utils.package_deal(deal, private)
+			deals = api_utils.fetch_all_users_deals(user)
+			packaged_deals = api_utils.package_deal_multi(deals, private)
+			
+			
 			response = {
-					'deal'	: packaged_deal
+					'deals'	: packaged_deals
 					}
 			api_utils.send_response(self,response, user)
 			
@@ -741,6 +746,7 @@ class ActivatePromotionHandler(api_utils.PromoteDeal):
 					levrToken = True,
 					promotionID = True,
 					deal = True,
+					receipt = True,
 					tags = False
 					)
 	@api_utils.private
@@ -779,11 +785,13 @@ class ActivatePromotionHandler(api_utils.PromoteDeal):
 				assert False, 'Did not recognize promotion type.'
 			
 			private = True
-			packaged_deal = api_utils.package_deal(deal, private)
+			deals = api_utils.fetch_all_users_deals(user)
+			packaged_deals = api_utils.package_deal_multi(deals, private)
 			
 			response = {
-					'deal' : packaged_deal
+					'deals'	: packaged_deals
 					}
+			
 			api_utils.send_response(self,response, user)
 		except AssertionError,e:
 			api_utils.send_error(self,str(e))

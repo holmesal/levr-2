@@ -29,7 +29,16 @@ class SocialClass:
 		else: 
 			self.debug = False
 	def build_display_name(self, first_name, last_name):
-		return first_name + ' ' + last_name[0] + '.'
+		display_name = ''
+		if first_name:
+			display_name += first_name
+			if last_name:
+				display_name += ' ' + last_name[0]+'.'
+		elif last_name:
+			display_name += last_name
+#		return first_name + ' ' + last_name[0] + '.'
+		return display_name
+	
 	def first_time_connect(self, auto_put=True, *args, **kwargs):
 		'''
 		
@@ -279,6 +288,9 @@ class Foursquare(SocialClass):
 		#set the foursquare api version
 		self.version = '20121007' #the foursquare api version
 		
+		if 'debug' in args:
+			foursquare_token = kwargs.get('foursquare_token')
+			self.foursquare_token = foursquare_token
 		
 		if not user:
 			#user was not passed, check to make sure that the user does not already exist
@@ -323,7 +335,7 @@ class Foursquare(SocialClass):
 		@param response_dict: the response dictionary from connecting with foursquare
 		@type response_dict: dictionary
 		'''
-		logging.debug('\n\n CONNECT WITH CREDENTIALS \n\n')
+		logging.debug('\n\n FOURSQUARE CONNECT WITH CREDENTIALS \n\n')
 		
 		#parse incoming dict
 		user_content = response_dict['response']['user']
@@ -357,7 +369,7 @@ class Foursquare(SocialClass):
 		'''
 		Foursquare
 		'''
-		logging.debug('\n\n UPDATE CREDENTIALS \n\n')
+		logging.debug('\n\n FOURSQUARE UPDATE CREDENTIALS \n\n')
 		self.user.foursquare_connected		= True
 		
 		#grab foursquare credentials
@@ -375,7 +387,7 @@ class Foursquare(SocialClass):
 		
 		if content is passed, it should be the user dict responded by foursquare
 		'''
-		logging.debug('\n\n UPDATE USER DETAILS \n\n')
+		logging.debug('\n\n FOURSQUARE UPDATE USER DETAILS PREFETCH \n\n')
 		#get foursquare details
 		if not content:
 			logging.debug('USER CONTENT WAS NOT PASSED... fetch data')
@@ -384,17 +396,18 @@ class Foursquare(SocialClass):
 		else:
 			logging.debug('USER CONTENT WAS PASSED... do not fetch data')
 			pass
-		
+		logging.debug('\n\n FOURSQUARE UPDATE USER DETAILS POSTFETCH \n\n')
 		
 #		logging.debug(foursquare_response)
 		
 		logging.debug(levr.log_dict(content))
+		logging.debug(type(content))
 		#give preference to facebook and twitter info over foursquare info
 		#grab stuff
 		updated = {}
 		
 		#update the users foursquare_id
-		foursquare_id	= int(content['id'])
+		foursquare_id	= int(content.get('id',None))
 		assert foursquare_id, "foursquare_id was not retrieved"
 		if not self.user.foursquare_id:
 				self.user.foursquare_id	= foursquare_id
@@ -411,11 +424,17 @@ class Foursquare(SocialClass):
 #				'foursquare_id'	: int(content['id'])
 #				
 #				}
-			first_name = content['firstName']
-			last_name	= content['lastName']
+			first_name = content.get('firstName','') #content['firstName']
+			last_name	= content.get('lastName','') #content['lastName']
 			display_name	= self.build_display_name(first_name, last_name)
-			photo			= content['photo']['prefix'] + '500x500' + content['photo']['suffix']
-			email			= content['contact']['email']
+			photo = content.get('photo',None)
+			if photo:
+				photo = photo.get('prefix','')+'500x500'+photo.get('suffix','')
+#			photo			= content['photo']['prefix'] + '500x500' + content['photo']['suffix']
+			contact = content.get('contact',None)
+			if contact:
+				email = contact.get('email')
+#			email			= content['contact']['email']
 			
 			
 			
@@ -452,7 +471,7 @@ class Foursquare(SocialClass):
 		3. Adds that information to a corresponding list on the user entity
 		4. Creates the db linkage between user and friends by calling create_notification
 		'''
-		logging.debug('\n\n UPDATE FRIENDS \n\n')
+		logging.debug('\n\n FOURSQUARE UPDATE FRIENDS \n\n')
 		#get the users friends
 		if not friends:
 			logging.debug('FRIEND DATA DOES NOT EXIST... make fetch')
@@ -503,7 +522,7 @@ class Foursquare(SocialClass):
 		Foursquare
 		Creates a url to perform a specified action on the foursquares api
 		'''
-		logging.debug('\n\n CREATE URL TWITTER \n\n')
+		logging.debug('\n\n FOURSQUARE CREATE URL \n\n')
 		url = 'https://api.foursquare.com/v2/users/'
 #		url += str(self.foursquare_id)
 		logging.debug(action)
@@ -879,25 +898,25 @@ class Facebook(SocialClass):
 		Updates the users facebook api credentials
 		
 		'''
-		if self.verbose: logging.debug('\n\n\n\t\t\t\t FACEBOOK UPDATE CREDENTIALS \n\n\n')
+		logging.debug('\n\n\n\t\t\t\t FACEBOOK UPDATE CREDENTIALS \n\n\n')
 		
 		#get the twitter oauth_token and twitter oauth_token_secret
-		if self.debug == True:
-			logging.warning('\n\n\n\t\t\t\t WARNING: RUNNING TWITTER CONNECTION IN DEBUG MODE')
-			self.user.facebook_token	= facebook_auth['pat_facebook_token']
-			self.user.facebook_id		= int(facebook_auth['pat_facebook_id'])
-		else:
-			#pull oauth credentials
-			facebook_token = kwargs.get('facebook_token',None)
-			facebook_id = kwargs.get('facebook_id',None)
-			#assure the credentials exist
-			assert facebook_token, 'facebook_token required in kwargs'
-			#not in debug mode, values are user provided
-			self.user.facebook_token	= facebook_token
-			#facebook_id is not required to get info
-			if facebook_id:
-				facebook_id = int(facebook_id)
-				self.user.facebook_id		= facebook_id
+#		if self.debug == True:
+#			logging.warning('\n\n\n\t\t\t\t WARNING: RUNNING TWITTER CONNECTION IN DEBUG MODE')
+#			self.user.facebook_token	= facebook_auth['pat_facebook_token']
+#			self.user.facebook_id		= int(facebook_auth['pat_facebook_id'])
+#		else:
+		#pull oauth credentials
+		facebook_token = kwargs.get('facebook_token',None)
+		facebook_id = kwargs.get('facebook_id',None)
+		#assure the credentials exist
+		assert facebook_token, 'facebook_token required in kwargs'
+		#not in debug mode, values are user provided
+		self.user.facebook_token	= facebook_token
+		#facebook_id is not required to get info
+		if facebook_id:
+			facebook_id = int(facebook_id)
+			self.user.facebook_id		= facebook_id
 		#set connection to facebook
 		self.user.facebook_connected = True
 		return
@@ -908,7 +927,7 @@ class Facebook(SocialClass):
 		'''
 		facebook_user = self.fetch('user')
 		updated = {}
-		if self.verbose: logging.debug('\n\n\n\t\t\t\t FACEBOOK GET USER DETAILS \n\n\n')
+		logging.debug('\n\n\n\t\t\t\t FACEBOOK GET USER DETAILS \n\n\n')
 #		name			= facebook_user['name']
 		first_name		= facebook_user['first_name']
 		last_name		= facebook_user['last_name']

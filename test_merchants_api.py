@@ -50,6 +50,7 @@ development = True
 #deal_id = test_deal_id
 #businessID = test_business_id
 
+refresh = False
 
 class TestSequence(unittest.TestCase):
 	def test_connect(self):
@@ -93,16 +94,16 @@ class TestSequence(unittest.TestCase):
 		#=======================================================================
 		# Request uploads
 		#=======================================================================
-#		endpoint = '/api/merchant/upload/request'
-#		actions = ['add','edit']
-#		method = 'GET'
-#		for action in actions:
-#			url = base_url+endpoint+'?uid={uid}&levrToken={levrToken}&action={action}'.format(uid=uid,
-#																						levrToken=levr_token,
-#																						action=action
-#																						)
-#			data = self._fetch(url, method, endpoint)
-#			print '--> upload url: ',data['response']['uploadURL']
+		endpoint = '/api/merchant/upload/request'
+		actions = ['add','edit']
+		method = 'GET'
+		for action in actions:
+			url = base_url+endpoint+'?uid={uid}&levrToken={levrToken}&action={action}'.format(uid=uid,
+																						levrToken=levr_token,
+																						action=action
+																						)
+			data = self._fetch(url, method, endpoint)
+			print '--> upload url: ',data['response']['uploadURL']
 			
 #	def test_get_merchant_deals(self):
 		#=======================================================================
@@ -129,54 +130,54 @@ class TestSequence(unittest.TestCase):
 		#=======================================================================
 		# Expire Deal
 		#=======================================================================
-#		endpoint = '/api/merchant/remove'
-#		method = 'POST'
-#		url = base_url+endpoint+'?uid={uid}&levrToken={levrToken}&dealID={dealID}'.format(uid=uid,
-#																						levrToken=levr_token,
-#																						dealID = deal_id
-#																						)
-#		data = self._fetch(url, method, endpoint)
-#		status = data['response']['deal']['status']
-#		print '--> status: ',status
-#		self.assertEqual(status, 'expired', 'Invalid deal status: {} != {}'.format(status,'expired'))
+		endpoint = '/api/merchant/remove'
+		method = 'POST'
+		url = base_url+endpoint+'?uid={uid}&levrToken={levrToken}&dealID={dealID}'.format(uid=uid,
+																						levrToken=levr_token,
+																						dealID = deal_id
+																						)
+		data = self._fetch(url, method, endpoint)
+		status = data['response']['deal']['status']
+		print '--> status: ',status
+		self.assertEqual(status, 'expired', 'Invalid deal status: {} != {}'.format(status,'expired'))
 		
 #	def test_reactivate_deal(self):
 		#=======================================================================
 		# Reactivate Deal
 		#=======================================================================
-#		endpoint = '/api/merchant/reactivate'
-#		method = 'POST'
-#		url = base_url+endpoint+'?uid={uid}&levrToken={levrToken}&dealID={dealID}'.format(uid=uid,
-#																		levrToken=levr_token,
-#																		dealID = deal_id
-#																		)
-#		data = self._fetch(url, method, endpoint)
-#		status = data['response']['deal']['status']
-#		print '--> status: ', status
-#		self.assertEqual(status, 'test', 'Invalid deal status: {} != {}'.format(status,'test'))
+		endpoint = '/api/merchant/reactivate'
+		method = 'POST'
+		url = base_url+endpoint+'?uid={uid}&levrToken={levrToken}&dealID={dealID}'.format(uid=uid,
+																		levrToken=levr_token,
+																		dealID = deal_id
+																		)
+		data = self._fetch(url, method, endpoint)
+		status = data['response']['deal']['status']
+		print '--> status: ', status
+		self.assertEqual(status, 'test', 'Invalid deal status: {} != {}'.format(status,'test'))
 		
 		
 		#=======================================================================
 		# Fetch promotions
 		#=======================================================================
-#		endpoint = '/api/merchant/promote/get'
-#		method = 'GET'
-#		url = base_url+endpoint
-#		
-#		data = self._fetch(url, method, endpoint)
-#		remote_promos = data['response']['promotions']
-#		
-#		remote_promotions = [key['name'] for key in remote_promos]
-#		local_promotions = [key for key in promo.PROMOTIONS]
-#		self.assertEqual(remote_promotions, local_promotions,
-#						'Promotions list is not equal: {} != {}'.format(remote_promotions,local_promotions))
+		endpoint = '/api/merchant/promote/get'
+		method = 'GET'
+		url = base_url+endpoint
+		
+		data = self._fetch(url, method, endpoint)
+		remote_promos = data['response']['promotions']
+		
+		remote_promotions = [key['name'] for key in remote_promos]
+		local_promotions = [key for key in promo.PROMOTIONS]
+		self.assertEqual(remote_promotions, local_promotions,
+						'Promotions list is not equal: {} != {}'.format(remote_promotions,local_promotions))
 		#=======================================================================
 		# Add a promotion to the deal
 		#=======================================================================
 		endpoint = '/api/merchant/promote/set'
 		method = 'POST'
-		post_url = base_url+endpoint+'?uid={uid}&levrToken={levrToken}&dealID={dealID}'.format(uid=uid,levrToken=levr_token,dealID=deal_id)
-		refresh = True
+		post_url = base_url+endpoint+'?uid={uid}&levrToken={levrToken}&dealID={dealID}&receipt=psyck!_this_is_not_a_receipt!'.format(uid=uid,levrToken=levr_token,dealID=deal_id)
+		
 		#=======================================================================
 		# # Boost rank
 		#=======================================================================
@@ -272,18 +273,18 @@ class TestSequence(unittest.TestCase):
 		self._fetch(url, method, endpoint, False)
 		
 		
+		if refresh == True:
+			# fetch user notifications to make sure the notification was created correctly
+			url = base_url+'/api/user/{previous_like_uid}/notifications?levrToken={previous_like_levr_token}'.format(
+																					previous_like_uid=previous_like_uid,
+																					previous_like_levr_token = previous_like_levr_token
+																					)
+			data = self._fetch(url, 'GET', '/api/user/<uid>/notifications', True)
+			notifications = data['response']['notifications']
+			num_notifications = data['response']['numResults']
 		
-		# fetch user notifications to make sure the notification was created correctly
-		url = base_url+'/api/user/{previous_like_uid}/notifications?levrToken={previous_like_levr_token}'.format(
-																				previous_like_uid=previous_like_uid,
-																				previous_like_levr_token = previous_like_levr_token
-																				)
-		data = self._fetch(url, 'GET', '/api/user/<uid>/notifications', True)
-		notifications = data['response']['notifications']
-		num_notifications = data['response']['numResults']
-		
-		self.assertEqual(num_notifications, 1, 'User should have one notification, has {}'.format(num_notifications))
-		pprint(notifications)
+			self.assertEqual(num_notifications, 1, 'User should have one notification, has {}'.format(num_notifications))
+			pprint(notifications)
 		#=======================================================================
 		# Notify related likes
 		#=======================================================================
@@ -323,17 +324,18 @@ class TestSequence(unittest.TestCase):
 		# Run again to make sure it fails
 		self._fetch(url, method, endpoint, False)
 		
-		# Get the users notifications to make sure the new one is there
-		url = base_url+'/api/user/{uid}/notifications?levrToken={levrToken}'.format(
-																			uid=related_likes_uid,
-																			levrToken=related_like_levr_token
-																			)
-		data = self._fetch(url, 'GET', '/api/user/<uid>/notifications', True)
-		notifications = data['response']['notifications']
-		num_notifications = data['response']['numResults']
-		
-		self.assertEqual(num_notifications, 1, 'User should have one notification, has {}'.format(num_notifications))
-		pprint(notifications)
+		if refresh == True:
+			# Get the users notifications to make sure the new one is there
+			url = base_url+'/api/user/{uid}/notifications?levrToken={levrToken}'.format(
+																				uid=related_likes_uid,
+																				levrToken=related_like_levr_token
+																				)
+			data = self._fetch(url, 'GET', '/api/user/<uid>/notifications', True)
+			notifications = data['response']['notifications']
+			num_notifications = data['response']['numResults']
+			
+			self.assertEqual(num_notifications, 1, 'User should have one notification, has {}'.format(num_notifications))
+			pprint(notifications)
 		
 	def _fetch(self,url,method,endpoint,success=True):
 		if method == 'GET':
