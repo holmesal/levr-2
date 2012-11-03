@@ -34,7 +34,7 @@ class BaseClass(webapp2.RequestHandler):
 		'''
 		Just being used as a wrapper while code is migrating
 		'''
-		send_error(self,message)
+		send_error(self,str(message))
 		
 	
 	def send_response(self,response,user=None):
@@ -1744,7 +1744,43 @@ class PromoteDeal(BaseClass):
 		Returns the deal as-is
 		'''
 		return self.deal
-	def _add_promo(self,promo_type):
+	def get_all_deals_response(self):
+		'''
+		Packages all deals into a json
+		
+		@return: the base json for the reply in merchants api
+		@rtype: dict
+		'''
+		private = True
+		deals = fetch_all_users_deals(self.user)
+		packaged_deals = package_deal_multi(deals, private)
+		
+		response = {
+				'deals'	: packaged_deals
+				}
+		return response
+	def get_promotion_by_promotionID(self,promotionID):
+		'''
+		Pulls a promotion for self.deal from the db based on the promotionID
+		@param promotionID: promotion identifier
+		@type promotionID: str
+		
+		@return: A promotion entity
+		@rtype: levr.DealPromotion
+		'''
+		key_name = self.make_promo_key_name(promotionID)
+		promotion_entity = levr.DealPromotion.get_by_key_name(key_name)
+		return promotion_entity
+	def make_promo_key_name(self,promotionID):
+		'''
+		Creates a key_name for a promotion entity using the uid and promotionID
+		key_names are in form of <uid>|<promotionID>
+		
+		@param promotionID: the promotion identifier
+		@type promotionID: str
+		'''
+		return '{}|{}'.format(self.user.key(),promotionID)
+	def _add_promo(self,promotionID):
 		'''
 		Adds the promotion to the list of promotions
 		Also creates a promotion entity to log the event
@@ -1752,12 +1788,14 @@ class PromoteDeal(BaseClass):
 		@param promo_type: one of the available promotions
 		@type promo_type: str
 		'''
-		self.deal.promotions.append(promo_type)
+		self.deal.promotions.append(promotionID)
+		name = self.make_promo_key_name(promotionID)
 		
 		promo = levr.DealPromotion(
+							key_name = name,
 							purchaser = self.user,
 							deal = self.deal,
-							type = promo_type
+							type = promotionID
 							)
 		promo.put()
 		return

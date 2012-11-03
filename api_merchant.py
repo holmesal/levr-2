@@ -15,7 +15,6 @@ import urllib
 import webapp2
 from datetime import datetime
 from datetime import timedelta
-from tasks import IMAGE_ROTATION_TASK_URL
 #import api_utils_social as social
 #from random import randint
 #import json
@@ -735,7 +734,7 @@ class FetchPromotionOptionsHandler(api_utils.BaseClass):
 
 
 
-class ActivatePromotionHandler(api_utils.PromoteDeal):
+class SetPromotionHandler(api_utils.PromoteDeal):
 	'''
 	A handler for activating a promotion. Will accept a users information and
 		an identifier for a promotion. The types of promotions correspond to the
@@ -746,7 +745,6 @@ class ActivatePromotionHandler(api_utils.PromoteDeal):
 					levrToken = True,
 					promotionID = True,
 					deal = True,
-					receipt = True,
 					tags = False
 					)
 	@api_utils.private
@@ -754,22 +752,29 @@ class ActivatePromotionHandler(api_utils.PromoteDeal):
 		user = kwargs.get('actor')
 		promotionID = kwargs.get('promotionID')
 		deal = kwargs.get('deal')
+		tags = kwargs.get('tags',[])
 #		development = kwargs.get('development')
 		
 		# init the PromoteDeal class
 		logging.debug(type(deal))
 		logging.debug(type(user))
 		
-		super(ActivatePromotionHandler,self).__initialize__(deal,user)
+		
 		
 		try:
+			# init super class
+			super(SetPromotionHandler,self).__initialize__(deal,user)
+			
+			# promotions can only be applied once
 			assert promotionID not in self.deal.promotions, \
 				'Deal already has promotion: '+promotionID
+			
+			# act accordingly
 			if promotionID == promo.BOOST_RANK:
 				deal = self.boost_rank()
 				
 			elif promotionID == promo.MORE_TAGS:
-				tags = kwargs.get('tags',[])
+				
 				assert tags, 'Required parameter not passed, tags: '+str(tags)
 				deal = self.more_tags(tags)
 				
@@ -784,21 +789,51 @@ class ActivatePromotionHandler(api_utils.PromoteDeal):
 			else:
 				assert False, 'Did not recognize promotion type.'
 			
-			private = True
-			deals = api_utils.fetch_all_users_deals(user)
-			packaged_deals = api_utils.package_deal_multi(deals, private)
-			
-			response = {
-					'deals'	: packaged_deals
-					}
-			
+			# return success
+			response = self.get_all_deals_response()
 			api_utils.send_response(self,response, user)
 		except AssertionError,e:
-			api_utils.send_error(self,str(e))
+			self.send_error(str(e))
 		except Exception,e:
 			levr.log_error(e)
-			api_utils.send_error(self,'Server Error')
-class RemovePromotionHandler(api_utils.PromoteDeal):
+			self.send_error()
+class ConfirmPromotionHandler(api_utils.PromoteDeal):
+	@api_utils.validate(None, 'param',
+					user = True,
+					levrToken = True,
+					promotionID = True,
+					deal = True,
+					receipt = True
+					)
+	def post(self,*args,**kwargs):
+		'''
+		A handler to confirm that payment was received for a promotion
+		'''
+		user = kwargs.get('actor')
+		deal = kwargs.get('deal')
+		promotionID = kwargs.get('promotionID')
+		receipt = kwargs.get('receipt')
+		
+		try:
+			# init the super class
+			super(ConfirmPromotionHandler,self).__initialize__(deal,user)
+			# fetch the original Promotion entity
+			promo_entity = self.get_promotion_by_promotionID(promotionID)
+			# add the receipt to the promotion log
+			promo_entity.receipt = receipt
+			promo_entity.put()
+			# return success - send all deals
+			response = self.get_all_deals_response()
+			self.send_response(response, self.user)
+			
+		except AssertionError,e:
+			self.send_error(e)
+		except Exception,e:
+			levr.log_error(e)
+			self.send_error()
+
+
+class CancelPromotionHandler(api_utils.PromoteDeal):
 	@api_utils.validate(None, 'param',
 					promotionID = True,
 					deal = True,
@@ -808,24 +843,27 @@ class RemovePromotionHandler(api_utils.PromoteDeal):
 		promotionID = kwargs.get('promotionID')
 		deal = kwargs.get('deal')
 #		development = kwargs.get('development')
-		
-		# init the PromoteDeal class
-		logging.debug(type(deal))
-		logging.debug(type(user))
-		
-		if promotionID == 'all':
-			deal.promotions = []
-		elif promotionID in deal.promotions:
-			deal.promotions.remove(promotionID)
-		
-		deal.put()
-		private = True
-		response = {
-				'deal' : api_utils.package_deal(deal, private)
-				}
-		self.send_response(response)
-		
-		
+		try:
+			# TODO: finish this!
+			# init super class
+			super(CancelPromotionHandler,self).__initialize__(deal,user)
+			
+			# init the PromoteDeal class
+			logging.debug(type(deal))
+			logging.debug(type(user))
+			
+			if promotionID == 'all':
+				deal.promotions = []
+			elif promotionID in deal.promotions:
+				deal.promotions.remove(promotionID)
+			
+			# send success
+			response = self.get_all_deals_response()
+			self.send_response(response,self.user)
+		except Exception,e:
+			levr.log_error(e)
+			self.send_error()
+			
 # Quality Assurance for generating the upload urls
 NEW_DEAL_UPLOAD_URL = '/api/merchant/upload/add'
 EDIT_DEAL_UPLOAD_URL = '/api/merchant/upload/edit'
@@ -838,8 +876,9 @@ app = webapp2.WSGIApplication([
 								('/api/merchant/remove',ExpireDealHandler),
 								('/api/merchant/reactivate',ReactivateDealHandler),
 								('/api/merchant/promote/get',FetchPromotionOptionsHandler),
-								('/api/merchant/promote/set',ActivatePromotionHandler),
-								('/api/merchant/promote/remove',RemovePromotionHandler)
+								('/api/merchant/promote/set',SetPromotionHandler),
+								('/api/merchant/promote/confirm',ConfirmPromotionHandler),
+								('/api/merchant/promote/cancel',CancelPromotionHandler)
 								
 								## old...
 #								('/api/merchant/initialize', InitializeMerchantHandler),
