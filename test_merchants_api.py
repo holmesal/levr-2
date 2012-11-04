@@ -172,14 +172,26 @@ class TestSequence(unittest.TestCase):
 		self.assertEqual(remote_promotions, local_promotions,
 						'Promotions list is not equal: {} != {}'.format(remote_promotions,local_promotions))
 		#=======================================================================
-		# Add a promotion to the deal
+		#=======================================================================
+		#=======================================================================
+		#=======================================================================
+		#=======================================================================
+		# # # # # Add a promotion to the deal
+		#=======================================================================
+		#=======================================================================
+		#=======================================================================
+		#=======================================================================
 		#=======================================================================
 		endpoint = '/api/merchant/promote/set'
 		method = 'POST'
 		post_url = base_url+endpoint+'?uid={uid}&levrToken={levrToken}&dealID={dealID}&receipt=psyck!_this_is_not_a_receipt!'.format(uid=uid,levrToken=levr_token,dealID=deal_id)
 		
 		#=======================================================================
-		# # Boost rank
+		#=======================================================================
+		#=======================================================================
+		# # # # Boost rank
+		#=======================================================================
+		#=======================================================================
 		#=======================================================================
 		promotionID = promo.BOOST_RANK
 		
@@ -194,13 +206,19 @@ class TestSequence(unittest.TestCase):
 			print '--> promotions: ', deal['promotions']
 			print '--> rank before: {}, rank after: {}'.format(pre_promotion_karma,karma)
 			self.assertGreater(karma , pre_promotion_karma, 'rank did not change')
-			
+			promo_ids = [p['name'] for p in deal['promotion']]
+			assert promotionID in promo_ids, '{} alert not in the promotions'.format(promotionID)
+		
 		
 		# run a second time to make sure it fails
 		self._fetch(url, method, endpoint, False)
 		
 		#=======================================================================
-		# More tags!
+		#=======================================================================
+		#=======================================================================
+		# # # More tags!
+		#=======================================================================
+		#=======================================================================
 		#=======================================================================
 		new_tags = 'tag1,tag2,tag_one_million!,legal'
 		promotionID = promo.MORE_TAGS
@@ -211,12 +229,19 @@ class TestSequence(unittest.TestCase):
 		if refresh == True:
 			data = self._fetch(url, method, endpoint, True)
 			deal = data['response']['deals'][0]
+			promo_ids = [p['name'] for p in deal['promotion']]
 			print '--> promotions: ', deal['promotions']
+			assert promotionID in promo_ids, '{} alert not in the promotions'.format(promotionID)
+		
 
 		# Run again to make sure it fails
 		self._fetch(url, method, endpoint, False)
 		#=======================================================================
-		# Radius alert
+		#=======================================================================
+		#=======================================================================
+		# # # Radius alert
+		#=======================================================================
+		#=======================================================================
 		#=======================================================================
 		promotionID = promo.RADIUS_ALERT
 		url = post_url+'&promotionID={promotionID}'.format(
@@ -225,15 +250,20 @@ class TestSequence(unittest.TestCase):
 		if refresh == True:
 			data = self._fetch(url, method, endpoint, True)
 			deal = data['response']['deals'][0]
+			promo_ids = [p['name'] for p in deal['promotion']]
 			print '--> promotions: ', deal['promotions']
-			assert promotionID in deal['promotions'], '{} alert not in the promotions'.format(promotionID)
+			assert promotionID in promo_ids, '{} alert not in the promotions'.format(promotionID)
 		
 		# Run again to make sure it fails
 		self._fetch(url, method, endpoint, False)
 		
 		
 		#=======================================================================
-		# Notify previous likes
+		#=======================================================================
+		#=======================================================================
+		# # # Notify previous likes
+		#=======================================================================
+		#=======================================================================
 		#=======================================================================
 		# need to have another like another deal uploaded by the business first
 #		previous_like_dealID = 'tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fCHGJdErv19TaoeLGNiu51StjnMAaChDyDrrMSui1aMhObO0DBg=='
@@ -266,8 +296,9 @@ class TestSequence(unittest.TestCase):
 		if refresh == True:
 			data = self._fetch(url, method, endpoint, True)
 			deal = data['response']['deals'][0]
+			promo_ids = [p['name'] for p in deal['promotion']]
 			print '--> promotions: ', deal['promotions']
-			assert promotionID in deal['promotions'], '{} alert not in the promotions'.format(promotionID)
+			assert promotionID in promo_ids, '{} alert not in the promotions'.format(promotionID)
 		
 		# Run again to make sure it fails
 		self._fetch(url, method, endpoint, False)
@@ -286,7 +317,11 @@ class TestSequence(unittest.TestCase):
 			self.assertEqual(num_notifications, 1, 'User should have one notification, has {}'.format(num_notifications))
 			pprint(notifications)
 		#=======================================================================
-		# Notify related likes
+		#=======================================================================
+		#=======================================================================
+		# # # Notify related likes
+		#=======================================================================
+		#=======================================================================
 		#=======================================================================
 #		related_likes_deal_id = 'tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fCHGJdErv19TaoeLGNiu51Ss7n-IaChDyDrrMSui1aMhOM9UDBg==' # has tag 'legal'
 		related_likes_uid = 'tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fO3GJdErv19TaoeLGNiu51Stnw-YaChA=' # Poop Scoops
@@ -318,11 +353,15 @@ class TestSequence(unittest.TestCase):
 		if refresh == True:
 			data = self._fetch(url, method, endpoint, True)
 			deal = data['response']['deals'][0]
+			promo_ids = [p['name'] for p in deal['promotion']]
 			print '--> promotions: ', deal['promotions']
-			assert promotionID in deal['promotions'], '{} alert not in the promotions'.format(promotionID)
+			assert promotionID in promo_ids, '{} alert not in the promotions'.format(promotionID)
 		
 		# Run again to make sure it fails
 		self._fetch(url, method, endpoint, False)
+		
+		
+		
 		
 		if refresh == True:
 			# Get the users notifications to make sure the new one is there

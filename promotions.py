@@ -34,7 +34,7 @@ PROMOTIONS = {
 			RADIUS_ALERT : {
 						'name'	: RADIUS_ALERT,
 						'readableName' : 'Alert!',
-						'img'	: 'http://www.funnypica.com/wp-content/uploads/2012/05/Ugly-and-Crazy-Man.jpg',
+						'img'	: 'http://www.levr.com/img/promo_radius.png',
 						'description' : 'Alert customers in your area',
 						'color' : '0xFF000088'
 						},

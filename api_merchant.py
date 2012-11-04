@@ -768,30 +768,6 @@ class SetPromotionHandler(api_utils.PromoteDeal):
 			
 			self.run_promotion(promotion_id,tags=self.tags,auto_put=True)
 			
-#			# promotions can only be applied once
-#			assert promotionID not in self.deal.promotions, \
-#				'Deal already has promotion: '+promotionID
-#			
-#			# act accordingly
-#			if promotionID == promo.BOOST_RANK:
-#				deal = self.boost_rank()
-#				
-#			elif promotionID == promo.MORE_TAGS:
-#				
-#				assert tags, 'Required parameter not passed, tags: '+str(tags)
-#				deal = self.more_tags(tags)
-#				
-#			elif promotionID == promo.RADIUS_ALERT:
-#				deal = self.radius_alert()
-#				
-#			elif promotionID == promo.NOTIFY_PREVIOUS_LIKES:
-#				deal = self.notify_previous_likes()
-#				
-#			elif promotionID == promo.NOTIFY_RELATED_LIKES:
-#				deal = self.notify_related_likes()
-#			else:
-#				assert False, 'Did not recognize promotion type.'
-#			
 			# return success
 			response = self.get_all_deals_response()
 			api_utils.send_response(self,response, user)
@@ -867,7 +843,8 @@ class CancelPromotionHandler(api_utils.PromoteDeal):
 		except Exception,e:
 			levr.log_error(e)
 			self.send_error()
-			
+class TestPromotionsHandler(api_utils.PromoteDeal):
+	pass
 # Quality Assurance for generating the upload urls
 NEW_DEAL_UPLOAD_URL = '/api/merchant/upload/add'
 EDIT_DEAL_UPLOAD_URL = '/api/merchant/upload/edit'
