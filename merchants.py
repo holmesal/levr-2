@@ -1,6 +1,6 @@
 #@PydevCodeAnalysisIgnore
 from gaesessions import get_current_session
-from google.appengine.api import mail, taskqueue
+from google.appengine.api import mail, taskqueue, images, files
 from google.appengine.ext import blobstore, db
 from google.appengine.ext.webapp import blobstore_handlers
 import api_utils
@@ -54,7 +54,8 @@ class MobileLoginHandler(webapp2.RequestHandler):
 		else:
 			
 			template_values = {
-				"title"		:	"Welcome back."
+				"title"		:	"Welcome back.",
+				"back_link"	:	"/merchants/mobile"
 			}
 			
 			template = jinja_environment.get_template('templates/merchants-mobile-login.html')
@@ -80,7 +81,8 @@ class MobileLoginHandler(webapp2.RequestHandler):
 				"email"		:	o_email,
 				"pw"		:	pw,
 				"error"		:	error,
-				"title"		:	"Welcome back."
+				"title"		:	"Welcome back.",
+				"back_link"	:	"/merchants/mobile"
 			}
 			
 			template = jinja_environment.get_template('templates/merchants-mobile-login.html')
@@ -94,7 +96,14 @@ class MobileLoginHandler(webapp2.RequestHandler):
 			session['owner_of']	=	enc.encrypt_key(user.owner_of)
 			
 			#send to the merchants page
-			self.redirect('/merchants/manage')
+			self.redirect('/merchants/mobile/manage')
+			
+class MobileLogoutHandler(webapp2.RequestHandler):
+	def get(self):
+		session = get_current_session()
+		session['loggedIn'] = False
+		
+		self.redirect('/merchants/mobile')
 			
 class MobileBusinessSelectHandler(webapp2.RequestHandler):
 	def get(self):
@@ -109,7 +118,8 @@ class MobileBusinessSelectHandler(webapp2.RequestHandler):
 			
 			template_values = {
 				"title"		:	"Find your business.",
-				"query"		:	query
+				"query"		:	query,
+				"back_link"	:	"/merchants/mobile"
 			}
 			
 			template = jinja_environment.get_template('templates/merchants-mobile-business-select.html')
@@ -138,30 +148,34 @@ class MobileAutocompleteHandler(webapp2.RequestHandler):
 		
 class MobileBusinessDetailsHandler(webapp2.RequestHandler):
 	def get(self):
-		reference = self.request.get('reference')
-		query = self.request.get('query')
-		
-		url = 'https://maps.googleapis.com/maps/api/place/details/json?sensor=false&key=AIzaSyCjddKUEHrVcCDqA9fqLMPUBXH0mrWPpgI&types=establishment&reference='+reference
-		
-		response = urlfetch.fetch(url)
-		reply = json.loads(response.content)
-		logging.debug(reply)
-		deets = reply['result']
-		
-		template_values = {
-			"vicinity"	:	deets["vicinity"],
-			"phone"		:	deets["formatted_phone_number"],
-			"name"		:	deets["name"],
-			"lat"		:	deets["geometry"]["location"]["lat"],
-			"lon"		:	deets["geometry"]["location"]["lng"],
-			"reference"	:	reference,
-			"query"		:	query,
-			"title"		:	"Is this you?"
-		}
-		
-		template = jinja_environment.get_template('templates/merchants-mobile-business-details.html')
-		self.response.out.write(template.render(template_values))
+		try:
+			reference = self.request.get('reference')
+			query = self.request.get('query')
 			
+			url = 'https://maps.googleapis.com/maps/api/place/details/json?sensor=false&key=AIzaSyCjddKUEHrVcCDqA9fqLMPUBXH0mrWPpgI&types=establishment&reference='+reference
+			
+			response = urlfetch.fetch(url)
+			reply = json.loads(response.content)
+			logging.debug(reply)
+			deets = reply['result']
+			
+			template_values = {
+				"vicinity"	:	deets["vicinity"],
+				"phone"		:	deets["formatted_phone_number"],
+				"name"		:	deets["name"],
+				"lat"		:	deets["geometry"]["location"]["lat"],
+				"lon"		:	deets["geometry"]["location"]["lng"],
+				"reference"	:	reference,
+				"query"		:	query,
+				"title"		:	"Is this you?",
+				"back_link"	:	"/merchants/mobile"
+			}
+			
+			template = jinja_environment.get_template('templates/merchants-mobile-business-details.html')
+			self.response.out.write(template.render(template_values))
+		
+		except:
+			levr.log_error(self)
 
 class MobileSignupHandler(webapp2.RequestHandler):
 	def get(self):
@@ -175,17 +189,25 @@ class MobileSignupHandler(webapp2.RequestHandler):
 			
 			template_values = {
 				"title"		:	"Sign up.",
-				"reference":	reference
+				"reference":	reference,
+				"back_link"	:	"/merchants/mobile"
 			}
 			
 			template = jinja_environment.get_template('templates/merchants-mobile-signup.html')
 			self.response.out.write(template.render(template_values))
 	def post(self):
 		#grab le inputs
-		email = self.request.get('email')
+		logging.info(self.request.body)
+		o_email = self.request.get('email')
+		email = o_email.lower()
 		pw1 = self.request.get('pw1')
 		pw2 = self.request.get('pw2')
 		reference = self.request.get('reference')
+		
+		logging.info(pw1)
+		logging.info(pw2)
+		logging.info(o_email)
+		logging.info(email)
 		
 		#email regex
 		email_regex = re.compile(r"^[A-Za-z0-9\.\+_-]+@[A-Za-z0-9\._-]+\.[a-zA-Z]*$")
@@ -196,16 +218,16 @@ class MobileSignupHandler(webapp2.RequestHandler):
 		#error-check
 		if email=="":
 			error = "Please enter an email"
-		if not email_regex.match(email):
+		elif email_regex.match(email) == None:
 			error = "Please enter a valid email address"
-		if existing_user:
+		elif existing_user:
 			error = "That email already exists"
 		elif pw1=="":
 			error = "Please enter a password"
 		elif pw2=="":
 			error = "Please confirm your password"
 		elif pw1!=pw2:
-			error = "Passwords didn't match. Please try again."
+			error = "Passwords didn't match."
 			pw1=""
 			pw2=""
 		else:
@@ -213,11 +235,13 @@ class MobileSignupHandler(webapp2.RequestHandler):
 		
 		if error:
 			template_values = {
-				"email"		:	email,
+				"email"		:	o_email,
 				"pw1"		:	pw1,
 				"pw2"		:	pw2,
 				"reference"	:	reference,
-				"error"		:	error
+				"error"		:	error,
+				"title"		:	"Sign up.",
+				"back_link"	:	"/merchants/mobile"
 			}
 			
 			template = jinja_environment.get_template('templates/merchants-mobile-signup.html')
@@ -287,7 +311,7 @@ class MobileSignupHandler(webapp2.RequestHandler):
 			session['owner_of']	=	enc.encrypt_key(owner.owner_of)
 			logging.debug(session)
 			
-			self.response.out.write(session)
+			self.redirect('/merchants/mobile/manage')
 
 class MobileManageHandler(webapp2.RequestHandler):
 	def get(self):
@@ -297,7 +321,7 @@ class MobileManageHandler(webapp2.RequestHandler):
 		owner = levr.Customer.get(meta['uid'])
 		
 		#grab the deals
-		q_deals = levr.Deal.gql('WHERE ANCESTOR IS :1 ORDER BY deal_views DESC',owner.key())
+		q_deals = levr.Deal.gql('WHERE ANCESTOR IS :1 ORDER BY date_created DESC',owner.key())
 		logging.info(q_deals.count())
 		#package
 		deals = []
@@ -328,11 +352,456 @@ class MobileManageHandler(webapp2.RequestHandler):
 		
 		template = jinja_environment.get_template('templates/merchants-mobile-manage.html')
 		self.response.out.write(template.render(template_values))
-			
 		
-class MobileCreateHandler(webapp2.RequestHandler):
+class MobileDealViewHandler(webapp2.RequestHandler):
 	def get(self):
 		meta = merchant_utils.login_check_mobile(self)
+		
+		dealID = self.request.get('dealID')
+		
+		deal = levr.Deal.get(enc.decrypt_key(dealID))
+		
+		enc_key = enc.encrypt_key(deal.key())
+		
+		template_values = {
+			"title"		:	"This offer is "+deal.deal_status+'.',
+			"back_link"	:	'/merchants/mobile/manage',
+			"existing_img"	: '/api/deal/'+enc_key+'/img?size=large',
+			"deal"		:	deal,
+			"enc_key"	:	enc_key
+		}
+		
+		template = jinja_environment.get_template('templates/merchants-mobile-deal-view.html')
+		self.response.out.write(template.render(template_values))
+		
+class MobileDealHandler(webapp2.RequestHandler):
+	def get(self):
+		meta = merchant_utils.login_check_mobile(self)
+		
+		dealID = self.request.get('dealID')
+		logging.info(dealID)
+		
+		if dealID !="":
+			#edit
+			deal = levr.Deal.get(enc.decrypt_key(dealID))
+			enc_key = enc.encrypt_key(deal.key())
+			existing_img = api_utils.create_img_url(deal,'large')
+			
+			template_values = {
+				"upload_url"	: blobstore.create_upload_url('/merchants/mobile/deal/edit'),
+				"preview_url"	: blobstore.create_upload_url('/merchants/mobile/deal/photorotate'),
+				"title"			: "",
+				"existing_img"	: '/api/deal/'+enc_key+'/img?size=large',
+				"dealID"		: dealID,	#encrypted woohoo
+				"deal_text"		: deal.deal_text,
+				"description"	: deal.description,
+				"deal"			: deal
+			}
+		else:
+			template_values = {
+				"upload_url"	: blobstore.create_upload_url('/merchants/mobile/deal/create'),
+				"preview_url"	: blobstore.create_upload_url('/merchants/mobile/deal/photorotate'),
+				"title"			: ""
+			}
+		
+		logging.info(template_values)
+		template = jinja_environment.get_template('templates/merchants-mobile-deal.html')
+		self.response.out.write(template.render(template_values))
+			
+class MobileDealCreateHandler(blobstore_handlers.BlobstoreUploadHandler):
+	def post(self):
+		meta = merchant_utils.login_check_mobile(self)
+		uid = meta['uid']
+		user = levr.Customer.get(uid)
+		
+		deal_text = self.request.get('deal_text')
+		description = self.request.get("description")
+		img_key = blobstore.BlobInfo(blobstore.BlobKey(self.request.get("img_key")))
+
+		# if self.get_uploads(): #will this work?
+# 			upload	= self.get_uploads()[0]
+# 			blob_key= upload.key()
+# 			img_key = blob_key
+# 			upload_flag = True
+# 		else:
+# 			upload_flag = False
+# 			raise KeyError('Image was not uploaded')
+			
+		#initialize the deal - just the stuff from the input here
+		deal = levr.Deal(
+			img				=	img_key,
+			deal_text		=	deal_text,
+			description		=	description,
+			parent			=	user.key()
+		)
+		
+		#add all the properties from the business
+		business = levr.Business.get(user.owner_of)
+		logging.info(levr.log_model_props(business))
+		
+		#kick over to create_deal to finish the deal creation
+		deal = merchant_utils.create_deal(deal,business,user)
+		
+		self.redirect('/merchants/mobile/manage')
+
+class MobileDealEditHandler(blobstore_handlers.BlobstoreUploadHandler):
+	def post(self):
+		meta = merchant_utils.login_check_mobile(self)
+		
+		dealID = self.request.get('dealID')
+		deal_text = self.request.get('deal_text')
+		description = self.request.get('description')
+		img_key = self.request.get('img_key')
+		
+		logging.info(img_key)
+		
+		
+		deal = levr.Deal.get(enc.decrypt_key(dealID))
+		
+		logging.info(str(deal.img))
+		
+		deal.deal_text = deal_text
+		deal.description = description
+		
+		if img_key !="":
+			img_key = blobstore.BlobInfo(blobstore.BlobKey(img_key))
+			deal.img = img_key
+			logging.info('IMAGE KEY UPDATED')
+			logging.info(str(deal.img))
+		
+		# if self.get_uploads(): #will this work?
+# 			logging.info('IMAGE UPLOADED')
+# 			upload	= self.get_uploads()[0]
+# 			blob_key= upload.key()
+# 			img_key = blob_key
+# 			deal.img = img_key
+# 		else:
+# 			logging.info('NO IMAGE UPLOADED')
+		
+		deal.put()
+		
+		self.redirect('/merchants/mobile/manage')
+		
+class MobilePhotoRotateHandler(blobstore_handlers.BlobstoreUploadHandler):
+	def post(self):
+		dealID = self.request.get('dealID')
+		logging.info(dealID)
+		
+		if self.get_uploads(): #will this work?
+			logging.info('IMAGE UPLOADED')
+			upload	= self.get_uploads()[0]
+			blob_key= upload.key()
+			
+			blob = blobstore.BlobInfo.get(blob_key)
+		
+			img = images.Image(blob_key=blob_key)
+			
+			#execute a bullshit transform
+			img.rotate(0)
+			img.execute_transforms(output_encoding=images.JPEG,quality=100,parse_source_metadata=True)
+			
+			#self.response.headers['Content-Type'] = 'image/jpeg'
+			#THIS LINE WILL FAIL IF YOU TRY CALL THIS ON AN IMAGE THAT HAS PREVIOUSLY BEEN ROTATED
+			test_dict = img.get_original_metadata()
+			if 'Orientation' in test_dict:
+				
+				orient = img.get_original_metadata()['Orientation']
+				
+				if orient != 1:
+					logging.info('Image not oriented properly')
+					logging.info('Orientation: '+str(orient))
+					if orient == 6:
+						#rotate 270 degrees
+						img.rotate(90)
+					elif orient == 8:
+						img.rotate(270)
+					elif orient == 3:
+						img.rotate(180)
+					else:
+						img.rotate(0)
+				
+					#write out the image
+					output_img = img.execute_transforms(output_encoding=images.JPEG,quality=100,parse_source_metadata=True)
+				
+					#figure out how to store this shitttt
+					# Create the file
+					overwrite = files.blobstore.create(mime_type='image/jpeg')
+					
+					# Open the file and write to it
+					with files.open(overwrite, 'a') as f:
+						f.write(output_img)
+					
+					# Finalize the file. Do this before attempting to read it.
+					files.finalize(overwrite)
+					
+					# Get the file's blob key
+					blob_key = files.blobstore.get_blob_key(overwrite)
+					
+					logging.info('GOT NEW BLOB KEY')
+					
+			logging.info(blob_key)
+			serving_url = '/merchants/mobile/deal/photoserve/'+str(blob_key)
+			logging.info(serving_url)
+
+		else:
+			upload_flag = False
+			raise KeyError('Image was not uploaded')
+			
+		
+		
+		if dealID !="":
+			#edit
+			deal = levr.Deal.get(enc.decrypt_key(dealID))
+			existing_img = api_utils.create_img_url(deal,'large')
+			
+			logging.info('EDIT WAS CALLED')
+			
+			template_values = {
+				"upload_url"	: blobstore.create_upload_url('/merchants/mobile/deal/edit'),
+				"preview_url"	: blobstore.create_upload_url('/merchants/mobile/deal/photorotate'),
+				"title"			: "",
+				"existing_img"	: serving_url,
+				"img_key"		: str(blob_key),
+				"dealID"		: dealID,	#encrypted woohoo
+				"deal_text"		: deal.deal_text,
+				"description"	: deal.description
+			}
+		else:
+			
+			logging.info('EDIT WAS NOT CALLED')
+			
+			template_values = {
+				"upload_url"	: blobstore.create_upload_url('/merchants/mobile/deal/create'),
+				"preview_url"	: blobstore.create_upload_url('/merchants/mobile/deal/photorotate'),
+				"existing_img"	: serving_url,
+				"img_key"		: str(blob_key),
+				"title"			: ""
+			}
+			
+		template = jinja_environment.get_template('templates/merchants-mobile-deal.html')
+		self.response.out.write(template.render(template_values))
+		
+		
+class MobilePhotoServeHandler(webapp2.RequestHandler):
+	def get(self,*args):
+		blob_key = blobstore.BlobInfo.get(blobstore.BlobKey(args[0]))
+		#self.send_blob(blob_info)
+		logging.info(blob_key)
+		blob_data = blob_key.open().read()
+		
+		logging.info('Blob size: '+str(blob_key.size))
+		
+		#pass blob data to the image handler
+		img			= images.Image(blob_data)
+		#get img dimensions
+		img_width	= img.width
+		img_height	= img.height
+		logging.debug(img_width)
+		logging.debug(img_height)
+		
+		aspect_ratio 	= 1. 	#width/height
+		output_width 	= 640.	#arbitrary standard
+		
+		output_height	= output_width/aspect_ratio
+		
+		##get crop dimensions
+		if img_width > img_height*aspect_ratio:
+			#width must be cropped
+			w_crop_unscaled = (img_width-img_height*aspect_ratio)/2
+			w_crop 	= float(w_crop_unscaled/img_width)
+			left_x 	= w_crop
+			right_x = 1.-w_crop
+			top_y	= 0.
+			bot_y	= 1.
+		else:
+			#height must be cropped
+			h_crop_unscaled = (img_height-img_width/aspect_ratio)/2
+			h_crop	= float(h_crop_unscaled/img_height)
+			left_x	= 0.
+			right_x	= 1.
+			top_y	= h_crop
+			bot_y	= 1.-h_crop
+	
+		#crop image to aspect ratio
+		img.crop(left_x,top_y,right_x,bot_y)
+		logging.debug(img)
+		
+		#resize cropped image
+		img.resize(width=int(output_width),height=int(output_height))
+		logging.debug(img)
+		
+		#package image
+		output_img = img.execute_transforms(output_encoding=images.JPEG,quality=95)
+		
+		#write image to output
+		self.response.headers['Content-Type'] = 'image/jpeg'
+		self.response.out.write(output_img)
+		logging.info(str(self.response.headers))
+
+
+class MobileDealExpireHandler(webapp2.RequestHandler):
+	def get(self):
+		meta = merchant_utils.login_check_mobile(self)
+		
+		dealID = self.request.get('dealID')
+		
+		deal = levr.Deal.get(enc.decrypt_key(dealID))
+		
+		deal.deal_status = 'expired'
+		
+		deal.put()
+		
+		self.redirect('/merchants/mobile/manage')
+		
+class MobileDealReanimateHandler(webapp2.RequestHandler):
+	def get(self):
+		meta = merchant_utils.login_check_mobile(self)
+		
+		dealID = self.request.get('dealID')
+		
+		deal = levr.Deal.get(enc.decrypt_key(dealID))
+		
+		deal.deal_status = 'active'
+		
+		deal.put()
+		
+		self.redirect('/merchants/mobile/manage')
+
+
+class MobilePhotoHandler(webapp2.RequestHandler):
+	def get(self):
+		meta = merchant_utils.login_check_mobile(self)
+		
+		dealID = self.request.get('dealID')
+		
+		if dealID != "":
+			#edit
+			deal = levr.Deal.get(enc.decrypt_key(dealID))
+			existing_img = api_utils.create_img_url(deal,'large')
+			
+			template_values = {
+				"upload_url"	: blobstore.create_upload_url('/merchants/mobile/photo/edit'),
+				"title"			: "Take a photo",
+				"existing_img"	: existing_img,
+				"dealID"		: dealID			
+			}
+		else:
+			template_values = {
+				"upload_url"	: blobstore.create_upload_url('/merchants/mobile/photo/create'),
+				"title"			: "Take a photo"		
+			}
+		
+		
+		template = jinja_environment.get_template('templates/merchants-mobile-photo.html')
+		self.response.out.write(template.render(template_values))
+		
+class MobilePhotoCreateHandler(blobstore_handlers.BlobstoreUploadHandler):
+	def post(self):
+		meta = merchant_utils.login_check_mobile(self)
+		
+		if self.get_uploads(): #will this work?
+			upload	= self.get_uploads()[0]
+			blob_key= upload.key()
+			img_key = blob_key
+			upload_flag = True
+		else:
+			upload_flag = False
+			raise KeyError('Image was not uploaded')
+				
+		logging.info(img_key)
+		
+		template_values = {
+			"img_key"		: img_key,
+			"title"			: "Describe your offer"		
+		}
+		
+		template = jinja_environment.get_template('templates/merchants-mobile-dealtext.html')
+		self.response.out.write(template.render(template_values))
+
+class MobilePhotoEditHandler(webapp2.RequestHandler):		
+	def post(self):
+		meta = merchant_utils.login_check_mobile(self)
+		dealID = self.request.get('dealID')
+		edited = self.request.get('edited')
+		
+		deal = levr.Deal.get(enc.decrypt_key(dealID))
+		
+		if self.get_uploads(): #will this work?
+			upload	= self.get_uploads()[0]
+			blob_key= upload.key()
+			img_key = blob_key
+			upload_flag = True
+		else:
+			upload_flag = False
+		
+		if upload_flag == True:
+			old_blob = deal.img
+			deal.img = img_key
+			old.blob.delete()
+		
+		deal.put()
+		
+		template_values = {
+			"title"		:	"Describe your offer"
+		}
+		
+		template = jinja_environment.get_template('templates/merchants-mobile-dealtext.html')
+		self.response.out.write(template.render(template_values))
+
+class MobileDealTextCreateHandler(webapp2.RequestHandler):
+	def post(self):
+		meta = merchant_utils.login_check_mobile(self)
+		
+		deal_text = self.request.get('deal_text')
+		img_key = self.request.get('img_key')
+		
+		if deal_text == "":
+			error = 'Please describe your offer'
+		else:
+			error = None 
+		
+		if error:
+			template_values = {
+				"title"		:	"Describe your offer",
+				"deal_text"	:	deal_text,
+				"img_key"	:	img_key,
+				"error"		:	error
+			}
+			
+			template = jinja_environment.get_template('templates/merchants-mobile-dealtext.html')
+			self.response.out.write(template.render(template_values))
+		
+		else:
+			template_values = {
+				"title"		:	"Anything else?",
+				"deal_text"	:	deal_text,
+				"img_key"	:	img_key
+			}
+			
+			template = jinja_environment.get_template('templates/merchants-mobile-description.html')
+			self.response.out.write(template.render(template_values))
+		
+class MobileDealTextEditHandler(webapp2.RequestHandler):
+	def post(self):
+		meta = merchant_utils.login_check_mobile(self)
+		self.response.out.write(meta)
+		
+class MobileDescriptionCreateHandler(webapp2.RequestHandler):
+	def post(self):
+		meta = merchant_utils.login_check_mobile(self)
+		
+		deal_text = self.request.get('deal_text')
+		description = self.request.get('description')
+		img_key = self.request.get('img_key')
+		
+		logging.info(deal_text)
+		logging.info(img_key)
+		logging.info(description)
+		
+class MobileDescriptionEditHandler(webapp2.RequestHandler):
+	def post(self):
+		meta = merchant_utils.login_check_mobile(self)
+		self.response.out.write(meta)
 		
 
 
@@ -1687,11 +2156,27 @@ class CheckPasswordHandler(webapp2.RequestHandler):
 
 app = webapp2.WSGIApplication([('/merchants/mobile',MobileLandingHandler),
 								('/merchants/mobile/login',MobileLoginHandler),
+								('/merchants/mobile/logout',MobileLogoutHandler),
 								('/merchants/mobile/businessselect',MobileBusinessSelectHandler),
 								('/merchants/mobile/autocomplete',MobileAutocompleteHandler),
 								('/merchants/mobile/businessdetails',MobileBusinessDetailsHandler),
 								('/merchants/mobile/signup',MobileSignupHandler),
 								('/merchants/mobile/manage',MobileManageHandler),
+								('/merchants/mobile/view',MobileDealViewHandler),
+								('/merchants/mobile/deal',MobileDealHandler),
+								('/merchants/mobile/deal/create',MobileDealCreateHandler),
+								('/merchants/mobile/deal/edit',MobileDealEditHandler),
+								('/merchants/mobile/deal/photorotate',MobilePhotoRotateHandler),
+								('/merchants/mobile/deal/photoserve/(.*)',MobilePhotoServeHandler),
+								('/merchants/mobile/deal/expire',MobileDealExpireHandler),
+								('/merchants/mobile/deal/reanimate',MobileDealReanimateHandler),
+								('/merchants/mobile/photo',MobilePhotoHandler),
+								('/merchants/mobile/photo/create',MobilePhotoCreateHandler),
+								('/merchants/mobile/photo/edit',MobilePhotoEditHandler),
+								('/merchants/mobile/dealtext/create',MobileDealTextCreateHandler),
+								('/merchants/mobile/dealtext/edit',MobileDealTextEditHandler),
+								('/merchants/mobile/description/create',MobileDescriptionCreateHandler),
+								('/merchants/mobile/description/edit',MobileDescriptionEditHandler),
 								('/merchants', MerchantsHandler),
 								('/merchants/', MerchantsHandler),
 								('/merchants/beta', MerchantsBetaHandler),

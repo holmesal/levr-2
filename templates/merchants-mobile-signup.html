@@ -6,15 +6,14 @@
 
 {% block content %}
 	{%if error%}
-		{{error}}
+		<div class="alert alert-error">{{error}}</div>
 	{%endif%}
-	<form action="/merchants/mobile/signup?reference={{reference}}" method="post">
-		<fieldset>
+	<form action="/merchants/mobile/signup" method="post"  enctype="multipart/form-data">
 			<input id="email" name="email" placeholder="Email" type="text" value="{{email}}">
 			<input id="pw1" name="pw1" placeholder="Password" type="password" value="{{pw1}}">
 			<input id="pw2" name="pw2" placeholder="Confirm Password" type="password" value="{{pw2}}">
-			<input type="submit" class="btn" value="Sign Up">
-		</fieldset>
+			<input type="submit" class="btn btn-block btn-success btn-large" value="Sign Up">
+			<input type="hidden" name="reference" value="{{reference}}">
 	</form>
 {% endblock %}
 

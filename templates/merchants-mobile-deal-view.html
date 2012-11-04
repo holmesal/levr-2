@@ -1,0 +1,84 @@
+{% extends "templates/merchants-mobile-base.html" %}
+
+{% block htmlhead %}
+
+<style type="text/css">
+
+	.navbar{
+		margin-bottom: 0px;
+	}
+
+	.imgView{
+		position: absolute;
+		width: 100%;
+		margin-left: -20px;
+		margin-right: -20px;
+		height: 200px;
+		background-size: cover;
+		background-position: center center;
+	}
+	
+	.dealInfo{
+		position: absolute;
+		top: 260px;
+		color: #ebebeb;
+		width: 100%;
+		margin-left: -20px;
+		margin-right: -20px;
+		
+	}
+	
+	.deal_text{
+		padding-left: 20px;
+		font-weight: 500;
+		font-size: 14pt;
+	}
+	
+	.description{
+		padding-left: 20px;
+		font-weight: 200;
+		font-size: 11pt;
+	}
+	
+	.buttons{
+		min-width: 95%;
+		margin-top: 20px;
+		text-align: center;
+	}
+	
+	#btnEdit{
+		min-width: 80px;
+		margin-right: 30px;
+	}
+	
+	#btnDelete,#btnReanimate{
+		min-width: 80px;
+	}
+</style>
+
+{% endblock %}
+
+
+
+{% block content %}
+<div class="imgView" style="background-image:url({{existing_img}});"></div>
+<div class="dealInfo">
+	<p class="deal_text">{{deal.deal_text}}</p>
+	<p class="description">{{deal.description}}</p>
+	<div class="buttons">
+		<a id="btnEdit" href='/merchants/mobile/deal?dealID={{enc_key}}' class="btn btn-info btn-large"><i class="icon-white icon-cog"></i> Edit</a>
+		{%if deal.deal_status == 'active'%}
+		<a id="btnDelete" href='/merchants/mobile/deal/expire?dealID={{enc_key}}' class="btn btn-danger btn-large"><i class="icon-white icon-trash"></i> Expire</a>
+		{%else%}
+		<a id="btnReanimate" href='/merchants/mobile/deal/reanimate?dealID={{enc_key}}' class="btn btn-success btn-large"><i class="icon-white icon-play"></i> Launch</a>
+		{% endif %}
+	</div>
+</div>
+
+{% endblock %}
+
+
+
+{% block javascript %}
+
+{% endblock %}

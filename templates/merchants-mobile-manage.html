@@ -1,13 +1,153 @@
 {% extends "templates/merchants-mobile-base.html" %}
 
-{% block htmlhead %}{% endblock %}
+{% block htmlhead %}
+<style type="text/css">
+	.navbar{
+		margin-bottom: 0px;
+	}
+	
+	body{
+		background-image: url('/img/low_contrast_linen.png');
+	}
 
+	/*.table{
+		margin-left: -20px;
+		margin-right: -20px;
+		background-color: red;
+		position: absolute;
+	}*/
+	
+	#addoffer{
+		margin-left: -20px;
+		margin-right: -20px;
+		background-color: blue;
+		position: relative;
+		height: 60px;
+		margin-top: 0px;
+	}
+	
+	#addoffer2{
+		/*width: 100%;
+		background-color: green;
+		position: absolute;
+		top:0;
+		bottom: 0;
+		left:0;
+		right: 0;*/
+		vertical-align: center;
+		text-align: center;
+		padding-top: 10px;
+		font-size: 12pt;
+	}
+	
+	#btnCreate{
+		margin-top: 15px;
+		margin-bottom: 15px;
+		font-size: 14pt;
+	}
+	
+	
+	
+	.cell{
+		background-color: #fafafa;
+		border-radius: 5px;
+		height: 70px;
+		padding-top: 10px;
+		padding-bottom: 0px;
+		margin-left: -10px;
+		margin-right: -10px;
+		margin-top: 10px;
+		box-shadow: 0px 0px 6px rgba(0,0,0,0.3);
+	}
+	
+	.cell:hover{
+		cursor: pointer;
+	}
+	
+	.cell-inner{
+		height: 60px;
+	}
+	
+	.small-img{
+		background-size: cover;
+		background-position: center center;
+		border: 1px solid #aaaaaa;
+		box-shadow: 0px 0px 5px #bfbfbf;
+		height: 100%;
+		width: 60px;;
+		margin-left: 15px;
+		display: inline-block;
+		float: left;
+		margin-right: 15px;
+	}
+	
+	.inner-text{
+		position: relative;
+		height: 100%;
+		min-width: 200px;
+		display: block;
+		float: left;
+		overflow: hidden;
+	}
+	
+	.deal-text{
+		position: absolute;
+		top: 0;
+		font-weight: 600;
+		clear: right;
+		margin: 0;
+		line-height: 100%;
+		white-space: nowrap;
+	}
+	
+	.deal-status{
+		position: absolute;
+		clear: right;
+		top: 21px;
+		margin: 0;
+		font-weight: 600;
+		font-size: 9pt;
+		color: #269300;
+	}
+	
+	.deal-stats{
+		position: absolute;
+		clear: right;
+		bottom: 0px;
+		margin: 0;
+		line-height: 120%;
+		font-size: 10pt;
+	}
 
-
-{% block content %}
-<a class="btn" href="/merchants/mobile/create">Add an offer</a>
+</style>
 {% endblock %}
 
 
 
-{% block javascript %}{% endblock %}
+{% block content %}
+<a id="btnCreate" href="/merchants/mobile/deal" class="btn btn-info btn-block btn-large"><i class="icon-white icon-plus" style="float: left;margin-left: 20px;"></i> Click to add an offer</a>
+<!--div id='addoffer'><a id="addoffer2" class="btn-info" href="/merchants/mobile/deal"><i class="icon-white icon-plus"></i>Click to add an offer</a></div-->
+{%for deal in deals%}
+	
+	<div class="cell">
+		<div class="cell-inner" onclick="window.location='/merchants/mobile/view?dealID={{deal.enc_key}}'">
+			<div class="small-img" style="background-image:url(/api/deal/{{deal.enc_key}}/img?size=small);"></div>
+			<div class="inner-text">
+				<p class="deal-text">{{deal.deal_text|capitalize}}</p>
+				<p class="deal-status"{%if deal.deal_status=='expired'%}style="color:#e40000;"{%endif%}>{{deal.deal_status|upper}}</p>
+				<p class="deal-stats">Seen {{deal.views}} times. Upvoted {{deal.upvotes}} times.</p>
+			</div>
+		</div>
+		
+	</div>
+	
+	<!--a href="/merchants/mobile/deal?dealID={{deal.enc_key}}" class="btn">{{deal.deal_text}}</a-->
+
+
+{%endfor%}
+{% endblock %}
+
+
+
+{% block javascript %}
+{% endblock %}

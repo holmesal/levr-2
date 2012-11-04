@@ -6,6 +6,7 @@ import base64
 from google.appengine.api import urlfetch,taskqueue
 import json
 import urllib
+from datetime import datetime, timedelta
 
 def login_check(self):
 	'''	for merchants ONLY
@@ -92,7 +93,7 @@ def create_deal(deal,business,owner):
 	
 	#add some other miscellaneous information
 	deal.origin = 'merchant'
-	deal.pin_color	=	'green'
+	deal.pin_color	= 'green'
 	
 	#copy info over from business
 	deal.business_name = business.business_name
@@ -100,21 +101,8 @@ def create_deal(deal,business,owner):
 	deal.business = business
 	deal.geo_point = business.geo_point
 	deal.geo_hash = business.geo_hash
-	
-	
-	
-	#get businessID - not encrypted - from database
-	#businessID = business.key()
-	#logging.debug("businessID: "+str(businessID))
-	
-	#check if the merchant has validated their business. If so, deploy as active. If not, deploy as pending
-	if validated_check(owner):
-		logging.debug('OKAY')
-		#todo: SET BUSINESS ID
-		deal.deal_status='active'
-	else:
-		logging.debug('FUCK ALL')
-		deal.deal_status='pending'
+	deal.deal_status='active'
+	deal.date_end = datetime.now() + timedelta(days=365)
 		
 	deal.put()
 	logging.info(levr.log_model_props(deal))

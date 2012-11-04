@@ -1,0 +1,190 @@
+{% extends "templates/merchants-mobile-base.html" %}
+
+{% block htmlhead %}
+<style type="text/css">
+	
+	#imgView{
+		width: 100%;
+		height: 200px;
+		position: relative;
+		background-size: cover;
+		background-position: center center;
+		{%if not existing_img%}display: none;{%endif%}
+	}
+	
+	
+	#imgReplace{
+		background-color: rgba(0,0,0,0.85);
+		position: absolute;
+		font-size: 12pt;
+		text-align: center;
+		padding-top: 5px;
+		padding-bottom: 5px;
+		margin: 0px;
+		color: #f6f6f6;
+		width: 100%;
+		bottom: 0;
+	}
+	
+	.uploadingOverlay{
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		background-color: rgba(0,0,0,0.7);
+		z-index: 99999;
+		display: none;
+		text-align: center;
+		color: white;
+	}
+	
+	.uploadingText{
+		margin-top: 190px;
+		font-weight: 600;
+		font-size: 20pt;
+		width: 100%;
+		line-height: 120%;
+	}
+	
+	/*#deal_text,#description{
+		width: 95%;
+		font-size: 14pt;
+	}*/
+	
+	.examples{
+		margin-left: 10px;
+		font-weight: 400;
+		color: #c9c9c9;
+	}
+	
+	#imgPrompt{
+		color: #c9c9c9;
+	}
+	
+	.btn-large{
+		font-size: 14pt !important;
+		margin-top: 15px !important;
+	}
+</style>
+{% endblock %}
+
+
+
+{% block content %}
+		
+		<form id="dealForm" action="{{upload_url}}" method="POST" enctype="multipart/form-data">
+			<div class="errorContainer">
+				<div class="alert alert-error error" style="display:none;">{{error}}</div>
+			</div>
+			<div class="uploadingOverlay">
+				<p class="uploadingText">Uploading your photo...</p>
+				<p>If you have bad reception, this could take a minute.</p>
+			</div>
+			<div id="pane1" class="pane">
+				<div id="imgView" style="background-image:url({{existing_img}});">
+					<p id="imgReplace">  Click to retake photo.</p>
+				</div>
+				<p id="imgPrompt">Take a photo of the offer, or an item related to the offer. This is the first thing people will see, so the more compelling, the better.</p>
+				<input type="file" id="img" name="file" onchange="previewImage(this);" style="position:absolute;top:0;z-index:-1;width:50px;">
+				<a id="launchCamera" class="btn btn-large btn-block btn-info" onclick="$('#img').trigger('click');"><i class="icon-camera icon-white" style="float: left;margin-left: 20px;"></i> Open Camera</a>
+				<a id="continue1" class="btn btn-success btn-block btn-large" style="display:none;" onclick="showPane(2)"><i class="icon-ok-sign icon-white" style="float: left;margin-left: 20px;"></i> Use this photo</a>
+			</div>
+			
+			<div id="pane2" class="pane" style="display:none;">
+				<textarea id="deal_text" name="deal_text" rows="3" placeholder="What's the offer?">{{deal_text}}</textarea>
+				<p class="examples">Ex: 50% Off All Appetizers</p>
+				<a id="continue2" class="btn btn-success btn-block btn-large"><i class="icon-ok-sign icon-white"></i> Continue</a>
+			</div>
+			
+			<div id="pane3" class="pane" style="display:none;">
+				<textarea id="description" name="description" rows="3" placeholder="Any terms or conditions?">{{description}}</textarea>
+				<p class="examples">Ex: With purchase of Entree. Only on Mondays between 1 and 3 PM.</p>
+				<input type="submit" id="btnSubmit" class="btn btn-large btn-block btn-success" value="Launch this offer!">
+				<input type="hidden" name="dealID" value="{{dealID}}">
+				<input type="hidden" name="img_key" value="{{img_key}}">
+			</div>
+			
+		</form>
+	
+	
+{% endblock %}
+
+
+
+{% block javascript %}
+	<script type="text/javascript">
+		
+		{% if dealID %}
+		$('#imgView').css('background-image','url({{existing_img}})');
+    	$('#imgView').css('display','block')
+    	$('#btnSubmit').val('Update this offer!')
+    	$('#continue1').show()
+    	{% endif %}
+    	
+    	{% if existing_img %}
+    	$('#imgPrompt').hide()
+    	$('#continue1').show()
+    	{% endif %}
+	
+		function previewImage(input){
+			/*if (input.files && input.files[0]) {
+		        var reader = new FileReader();
+		        reader.onload = function (e) {
+		        	$('#imgView').css('background-image','url('+e.target.result+')');
+		        	$('#imgView').css('display','block')
+		        	$('#continue1').show()
+		        	//$('#imgPrompt,#fakeImgBtn').hide()
+		        };
+		
+		        reader.readAsDataURL(input.files[0]);
+		    }*/
+		    $('.uploadingOverlay').css('display','block')
+		    $('.uploadingOverlay').show()
+		    $('#dealForm').attr('action','{{preview_url}}')
+		    $('#dealForm').submit()
+		}
+		
+		function showPane(pane){
+			$('.pane').hide()
+			$('#pane'+pane).show()
+			
+			if (pane==1) {
+				$('.brand').text('Take a photo')
+				$('.back').unbind('click')
+			} else if (pane==2){
+				$('.brand').text('Describe your offer')
+				$('.back').click(function(e){e.preventDefault();showPane(1)})
+			} else if (pane==3){
+				$('.brand').text('Anything else?')
+				$('.back').click(function(e){e.preventDefault();showPane(2)})
+			}
+		}
+		
+		$(document).ready(function() {
+			$('.brand').text('Add a photo')
+			$('.back').show().attr('href','/merchants/mobile/manage')
+		})
+		
+		$('#continue2').click(function(){
+			//validate input
+			
+			console.log($('#deal_text').val() == "")
+			if ($('#deal_text').val() == ""){
+				$('.error').text("Please describe your offer").show()
+			} else{
+				$('.error').hide()
+				showPane(3)
+			}
+		})
+		
+		$('#imgView').click(function(){
+			$('#img').trigger('click')
+		})
+		
+		
+		
+		//$('#continue1').click(function(){showPane(2)});
+	</script>
+
+{% endblock %}

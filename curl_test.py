@@ -8,6 +8,7 @@ test_url = 'http://test.levr-production.appspot.com'
 fuckery_url = 'http://fuckery.levr-production.appspot.com'
 live_url = 'http://www.levr.com'
 local_url = 'http://0.0.0.0:8080'
+dev_url = 'http://t.levr-development.appspot.com'
 base_url = test_url
 # Active account info is for CarlD
 
@@ -23,6 +24,13 @@ test_levr_token = 'twfSOF0Xtwhx-GrrKxYVw4cLn5yEQjLTWbFvDATEDTo'
 # Deal test
 # deal uploaded by Bill!
 deal_id = 'tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fCHGJdErv19TaoeLGNiu51Sthw-oaChDyDrrMSui1aMhONe5YBg=='
+
+
+# FOR levr-development
+dev_uid = 'tAv8dQhJqgEn8hL7RTJ1wb9s09OBNDuKXr0EE3aWTlD9ocyRppatNBO2ygtMr8Ac'
+dev_levr_token = 'tlODblgStAslrGi7K0VBxt0KnZyGEj-FDrY0WALJXzc'
+
+
 
 lat = '42.365468'
 lon = '-71.029486'
@@ -133,6 +141,10 @@ if __name__ == '__main__':
 			base_url = fuckery_url
 		elif location == 'live':
 			base_url = live_url
+		elif location == 'dev':
+			base_url = dev_url
+			uid = dev_uid
+			levr_token = dev_levr_token
 		else:
 			raise Exception('As a second argument pass: local, test, or live e.g. python curl_test.py test')
 	

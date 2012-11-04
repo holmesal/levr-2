@@ -1,0 +1,25 @@
+{% extends "templates/merchants-mobile-base.html" %}
+
+{% block htmlhead %}{% endblock %}
+
+
+
+{% block content %}
+{%if error%}
+	{{error}}
+{%endif%}
+{% if dealID %}
+<form method="post" action="/merchants/mobile/dealtext/edit">
+{% else %}
+<form method="post" action="/merchants/mobile/dealtext/create">
+{%endif%}
+	<input id="deal_text" name="deal_text" value="{{deal_text}}" placeholder="What's the offer?">
+	<input id="submit" class="btn" type="submit" value="Submit">
+	<input type="hidden" name="img_key" value="{{img_key}}">
+</form>
+
+{% endblock %}
+
+
+
+{% block javascript %}{% endblock %}
