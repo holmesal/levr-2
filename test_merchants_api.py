@@ -186,7 +186,7 @@ class TestSequence(unittest.TestCase):
 		url = post_url+'&promotionID={promotionID}'.format(promotionID = promotionID)
 		if refresh == True:
 			data = self._fetch(url, method, endpoint,True)
-			deal = data['response']['deal']
+			deal = data['response']['deals'][0]
 	#		pprint(deal)
 			karma = deal['karma']
 			print '--> karma: ', karma
@@ -210,7 +210,7 @@ class TestSequence(unittest.TestCase):
 																	)
 		if refresh == True:
 			data = self._fetch(url, method, endpoint, True)
-			deal = data['response']['deal']
+			deal = data['response']['deals'][0]
 			print '--> promotions: ', deal['promotions']
 
 		# Run again to make sure it fails
@@ -224,7 +224,7 @@ class TestSequence(unittest.TestCase):
 														)
 		if refresh == True:
 			data = self._fetch(url, method, endpoint, True)
-			deal = data['response']['deal']
+			deal = data['response']['deals'][0]
 			print '--> promotions: ', deal['promotions']
 			assert promotionID in deal['promotions'], '{} alert not in the promotions'.format(promotionID)
 		
@@ -265,7 +265,7 @@ class TestSequence(unittest.TestCase):
 														)
 		if refresh == True:
 			data = self._fetch(url, method, endpoint, True)
-			deal = data['response']['deal']
+			deal = data['response']['deals'][0]
 			print '--> promotions: ', deal['promotions']
 			assert promotionID in deal['promotions'], '{} alert not in the promotions'.format(promotionID)
 		
@@ -317,7 +317,7 @@ class TestSequence(unittest.TestCase):
 														)
 		if refresh == True:
 			data = self._fetch(url, method, endpoint, True)
-			deal = data['response']['deal']
+			deal = data['response']['deals'][0]
 			print '--> promotions: ', deal['promotions']
 			assert promotionID in deal['promotions'], '{} alert not in the promotions'.format(promotionID)
 		
@@ -371,7 +371,7 @@ class TestSequence(unittest.TestCase):
 		
 if __name__ == '__main__':
 	
-	print 'Running levr curl test on {}...'.format(base_url)
+	print '\n--> Running levr curl test on {}...'.format(base_url)
 	
 	unittest.main()
 	

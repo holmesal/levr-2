@@ -764,7 +764,7 @@ class SetPromotionHandler(api_utils.PromoteDeal):
 		
 		try:
 			# init super class
-			super(SetPromotionHandler,self).__initialize__(deal,user,promotion_id)
+			super(SetPromotionHandler,self).__initialize__(deal,user)
 			
 			self.run_promotion(promotion_id,tags=self.tags,auto_put=True)
 			
@@ -808,29 +808,28 @@ class ConfirmPromotionHandler(api_utils.PromoteDeal):
 					deal = True,
 					receipt = True
 					)
+	@api_utils.private
 	def post(self,*args,**kwargs):
 		'''
 		A handler to confirm that payment was received for a promotion
 		'''
 		user = kwargs.get('actor')
 		deal = kwargs.get('deal')
-		promotionID = kwargs.get('promotionID')
+		promotion_id = kwargs.get('promotionID')
 		receipt = kwargs.get('receipt')
 		
 		try:
 			# init the super class
 			super(ConfirmPromotionHandler,self).__initialize__(deal,user)
-			# fetch the original Promotion entity
-			promo_entity = self.get_promotion_by_promotionID(promotionID)
-			# add the receipt to the promotion log
-			promo_entity.receipt = receipt
-			promo_entity.put()
+			# confirm the promotion
+			self.confirm_promotion(promotion_id, receipt)
 			# return success - send all deals
 			response = self.get_all_deals_response()
 			self.send_response(response, self.user)
 			
 		except AssertionError,e:
 			self.send_error(e)
+			logging.warning(e)
 		except Exception,e:
 			levr.log_error(e)
 			self.send_error()
@@ -843,30 +842,28 @@ class CancelPromotionHandler(api_utils.PromoteDeal):
 					promotionID = True,
 					deal = True,
 					)
+	@api_utils.private
 	def post(self,*args,**kwargs):
 		user = kwargs.get('actor')
-		promotionID = kwargs.get('promotionID')
+		promotion_id = kwargs.get('promotionID')
 		deal = kwargs.get('deal')
 #		development = kwargs.get('development')
 		try:
-			# TODO: finish this!
 			# init super class
 			super(CancelPromotionHandler,self).__initialize__(deal,user)
 			
-			# init the PromoteDeal class
-			logging.debug(type(deal))
-			logging.debug(type(user))
-			
-			if promotionID == 'all':
-				deal.promotions = []
-				
-			elif promotionID in self.deal.promotions:
-				deal.promotions.remove(promotionID)
-				self.deal.promotions.remove(promotionID)
-			
+			# remove the promotion
+			if promotion_id == 'all':
+				for p in self.deal.promotions:
+					self.remove_promotion(p)
+			else:
+				self.remove_promotion(promotion_id)
 			# send success
 			response = self.get_all_deals_response()
 			self.send_response(response,self.user)
+		except AssertionError,e:
+			self.send_error(e)
+			logging.warning(e)
 		except Exception,e:
 			levr.log_error(e)
 			self.send_error()

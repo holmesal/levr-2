@@ -214,9 +214,10 @@ def _package_deal(deal,owner,business,private=False,rank=None,distance=None):
 		packaged_deal['distance'] = distance
 	
 	if private == True:
+		
 		packaged_deal.update({
 							'views'	: deal.views,
-							'promotions' : deal.promotions, # TODO: send this as a dict w/ descr. and img
+							'promotions' : [promo.PROMOTIONS[p] for p in deal.promotions], # TODO: send this as a dict w/ descr. and img
 							'status': deal.deal_status
 							})
 	
@@ -1690,7 +1691,7 @@ class PromoteDeal(BaseClass):
 	'''
 	Class for promoting deals. Mostly for namespacing.
 	'''
-	def __initialize__(self,deal,user,promotion_id,**kwargs):
+	def __initialize__(self,deal,user,**kwargs):
 		'''
 		This is named _initialize__ instead of init because of the
 		way that webapp2 creates an instance of the class before the
@@ -1710,7 +1711,7 @@ class PromoteDeal(BaseClass):
 		'''
 		self.deal = deal
 		self.user = user # user is the purchaser of the promotion
-		self.promotion_id = promotion_id
+#		self.promotion_id = promotion_id
 		
 		# set the business
 		try:
@@ -1732,19 +1733,8 @@ class PromoteDeal(BaseClass):
 		logging.debug(levr.log_model_props(self.deal))
 		logging.debug(levr.log_model_props(self.business))
 		logging.debug(levr.log_model_props(self.purchaser))
-	def put(self):
-		'''
-		Simply puts the deal and returns the deal
-		Useful for stacking promotions where it is undesirable to
-			put the deal every time a promotion is applied
-		'''
-		self.deal.put()
-		return self.deal
-	def get_sans_put(self):
-		'''
-		Returns the deal as-is
-		'''
-		return self.deal
+	
+	
 	def get_all_deals_response(self):
 		'''
 		Packages all deals into a json
@@ -1760,7 +1750,7 @@ class PromoteDeal(BaseClass):
 				'deals'	: packaged_deals
 				}
 		return response
-	def get_promotion_by_promotionID(self,promotionID):
+	def get_promotion_by_promotionID(self,promotion_id):
 		'''
 		Pulls a promotion for self.deal from the db based on the promotionID
 		@param promotionID: promotion identifier
@@ -1769,7 +1759,7 @@ class PromoteDeal(BaseClass):
 		@return: A promotion entity
 		@rtype: levr.DealPromotion
 		'''
-		key_name = self.make_promo_key_name(promotionID)
+		key_name = self.make_promo_key_name(promotion_id)
 		promotion_entity = levr.DealPromotion.get_by_key_name(key_name)
 		return promotion_entity
 	def make_promo_key_name(self,promotionID):
@@ -1781,60 +1771,23 @@ class PromoteDeal(BaseClass):
 		@type promotionID: str
 		'''
 		return '{}|{}'.format(self.deal.key(),promotionID)
-	def _add_promo(self,promotionID,*args):
+	
+	#===========================================================================
+	# Return functions
+	#===========================================================================
+	def get_sans_put(self):
 		'''
-		Adds the promotion to the list of promotions
-		Also creates a promotion entity to log the event
-		
-		@param promo_type: one of the available promotions
-		@type promo_type: str
+		Returns the deal as-is
 		'''
-		self.deal.promotions.append(promotionID)
-		name = self.make_promo_key_name(promotionID)
-		
-		promo = levr.DealPromotion(
-							key_name = name,
-							purchaser = self.user,
-							deal = self.deal,
-							promotion_id = promotionID
-							)
-		# add the deal tags to the promotion
-		if args:
-			promo.tags = list(args)
-		promo.put()
-		return
-	def _remove_promo(self,promotionID):
+		return self.deal
+	def put(self):
 		'''
-		Removes a promotion from the list of promotions on a deal
-		deletes the promotion entity that was created in _add_promo
-		
-		@param promotionID: one of the available promotions
-		@type promotionID: str
+		Simply puts the deal and returns the deal
+		Useful for stacking promotions where it is undesirable to
+			put the deal every time a promotion is applied
 		'''
-		# remove the promo entity
-		promo_entity = self.get_promotion_by_promotionID(promotionID)
-		
-		# remove tags
-		tags = promo_entity.tags
-		if tags:
-			for tag in tags:
-				try:
-					self.deal.tags.remove(tag)
-				except ValueError,e:
-					logging.error('A tag could not be removed from a deal. This should not happen')
-					logging.info('deal key: '+str(self.deal.key()))
-					logging.info('tag: '+str(tag))
-					logging.info('deal tags: '+str(self.deal.tags))
-					levr.log_error(e)
-					
-		
-		promo_entity.delete()
-		
-		# remove promo id from the deal entity
-		self.deal.promotions.remove(promotionID)
-		return
-		
-		
+		self.deal.put()
+		return self.deal
 	def _return(self,auto_put=True):
 		'''
 		Wrapper for the return function
@@ -1865,6 +1818,65 @@ class PromoteDeal(BaseClass):
 		if lst and lst.__len__() > self._max_sub_query_length:
 			lst = lst[:self._max_sub_query_length]
 		return lst
+	
+	#===========================================================================
+	# Interfaces with the promotion entity in the db
+	#===========================================================================
+	def _add_promo(self,promotion_id,*args):
+		'''
+		Adds the promotion to the list of promotions
+		Also creates a promotion entity to log the event
+		
+		@param promo_type: one of the available promotions
+		@type promo_type: str
+		'''
+		self.deal.promotions.append(promotion_id)
+		name = self.make_promo_key_name(promotion_id)
+		
+		promo = levr.DealPromotion(
+							key_name = name,
+							purchaser = self.user,
+							deal = self.deal,
+							promotion_id = promotion_id
+							)
+		# add the deal tags to the promotion
+		if args:
+			promo.tags = list(args)
+		promo.put()
+		return
+	def _remove_promo(self,promotion_id):
+		'''
+		Removes a promotion from the list of promotions on a deal
+		deletes the promotion entity that was created in _add_promo
+		
+		@param promotionID: one of the available promotions
+		@type promotionID: str
+		'''
+		# remove the promo entity
+		promo_entity = self.get_promotion_by_promotionID(promotion_id)
+		
+		# remove tags
+		tags = promo_entity.tags
+		if tags:
+			for tag in tags:
+				try:
+					self.deal.tags.remove(tag)
+				except ValueError,e:
+					logging.error('A tag could not be removed from a deal. This should not happen')
+					logging.info('deal key: '+str(self.deal.key()))
+					logging.info('tag: '+str(tag))
+					logging.info('deal tags: '+str(self.deal.tags))
+					levr.log_error(e)
+					
+		
+		promo_entity.delete()
+		
+		# remove promo id from the deal entity
+		self.deal.promotions.remove(promotion_id)
+		return
+		
+		
+	
 	#===========================================================================
 	# Actions!
 	#===========================================================================
@@ -1880,6 +1892,7 @@ class PromoteDeal(BaseClass):
 		
 		@return: depends on the function that is called
 		'''
+			
 		# make sure the promotion has not been run
 		assert promotion_id not in self.deal.promotions, \
 			'Deal already has promotion: {}'.format(promotion_id)
@@ -1891,9 +1904,32 @@ class PromoteDeal(BaseClass):
 				promo.NOTIFY_RELATED_LIKES : self._set_notify_related_likes,
 				promo.RADIUS_ALERT : self._set_radius_alert
 				}
-		auto_put = kwargs.get('auto_put',True)
+		# Assure that the requested promotion is available for hire
+		assert promotion_id in [key for key in handlers], \
+			'Promotion not available: {}'.format(promotion_id)
+		
 		# run the required function
-		return handlers[promotion_id](auto_put)
+		handlers[promotion_id]()
+		
+		# create the promotion entity
+		self._add_promo(promotion_id)
+		# return
+		auto_put = kwargs.get('auto_put',True)
+		return self._return(auto_put)
+		
+	def confirm_promotion(self,promotion_id,receipt,**kwargs):
+		'''
+		Confirms a promotion. Fetches the promotion entity and adds a receipt
+		
+		@param promotion_id: promotion identifier
+		@type promotion_id: str
+		'''
+		promotion_entity = self.get_promotion_by_promotionID(promotion_id)
+		# add the receipt to the promotion
+		promotion_entity.receipt = receipt
+		promotion_entity.put()
+		auto_put = kwargs.get('auto_put',True)
+		return self._return(auto_put)
 	def remove_promotion(self,promotion_id,**kwargs):
 		'''
 		Runs the function to remove the effects of a promotion that
@@ -1912,52 +1948,43 @@ class PromoteDeal(BaseClass):
 				promo.NOTIFY_RELATED_LIKES : self._remove_notify_related_likes,
 				promo.RADIUS_ALERT : self._remove_radius_alert
 				}
-		auto_put = kwargs.get('auto_put',True)
-		# run the action
-		return handlers[promotion_id](auto_put)
+		# Assure that the requested promotion is available for hire
+		assert promotion_id in [key for key in handlers], \
+			'Promotion not available: {}'.format(promotion_id)
 		
+		# run the action
+		handlers[promotion_id]()
+		# Remove the promotion entity
+		self._remove_promo(promotion_id)
+		# Return
+		auto_put = kwargs.get('auto_put',True)
+		return self._return(auto_put)
 	#===========================================================================
-	# Promotions
+	# Promotions!!!
 	#===========================================================================
-#	def run_promotion(self):
-#		'''
-#		Creates a promotion for a deal
-#		'''
-#		assert self.promotion_id not in self.deal.promotions, \
-#			'Deal already has promotion: {}'.format(self.promotion_id)
-#		if 
 	#===========================================================================
 	# Boost Rank
 	#===========================================================================
 	_karma_boost = 200
-	def _set_boost_rank(self,auto_put=True):
+	def _set_boost_rank(self):
 		'''
 		Gives the deal preference over other deals so that it is shown before them
 		This is done by adding karma to the deal without increasing the upvotes
 		'''
 		# increase the unseen karma of the deal
 		self.deal.karma += self._karma_boost
-		
-		# log new promo type to the deal
-		self._add_promo(promo.BOOST_RANK)
-		
-		return self._return(auto_put)
-	def _remove_boost_rank(self,auto_put=True):
+		return
+	def _remove_boost_rank(self):
 		'''
 		Removes the karma from the deal that was added
 		'''
 		# remove karma
 		self.deal.karma -= self._karma_boost
-		
-		# remove all the promo stuff in the db
-		self._remove_promo(promo.BOOST_RANK)
-		
-		# return
-		return self._return(auto_put)
+		return
 	#===========================================================================
 	# More Tags
 	#===========================================================================
-	def _set_more_tags(self,auto_put=True):
+	def _set_more_tags(self):
 		'''
 		Increases the tags on a deal so that it is more visible
 		'''
@@ -1966,49 +1993,34 @@ class PromoteDeal(BaseClass):
 		# append new deal tags to the list of tags
 		assert type(self.tags) == list, 'tags must be a list'
 		self.deal.tags.extend(self.tags)
-		
-		# add the new promo type to the deal
-		self._add_promo(promo.MORE_TAGS)
-		
-		return self._return(auto_put)
-#		return self._return(kwargs)
-	def _remove_more_tags(self,auto_put=True):
+		return
+	def _remove_more_tags(self):
 		'''
 		Removes the tags that were added by the _set_more_tags function
 		'''
-		# Do nothing if the promotion doesnt already exist
-		if promo.MORE_TAGS not in self.deal.promotions:
-			return
-		# TODO: remove the original tags
-		self._remove_promo(promo.MORE_TAGS)
+		# Do nothing here. All is taken care of by the self._remove_promo
+		return
 	#===========================================================================
 	# Radius Alert
 	#===========================================================================
-	def _set_radius_alert(self,auto_put=True):
+	def _set_radius_alert(self):
 		'''
 		Sends a notification to ALL users within a certain radius when they search 
 		'''
 		# all actions are handled dynamically at the search, so do nothing here!
-		# add the new promo type to the deal
-		self._add_promo(promo.RADIUS_ALERT)
-		# TODO: add chron job to expire this promotion
-		return self._return(auto_put)
-#		return self._return(kwargs)
-	def _remove_radius_alert(self,auto_put=True):
+		return
+	def _remove_radius_alert(self):
 		'''
 		Removes the effects from setting a radius alert
 		'''
-		# Do nothing if the promotion was never set
-		if promo.RADIUS_ALERT not in self.deal.promotions:
-			return
-		# Removes the promtion entity and the identifier on the deal
-		self._remove_promo(promo.RADIUS_ALERT)
-		# All actions are taken dynamically at search. 
-		return self._return(auto_put)
+		# Do nothing here. All is taken care of in self._remove_promo
+		#   because all actions taken for this promo happen at search time
+		# TODO: add radius alert to search
+		return
 	#===========================================================================
 	# Notify Previous Likes
 	#===========================================================================
-	def _set_notify_previous_likes(self,auto_put=True):
+	def _set_notify_previous_likes(self):
 		'''
 		Sends a notification to everyone who has liked a deal at that business before
 		'''
@@ -2034,13 +2046,9 @@ class PromoteDeal(BaseClass):
 		assert levr.create_notification('followedUpload', user_keys, self.user.key(), self.deal.key()), \
 			'Notifications could not be created'
 		
-		
-		
-		# everything worked? the new promo object to the deal
-		self._add_promo(promo.NOTIFY_PREVIOUS_LIKES)
-		return self._return(auto_put)
+		return
 	
-	def _remove_notify_previous_likes(self,auto_put=True):
+	def _remove_notify_previous_likes(self):
 		'''
 		Removes the actions taken by the set_notify_previous_likes
 		'''
@@ -2052,14 +2060,11 @@ class PromoteDeal(BaseClass):
 											).get()
 		if notification:
 			notification.delete()
-		
-		# remove the promotion entity and the reference in the deal entity
-		self._remove_promo(promo.NOTIFY_PREVIOUS_LIKES)
-		return self._return(auto_put)
+		return
 	#===========================================================================
 	# Notify Related Likes
 	#===========================================================================
-	def _set_notify_related_likes(self,auto_put=True):
+	def _set_notify_related_likes(self):
 		'''
 		Sends a notification to everyone who has likes a deal that is similar to this one
 		
@@ -2087,11 +2092,8 @@ class PromoteDeal(BaseClass):
 		# add a notification for all of the users
 		assert levr.create_notification('followedUpload', user_keys, self.user.key(), self.deal.key()), \
 			'Notifications could not be created'
-		
-		# everything worked? set the promo 
-		self._add_promo(promo.NOTIFY_RELATED_LIKES)
-		return self._return(auto_put)
-	def _remove_notify_related_likes(self,auto_put=True):
+		return
+	def _remove_notify_related_likes(self):
 		'''
 		Removes the actions taken by the set_notify_related_likes
 		'''
@@ -2104,9 +2106,7 @@ class PromoteDeal(BaseClass):
 		if notification:
 			notification.delete()
 		
-		# remove promo entity and the reference in the deal entity
-		self._remove_promo(promo.NOTIFY_RELATED_LIKES)
-		return self._return(auto_put)
+		return
 
 class SpoofUndeadNinjaActivity:
 	'''
