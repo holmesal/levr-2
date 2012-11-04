@@ -1,23 +1,86 @@
 {% extends "templates/merchants-mobile-base.html" %}
 
-{% block htmlhead %}{% endblock %}
+{% block htmlhead %}
+<link href='http://api.tiles.mapbox.com/mapbox.js/v0.6.6/mapbox.css' rel='stylesheet' />
+<script src='http://api.tiles.mapbox.com/mapbox.js/v0.6.6/mapbox.js'></script>
+<style type="text/css">
+
+.navbar{
+	margin-bottom: 0px;
+}
+	.map-container{
+		position: absolute;
+		width: 100%;
+		height: 140px;
+		margin-left: -20px;
+		margin-right: -20px;
+		background-color: #f3f3f3;
+	}
+	
+	.businessInfo{
+		margin-top: 150px;
+	}
+	
+	.name{
+		font-size: 14pt;
+		font-weight: 600;
+	}
+	
+	.phone{
+		font-size: 12pt;
+		font-weight: 500;
+	}
+	
+	.vicinity{
+		font-size: 10pt;
+		font-weight: 200;
+	}
+	
+	.btn{
+		margin-top: 20px !important;
+	}
+</style>
+{% endblock %}
 
 
 
 {% block content %}
-<p>(map goes here)</p>
-<p>{{name}}</p>
-<p>{{address}}</p>
-<p>{{vicinity}}</p>
-<p>{{phone}}</p>
-<a id="verify" class="btn">Yes, that's me</a>
-<a class="btn" href="/merchants/mobile/businessselect?query={{query}}">That's not me - go back</a>
+<div class="map-container" id='map'><div id='map2'></div></div>
+<div class="businessInfo">
+	<p class="name light">{{name}}</p>
+	<p class="phone light">{{phone}}</p>
+	<p class="vicinity light">{{vicinity}}</p>
+	<a class="btn btn-large btn-block btn-danger" href="/merchants/mobile/businessselect?query={{query}}"><i class="icon-white icon-arrow-left" style="float: left;margin-left: 20px;"></i> That's not me</a>
+	<a id="verify" class="btn btn-large btn-block btn-success"><i class="icon-white icon-ok" style="float: left;margin-left: 20px;"></i> Yes, that's me</a>
+</div>
 {% endblock %}
 
 
 
 {% block javascript %}
 <script type="text/javascript">
+	
+	var features = [{
+        "geometry": { "type": "Point", "coordinates": [{{lat}}, {{lon}}]},
+        "properties": {}
+    }];
+    
+    var map = mapbox.map('map');
+    map.addLayer(mapbox.layer().id('alonsoholmes.map-7b8eyy4m'));
+    var markerLayer = mapbox.markers.layer();
+    map.addLayer(markerLayer);
+    map.zoom(16).center({ lat: {{lat}}, lon: {{lon}} });
+    
+    markerLayer.add_feature({
+	  geometry: {
+	      coordinates: [{{lon}}, {{lat}}]
+	  },
+	  properties: {
+	      "marker-size"	:	"medium",
+	        "marker-color"	:	"FA6900",
+	        "marker-symbol"	:	"star"
+	  }
+	});
 
 	$("#verify").on('click',function(){
 		window.location = '/merchants/mobile/signup?reference={{reference}}'

@@ -136,6 +136,12 @@ indexes:
 - kind: Deal
   ancestor: yes
   properties:
+  - name: date_created
+    direction: desc
+
+- kind: Deal
+  ancestor: yes
+  properties:
   - name: deal_views
 
 - kind: Deal

@@ -1,0 +1,67 @@
+{% extends "templates/merchants-mobile-base.html" %}
+
+{% block htmlhead %}
+<style type="text/css">
+	#imgView{
+		width: 100%;
+		height: 200px;
+		position: relative;
+		display: none;
+	}
+	
+	#imgReplace{
+		background-color: rgba(0,0,0,0.85);
+		position: absolute;
+		margin: 0px;
+		color: white;
+		width: 100%;
+		bottom: 0;
+	}
+</style>
+{% endblock %}
+
+
+
+{% block content %}
+	<div id="imgView" style="background-image:url({{existing_img}})">
+		<p id="imgReplace">  Click to retake photo.</p>
+	</div>
+	<form action="{{upload_url}}" method="POST" enctype="multipart/form-data">
+		<input type="file" id="img" name="file" onchange="previewImage(this);">
+		<input type="submit" id="submit" class="btn" value="Submit" style="display:none;">
+		{% if dealID %}
+		<input type="hidden" name="dealID" value="{{dealID}}">
+		<input type="hidden" name="dealID" value="False">
+		{% endif %}
+	</form>
+	
+	
+{% endblock %}
+
+
+
+{% block javascript %}
+	<script type="text/javascript">
+		
+		{% if dealID %}
+		$('#imgView').css('background-image','url({{existing_img}})');
+    	$('#imgView').css('display','block')
+    	$('#submit').show()
+    	{% endif %}
+	
+		function previewImage(input){
+			if (input.files && input.files[0]) {
+		        var reader = new FileReader();
+		        reader.onload = function (e) {
+		        	$('#imgView').css('background-image','url('+e.target.result+')');
+		        	$('#imgView').css('display','block')
+		        	$('#submit').show()
+		        	//$('#imgPrompt,#fakeImgBtn').hide()
+		        };
+		
+		        reader.readAsDataURL(input.files[0]);
+		    }
+		}
+	</script>
+
+{% endblock %}

@@ -6,13 +6,13 @@
 
 {% block content %}
 	{%if error%}
-		{{error}}
+		<div class="alert alert-error">{{error}}</div>
 	{%endif%}
-	<form action="/merchants/mobile/login" method="post">
+	<form action="/merchants/mobile/login" method="post" enctype="multipart/form-data">
 		<fieldset>
 			<input id="email" name="email" placeholder="Email" type="text" value="{{email}}">
 			<input id="pw1" name="pw" placeholder="Password" type="password" value="{{pw}}">
-			<input type="submit" class="btn" value="Log in">
+			<input type="submit" class="btn btn-block btn-large btn-success" value="Log in">
 		</fieldset>
 	</form>
 {% endblock %}
