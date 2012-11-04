@@ -206,7 +206,7 @@ class TestSequence(unittest.TestCase):
 			print '--> promotions: ', deal['promotions']
 			print '--> rank before: {}, rank after: {}'.format(pre_promotion_karma,karma)
 			self.assertGreater(karma , pre_promotion_karma, 'rank did not change')
-			promo_ids = [p['name'] for p in deal['promotion']]
+			promo_ids = [p['name'] for p in deal['promotions']]
 			assert promotionID in promo_ids, '{} alert not in the promotions'.format(promotionID)
 		
 		
@@ -229,7 +229,7 @@ class TestSequence(unittest.TestCase):
 		if refresh == True:
 			data = self._fetch(url, method, endpoint, True)
 			deal = data['response']['deals'][0]
-			promo_ids = [p['name'] for p in deal['promotion']]
+			promo_ids = [p['name'] for p in deal['promotions']]
 			print '--> promotions: ', deal['promotions']
 			assert promotionID in promo_ids, '{} alert not in the promotions'.format(promotionID)
 		
@@ -250,7 +250,7 @@ class TestSequence(unittest.TestCase):
 		if refresh == True:
 			data = self._fetch(url, method, endpoint, True)
 			deal = data['response']['deals'][0]
-			promo_ids = [p['name'] for p in deal['promotion']]
+			promo_ids = [p['name'] for p in deal['promotions']]
 			print '--> promotions: ', deal['promotions']
 			assert promotionID in promo_ids, '{} alert not in the promotions'.format(promotionID)
 		
@@ -296,7 +296,7 @@ class TestSequence(unittest.TestCase):
 		if refresh == True:
 			data = self._fetch(url, method, endpoint, True)
 			deal = data['response']['deals'][0]
-			promo_ids = [p['name'] for p in deal['promotion']]
+			promo_ids = [p['name'] for p in deal['promotions']]
 			print '--> promotions: ', deal['promotions']
 			assert promotionID in promo_ids, '{} alert not in the promotions'.format(promotionID)
 		
@@ -353,7 +353,7 @@ class TestSequence(unittest.TestCase):
 		if refresh == True:
 			data = self._fetch(url, method, endpoint, True)
 			deal = data['response']['deals'][0]
-			promo_ids = [p['name'] for p in deal['promotion']]
+			promo_ids = [p['name'] for p in deal['promotions']]
 			print '--> promotions: ', deal['promotions']
 			assert promotionID in promo_ids, '{} alert not in the promotions'.format(promotionID)
 		

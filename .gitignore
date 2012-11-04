@@ -25,4 +25,4 @@ ninjas/
 *.old
 
 #git mergetool files
-*.orig
+*.orig*

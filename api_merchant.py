@@ -844,7 +844,12 @@ class CancelPromotionHandler(api_utils.PromoteDeal):
 			levr.log_error(e)
 			self.send_error()
 class TestPromotionsHandler(api_utils.PromoteDeal):
-	pass
+	def get(self):
+#		user = levr.Customer.all().filter('')
+#		deal = levr.Deal.
+		promotions = [key for key in promo.PROMOTIONS]
+#		for p in promotions:
+			
 # Quality Assurance for generating the upload urls
 NEW_DEAL_UPLOAD_URL = '/api/merchant/upload/add'
 EDIT_DEAL_UPLOAD_URL = '/api/merchant/upload/edit'
