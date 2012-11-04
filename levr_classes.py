@@ -1304,14 +1304,15 @@ class DealPromotion(db.Model):
 	purchaser = db.ReferenceProperty(Customer,required=True,collection_name='purchased_promotions_history')
 	deal = db.ReferenceProperty(Deal,required=True,collection_name='purchased_promotions_history')
 	date = db.DateTimeProperty(auto_now_add=True)
-	type = db.StringProperty(required=True,choices=set([
+	promotion_id = db.StringProperty(required=True,choices=set([
 													promo.BOOST_RANK,
 													promo.MORE_TAGS,
 													promo.NOTIFY_PREVIOUS_LIKES,
 													promo.NOTIFY_RELATED_LIKES,
 													promo.RADIUS_ALERT
 													])
-							)
+									)
+	tags = db.StringListProperty()
 	model_version = db.IntegerProperty(default=PROMOTION_MODEL_VERSION)
 
 

@@ -1,6 +1,6 @@
 from google.appengine.api import taskqueue, urlfetch
 from google.appengine.ext import blobstore, db
-from google.appengine.ext.blobstore import BlobInfo
+#from google.appengine.ext.blobstore import BlobInfo
 from google.appengine.ext.webapp import blobstore_handlers
 from tasks import IMAGE_ROTATION_TASK_URL
 import api_utils
@@ -720,6 +720,7 @@ class FetchPromotionOptionsHandler(api_utils.BaseClass):
 		try:
 			promotions = [promo.PROMOTIONS[key] for key in promo.PROMOTIONS]
 			
+			
 			response = {
 					'promotions' : promotions
 					}
@@ -750,9 +751,9 @@ class SetPromotionHandler(api_utils.PromoteDeal):
 	@api_utils.private
 	def post(self,*args,**kwargs):
 		user = kwargs.get('actor')
-		promotionID = kwargs.get('promotionID')
+		promotion_id = kwargs.get('promotionID')
 		deal = kwargs.get('deal')
-		tags = kwargs.get('tags',[])
+		self.tags = kwargs.get('tags',[])
 #		development = kwargs.get('development')
 		
 		# init the PromoteDeal class
@@ -763,32 +764,34 @@ class SetPromotionHandler(api_utils.PromoteDeal):
 		
 		try:
 			# init super class
-			super(SetPromotionHandler,self).__initialize__(deal,user)
+			super(SetPromotionHandler,self).__initialize__(deal,user,promotion_id)
 			
-			# promotions can only be applied once
-			assert promotionID not in self.deal.promotions, \
-				'Deal already has promotion: '+promotionID
+			self.run_promotion(promotion_id,tags=self.tags,auto_put=True)
 			
-			# act accordingly
-			if promotionID == promo.BOOST_RANK:
-				deal = self.boost_rank()
-				
-			elif promotionID == promo.MORE_TAGS:
-				
-				assert tags, 'Required parameter not passed, tags: '+str(tags)
-				deal = self.more_tags(tags)
-				
-			elif promotionID == promo.RADIUS_ALERT:
-				deal = self.radius_alert()
-				
-			elif promotionID == promo.NOTIFY_PREVIOUS_LIKES:
-				deal = self.notify_previous_likes()
-				
-			elif promotionID == promo.NOTIFY_RELATED_LIKES:
-				deal = self.notify_related_likes()
-			else:
-				assert False, 'Did not recognize promotion type.'
-			
+#			# promotions can only be applied once
+#			assert promotionID not in self.deal.promotions, \
+#				'Deal already has promotion: '+promotionID
+#			
+#			# act accordingly
+#			if promotionID == promo.BOOST_RANK:
+#				deal = self.boost_rank()
+#				
+#			elif promotionID == promo.MORE_TAGS:
+#				
+#				assert tags, 'Required parameter not passed, tags: '+str(tags)
+#				deal = self.more_tags(tags)
+#				
+#			elif promotionID == promo.RADIUS_ALERT:
+#				deal = self.radius_alert()
+#				
+#			elif promotionID == promo.NOTIFY_PREVIOUS_LIKES:
+#				deal = self.notify_previous_likes()
+#				
+#			elif promotionID == promo.NOTIFY_RELATED_LIKES:
+#				deal = self.notify_related_likes()
+#			else:
+#				assert False, 'Did not recognize promotion type.'
+#			
 			# return success
 			response = self.get_all_deals_response()
 			api_utils.send_response(self,response, user)
@@ -835,6 +838,8 @@ class ConfirmPromotionHandler(api_utils.PromoteDeal):
 
 class CancelPromotionHandler(api_utils.PromoteDeal):
 	@api_utils.validate(None, 'param',
+					user = True,
+					levrToken = True,
 					promotionID = True,
 					deal = True,
 					)
@@ -854,8 +859,10 @@ class CancelPromotionHandler(api_utils.PromoteDeal):
 			
 			if promotionID == 'all':
 				deal.promotions = []
-			elif promotionID in deal.promotions:
+				
+			elif promotionID in self.deal.promotions:
 				deal.promotions.remove(promotionID)
+				self.deal.promotions.remove(promotionID)
 			
 			# send success
 			response = self.get_all_deals_response()
