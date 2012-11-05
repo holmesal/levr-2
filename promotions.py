@@ -21,7 +21,7 @@ PROMOTIONS = {
 					'name'	: BOOST_RANK,
 					'readableName' : 'Boost Rank',
 					'img'	: 'http://www.levr.com/img/promo_rank.png',
-					'img2x' : 'http://www.levr.com/img/promo_rank@2x.png',
+					'img2x' : 'http://www.levr.com/img/promo_rank_2x.png',
 					'description' : 'Appear as a priority search result', # TODO: add description
 					'color' : '0xFF000088' # TODO: add colors to promotions
 					},
@@ -29,7 +29,7 @@ PROMOTIONS = {
 					'name'	: MORE_TAGS,
 					'readableName' : 'More Tags',
 					'img'	: 'http://www.levr.com/img/promo_tags.png',
-					'img2x'	: 'http://www.levr.com/img/promo_tags@2x.png',
+					'img2x'	: 'http://www.levr.com/img/promo_tags_2x.png',
 					'description' : 'Appear in more searches',
 					'color' : '0xFF000088'
 					},
@@ -37,7 +37,7 @@ PROMOTIONS = {
 						'name'	: RADIUS_ALERT,
 						'readableName' : 'Alert!',
 						'img'	: 'http://www.levr.com/img/promo_radius.png',
-						'img2x'	: 'http://www.levr.com/img/promo_radius@2x.png',
+						'img2x'	: 'http://www.levr.com/img/promo_radius_2x.png',
 						'description' : 'Alert customers in your area',
 						'color' : '0xFF000088'
 						},
@@ -45,7 +45,7 @@ PROMOTIONS = {
 								'name'	: NOTIFY_PREVIOUS_LIKES,
 								'readableName' : 'Alert!',
 								'img'	: 'http://www.levr.com/img/promo_likes.png',
-								'img2x'	: 'http://www.levr.com/img/promo_like@2x.png',
+								'img2x'	: 'http://www.levr.com/img/promo_like_2x.png',
 								'description' : 'Alert customers who have visited you before',
 								'color' : '0xFF000088'
 								},
@@ -53,7 +53,7 @@ PROMOTIONS = {
 								'name'	: NOTIFY_RELATED_LIKES,
 								'readableName' : 'Alert!',
 								'img'	: 'http://www.levr.com/img/promo_similar.png',
-								'img2x'	: 'http://www.levr.com/img/promo_similar@2x.png',
+								'img2x'	: 'http://www.levr.com/img/promo_similar_2x.png',
 								'description' : 'Alert customers who have liked similar deals',
 								'color' : '0xFF000088'
 								}

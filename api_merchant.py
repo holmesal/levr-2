@@ -861,7 +861,7 @@ class TestPromotionsHandler(api_utils.PromoteDeal):
 		
 		# remove all the promotions
 		for promotion_id in promotions:
-			self.remove_promotion(promotion_id)
+			self.remove_promotion(promotion_id,auto_put=False)
 		
 # Quality Assurance for generating the upload urls
 NEW_DEAL_UPLOAD_URL = '/api/merchant/upload/add'
