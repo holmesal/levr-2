@@ -14,7 +14,7 @@ jinja_environment = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.di
 class Approve(webapp2.RequestHandler):
 	#insert into database and redirect to Pending for next pending deal
 	@api_utils.validate('deal', None)
-	def get(self,*args,**kwargs):
+	def get(self,*args,**kwargs): #@UnusedVariable
 		try:
 			self.response.headers['Content-Type'] = 'text/plain'
 			
@@ -31,11 +31,16 @@ class Approve(webapp2.RequestHandler):
 		
 class Reject(webapp2.RequestHandler):
 	@api_utils.validate('deal', None)
-	def get(self,*args,**kwargs):
+	def get(self,*args,**kwargs): #@UnusedVariable
 		try:
 			self.response.headers['Content-Type'] = 'text/plain'
 			deal = kwargs.get('deal')
 			assert deal.been_reviewed == False, 'Deal has already been reviewed.'
+			# remove the deal from the memcache
+			try:
+				levr.remove_memcache_key_by_deal(deal)
+			except:
+				levr.log_error('Could not remove key from memcache')
 			deal.deal_status = 'rejected'
 			deal.been_reviewed = True
 			deal.put()
@@ -48,42 +53,6 @@ class Reject(webapp2.RequestHandler):
 			levr.log_error(e)
 			self.response.out.write('Error rejecting: '+str(e))
 		
-class GodLoginHandler(webapp2.RequestHandler):
-	def get(self):
-		'''This handler allows an admin to log in to any merchants account to manage it'''
-		#grab ALLL of the business Owners, sorted alphabetically
-#		owners = levr.BusinessOwner.all().order('-email').fetch(None)
-#		data = []
-#		for o in owners:
-#			things = {
-#					"email":o.email,
-#					"business":o.businesses.get().business_name,
-#					"id":str(o.key())
-#					}
-#			logging.debug(things)
-#			data.append(things)
-#		logging.debug(data)
-#		#grab all of the businesses
-#		businesses = levr.Business.all().order('-business_name').fetch(None)
-#		
-#		template_values = {
-#						'owners':data,
-#						'businesses':businesses
-#						}
-#		
-#		template = jinja_environment.get_template('templates/god_login.html')
-#		self.response.out.write(template.render(template_values))
-#	def post(self):
-#		logging.debug(self.request.body)
-#		owner_id = self.request.get('owner_id')
-#		
-#		owner = levr.BusinessOwner.get(owner_id)
-#		
-#		session = get_current_session()
-#		session['ownerID'] = enc.encrypt_key(owner_id)#business.key())
-#		session['loggedIn'] = True
-#		session['validated'] = owner.validated
-#		self.redirect('/merchants/manage')
 app = webapp2.WSGIApplication([
 								('/admin/deal/(.*)/approve', Approve),
 								('/admin/deal/(.*)/reject',Reject),
