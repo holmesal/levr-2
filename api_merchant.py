@@ -756,12 +756,6 @@ class SetPromotionHandler(api_utils.PromoteDeal):
 		self.tags = kwargs.get('tags',[])
 #		development = kwargs.get('development')
 		
-		# init the PromoteDeal class
-		logging.debug(type(deal))
-		logging.debug(type(user))
-		
-		
-		
 		try:
 			# init super class
 			super(SetPromotionHandler,self).__initialize__(deal,user)
@@ -845,11 +839,30 @@ class CancelPromotionHandler(api_utils.PromoteDeal):
 			self.send_error()
 class TestPromotionsHandler(api_utils.PromoteDeal):
 	def get(self):
-#		user = levr.Customer.all().filter('')
-#		deal = levr.Deal.
+		self.response.headers['Content-Type'] = 'text/plain'
+		user = levr.Customer.all().filter('email','ethan@levr.com').get()
+		deal = levr.Deal.all().ancestor(user).get()
+		assert user, 'No user'
+		assert deal, 'No deal'
+		
+		super(TestPromotionsHandler,self).__initialize__(deal,user)
+		self.tags = ['one','tags2','tag3','butt']
 		promotions = [key for key in promo.PROMOTIONS]
-#		for p in promotions:
-			
+		# run all the promotions
+		for promotion_id in promotions:
+			self.run_promotion(promotion_id,tags=self.tags,auto_put=False)
+		self.put()
+		self.response.out.write(levr.log_model_props,self.deal)
+		
+		receipt = 'hi'
+		# confirm all the promotions
+		for promotion_id in promotions:
+			self.confirm_promotion(promotion_id, receipt)
+		
+		# remove all the promotions
+		for promotion_id in promotions:
+			self.remove_promotion(promotion_id)
+		
 # Quality Assurance for generating the upload urls
 NEW_DEAL_UPLOAD_URL = '/api/merchant/upload/add'
 EDIT_DEAL_UPLOAD_URL = '/api/merchant/upload/edit'
