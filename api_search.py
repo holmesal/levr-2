@@ -46,12 +46,12 @@ class SearchQueryHandler(api_utils.SearchClass):
 #			limit 			= kwargs.get('limit')
 			query 			= kwargs.get('query','all')
 			development		= kwargs.get('development',False)
-			user 			= kwargs.get('actor')
+			self.user 			= kwargs.get('actor')
 			lon_half_delta	= kwargs.get('longitudeHalfDelta',None)
 #			lat_half_delta	= kwargs.get('latitudeHalfDelta')
 			
 			try:
-				logging.info(user.display_name)
+				logging.info(self.user.display_name)
 			except:
 				pass
 			if development:
@@ -393,9 +393,10 @@ class SearchQueryHandler(api_utils.SearchClass):
 				# Check if any of the deals has a promotion 
 				#===============================================================
 				try:
-					self.check_for_promotions(user,deals)
+					logging.info('checking for promotions')
+					self.check_for_promotions(deals)
 				except:
-					pass
+					levr.log_error()
 				
 				
 				packaged_deals = api_utils.package_deal_multi(deals,ranks=ranks,distances=distances)
@@ -436,19 +437,19 @@ class SearchQueryHandler(api_utils.SearchClass):
 								'ML4L1LW3SO0SKUXLKWMMBTSOWIUZ34NOTWTWRW41D0ANDBAX',
 								'RGTMFLSGVHNMZMYKSMW4HYFNEE0ZRA5PTD4NJE34RHUOQ5LZ'
 								]
-			if development	:
-				token = random.choice(developer_tokens)
-			elif user.foursquare_token:
-				token = 'random'
-			else:
+			try:
+				if development	:
+					token = random.choice(developer_tokens)
+				elif self.user.foursquare_token:
+					token = self.user.foursquare_token
+				else:
+					token = random.choice(developer_tokens)
+			except:
+				levr.log_error()
 				token = random.choice(developer_tokens)
 			logging.info('Using foursquare token: '+str(token))
 			
 			#if this is a registered foursquare user, set it to be an actual token
-			if user:
-				if user.foursquare_token:
-					token = user.foursquare_token
-					
 			# TODO: limit foursquare results so that when a search returns a minimum number \
 			# of levr deals, foursquare results are not shown
 			if accepted_deals_count == 0:
@@ -527,13 +528,17 @@ class SearchQueryHandler(api_utils.SearchClass):
 					'foursquare_deals'	: foursquare_deals.__len__(),
 					'deals'				: packaged_deals
 					}
+			try:
+				response.update({
+								'user' : api_utils.package_user(self.user, True, False)
+								})
+			except:
+				levr.log_error()
 			
-			
-			
-			api_utils.send_response(self,response,user)
+			self.send_response(response, self.user)
 		except:
 			levr.log_error()
-			api_utils.send_error(self,'Server Error')
+			self.send_error()
 			
 			
 class SearchNewHandler(webapp2.RequestHandler):

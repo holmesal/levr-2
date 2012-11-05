@@ -14,6 +14,7 @@ import random
 import urllib
 import promotions as promo
 import webapp2
+from datetime import timedelta
 #from fnmatch import filter
 
 
@@ -48,7 +49,7 @@ class SearchClass(BaseClass):
 	'''
 	Base class for all search handlers
 	'''
-	def check_for_promotions(self,user,deals):
+	def check_for_promotions(self,deals):
 		'''
 		A function to check search results for any promotions that might apply
 		
@@ -56,14 +57,16 @@ class SearchClass(BaseClass):
 		'''
 		# Find deals that have a radius blast promotion
 		#	and that have not been blasted to this user before
-		promoted_deals = filter(lambda x: promo.RADIUS_ALERT in x.promotions \
-							and x.key() not in user.been_radius_blasted,deals)
-		# select only one deal to blast
-		deal = random.choice(promoted_deals)
-		# create the notification for the deal
-		# TODO: create a special radius blast alert for this situation
-		if not levr.create_notification('followedUpload', [user.key()], deal.parent_key(), deal.key()):
-			levr.log_error('Notification was not created correctly')
+		promoted_deals = filter(lambda x: promo.RADIUS_ALERT in x.promotions,deals)
+		logging.info('promoted_deals: {}'.format(promoted_deals))
+		# Filter deals that have already been sent to the user via alert
+		promoted_deals = filter(lambda x: x.key() not in self.user.been_radius_blasted,promoted_deals)
+		logging.info('promoted_deals: {}'.format(promoted_deals))
+		if promoted_deals:
+			# select only one deal to blast
+			deal = random.choice(promoted_deals)
+			# create the notification for the deal
+			self.user = levr.Notification().create_radius_alert(self.user, deal)
 			
 		return
 def deprecated(handler_method):
@@ -1430,7 +1433,6 @@ def add_foursquare_deal(foursquare_deal,business,deal_status):
 	logging.debug(type(tags))
 	#Do not include these tags: +' '+foursquare_deal['description']
 	
-	
 	deal = levr.Deal(
 		businessID		=	str(business.key()),
 		business		=	business,
@@ -1447,6 +1449,7 @@ def add_foursquare_deal(foursquare_deal,business,deal_status):
 		geo_hash		=	business.geo_hash,
 		pin_color		=	'blue',
 		parent			=	random_dead_ninja.key(),
+		date_end		=	datetime.now()+timedelta(days=21),
 		smallImg		=	'http://playfoursquare.s3.amazonaws.com/press/logo/icon-512x512.png'
 	)
 

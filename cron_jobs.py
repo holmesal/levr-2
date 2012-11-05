@@ -66,6 +66,7 @@ class ExpireDealsHandler(webapp2.RequestHandler):
 			
 			#set deal_status to expired
 			for deal in deals:
+				levr.remove_memcache_key_by_deal(deal)
 				#set expired deal status
 				deal.deal_status = 'expired'
 				#grab the deal owner

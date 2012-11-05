@@ -163,6 +163,7 @@ def create_notification(notification_type,to_be_notified,actor,deal=None,**kwarg
 			#replace user
 			db.put(user)
 		elif notification_type == "followedUpload":
+			logging.info('followedUpload')
 			#user is the person being notified
 			users = db.get(to_be_notified)
 			
@@ -1147,15 +1148,61 @@ class Notification(db.Model):
 	# Only has outbound references, no inbound
 	date				= db.DateTimeProperty(auto_now_add=True)
 	date_in_seconds		= db.IntegerProperty()
-	notification_type	= db.StringProperty(required=True,choices=set(['favorite','followedUpload','newFollower','levelup','shared','levr','expired']))
-	line2				= db.StringProperty(default='')
+	notification_type	= db.StringProperty(choices=set(['favorite','followedUpload','newFollower','levelup','shared','levr','expired']))
 	to_be_notified		= db.ListProperty(db.Key)
-	deal				= db.ReferenceProperty(Deal,collection_name='notifications')
+	line2				= db.StringProperty(default='')
 	actor				= db.ReferenceProperty(Customer)
+	deal				= db.ReferenceProperty(Deal,collection_name='notifications')
 	#metadata used for migrations
 	model_version		= db.IntegerProperty(default=NOTIFICATION_MODEL_VERSION)
-
-
+	
+	def _add_basics(self):
+		self.date_in_seconds = long(unix_time(datetime.now()))
+		return
+	def _return(self,to_be_returned):
+		'''
+		A wrapper for returning to valididate the notification creation process
+		Because of the way the notification creation functions are called,
+			properties cannot be required. This serves that function instead.
+		
+		@param to_be_returned: Whatever you want to return
+		@type to_be_returned: Whatever.
+		'''
+		assert self.date_in_seconds, 'Did not set date_in_seconds'
+		assert self.notification_type, 'Did not set notification_type'
+		assert self.to_be_notified, 'Did not set to_be_notified'
+		assert self.line2, 'Did not set line2'
+		assert self.actor, 'Did not set actor'
+		
+		return to_be_returned
+		
+	def create_radius_alert(self,to_be_notified,deal):
+		'''
+		Creates a notification when someone searches within a radius of the deal
+		@param to_be_notified: a single customer, because only one person searches at a time
+		@type to_be_notified: Customer
+		@param deal: deal entity
+		@type deal: Deal
+		
+		@return: the user that is being notified
+		@rtype: Customer
+		'''
+		to_be_notified.new_notifications += 1
+		to_be_notified.been_radius_blasted.append(deal.key())
+		to_be_notified.put()
+		
+		self.notification_type = 'followedUpload'
+		self.line2 = 'wants to share a deal with you.'
+		self.to_be_notified = [to_be_notified.key()]
+		self.deal = deal
+		self.actor = deal.parent_key()
+		# add uni
+		self._add_basics()
+		self.put()
+		
+		return self._return(to_be_notified)
+	
+		
 REPORTED_DEAL_MODEL_VERSION = 1
 class ReportedDeal(db.Model):
 	# Only has outbound references, no inbound

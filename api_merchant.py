@@ -188,7 +188,7 @@ class ConnectMerchantHandler(api_utils.BaseClass):
 					types = True,
 					development = False,
 					)
-	def post(self,*args,**kwargs):
+	def post(self,*args,**kwargs): #@UnusedVariable
 		'''
 		Checks for existing account with that business
 		If the account exists, return true
@@ -326,7 +326,7 @@ class MerchantDealsHandler(api_utils.BaseClass):
 					levrToken = True
 					)
 	@api_utils.private
-	def get(self,*args,**kwargs):
+	def get(self,*args,**kwargs): #@UnusedVariable
 		'''
 		@keyword actor:
 		
@@ -361,7 +361,7 @@ class RequestUploadURLHandler(api_utils.BaseClass):
 					action = True,
 					)
 	@api_utils.private
-	def get(self,*args,**kwargs):
+	def get(self,*args,**kwargs): #@UnusedVariable
 		'''
 		@keyword actor: 
 		@keyword action: if the deal will be a new deal or if it will be edited
@@ -419,7 +419,7 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 					description = True,
 					dealText = True,
 					)
-	def post(self,*args,**kwargs):
+	def post(self,*args,**kwargs): #@UnusedVariable
 		'''
 		@keyword actor: required
 		@keyword business: required
@@ -547,7 +547,7 @@ class EditDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 					dealText = False,
 					)
 	@api_utils.private
-	def post(self,*args,**kwargs):
+	def post(self,*args,**kwargs): #@UnusedVariable
 		'''
 		@keyword actor: required
 		@keyword deal: required
@@ -622,7 +622,7 @@ class ExpireDealHandler(api_utils.BaseClass):
 					levrToken = True,
 					deal = True
 					)
-	def post(self,*args,**kwargs):
+	def post(self,*args,**kwargs): #@UnusedVariable
 		'''
 		@keyword actor: 
 		@keyword deal: 
@@ -637,6 +637,7 @@ class ExpireDealHandler(api_utils.BaseClass):
 		try:
 			# assure that the user is the owner of the deal
 			assert deal.parent_key() == user.key(), 'User does not own that deal'
+			levr.remove_memcache_key_by_deal(deal)
 			
 			deal.deal_status = 'expired'
 			
@@ -669,7 +670,7 @@ class ReactivateDealHandler(api_utils.BaseClass):
 					levrToken = True,
 					deal = True,
 					)
-	def post(self,*args,**kwargs):
+	def post(self,*args,**kwargs): #@UnusedVariable
 		'''
 		@keyword actor: required
 		@keyword deal: required
@@ -691,6 +692,8 @@ class ReactivateDealHandler(api_utils.BaseClass):
 				deal.deal_status = 'test'
 			else:
 				deal.deal_status = 'active'
+			
+			levr.remove_memcache_key_by_deal(deal)
 			
 			
 			# set the date of expiration to the future!
@@ -716,7 +719,7 @@ class FetchPromotionOptionsHandler(api_utils.BaseClass):
 	'''
 	A handler for fetching the available promotion options for merchants
 	'''
-	def get(self,*args,**kwargs):
+	def get(self):
 		try:
 			promotions = [promo.PROMOTIONS[key] for key in promo.PROMOTIONS]
 			
@@ -749,7 +752,7 @@ class SetPromotionHandler(api_utils.PromoteDeal):
 					tags = False
 					)
 	@api_utils.private
-	def post(self,*args,**kwargs):
+	def post(self,*args,**kwargs): #@UnusedVariable
 		user = kwargs.get('actor')
 		promotion_id = kwargs.get('promotionID')
 		deal = kwargs.get('deal')
@@ -779,7 +782,7 @@ class ConfirmPromotionHandler(api_utils.PromoteDeal):
 					receipt = True
 					)
 	@api_utils.private
-	def post(self,*args,**kwargs):
+	def post(self,*args,**kwargs): #@UnusedVariable
 		'''
 		A handler to confirm that payment was received for a promotion
 		'''
@@ -813,7 +816,7 @@ class CancelPromotionHandler(api_utils.PromoteDeal):
 					deal = True,
 					)
 	@api_utils.private
-	def post(self,*args,**kwargs):
+	def post(self,*args,**kwargs): #@UnusedVariable
 		user = kwargs.get('actor')
 		promotion_id = kwargs.get('promotionID')
 		deal = kwargs.get('deal')
@@ -844,7 +847,7 @@ class TestPromotionsHandler(api_utils.PromoteDeal):
 		deal = levr.Deal.all().ancestor(user).get()
 		assert user, 'No user'
 		assert deal, 'No deal'
-		
+		self.response.out.write('Deal key: {}'.format(str(deal.key())))
 		super(TestPromotionsHandler,self).__initialize__(deal,user)
 		self.response.out.write(levr.log_model_props(self.deal))
 		self.tags = ['one','tags2','tag3','butt']
@@ -866,12 +869,12 @@ class TestPromotionsHandler(api_utils.PromoteDeal):
 			self.response.out.write(levr.log_model_props(n))
 		
 		
-		# remove all the promotions
-		for promotion_id in promotions:
-			self.remove_promotion(promotion_id,auto_put=False)
-		self.response.out.write(levr.log_model_props(self.deal))
-		self.put()
-		
+#		# remove all the promotions
+#		for promotion_id in promotions:
+#			self.remove_promotion(promotion_id,auto_put=False)
+#		self.response.out.write(levr.log_model_props(self.deal))
+#		self.put()
+#		
 		
 		
 # Quality Assurance for generating the upload urls
