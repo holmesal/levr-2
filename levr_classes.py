@@ -427,15 +427,41 @@ def text_notify(user_string):
 
 MEMCACHE_ACTIVE_GEOHASH_NAMESPACE = 'active_geohash'
 MEMCACHE_TEST_GEOHASH_NAMESPACE = 'test_geohash'
-def update_deal_key_memcache(geo_point,dealID,namespace):
+def remove_memcache_key_by_deal(deal):
+	'''
+	Removes the memcache key that refers to the deal
+	
+	@warning: If expiring or rejecting a deal, call this function BEFORE
+		changing the status from active or test. Otherwise, this will
+		default to the active namespace, and that will probably confuse you
+		if you are in the test namespace and forget about it.
+	
+	@param deal: The deal whos memcache entry will be deleted
+	@type deal: Deal
+	'''
+	if deal.deal_status == 'active':
+		namespace = MEMCACHE_ACTIVE_GEOHASH_NAMESPACE
+	elif deal.deal_status == 'test':
+		namespace = MEMCACHE_TEST_GEOHASH_NAMESPACE
+	elif deal.deal_status == 'rejected':
+		logging.warning('Call the remove_memcache_key_deal funct. BEFORE rejecting')
+		namespace = MEMCACHE_ACTIVE_GEOHASH_NAMESPACE
+	elif deal.deal_status == 'expired':
+		logging.warning('Call the remove_memcache_key_deal funct. BEFORE expiring')
+		namespace = MEMCACHE_ACTIVE_GEOHASH_NAMESPACE
+	else:
+		raise Exception('Invalid memcache namespace')
+	logging.debug('Updating memcache')
+	logging.info('updating memcahce')
+	return remove_memcache_key_by_geo_point(deal.geo_point,namespace)
+	
+def remove_memcache_key_by_geo_point(geo_point,namespace):
 	'''
 	Updates the geohash+deal_key memcache when one of the geohashes has been updated and the memcache now has stale information
 	Typical use case: a new deal was uploaded and the memcache key (i.e. the new deals geohash) needs to be updated
 	or deleted.
 	@param geo_point: the geopoint of the deal
 	@type geo_point: db.GeoPt
-	@param dealID: the deals unencrypted key
-	@type dealID: db.Key
 	@param namespace: the memcaches namespace
 	@type namespace: MEMCACHE_ACTIVE_GEOHASH_NAMESPACE or MEMCACHE_TEST_GEOHASH_NAMESPACE
 	'''
@@ -454,42 +480,6 @@ def update_deal_key_memcache(geo_point,dealID,namespace):
 			logging.debug('geohashes {} were deleted from memcache'.format(geo_hash_list))
 			break
 	return
-#	
-	# This is for actually updating the memcache. 
-	# Grab the existing hashes from the memcache
-	
-#	
-##	while True and failsafe <50:
-#	for i in range(0,5): #@UnusedVariable
-#		failsafe += 1
-#		logging.debug(failsafe)
-#		#grab existing mappings
-#		existing_mappings = client.get_multi(geo_hash_list, '', namespace, True)
-#		logging.info(existing_mappings)
-##		unresolved_keys = filter(lambda x: x not in existing_mappings,geo_hash_list)
-#		
-#		#update the mappings that exist in the memcache
-#		for key in existing_mappings:
-#			existing_mappings[key].append(dealID)
-#		unresolved_keys = client.cas_multi(existing_mappings, 0, '',0, namespace)
-#		logging.info('unresolved_keys: '+repr(unresolved_keys))
-#		if not unresolved_keys:
-#			# Everything was updated properly
-#			break
-#		else:
-#			# Some keys were not updated. Update list of geo_hashes for next loop
-#			geo_hash_list = unresolved_keys
-#			logging.info('cas_multi failed on keys: {}'.format(unresolved_keys))
-#			break
-#	logging.info(failsafe)
-
-	#============================================================================
-	# while True: # Retry loop
-	#  counter = client.gets(key)
-	#  assert counter is not None, 'Uninitialized counter'
-	#  if client.cas(key, counter+1):
-	#     break
-	#============================================================================
 
 def create_deal():
 	'''
@@ -819,15 +809,8 @@ def dealCreate(params,origin,upload_flag=True,**kwargs):
 	#put the deal
 	deal.put()
 	
-	if deal.deal_status == 'active':
-		namespace = MEMCACHE_ACTIVE_GEOHASH_NAMESPACE
-	elif deal.deal_status == 'test':
-		namespace = MEMCACHE_TEST_GEOHASH_NAMESPACE
-	else:
-		raise Exception('Invalid memcache namespace')
-	logging.debug('Updating memcache')
-	logging.info('updating memcahce')
-	update_deal_key_memcache(deal.geo_point,deal.key(),namespace)
+	remove_memcache_key_by_deal(deal)
+	
 	
 	#dealput is the deal key i.e. dealID
 	logging.debug(log_model_props(deal))
@@ -893,11 +876,11 @@ class Customer(db.Model):
 	new_notifications = db.IntegerProperty(default=0)
 	
 	# db references
-	followers		= db.ListProperty(db.Key) # Customer
-	favorites		= db.ListProperty(db.Key,default=[]) # Deal
-	upvotes			= db.ListProperty(db.Key,default=[]) # Deal
-	downvotes		= db.ListProperty(db.Key,default=[]) # Deal
-	
+	followers			= db.ListProperty(db.Key) # Customer
+	favorites			= db.ListProperty(db.Key,default=[]) # Deal
+	upvotes				= db.ListProperty(db.Key,default=[]) # Deal
+	downvotes			= db.ListProperty(db.Key,default=[]) # Deal
+	been_radius_blasted	= db.ListProperty(db.Key) # Deal
 	
 	#facebook
 	facebook_connected	= db.BooleanProperty(default=False)

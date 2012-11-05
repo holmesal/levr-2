@@ -48,15 +48,24 @@ class SearchClass(BaseClass):
 	'''
 	Base class for all search handlers
 	'''
-	def check_for_promotions(self,deals):
+	def check_for_promotions(self,user,deals):
 		'''
 		A function to check search results for any promotions that might apply
 		
 		@status: Only handles a radius blast alert
 		'''
-		promoted_deals = filter(lambda x: promo.RADIUS_ALERT in x.promotions,deals)
-		
-	
+		# Find deals that have a radius blast promotion
+		#	and that have not been blasted to this user before
+		promoted_deals = filter(lambda x: promo.RADIUS_ALERT in x.promotions \
+							and x.key() not in user.been_radius_blasted,deals)
+		# select only one deal to blast
+		deal = random.choice(promoted_deals)
+		# create the notification for the deal
+		# TODO: create a special radius blast alert for this situation
+		if not levr.create_notification('followedUpload', [user.key()], deal.parent_key(), deal.key()):
+			levr.log_error('Notification was not created correctly')
+			
+		return
 def deprecated(handler_method):
 	'''
 	Decorator used to warn the coder that the function they are using is deprecated
@@ -1450,13 +1459,8 @@ def add_foursquare_deal(foursquare_deal,business,deal_status):
 	#===========================================================================
 	# Update memcache because a deal was created
 	#===========================================================================
-	if deal.deal_status == 'active':
-		namespace = levr.MEMCACHE_ACTIVE_GEOHASH_NAMESPACE
-	elif deal.deal_status == 'test':
-		namespace = levr.MEMCACHE_TEST_GEOHASH_NAMESPACE
-	else:
-		raise Exception('Invalid memcahce namespace')
-	levr.update_deal_key_memcache(deal.geo_point,deal.key(),namespace)
+	levr.remove_memcache_key_by_deal(deal)
+	
 	
 	logging.info('Foursquare special '+deal.foursquare_id+' added to database.')
 	#logging.debug(levr.log_model_props(deal))

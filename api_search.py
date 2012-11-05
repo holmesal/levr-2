@@ -14,7 +14,12 @@ from tasks import INCREMENT_DEAL_VIEW_URL
 
 
 class SearchQueryHandler(api_utils.SearchClass):
-	@api_utils.validate('query',None,geoPoint=True,radius=False,user=False,latitudeHalfDelta=False,longitudeHalfDelta=False)
+	@api_utils.validate('query',None,
+					geoPoint=True,
+					radius=False,
+					user=False,
+					latitudeHalfDelta=False,
+					longitudeHalfDelta=False)
 	def get(self,*args,**kwargs): #@UnusedVariable
 		'''
 		inputs: lat,lon,limit, query
@@ -378,7 +383,7 @@ class SearchQueryHandler(api_utils.SearchClass):
 			# Only try to package deals if they are actually there
 			if lst:
 				# unzip list of tuples into various lists
-				ranks,karmas,distances,deals = zip(*lst) #@UnusedVariable
+				ranks,karmas,distances,deals = zip(*lst)
 				logging.info(ranks)
 				logging.info(karmas)
 				logging.info(distances)
@@ -387,7 +392,10 @@ class SearchQueryHandler(api_utils.SearchClass):
 				#===============================================================
 				# Check if any of the deals has a promotion 
 				#===============================================================
-				
+				try:
+					self.check_for_promotions(user,deals)
+				except:
+					pass
 				
 				
 				packaged_deals = api_utils.package_deal_multi(deals,ranks=ranks,distances=distances)
