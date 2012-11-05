@@ -1201,8 +1201,7 @@ class Notification(db.Model):
 		self.put()
 		
 		return self._return(to_be_notified)
-	
-		
+
 REPORTED_DEAL_MODEL_VERSION = 1
 class ReportedDeal(db.Model):
 	# Only has outbound references, no inbound

@@ -145,7 +145,7 @@ class SearchQueryHandler(api_utils.SearchClass):
 					searched_hash_set.extend(new_hash_set)
 					#reset new_hash_set
 	#				logging.info('searched_hash_set: '+str(searched_hash_set))
-				# 
+				
 				
 				total_hash_set = searched_hash_set
 			logging.info('total_hash_set: '+str(total_hash_set))
