@@ -22,8 +22,8 @@ PROMOTIONS = {
 					'readableName' : 'Boost Rank',
 					'img'	: 'http://www.levr.com/img/promo_rank.png',
 					'img2x' : 'http://www.levr.com/img/promo_rank_2x.png',
-					'description' : 'Appear as a priority search result', # TODO: add description
-					'color' : '0xFF000088' # TODO: add colors to promotions
+					'description' : 'Appear as a priority search result',
+					'color' : '0xFF000088'
 					},
 			MORE_TAGS :{
 					'name'	: MORE_TAGS,

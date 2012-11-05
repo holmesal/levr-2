@@ -218,9 +218,8 @@ class ConnectMerchantHandler(api_utils.BaseClass):
 		vicinity = kwargs.get('vicinity')
 		geo_point = kwargs.get('ll')
 		types = kwargs.get('types')
-		development = kwargs.get('development',True) # TODO: switch this to False by default when changing to live
+		development = kwargs.get('development',False) # TODO: switch this to False by default when changing to live
 		phone_number = kwargs.get('phoneNumber','')
-		# TODO: accept phone number as well
 		try:
 			# Convert input data
 			password = enc.encrypt_password(password)
@@ -265,7 +264,8 @@ class ConnectMerchantHandler(api_utils.BaseClass):
 										tester=development,
 										pw=password,
 										email=email,
-										display_name=business_name
+										display_name=business_name,
+										
 										)
 				logging.debug(business_name)
 				logging.debug(levr.log_model_props(user))
@@ -309,7 +309,7 @@ class ConnectMerchantHandler(api_utils.BaseClass):
 					'user' : packaged_user,
 					'business' : packaged_business
 					}
-			api_utils.send_response(self,response)
+			self.send_response(response)
 			# TODO: Merchant connect - handle all cases - new and existing accounts
 		except AssertionError,e:
 			api_utils.send_error(self,e.message)
@@ -846,22 +846,33 @@ class TestPromotionsHandler(api_utils.PromoteDeal):
 		assert deal, 'No deal'
 		
 		super(TestPromotionsHandler,self).__initialize__(deal,user)
+		self.response.out.write(levr.log_model_props(self.deal))
 		self.tags = ['one','tags2','tag3','butt']
 		promotions = [key for key in promo.PROMOTIONS]
 		# run all the promotions
 		for promotion_id in promotions:
 			self.run_promotion(promotion_id,tags=self.tags,auto_put=False)
 		self.put()
-		self.response.out.write(levr.log_model_props,self.deal)
+		self.response.out.write(levr.log_model_props(self.deal))
 		
 		receipt = 'hi'
 		# confirm all the promotions
 		for promotion_id in promotions:
 			self.confirm_promotion(promotion_id, receipt)
 		
+		notifications = levr.Notification.all().fetch(None)
+		for n in notifications:
+			self.response.out.write('\n'+promotion_id+'\n')
+			self.response.out.write(levr.log_model_props(n))
+		
+		
 		# remove all the promotions
 		for promotion_id in promotions:
 			self.remove_promotion(promotion_id,auto_put=False)
+		self.response.out.write(levr.log_model_props(self.deal))
+		self.put()
+		
+		
 		
 # Quality Assurance for generating the upload urls
 NEW_DEAL_UPLOAD_URL = '/api/merchant/upload/add'
@@ -877,8 +888,8 @@ app = webapp2.WSGIApplication([
 								('/api/merchant/promote/get',FetchPromotionOptionsHandler),
 								('/api/merchant/promote/set',SetPromotionHandler),
 								('/api/merchant/promote/confirm',ConfirmPromotionHandler),
-								('/api/merchant/promote/cancel',CancelPromotionHandler)
-								
+								('/api/merchant/promote/cancel',CancelPromotionHandler),
+								('/api/merchant/test',TestPromotionsHandler)
 								## old...
 #								('/api/merchant/initialize', InitializeMerchantHandler),
 #								('/api/merchant/call', CallMerchantHandler),

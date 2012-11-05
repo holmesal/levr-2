@@ -217,7 +217,7 @@ def _package_deal(deal,owner,business,private=False,rank=None,distance=None):
 		
 		packaged_deal.update({
 							'views'	: deal.views,
-							'promotions' : [promo.PROMOTIONS[p] for p in deal.promotions], # TODO: send this as a dict w/ descr. and img
+							'promotions' : [promo.PROMOTIONS[p] for p in deal.promotions],
 							'status': deal.deal_status
 							})
 	
@@ -1817,6 +1817,11 @@ class PromoteDeal(BaseClass):
 		'''
 		if lst and lst.__len__() > self._max_sub_query_length:
 			lst = lst[:self._max_sub_query_length]
+			logging.warning('A promotion to alert some users resulted in clipping some \
+			deals because the business owns too many deals.')
+			logging.warning(levr.log_model_props(self.user))
+			logging.warning(levr.log_model_props(self.business))
+			logging.warning(levr.log_model_props(self.deal))
 		return lst
 	
 	#===========================================================================
@@ -1833,16 +1838,18 @@ class PromoteDeal(BaseClass):
 		self.deal.promotions.append(promotion_id)
 		name = self.make_promo_key_name(promotion_id)
 		
-		promo = levr.DealPromotion(
+		promotion = levr.DealPromotion(
 							key_name = name,
 							purchaser = self.user,
 							deal = self.deal,
 							promotion_id = promotion_id
 							)
 		# add the deal tags to the promotion
-		if args:
-			promo.tags = list(args)
-		promo.put()
+		if promotion_id == promo.MORE_TAGS:
+			if not self.tags:
+				logging.error('No self.tags were passed to Promotion._add_promo')
+			promotion.tags = list(self.tags)
+		promotion.put()
 		return
 	def _remove_promo(self,promotion_id):
 		'''
@@ -2025,7 +2032,6 @@ class PromoteDeal(BaseClass):
 		Sends a notification to everyone who has liked a deal at that business before
 		'''
 		# grab the business from the deal - already have self.business
-		# self.business
 		
 		# get all deals that reference the business
 		deal_keys = levr.Deal.all(keys_only=True).filter('businessID',str(self.business.key())).order('-deal_status').fetch(None)
@@ -2078,7 +2084,6 @@ class PromoteDeal(BaseClass):
 		for tag in tags:
 			deal_keys.update(levr.Deal.all(keys_only=True).filter('tags',tag))
 		deal_keys = list(deal_keys)
-		# TODO: order the deal keys so that when the list is clipped, naughty deals are removed
 		deals = db.get(deal_keys)
 		deals = sort_deals_by_property(deals, 'date_created')
 		

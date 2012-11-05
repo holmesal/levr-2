@@ -67,7 +67,7 @@ def create_new_user(**kwargs):
 	user = level_check(user)
 	user.put()
 	return user
-def create_new_business(business_name,vicinity,geo_point,types,phone_number,**kwargs):
+def create_new_business(business_name,vicinity,geo_point,types,phone_number=None,**kwargs):
 	'''
 	Creates a new business entity with an optional owner.
 	Puts the business before returning
@@ -331,7 +331,7 @@ def log_model_props(model,props=None):
 			for key in key_list:
 				log_str += str(key)+": "+str(getattr(model,key))+delimeter
 	except Exception,e:
-		logging.warning('There was an error in log_model_props %s',e)
+		logging.info('There was an error in log_model_props %s',e)
 	finally:
 		return log_str
 
@@ -355,7 +355,7 @@ def log_dir(obj,props=None):
 			for key in dir(obj):
 				log_str += str(key)+": "+str(getattr(obj,key))+delimeter
 	except:
-		logging.warning('There was an error in log_dir')
+		logging.info('There was an error in log_dir')
 	finally:
 		return log_str
 
@@ -385,7 +385,7 @@ def log_dict(obj,props=None,delimeter= "\n\t\t"):
 				else:
 					log_str += str(key)+": "+str(obj[key])+delimeter
 	except Exception,e:
-		logging.warning('There was an error in log_dict %s',e)
+		logging.info('There was an error in log_dict %s',e)
 	finally:
 		return log_str
 	
@@ -945,154 +945,6 @@ class Customer(db.Model):
 	new_redeem_count= db.IntegerProperty(default = 0) #number of unseen redemptions
 	vicinity		= db.StringProperty() #the area of the user, probably a college campus
 	
-#===============================================================================
-	#===========================================================================
-	# Do not use this. It is not complete
-	#===========================================================================
-#	def merge_into_user(self,new_user):
-#		'''
-#		Merges two accounts. new_user will cannibalize the user that this method is called on.
-#		This includes transferring all of the old users information.
-#		
-#		@param new_user:
-#		@type new_user: Customer
-#		'''
-#		
-#		new_user = self.secure_delete(self,new_user)
-#		return new_user
-#	
-#	def secure_delete(self,new_user=None):
-#		'''
-#		Securely deletes a Customer entity by removing all references to the entity in the database
-#		and then calling db.Models delete method on the entity. See ya.
-#		
-#		If new_user is passed, then instead of deleting all relational references, they are transfered to the new user
-#		
-#		@param new_user: 
-#		@type new_user: Customer
-#		'''
-#		old_key = self.key()
-#		new_key = new_user.key()
-#		
-#		#=======================================================================
-#		# Notifications
-#		# Delete the notifications
-#		#=======================================================================
-#		# to_be_notified notifications
-#		to_be_notified = Notification.all().filter('to_be_notified',old_key).fetch(None)
-#		# actor notifications
-#		actor = self.notification_set.fetch(None)
-#		
-#		notes = set([])
-#		notes.update(to_be_notified)
-#		notes.update(actor)
-#		
-#		
-#		logging.debug('Notifications: {}'.format(to_be_notified.__len__()+actor.__len__()))
-#		
-#		
-#		if new_user:
-#			#transfer notifications
-#			#exchange to_be_notified
-#			for note in notes:
-#				#user exists in to_be_notified
-#				if old_key in user.to_be_notified:
-#					#remove old reference
-#					note.to_be_notified.remove(old_key)
-#					#add new reference
-#					note.to_be_notified.append(new_key)
-#				# otherwise, user is the actor
-#				else:
-#					note.actor = new_user
-#			db.put(notes)
-#		else:
-#			#delete all notifications
-#			notes = set([])
-#			notes.update(to_be_notified)
-#			notes.update(actor)
-#			db.delete(notes)
-#		
-#		#=======================================================================
-#		# Other Customers
-#		# Remove reference links
-#		#=======================================================================
-#		users = Customer.all().filter('followers',old_key).fetch(None)
-#		# remove the deleted users key
-#		for user in users:
-#			#remove old reference
-#			user.followers.remove(old_key)
-#			#add new reference if there is one
-#			if new_user:	user.followers.append(new_key)
-#			
-#		logging.debug(users)
-#		logging.debug('Follower references: {}'.format(users.__len__()))
-#		db.put(users)
-#		
-#		#=======================================================================
-#		# Deal
-#		# 
-#		#=======================================================================
-#		deals = Deal.all().ancestor(old_key).fetch(None)
-#		logging.debug('Child Deals: {}'.format(deals.__len__()))
-#		
-#		for deal in deals:
-#			if new_user:
-#				#transfer ownership
-#				deal.transfer_ownership_to(new_user)
-#			else:
-#				#secure deletion
-#				deal.secure_delete()
-#		
-#		
-#		
-#		#=======================================================================
-#		# Business
-#		# Empty the reference property
-#		#=======================================================================
-#		businesses = self.businesses.fetch(None)
-#		for business in businesses:
-#			#update or remove ownership
-#			if new_user:	business.owner = new_user
-#			else:			business.owner = None
-#		logging.debug('Businesses ownership: {}'.format(businesses.__len__()))
-#		db.put(businesses)
-#		
-#		
-#		#=======================================================================
-#		# ReportedDeal
-#		# Remove reference link
-#		#=======================================================================
-#		reported_deals = self.reported_deals.fetch(None)
-#		for deal in reported_deals:
-#			# Transfer or remove ownership
-#			if new_user:	deal.uid = new_user
-#			else:			deal.uid = None
-#		logging.debug('ReportedDeals: {}'.format(reported_deals.__len__()))
-#		db.put(reported_deals)
-#		
-#		#=======================================================================
-#		# FloatingContent
-#		# Delete the content - it is now irrelevant
-#		#=======================================================================
-#		floating_content = self.floating_content.fetch(None)
-#		logging.debug('Floating content removed: {}'.format(floating_content.__len__()))
-#		
-#		if new_user:
-#			# Update reference
-#			for content in floating_content:
-#				content.user = new_user
-#			db.put(floating_content)
-#		else:
-#			# Delete the content... no longer relevant
-#			db.delete(floating_content)
-#		
-#		#call the users delete function to delete the user
-# #		self.delete()
-#		
-#		return
-#===============================================================================
-	
-	
 	@property
 	def following(self):
 		#returns a query object that will return all followers of this user entity
@@ -1133,16 +985,6 @@ class Customer(db.Model):
 	
 
 
-
-
-#class BusinessOwner(db.Model):
-#	email 			= db.EmailProperty()
-#	pw 				= db.StringProperty()
-#	validated		= db.BooleanProperty(default=False)
-#	date_created	= db.DateTimeProperty(auto_now_add=True)
-#	date_last_edited= db.DateTimeProperty(auto_now=True)
-	
-	#psudoproperty: businesses - see business entity - this is a query for all the businesses that list this owner as the owner
 BUSINESS_MODEL_VERSION = 1
 class Business(db.Model):
 	#root class
@@ -1276,7 +1118,7 @@ class Deal(polymodel.PolyModel):
 		Increments the number of times this deal has been viewed
 		'''
 		index = random.randint(0,NUM_DEAL_VIEW_COUNTERS-1)
-		shard_name = 'shard'+str(index)
+		shard_name = str(self.key())+'|shard'+str(index)
 		counter = DealViewCounter.get_by_key_name(shard_name,self)
 		if counter is None:
 			counter = DealViewCounter(key_name=shard_name,parent=self)
@@ -1312,6 +1154,7 @@ class DealPromotion(db.Model):
 													promo.RADIUS_ALERT
 													])
 									)
+	receipt = db.StringProperty()
 	tags = db.StringListProperty()
 	model_version = db.IntegerProperty(default=PROMOTION_MODEL_VERSION)
 

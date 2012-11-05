@@ -158,11 +158,13 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 					'img_key'			: img_key
 					}
 		
-		levr.dealCreate(params,'phone_new_business')
-		
+		deal = levr.dealCreate(params,'phone_new_business')
+		p = db.get(pat)
+		p.upvotes.append(deal.key())
+		p.put()
 		params = {
 					'uid'				: ethan,
-					'business_name'		: 'Als Sweatshop 3',
+					'business_name'		: 'Als Sweatshop',
 					'geo_point'			: levr.geo_converter('42.343880,-71.059575'),
 					'vicinity'			: '10 Buick St',
 					'types'				: 'Establishment,Food',
@@ -173,16 +175,17 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 					'img_key'			: img_key
 					}
 		
-		levr.dealCreate(params,'phone_new_business')
+		deal = levr.dealCreate(params,'phone_new_business')
 		
 		bus = levr.Business.gql('WHERE business_name=:1','Als Sweatshop').get()
 		
-		ant = levr.Customer.get(alonso)
+		ant = levr.Customer.get(ethan)
 		
 		ant.owner_of = str(bus.key())
 		ant.put()
-		
-		
+		a = db.get(alonso)
+		a.upvotes.append(deal.key())
+		a.put()
 		
 		
 		self.redirect('/new/test')
