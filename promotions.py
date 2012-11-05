@@ -45,7 +45,7 @@ PROMOTIONS = {
 								'name'	: NOTIFY_PREVIOUS_LIKES,
 								'readableName' : 'Alert!',
 								'img'	: 'http://www.levr.com/img/promo_likes.png',
-								'img2x'	: 'http://www.levr.com/img/promo_like_2x.png',
+								'img2x'	: 'http://www.levr.com/img/promo_likes_2x.png',
 								'description' : 'Alert customers who have visited you before',
 								'color' : '0xFF000088'
 								},

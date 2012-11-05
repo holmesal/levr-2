@@ -13,9 +13,9 @@ from tasks import INCREMENT_DEAL_VIEW_URL
 
 
 
-class SearchQueryHandler(webapp2.RequestHandler):
+class SearchQueryHandler(api_utils.SearchClass):
 	@api_utils.validate('query',None,geoPoint=True,radius=False,user=False,latitudeHalfDelta=False,longitudeHalfDelta=False)
-	def get(self,*args,**kwargs):
+	def get(self,*args,**kwargs): #@UnusedVariable
 		'''
 		inputs: lat,lon,limit, query
 		response:{
@@ -383,6 +383,13 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				logging.info(karmas)
 				logging.info(distances)
 				logging.info(deals)
+				
+				#===============================================================
+				# Check if any of the deals has a promotion 
+				#===============================================================
+				
+				
+				
 				packaged_deals = api_utils.package_deal_multi(deals,ranks=ranks,distances=distances)
 				
 				# add deal views for each deal
@@ -434,6 +441,8 @@ class SearchQueryHandler(webapp2.RequestHandler):
 				if user.foursquare_token:
 					token = user.foursquare_token
 					
+			# TODO: limit foursquare results so that when a search returns a minimum number \
+			# of levr deals, foursquare results are not shown
 			if accepted_deals_count == 0:
 			#if False:
 				try:
@@ -521,7 +530,7 @@ class SearchQueryHandler(webapp2.RequestHandler):
 			
 class SearchNewHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,None,geoPoint=True,limit=False,radius=False,user=False)
-	def get(self,*args,**kwargs):
+	def get(self,*args,**kwargs): #@UnusedVariable
 		'''
 		inputs: lat,lon,limit,radius
 		Output:{
@@ -542,7 +551,7 @@ class SearchNewHandler(webapp2.RequestHandler):
 
 class SearchHotHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,None,geoPoint=True,limit=False,radius=False,user=False)
-	def get(self,*args,**kwargs):
+	def get(self,*args,**kwargs): #@UnusedVariable
 		'''
 		inputs: lat,lon,limit
 		Output:{

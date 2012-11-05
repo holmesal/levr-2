@@ -44,6 +44,18 @@ class BaseClass(webapp2.RequestHandler):
 		'''
 		send_response(self,response, user)
 		
+class SearchClass(BaseClass):
+	'''
+	Base class for all search handlers
+	'''
+	def check_for_promotions(self,deals):
+		'''
+		A function to check search results for any promotions that might apply
+		
+		@status: Only handles a radius blast alert
+		'''
+		promoted_deals = filter(lambda x: promo.RADIUS_ALERT in x.promotions,deals)
+		
 	
 def deprecated(handler_method):
 	'''
@@ -69,7 +81,7 @@ def send_error(self,error):
 	}
 	logging.debug(levr.log_dict(reply))
 	self.response.out.write(json.dumps(reply))
-@deprecated
+#@deprecated
 def send_response(self,response,user=None):
 	'''The optional third argument should be passed a user object if this is a private response
 		and left out if a public response '''
@@ -106,7 +118,7 @@ def create_pin_color(deal):
 		
 	return pin_color
 
-def package_deal_multi(deals,private=False,*args,**kwargs):
+def package_deal_multi(deals,private=False,**kwargs):
 	'''
 	Batch packages a list of deals - prefetching related entities
 	
@@ -170,7 +182,7 @@ def package_deal_multi(deals,private=False,*args,**kwargs):
 	logging.info(new_data)
 	return package_prefetched_deal_multi(new_data, private)
 	
-def package_prefetched_deal_multi(data,private=False,*args,**kwargs):
+def package_prefetched_deal_multi(data,private=False):
 	'''
 	
 	@param data: packaged deal information with prefetched related entities
@@ -223,7 +235,7 @@ def _package_deal(deal,owner,business,private=False,rank=None,distance=None):
 	
 	return packaged_deal
 	
-def package_deal(deal,private=False,*args,**kwargs):
+def package_deal(deal,private=False,**kwargs):
 #	logging.debug(deal.businessID)
 #	logging.debug(deal.key())
 #	logging.debug(str(deal.geo_point))
@@ -280,7 +292,8 @@ def package_user(user,private=False,followers=False,**kwargs):
 		packaged_user.update({
 							'levrToken': user.levr_token
 							})
-	
+	if private:
+		pass
 # 	if private:
 # 		packaged_user.update({
 # 							'moneyAvailable'	: 1,
@@ -413,7 +426,7 @@ def private(handler_method):
 			
 	return check
 
-def validate(url_param,authentication_source,*a,**to_validate):
+def validate(url_param,authentication_source,*a,**to_validate): #@UnusedVariable
 	'''
 	General function for validating the inputs that are passed as arguments
 	to use, pass kwargs in form of key:bool,
@@ -933,22 +946,6 @@ def send_img(self,blob_key,size):
 		levr.log_error()
 		send_error(self,'Server Error')
 
-def fetch_deals(keys,**kwargs):
-	logging.debug('\n\n\n\t\t\t FETCH DEALS \n\n\n')
-	#set namespace parameter
-	development		= kwargs.get('development',False)
-	if development	:namespace = levr.MEMCACHE_TEST_GEOHASH_NAMESPACE
-	else			:namespace = levr.MEMCACHE_ACTIVE_GEOHASH_NAMESPACE
-	logging.debug(namespace)
-	
-	
-#def fetch_deals(deal_keys):
-#	'''
-#	Fetches deals from a list of deal keys
-#	First tries memcache, and g
-#	@param deal_keys:
-#	@type deal_keys:
-#	'''
 
 def get_deal_keys(hash_set,**kwargs):
 	'''
@@ -1151,7 +1148,7 @@ def distance_between_points(lat1, lon1, lat2, lon2):
 	h = haversine(dlat) + cos(lat1) * cos(lat2) * haversine(dlon)
 	return RADIUS * inverse_haversine(h)
 
-def bounding_box(lat, lon, distance):
+def bounding_box(lat, lon, distance): #@UnusedVariable
 	# Input and output lats/longs are in degrees.
 	# Distance arg must be in same units as RADIUS.
 	# Returns (dlat, dlon) such that
@@ -1827,7 +1824,7 @@ class PromoteDeal(BaseClass):
 	#===========================================================================
 	# Interfaces with the promotion entity in the db
 	#===========================================================================
-	def _add_promo(self,promotion_id,*args):
+	def _add_promo(self,promotion_id):
 		'''
 		Adds the promotion to the list of promotions
 		Also creates a promotion entity to log the event
