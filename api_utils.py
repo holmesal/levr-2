@@ -49,6 +49,7 @@ class SearchClass(BaseClass):
 	'''
 	Base class for all search handlers
 	'''
+	
 	def check_for_promotions(self,deals):
 		'''
 		A function to check search results for any promotions that might apply
@@ -1400,6 +1401,7 @@ def search_foursquare(geo_point,token,deal_status,already_found=[],**kwargs):
 	return response_deals
 
 def add_foursquare_deal(foursquare_deal,business,deal_status):
+	# TODO: consolidate this into a general add deal function
 	#grab a random ninja to be the owner of this deal
 	random_dead_ninja = get_random_dead_ninja()
 	
@@ -1449,7 +1451,6 @@ def add_foursquare_deal(foursquare_deal,business,deal_status):
 		geo_hash		=	business.geo_hash,
 		pin_color		=	'blue',
 		parent			=	random_dead_ninja.key(),
-		date_end		=	datetime.now()+timedelta(days=21),
 		smallImg		=	'http://playfoursquare.s3.amazonaws.com/press/logo/icon-512x512.png'
 	)
 
@@ -1472,6 +1473,17 @@ def add_foursquare_deal(foursquare_deal,business,deal_status):
 
 
 def filter_foursquare_deal(foursquare_deal,already_found):
+	'''
+	
+	@param foursquare_deal: The response from foursquare - the deal
+	@type foursquare_deal: dict
+	@param already_found: The list of deals that were already found in the db...?
+	@type already_found: list
+	
+	
+	@return: Whether or not the deal was found in the db - If found, return True
+	@rtype: bool
+	'''
 	
 # 	allowed_categories = ["Afghan Restaurant", "African Restaurant", "American Restaurant", "Arepa Restaurant", "Argentinian Restaurant", "Asian Restaurant", "Australian Restaurant", "BBQ Joint", "Bagel Shop", "Bakery", "Brazilian Restaurant", "Breakfast Spot", "Brewery", "Burger Joint", "Burrito Place", "Caf\u00e9", "Cajun / Creole Restaurant", "Caribbean Restaurant", "Chinese Restaurant", "Coffee Shop", "Cuban Restaurant", "Cupcake Shop", "Deli / Bodega", "Dessert Shop", "Dim Sum Restaurant", "Diner", "Distillery", "Donut Shop", "Dumpling Restaurant", "Eastern European Restaurant", "Ethiopian Restaurant", "Falafel Restaurant", "Fast Food Restaurant", "Filipino Restaurant", "Fish & Chips Shop", "Food Truck", "French Restaurant", "Fried Chicken Joint", "Gastropub", "German Restaurant", "Gluten-free Restaurant", "Greek Restaurant", "Hot Dog Joint", "Ice Cream Shop", "Indian Restaurant", "Indonesian Restaurant", "Italian Restaurant", "Japanese Restaurant", "Juice Bar", "Korean Restaurant", "Latin American Restaurant", "Mac & Cheese Joint", "Malaysian Restaurant", "Mediterranean Restaurant", "Mexican Restaurant", "Middle Eastern Restaurant", "Molecular Gastronomy Restaurant", "Mongolian Restaurant", "Moroccan Restaurant", "New American Restaurant", "Peruvian Restaurant", "Pizza Place", "Portuguese Restaurant", "Ramen / Noodle House", "Restaurant", "Salad Place", "Sandwich Place", "Scandinavian Restaurant", "Seafood Restaurant", "Snack Place", "Soup Place", "South American Restaurant", "Southern / Soul Food Restaurant", "Spanish Restaurant", "Steakhouse", "Sushi Restaurant", "Swiss Restaurant", "Taco Place", "Tapas Restaurant", "Tea Room", "Thai Restaurant", "Turkish Restaurant", "Vegetarian / Vegan Restaurant", "Vietnamese Restaurant", "Winery", "Wings Joint", "Bar", "Beer Garden", "Cocktail Bar", "Dive Bar", "Gay Bar", "Hookah Bar", "Hotel Bar", "Karaoke Bar", "Lounge", "Nightclub", "Other Nightlife", "Pub", "Sake Bar", "Speakeasy", "Sports Bar", "Strip Club", "Whisky Bar", "Wine Bar"]
 	
@@ -1486,11 +1498,6 @@ def filter_foursquare_deal(foursquare_deal,already_found):
 	
 # 	logging.debug(foursquare_deal['venue']['categories'])
 	
-# 	if foursquare_deal['venue']['categories'][0]['name'] not in allowed_categories:
-# 		pass
-		#logging.info('Special '+foursquare_deal['id']+' filtered out because it was from a non-allowed category: '+foursquare_deal['venue']['categories'][0]['name'])
-#		return True
-#		logging.info('Special from category: '+foursquare_deal['venue']['categories'][0]['name']+' allowed because category filter is turned off')
 	if foursquare_deal['type'] not in allowed_types:
 		logging.info('Special '+foursquare_deal['id']+' filtered out because it was of a non-allowed type: '+foursquare_deal['type'])
 		return True
@@ -1595,6 +1602,21 @@ def match_foursquare_business(geo_point,query):
 		return False
 		
 def update_foursquare_business(foursquare_id,deal_status,token='random'):
+	'''
+	Make a request to foursquare for all of the deals being run at that business
+	Grab each of the deals at the business from the levr db
+	Compare the two lists
+	Every levr deal that IS NOT found in the foursquare list gets expired
+	Every levr deal that IS found in the foursquare list 
+	
+	
+	@param foursquare_id:
+	@type foursquare_id:
+	@param deal_status:
+	@type deal_status:
+	@param token:
+	@type token:
+	'''
 
 	logging.info('''
 						
@@ -1637,18 +1659,20 @@ def update_foursquare_business(foursquare_id,deal_status,token='random'):
 	#deals = levr.Deal.gql('WHERE businessID = :1',str(business_key))
 	deals = levr.Deal.gql('WHERE businessID = :1 AND origin = :2 AND deal_status = :3',str(business_key),'foursquare',deal_status)
 	
+	# For every deal on that business 
 	for deal in deals:
-		
 		if deal.foursquare_id not in foursquare_deal_ids:
 			#remove levr-stored foursquare deals not returned by the foursquare venue request (foursquare has removed them)
-			deal.deal_status = 'expired'
+			# FIXME: should remove memcache entry
+			deal.expire()
 			logging.info('The foursquare special '+deal.foursquare_id+' has been retired because it was not found on the foursquare servers.')
 			#put back
 			deal.put()
 		else:
 			#levr-stored deal WAS found in foursquare list, so remove from the list
 			#list comprehension should remove the foursquare_deal_id AND handle duplicates
-			foursquare_deal_ids = [x for x in foursquare_deal_ids if x != deal.foursquare_id]
+			foursquare_deal_ids.remove(deal.foursquare_id)
+#			foursquare_deal_ids = [x for x in foursquare_deal_ids if x != deal.foursquare_id]
 			logging.info('matched deal!')
 			logging.info(foursquare_deal_ids)
 	

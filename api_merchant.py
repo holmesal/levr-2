@@ -471,6 +471,8 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 					'development'		: development,
 					'img_key'			: img_key
 					}
+			# TODO: add pin_color = 'green' to the deal
+			# TODO: add origin = 'merchant'
 			deal_entity = levr.dealCreate(params, 'phone_merchant', upload_flag)
 			
 			
@@ -590,9 +592,6 @@ class EditDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 			if deal_text:
 				deal.deal_text = deal_text
 			
-			deal.date_end = datetime.now() + timedelta(days=levr.MERCHANT_DEAL_LENGTH)
-			
-			
 			deal.put()
 			
 			
@@ -637,13 +636,8 @@ class ExpireDealHandler(api_utils.BaseClass):
 		try:
 			# assure that the user is the owner of the deal
 			assert deal.parent_key() == user.key(), 'User does not own that deal'
-			levr.remove_memcache_key_by_deal(deal)
-			
-			deal.deal_status = 'expired'
-			
-			# set the deal expiration date to... now!
-			deal.date_end = datetime.now()
-			
+			# expire the deal without a notification
+			deal.expire()
 			deal.put()
 			
 			private = True
@@ -682,24 +676,14 @@ class ReactivateDealHandler(api_utils.BaseClass):
 		'''
 		user = kwargs.get('actor')
 		deal = kwargs.get('deal')
-		development = kwargs.get('development')
+#		development = kwargs.get('development')
 		
 		try:
 			#assure that this user does own the deal
 			assert deal.parent_key() == user.key()
 			
-			if development:
-				deal.deal_status = 'test'
-			else:
-				deal.deal_status = 'active'
 			
-			levr.remove_memcache_key_by_deal(deal)
-			
-			
-			# set the date of expiration to the future!
-			deal.date_end = datetime.now() + timedelta(days=levr.MERCHANT_DEAL_LENGTH)
-			
-			
+			deal.reanimate()
 			deal.put()
 			
 			private = True

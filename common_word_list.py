@@ -44,6 +44,7 @@ blacklist = [
 # Foursquare Words
 #===============================================================================
 'checkin',
+'http',
 'welcome',
 'upgrade',
 'supreme',

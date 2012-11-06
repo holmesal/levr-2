@@ -60,19 +60,33 @@ class ExpireDealsHandler(webapp2.RequestHandler):
 	def get(self):
 		try:
 			now = datetime.now()
-			
 			#fetch all deals that are set to expire
-			deals = levr.Deal.all().filter('deal_status','active').filter('date_end <=',now).fetch(None)
+			deals = levr.Deal.all().filter('deal_status','active').filter('date_end <=',now).filter('date_end !=',None).fetch(None)
+			logging.info('<-- With date_end -->\n\n')
+			for deal in deals:
+				logging.info(str(deal.date_end)+' --> '+ deal.deal_text+'\n')
+				
+			
+			### DEBUG ###
+			# This is the control group of all active deals
+			logging.info('\n\n<-- Without date end -->\n\n')
+			deals2 = levr.Deal.all().filter('deal_status','active').fetch(None)
+			for deal in deals2:
+				logging.info(str(deal.date_end)+' --> '+ deal.deal_text+ '\n')
+			## /DEBUG ###
+			
 			
 			#set deal_status to expired
 			for deal in deals:
-				levr.remove_memcache_key_by_deal(deal)
-				#set expired deal status
-				deal.deal_status = 'expired'
-				#grab the deal owner
-				to_be_notified = deal.key().parent()
-				#create the notification
-				levr.create_notification('expired',to_be_notified,None,deal.key())
+				# expire the deal
+				deal.expire()
+#				levr.remove_memcache_key_by_deal(deal)
+#				#set expired deal status
+#				deal.deal_status = 'expired'
+#				#grab the deal owner
+#				to_be_notified = deal.key().parent()
+#				#create the notification
+#				levr.create_notification('expired',to_be_notified,None,deal.key())
 			#replace deals
 			db.put(deals)
 			

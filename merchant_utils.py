@@ -79,6 +79,7 @@ def create_deal(deal,business,owner):
 	'''deal: a deal object
 	merchant: the merchant to be set as the owner of the deal'''
 	
+	# TODO: remove this. Deals are being created in too many places and some are missing info
 	#init tags
 	tags = []
 	#add tags from the merchant
@@ -102,7 +103,7 @@ def create_deal(deal,business,owner):
 	deal.geo_point = business.geo_point
 	deal.geo_hash = business.geo_hash
 	deal.deal_status='active'
-	deal.date_end = datetime.now() + timedelta(days=365)
+	deal.date_end = None
 		
 	deal.put()
 	logging.info(levr.log_model_props(deal))

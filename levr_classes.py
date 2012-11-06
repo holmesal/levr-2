@@ -440,18 +440,12 @@ def remove_memcache_key_by_deal(deal):
 	@param deal: The deal whos memcache entry will be deleted
 	@type deal: Deal
 	'''
-	if deal.deal_status == 'active':
+	if deal.deal_status == DEAL_STATUS_ACTIVE:
 		namespace = MEMCACHE_ACTIVE_GEOHASH_NAMESPACE
-	elif deal.deal_status == 'test':
+	elif deal.deal_status == DEAL_STATUS_TEST:
 		namespace = MEMCACHE_TEST_GEOHASH_NAMESPACE
-	elif deal.deal_status == 'rejected':
-		logging.warning('Call the remove_memcache_key_deal funct. BEFORE rejecting')
-		namespace = MEMCACHE_ACTIVE_GEOHASH_NAMESPACE
-	elif deal.deal_status == 'expired':
-		logging.warning('Call the remove_memcache_key_deal funct. BEFORE expiring')
-		namespace = MEMCACHE_ACTIVE_GEOHASH_NAMESPACE
 	else:
-		raise Exception('Invalid memcache namespace')
+		raise Exception('Invalid memcache namespace: '+repr(deal.deal_status))
 	logging.debug('Updating memcache')
 	logging.info('updating memcahce')
 	return remove_memcache_key_by_geo_point(deal.geo_point,namespace)
@@ -712,8 +706,7 @@ def dealCreate(params,origin,upload_flag=True,**kwargs):
 		deal = Deal(
 				parent = user,
 				is_exclusive = True,
-				deal_status = deal_status,
-				date_end = datetime.now() + timedelta(days=MERCHANT_DEAL_LENGTH)
+				deal_status = deal_status
 				)
 		
 	elif origin	=='phone_existing_business' or origin == 'phone_new_business':
@@ -748,7 +741,8 @@ def dealCreate(params,origin,upload_flag=True,**kwargs):
 		if development:
 			deal.deal_status = 'test'
 		
-		deal.date_end = datetime.now() + timedelta(days=7)
+		# FIXME: removed date end from deals for debugging
+#		deal.date_end = datetime.now() + timedelta(days=7)
 
 	elif origin == 'admin_review':
 		#deal has already been uploaded by ninja - rewriting info that has been reviewed
@@ -1082,6 +1076,66 @@ class Deal(polymodel.PolyModel):
 	is_exclusive	= db.BooleanProperty(default=False)
 	locu_id			= db.StringProperty()
 	
+	def expire(self,notify=False):
+		'''
+		Sets the deal_status to expired and performs any other actions necessary
+			to expire the deal properly
+		Removes the deals memcache entry
+		Sets the deals expiration date to right now
+		
+		@attention: Does not put deal before returning.
+		
+		@param notify: Determines whether or not the owner will be notified
+		@type notify: bool
+		
+		@return: self
+		@rtype: Deal
+		
+		'''
+		# reset the memcache entry
+		remove_memcache_key_by_deal(self)
+		
+		# set deal status to expired
+		self.deal_status = DEAL_STATUS_EXPIRED
+		
+		# set the expiration date to right now
+		self.date_end = datetime.now()
+		
+		if notify:
+			pass
+			# notifies the owner that their deal has been expired
+			# TODO: notify the deals owner that their deal has expired
+			
+			#grab the deal owner
+	#		to_be_notified = deal.key().parent()
+	#		#create the notification
+	#		levr.create_notification('expired',to_be_notified,None,deal.key())
+		return self
+	def reanimate(self,date_end=None):
+		'''
+		Reactivates a deal. Performs auxiliary actions beyond setting
+			deal status to active
+		
+		@attention: Does not put deal before returning
+		
+		@param date_end: The date to expire the deal. None if deal doesnt expire
+		@type date_end: datetime.datetime
+		
+		@return: self
+		'''
+		# Eliminate the memcache entry
+		remove_memcache_key_by_deal(self)
+		# Determine whether or not the deal status should be set to active or test
+		owner = self.parent()
+		if owner.tester:
+			self.deal_status = DEAL_STATUS_TEST
+		else:
+			self.deal_status = DEAL_STATUS_ACTIVE
+		
+		# reset the end date
+		self.date_end = date_end
+		
+		return self
 	@property
 	def views(self):
 		'''

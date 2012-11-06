@@ -1,4 +1,4 @@
-#@PydevCodeAnalysisIgnore
+#  @PydevCodeAnalysisIgnore
 from gaesessions import get_current_session
 from google.appengine.api import mail, taskqueue, images, files
 from google.appengine.ext import blobstore, db
@@ -410,6 +410,7 @@ class MobileDealHandler(webapp2.RequestHandler):
 			
 class MobileDealCreateHandler(blobstore_handlers.BlobstoreUploadHandler):
 	def post(self):
+		# TODO: combine this
 		meta = merchant_utils.login_check_mobile(self)
 		uid = meta['uid']
 		user = levr.Customer.get(uid)
@@ -647,7 +648,9 @@ class MobileDealExpireHandler(webapp2.RequestHandler):
 		
 		deal = levr.Deal.get(enc.decrypt_key(dealID))
 		
-		deal.deal_status = 'expired'
+#		deal.deal_status = 'expired'
+		
+		deal.expire()
 		
 		deal.put()
 		
@@ -660,9 +663,9 @@ class MobileDealReanimateHandler(webapp2.RequestHandler):
 		dealID = self.request.get('dealID')
 		
 		deal = levr.Deal.get(enc.decrypt_key(dealID))
-		
-		deal.deal_status = 'active'
-		
+		# TODO: set deal status to active via deal.reactivate
+#		deal.deal_status = 'active'
+		deal.reanimate()
 		deal.put()
 		
 		self.redirect('/merchants/mobile/manage')
@@ -1398,7 +1401,8 @@ class DealUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			else:
 				upload_flag = False
 				raise KeyError('Image was not uploaded')
-				
+			
+			# TODO: too many deal creations
 			#initialize the deal - just the stuff from the input here
 			deal = levr.Deal(
 				img				=	img_key,
