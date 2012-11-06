@@ -15,6 +15,7 @@ import urllib
 import promotions as promo
 import webapp2
 from datetime import timedelta
+from google.appengine.ext import blobstore
 #from fnmatch import filter
 
 
@@ -1715,6 +1716,80 @@ def update_foursquare_business(foursquare_id,deal_status,token='random'):
 
 	
 #delete account and all follower references
+
+def rotate_image(blob_key):
+	'''
+	Checks the orientation of an image in the blobstore.
+	If the image is rotated, rotate it again until it is in a natural orientation
+	
+	@param blob_key: The blob key for the image that is being checks
+	@type blob_key: blobstore blob_key
+	
+	@return: Nothing.
+	'''
+	blob = blobstore.BlobInfo.get(blob_key)
+	
+	img = images.Image(blob_key=blob_key)
+	
+	#execute a bullshit transform
+	img.rotate(0)
+	img.execute_transforms(output_encoding=images.JPEG,quality=100,parse_source_metadata=True)
+	
+	#self.response.headers['Content-Type'] = 'image/jpeg'
+	#THIS LINE WILL FAIL IF YOU TRY CALL THIS ON AN IMAGE THAT HAS PREVIOUSLY BEEN ROTATED
+	test_dict = img.get_original_metadata()
+	if 'Orientation' in test_dict:
+		
+		orient = img.get_original_metadata()['Orientation']
+		
+		if orient != 1:
+			logging.info('Image not oriented properly')
+			logging.info('Orientation: '+str(orient))
+			if orient == 6:
+				#rotate 270 degrees
+				img.rotate(90)
+			elif orient == 8:
+				img.rotate(270)
+			elif orient == 3:
+				img.rotate(180)
+		
+			#write out the image
+			output_img = img.execute_transforms(output_encoding=images.JPEG,quality=100,parse_source_metadata=True)
+		
+			#figure out how to store this shitttt
+			# Create the file
+			overwrite = files.blobstore.create(mime_type='image/jpeg')
+			
+			# Open the file and write to it
+			with files.open(overwrite, 'a') as f:
+				f.write(output_img)
+			
+			# Finalize the file. Do this before attempting to read it.
+			files.finalize(overwrite)
+			
+			# Get the file's blob key
+			new_blob_key = files.blobstore.get_blob_key(overwrite)
+			
+			#grab the reference to the old image
+			deal = levr.Deal.gql('WHERE img=:1',blob_key).get()
+			logging.debug('Old img key: '+blob_key)
+			logging.debug('New img key: '+str(new_blob_key))
+			deal.img = new_blob_key
+			logging.debug(deal.img)
+			deal.put()
+			logging.debug('Deal updated')
+			
+			#delete the old blob
+			blob.delete()
+			logging.debug('Old image deleted successfully')
+		else:
+			logging.info('Image oriented properly')
+	else:
+		logging.info('No "Orientation" property found in Exif data - this image must have been rotated previously')
+		
+
+
+
 class PromoteDeal(BaseClass):
 	'''
 	Class for promoting deals. Mostly for namespacing.

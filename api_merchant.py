@@ -449,12 +449,19 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 				img_key = blob_key
 				upload_flag = True
 				
-				# send the image to the img rotation task que
-				task_params = {
-								'blob_key'	:	str(img_key)
-								}
-				logging.info('Sending this to the img rotation task: '+str(task_params))
-				taskqueue.add(url=IMAGE_ROTATION_TASK_URL,payload=json.dumps(task_params))
+				
+				try:
+					# Synchronously rotate the image
+					api_utils.rotate_image(blob_key)
+				except:
+					levr.log_error('An image could not be rotated. It was sent to the task que: '+str(blob_key))
+					# Send the image to the img rotation task que
+					task_params = {
+									'blob_key'	:	str(blob_key)
+									}
+					logging.info('Sending this to the img rotation task: '+str(task_params))
+					
+					taskqueue.add(url=IMAGE_ROTATION_TASK_URL,payload=json.dumps(task_params))
 			else:
 				upload_flag = False
 				raise KeyError('Image was not uploaded')
@@ -476,14 +483,6 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 			deal_entity = levr.dealCreate(params, 'phone_merchant', upload_flag)
 			
 			
-			
-			#===================================================================
-			# Send deal to the task param to rotate the image if it needs to be
-			#===================================================================
-			task_params = {
-						'blob_key'	: str(deal_entity.img.key())
-						}
-			taskqueue.add(url = IMAGE_ROTATION_TASK_URL, payload = json.dumps(task_params))
 			
 			#===================================================================
 			# Aw hell.. why not give them some karma too.
@@ -578,10 +577,23 @@ class EditDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 				old_img_key = deal.img
 				# replace with new key
 				deal.img = new_img_key
-				
 				# delete that old key
 				old_img_key.delete()
-#				BlobInfo.get(old_img_key).delete()
+				
+				try:
+					# Synchronously rotate the image
+					api_utils.rotate_image(new_img_key)
+				except:
+					levr.log_error('An image could not be rotated. \
+						It was sent to the task que: '+str(new_img_key))
+					# Send the image to the img rotation task que
+					task_params = {
+									'blob_key'	:	str(new_img_key)
+									}
+					logging.info('Sending this to the img rotation task: '+str(task_params))
+					
+					taskqueue.add(url=IMAGE_ROTATION_TASK_URL,payload=json.dumps(task_params))
+				
 			else:
 				assert description or deal_text, 'Thanks for sending me something to update.'
 			#===================================================================
@@ -591,6 +603,10 @@ class EditDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 				deal.description = description
 			if deal_text:
 				deal.deal_text = deal_text
+			
+			# TODO: add new tags on the deal for the new information that was added
+			
+			
 			
 			deal.put()
 			
