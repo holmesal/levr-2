@@ -49,8 +49,14 @@ class MobileLandingHandler(webapp2.RequestHandler):
 				template = jinja_environment.get_template('templates/merchants-mobile-landing.html')
 				self.response.out.write(template.render(template_values))
 		else:
-			template = jinja_environment.get_template('templates/merchants-mobile-landing-desktop.html')
+			template = jinja_environment.get_template('templates/merchants-desktop-mobile.html')
 			self.response.out.write(template.render())
+			
+class MobileonlyHandler(webapp2.RequestHandler):
+	def get(self):
+		template = jinja_environment.get_template('templates/merchants-desktop-mobile.html')
+		self.response.out.write(template.render(template_values))
+
 
 class MobileLoginHandler(webapp2.RequestHandler):
 	def get(self):
@@ -863,6 +869,9 @@ class MerchantsHandler(webapp2.RequestHandler):
 		if version == '':
 			if merchant_utils.check_ua(self) == 'mobile':
 				self.redirect('/merchants/mobile')
+			else:
+				template = jinja_environment.get_template('templates/merchants.html')
+				self.response.out.write(template.render())
 		else:
 			template = jinja_environment.get_template('templates/merchants.html')
 			self.response.out.write(template.render())
@@ -2207,6 +2216,7 @@ class CheckPasswordHandler(webapp2.RequestHandler):
 		
 
 app = webapp2.WSGIApplication([('/merchants/mobile',MobileLandingHandler),
+								('/merchants/mobileonly',MobileonlyHandler),
 								('/merchants/mobile/login',MobileLoginHandler),
 								('/merchants/mobile/logout',MobileLogoutHandler),
 								('/merchants/mobile/businessselect',MobileBusinessSelectHandler),

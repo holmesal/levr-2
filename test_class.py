@@ -757,7 +757,7 @@ class LandingTestHandler(webapp2.RequestHandler):
 		
 		#launch the jinja environment
 		jinja_environment = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
-		template = jinja_environment.get_template('templates/landing_v5.html')
+		template = jinja_environment.get_template('templates/landing-merchants-v5.html')
 		self.response.out.write(template.render())
 
 

@@ -159,4 +159,4 @@ def mobile_ua_bounce(self):
 		logging.info('Serving mobile version')
 	else:
 		logging.info('Not a mobile device - bounding to /merchants/mobile desktop version')
-		self.redirect('/merchants')
+		self.redirect('/merchants/mobileonly')
