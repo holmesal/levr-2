@@ -907,10 +907,10 @@ class MerchantsHandler(webapp2.RequestHandler):
 			if merchant_utils.check_ua(self) == 'mobile':
 				self.redirect('/merchants/mobile')
 			else:
-				template = jinja_environment.get_template('templates/merchants.html')
+				template = jinja_environment.get_template('templates/landing-merchants-v5.html')
 				self.response.out.write(template.render())
 		else:
-			template = jinja_environment.get_template('templates/merchants.html')
+			template = jinja_environment.get_template('templates/landing-merchants-v5.html')
 			self.response.out.write(template.render())
 			
 class MerchantsBetaHandler(webapp2.RequestHandler):
