@@ -31,22 +31,32 @@ import urllib
 jinja_environment = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
 class MobileLandingHandler(webapp2.RequestHandler):
 	def get(self):
-		#check if the merchant is logged in
-		session = get_current_session()
-		if session.has_key('loggedIn') == True and session['loggedIn'] == True:
-			self.redirect("/merchants/mobile/manage")
+	
+		version = merchant_utils.check_ua(self)
+		
+		if version == 'mobile':
+			#check if the merchant is logged in
+			session = get_current_session()
+			if session.has_key('loggedIn') == True and session['loggedIn'] == True:
+				self.redirect("/merchants/mobile/manage")
+			else:
+				
+				template_values = {
+					"title"		:	"Welcome to Levr.",
+					"title_link":	"/merchants/mobile"
+				}
+				
+				template = jinja_environment.get_template('templates/merchants-mobile-landing.html')
+				self.response.out.write(template.render(template_values))
 		else:
-			
-			template_values = {
-				"title"		:	"Welcome to Levr.",
-				"title_link":	"/merchants/mobile"
-			}
-			
-			template = jinja_environment.get_template('templates/merchants-mobile-landing.html')
-			self.response.out.write(template.render(template_values))
+			template = jinja_environment.get_template('templates/merchants-mobile-landing-desktop.html')
+			self.response.out.write(template.render())
 
 class MobileLoginHandler(webapp2.RequestHandler):
 	def get(self):
+	
+		merchant_utils.mobile_ua_bounce(self)
+	
 		#check if the merchant is logged in
 		session = get_current_session()
 		if session.has_key('loggedIn') == True and session['loggedIn'] == True:
@@ -63,7 +73,8 @@ class MobileLoginHandler(webapp2.RequestHandler):
 	def post(self):
 		o_email = self.request.get('email')
 		email = o_email.lower()
-		pw = enc.encrypt_password(self.request.get('pw'))
+		o_pw = self.request.get('pw')
+		pw = enc.encrypt_password(o_pw)
 		
 		user = levr.Customer.gql('WHERE email=:1 AND pw=:2',email,pw).get()
 		
@@ -79,7 +90,7 @@ class MobileLoginHandler(webapp2.RequestHandler):
 		if error:
 			template_values = {
 				"email"		:	o_email,
-				"pw"		:	pw,
+				"pw"		:	o_pw,
 				"error"		:	error,
 				"title"		:	"Welcome back.",
 				"back_link"	:	"/merchants/mobile"
@@ -100,6 +111,9 @@ class MobileLoginHandler(webapp2.RequestHandler):
 			
 class MobileLogoutHandler(webapp2.RequestHandler):
 	def get(self):
+		
+		merchant_utils.mobile_ua_bounce(self)
+		
 		session = get_current_session()
 		session['loggedIn'] = False
 		
@@ -107,6 +121,9 @@ class MobileLogoutHandler(webapp2.RequestHandler):
 			
 class MobileBusinessSelectHandler(webapp2.RequestHandler):
 	def get(self):
+		
+		merchant_utils.mobile_ua_bounce(self)
+		
 		#check if the merchant is logged in
 		session = get_current_session()
 		if session.has_key('loggedIn') == True and session['loggedIn'] == True:
@@ -149,6 +166,9 @@ class MobileAutocompleteHandler(webapp2.RequestHandler):
 class MobileBusinessDetailsHandler(webapp2.RequestHandler):
 	def get(self):
 		try:
+			
+			merchant_utils.mobile_ua_bounce(self)
+			
 			reference = self.request.get('reference')
 			query = self.request.get('query')
 			
@@ -179,6 +199,9 @@ class MobileBusinessDetailsHandler(webapp2.RequestHandler):
 
 class MobileSignupHandler(webapp2.RequestHandler):
 	def get(self):
+		
+		merchant_utils.mobile_ua_bounce(self)
+		
 		#check if the merchant is logged in
 		session = get_current_session()
 		if session.has_key('loggedIn') == True and session['loggedIn'] == True:
@@ -316,6 +339,8 @@ class MobileSignupHandler(webapp2.RequestHandler):
 class MobileManageHandler(webapp2.RequestHandler):
 	def get(self):
 		
+		merchant_utils.mobile_ua_bounce(self)
+		
 		meta = merchant_utils.login_check_mobile(self)
 		
 		owner = levr.Customer.get(meta['uid'])
@@ -355,6 +380,9 @@ class MobileManageHandler(webapp2.RequestHandler):
 		
 class MobileDealViewHandler(webapp2.RequestHandler):
 	def get(self):
+		
+		merchant_utils.mobile_ua_bounce(self)
+		
 		meta = merchant_utils.login_check_mobile(self)
 		
 		dealID = self.request.get('dealID')
@@ -376,6 +404,9 @@ class MobileDealViewHandler(webapp2.RequestHandler):
 		
 class MobileDealHandler(webapp2.RequestHandler):
 	def get(self):
+		
+		merchant_utils.mobile_ua_bounce(self)
+		
 		meta = merchant_utils.login_check_mobile(self)
 		
 		dealID = self.request.get('dealID')
@@ -487,99 +518,106 @@ class MobilePhotoRotateHandler(blobstore_handlers.BlobstoreUploadHandler):
 		dealID = self.request.get('dealID')
 		logging.info(dealID)
 		
-		if self.get_uploads(): #will this work?
-			logging.info('IMAGE UPLOADED')
-			upload	= self.get_uploads()[0]
-			blob_key= upload.key()
+		try:
 			
-			blob = blobstore.BlobInfo.get(blob_key)
-		
-			img = images.Image(blob_key=blob_key)
-			
-			#execute a bullshit transform
-			img.rotate(0)
-			img.execute_transforms(output_encoding=images.JPEG,quality=100,parse_source_metadata=True)
-			
-			#self.response.headers['Content-Type'] = 'image/jpeg'
-			#THIS LINE WILL FAIL IF YOU TRY CALL THIS ON AN IMAGE THAT HAS PREVIOUSLY BEEN ROTATED
-			test_dict = img.get_original_metadata()
-			if 'Orientation' in test_dict:
+			if self.get_uploads(): #will this work?
+				logging.info('IMAGE UPLOADED')
+				upload	= self.get_uploads()[0]
+				blob_key= upload.key()
 				
-				orient = img.get_original_metadata()['Orientation']
+				blob = blobstore.BlobInfo.get(blob_key)
+			
+				img = images.Image(blob_key=blob_key)
 				
-				if orient != 1:
-					logging.info('Image not oriented properly')
-					logging.info('Orientation: '+str(orient))
-					if orient == 6:
-						#rotate 270 degrees
-						img.rotate(90)
-					elif orient == 8:
-						img.rotate(270)
-					elif orient == 3:
-						img.rotate(180)
-					else:
-						img.rotate(0)
+				#execute a bullshit transform
+				img.rotate(0)
+				img.execute_transforms(output_encoding=images.JPEG,quality=100,parse_source_metadata=True)
 				
-					#write out the image
-					output_img = img.execute_transforms(output_encoding=images.JPEG,quality=100,parse_source_metadata=True)
+				#self.response.headers['Content-Type'] = 'image/jpeg'
+				#THIS LINE WILL FAIL IF YOU TRY CALL THIS ON AN IMAGE THAT HAS PREVIOUSLY BEEN ROTATED
+				test_dict = img.get_original_metadata()
+				if 'Orientation' in test_dict:
+					
+					orient = img.get_original_metadata()['Orientation']
+					
+					if orient != 1:
+						logging.info('Image not oriented properly')
+						logging.info('Orientation: '+str(orient))
+						if orient == 6:
+							#rotate 270 degrees
+							img.rotate(90)
+						elif orient == 8:
+							img.rotate(270)
+						elif orient == 3:
+							img.rotate(180)
+						else:
+							img.rotate(0)
+					
+						#write out the image
+						output_img = img.execute_transforms(output_encoding=images.JPEG,quality=100,parse_source_metadata=True)
+					
+						#figure out how to store this shitttt
+						# Create the file
+						overwrite = files.blobstore.create(mime_type='image/jpeg')
+						
+						# Open the file and write to it
+						with files.open(overwrite, 'a') as f:
+							f.write(output_img)
+						
+						# Finalize the file. Do this before attempting to read it.
+						files.finalize(overwrite)
+						
+						# Get the file's blob key
+						blob_key = files.blobstore.get_blob_key(overwrite)
+						
+						logging.info('GOT NEW BLOB KEY')
+						
+				logging.info(blob_key)
+				serving_url = '/merchants/mobile/deal/photoserve/'+str(blob_key)
+				logging.info(serving_url)
 				
-					#figure out how to store this shitttt
-					# Create the file
-					overwrite = files.blobstore.create(mime_type='image/jpeg')
-					
-					# Open the file and write to it
-					with files.open(overwrite, 'a') as f:
-						f.write(output_img)
-					
-					# Finalize the file. Do this before attempting to read it.
-					files.finalize(overwrite)
-					
-					# Get the file's blob key
-					blob_key = files.blobstore.get_blob_key(overwrite)
-					
-					logging.info('GOT NEW BLOB KEY')
-					
-			logging.info(blob_key)
-			serving_url = '/merchants/mobile/deal/photoserve/'+str(blob_key)
-			logging.info(serving_url)
-
-		else:
-			upload_flag = False
-			raise KeyError('Image was not uploaded')
+	
+			else:
+				upload_flag = False
+				raise KeyError('Image was not uploaded')
+				
 			
-		
-		
-		if dealID !="":
-			#edit
-			deal = levr.Deal.get(enc.decrypt_key(dealID))
-			existing_img = api_utils.create_img_url(deal,'large')
 			
-			logging.info('EDIT WAS CALLED')
+			if dealID !="":
+				#edit
+				deal = levr.Deal.get(enc.decrypt_key(dealID))
+				existing_img = api_utils.create_img_url(deal,'large')
+				
+				logging.info('EDIT WAS CALLED')
+				
+				template_values = {
+					"upload_url"	: blobstore.create_upload_url('/merchants/mobile/deal/edit'),
+					"preview_url"	: blobstore.create_upload_url('/merchants/mobile/deal/photorotate'),
+					"title"			: "",
+					"existing_img"	: serving_url,
+					"img_key"		: str(blob_key),
+					"dealID"		: dealID,	#encrypted woohoo
+					"deal_text"		: deal.deal_text,
+					"description"	: deal.description
+				}
+			else:
+				
+				logging.info('EDIT WAS NOT CALLED')
+				
+				template_values = {
+					"upload_url"	: blobstore.create_upload_url('/merchants/mobile/deal/create'),
+					"preview_url"	: blobstore.create_upload_url('/merchants/mobile/deal/photorotate'),
+					"existing_img"	: serving_url,
+					"img_key"		: str(blob_key),
+					"title"			: ""
+				}
+				
+			template = jinja_environment.get_template('templates/merchants-mobile-deal.html')
+			self.response.out.write(template.render(template_values))
 			
-			template_values = {
-				"upload_url"	: blobstore.create_upload_url('/merchants/mobile/deal/edit'),
-				"preview_url"	: blobstore.create_upload_url('/merchants/mobile/deal/photorotate'),
-				"title"			: "",
-				"existing_img"	: serving_url,
-				"img_key"		: str(blob_key),
-				"dealID"		: dealID,	#encrypted woohoo
-				"deal_text"		: deal.deal_text,
-				"description"	: deal.description
-			}
-		else:
-			
-			logging.info('EDIT WAS NOT CALLED')
-			
-			template_values = {
-				"upload_url"	: blobstore.create_upload_url('/merchants/mobile/deal/create'),
-				"preview_url"	: blobstore.create_upload_url('/merchants/mobile/deal/photorotate'),
-				"existing_img"	: serving_url,
-				"img_key"		: str(blob_key),
-				"title"			: ""
-			}
-			
-		template = jinja_environment.get_template('templates/merchants-mobile-deal.html')
-		self.response.out.write(template.render(template_values))
+		except:
+				levr.log_error()
+				self.response.out.write('Error uploading image.')
 		
 		
 class MobilePhotoServeHandler(webapp2.RequestHandler):
@@ -641,6 +679,9 @@ class MobilePhotoServeHandler(webapp2.RequestHandler):
 
 class MobileDealExpireHandler(webapp2.RequestHandler):
 	def get(self):
+		
+		merchant_utils.mobile_ua_bounce(self)
+		
 		meta = merchant_utils.login_check_mobile(self)
 		
 		dealID = self.request.get('dealID')
@@ -655,6 +696,9 @@ class MobileDealExpireHandler(webapp2.RequestHandler):
 		
 class MobileDealReanimateHandler(webapp2.RequestHandler):
 	def get(self):
+		
+		merchant_utils.mobile_ua_bounce(self)
+		
 		meta = merchant_utils.login_check_mobile(self)
 		
 		dealID = self.request.get('dealID')
@@ -670,6 +714,11 @@ class MobileDealReanimateHandler(webapp2.RequestHandler):
 
 class MobilePhotoHandler(webapp2.RequestHandler):
 	def get(self):
+		
+		
+		merchant_utils.mobile_ua_bounce(self)
+		
+		
 		meta = merchant_utils.login_check_mobile(self)
 		
 		dealID = self.request.get('dealID')
@@ -807,10 +856,13 @@ class MobileDescriptionEditHandler(webapp2.RequestHandler):
 
 class MerchantsHandler(webapp2.RequestHandler):
 	def get(self):
-		#check if logged in. if so, redirect to the manage page
-		session = get_current_session()
-		if session.has_key('loggedIn') == True and session['loggedIn'] == True:
-			self.redirect("/merchants/manage")
+	
+		#check if mobile
+		version = self.request.get("version")
+		
+		if version == '':
+			if merchant_utils.check_ua(self) == 'mobile':
+				self.redirect('/merchants/mobile')
 		else:
 			template = jinja_environment.get_template('templates/merchants.html')
 			self.response.out.write(template.render())

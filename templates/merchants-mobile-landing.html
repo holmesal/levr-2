@@ -1,12 +1,38 @@
 {% extends "templates/merchants-mobile-base.html" %}
 
-{% block htmlhead %}{% endblock %}
+{% block htmlhead %}
+<style type="text/css">
+	.top{
+		font-size: 20pt;
+		font-weight: 400;
+		line-height: 115%;
+		
+	}
+	
+	.subtop{
+		margin-top: 20px;
+	}
+	
+	.btn{
+		margin-top: 10px;
+	}
+	
+	#full{
+		margin-top: 50px;
+	}
+</style>
+
+
+{% endblock %}
 
 
 
 {% block content %}
+	<p class="top">Put your offers on a bigger blackboard.</p>
+	<p class="subtop">Sign up for free, and put your offers in the hands of mobile users.</p>
 	<a class="btn btn-block btn-info btn-large" href="/merchants/mobile/businessselect">Sign up</a>
 	<a class="btn btn-block btn-success btn-large" href="/merchants/mobile/login">Log in</a>
+	<a id="full" class="btn btn-block btn-large" href="/merchants?version=desktop">View full site</a>
 
 {% endblock %}
 

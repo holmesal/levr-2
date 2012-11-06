@@ -1,13 +1,10 @@
 {% extends "templates/merchants-mobile-base.html" %}
 
 {% block htmlhead %}
+
 <style type="text/css">
 	.navbar{
 		margin-bottom: 0px;
-	}
-	
-	body{
-		background-image: url('/img/low_contrast_linen.png');
 	}
 
 	/*.table{
@@ -49,49 +46,52 @@
 	
 	
 	.cell{
-		background-color: #fafafa;
-		border-radius: 5px;
-		height: 70px;
-		padding-top: 10px;
-		padding-bottom: 0px;
-		margin-left: -10px;
-		margin-right: -10px;
-		margin-top: 10px;
-		box-shadow: 0px 0px 6px rgba(0,0,0,0.3);
+		background-image: url(/img/listbackground.png);
+		background-size: cover;
+		width: 10px;
+/* 		max-width: 612px; */
+		height: 10px;
+/* 		max-height: 215px; */
+		margin-left: -20px;
+		margin-right: -20px;
+		margin-top: 20px;
 	}
 	
 	.cell:hover{
 		cursor: pointer;
 	}
 	
-	.cell-inner{
-		height: 60px;
-	}
-	
-	.small-img{
+	.cell-img{
 		background-size: cover;
 		background-position: center center;
-		border: 1px solid #aaaaaa;
-		box-shadow: 0px 0px 5px #bfbfbf;
-		height: 100%;
-		width: 60px;;
-		margin-left: 15px;
+		width: 1px;
+		margin: 0;
+		margin-top: 2px;
 		display: inline-block;
 		float: left;
 		margin-right: 15px;
 	}
 	
-	.inner-text{
+	.cell-inner{
 		position: relative;
-		height: 100%;
-		min-width: 200px;
-		display: block;
-		float: left;
-		overflow: hidden;
 	}
 	
 	.deal-text{
+		margin: 0;
+		margin-top: 2px;
+		float: left;
+		font-size: 14pt;
+		line-height: 100%;
+		overflow: hidden;
+	}
+	
+	.stats{
 		position: absolute;
+	}
+	
+/*
+	.deal-text{
+		
 		top: 0;
 		font-weight: 600;
 		clear: right;
@@ -99,24 +99,27 @@
 		line-height: 100%;
 		white-space: nowrap;
 	}
+*/
 	
 	.deal-status{
 		position: absolute;
-		clear: right;
-		top: 21px;
-		margin: 0;
+		background-image: url(/img/play.png);
+		background-size: cover;
 		font-weight: 600;
 		font-size: 9pt;
 		color: #269300;
 	}
 	
 	.deal-stats{
-		position: absolute;
-		clear: right;
-		bottom: 0px;
+		bottom: 0;
 		margin: 0;
 		line-height: 120%;
-		font-size: 10pt;
+		font-weight: 200;
+		color: #ffffff;
+	}
+	
+	.deal-stats-strong{
+		font-weight: 400;
 	}
 
 </style>
@@ -131,12 +134,16 @@
 	
 	<div class="cell">
 		<div class="cell-inner" onclick="window.location='/merchants/mobile/view?dealID={{deal.enc_key}}'">
-			<div class="small-img" style="background-image:url(/api/deal/{{deal.enc_key}}/img?size=small);"></div>
-			<div class="inner-text">
-				<p class="deal-text">{{deal.deal_text|capitalize}}</p>
-				<p class="deal-status"{%if deal.deal_status=='expired'%}style="color:#e40000;"{%endif%}>{{deal.deal_status|upper}}</p>
-				<p class="deal-stats">Seen {{deal.views}} times. Upvoted {{deal.upvotes}} times.</p>
+			<div class="cell-img" style="background-image:url(/api/deal/{{deal.enc_key}}/img?size=small);"></div>
+			<div class="deal-text">
+				<p class="deal-text-text">{{deal.deal_text|capitalize}}</p>
+				
 			</div>
+			<div class="stats">
+				<p class="deal-stats">Viewed <span class="deal-stats-strong">{{deal.views}}</span> times.</p>
+			</div>
+			<div class="deal-status"{%if deal.deal_status=='expired'%}style="background-image:url(/img/stop.png);"{%endif%}></div>
+			
 		</div>
 		
 	</div>
@@ -150,4 +157,54 @@
 
 
 {% block javascript %}
+<script type="text/javascript">
+	
+	//get width of screen
+	window_width = $(window).width()
+	
+	div_width = 0.95*window_width
+	
+	h_w = 215/612
+	
+	div_height = div_width*h_w
+	
+	left = -20+0.04*window_width
+	
+	img_width = 177 * div_width/612
+	
+	img_height = 207 * div_height/215
+	
+	text_width = 0.95*div_width - img_width - 15
+	
+	text_height = 125 * div_height/215
+	
+	text_top = (12*div_height/215)+2
+	
+	views_top = 146*div_height/215
+	
+	views_left = 280*div_width/612
+	
+	views_text_height = 35*div_height/215
+	
+	status_height = 45*div_height/215
+	
+	status_left = 190*div_width/612
+	
+	status_top = 146*div_height/215
+	
+	$('.cell').width(div_width).height(div_height).css('margin-left',left+'px')
+	
+	$('.cell-img').width(img_width).height(img_height)
+	
+	$('.deal-text').width(text_width).height(text_height).css({'margin-top':text_top+'px','font-size':0.8*views_text_height+'px'})
+	
+	$('.stats').css({'top':views_top+'px','left':views_left+'px'})
+	
+	$('.deal-stats').css({'font-size':views_text_height+'px'})
+	
+	$('.deal-stats-strong').css({'font-size':1.25*views_text_height+'px'})
+	
+	$('.deal-status').width(status_height).height(status_height).css({'top':status_top+'px','left':status_left+'px'})
+	
+</script>
 {% endblock %}
