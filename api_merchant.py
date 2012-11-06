@@ -1,6 +1,6 @@
+from datetime import datetime, timedelta
 from google.appengine.api import taskqueue, urlfetch
 from google.appengine.ext import blobstore, db
-#from google.appengine.ext.blobstore import BlobInfo
 from google.appengine.ext.webapp import blobstore_handlers
 from tasks import IMAGE_ROTATION_TASK_URL
 import api_utils
@@ -13,8 +13,7 @@ import promotions as promo
 import time
 import urllib
 import webapp2
-from datetime import datetime
-from datetime import timedelta
+#from google.appengine.ext.blobstore import BlobInfo
 #import api_utils_social as social
 #from random import randint
 #import json
@@ -604,7 +603,7 @@ class EditDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 			if deal_text:
 				deal.deal_text = deal_text
 			
-			# TODO: add new tags on the deal for the new information that was added
+			# TODO: add new tags to the deal for the new information that was added
 			
 			
 			

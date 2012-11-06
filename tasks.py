@@ -1,5 +1,5 @@
 from datetime import datetime
-from google.appengine.api import urlfetch
+from google.appengine.api import files, images, urlfetch
 from google.appengine.ext import db, blobstore
 import api_utils
 import base64
@@ -8,8 +8,6 @@ import levr_classes as levr
 import logging
 import urllib
 import webapp2
-from google.appengine.api import images
-from google.appengine.api import files
 #import levr_encrypt as enc
 #import api_utils_social as social
 

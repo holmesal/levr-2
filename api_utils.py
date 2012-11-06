@@ -1,7 +1,7 @@
 #from common_word_list import blacklist
-from datetime import datetime
-from google.appengine.api import images, urlfetch, memcache
-from google.appengine.ext import db
+from datetime import datetime, timedelta
+from google.appengine.api import files, images, urlfetch, memcache
+from google.appengine.ext import blobstore, db
 from math import sin, cos, asin, degrees, radians, floor, sqrt
 import api_utils_social as social
 import geo.geohash as geohash
@@ -10,12 +10,10 @@ import levr_classes as levr
 import levr_encrypt as enc
 import logging
 import os
+import promotions as promo
 import random
 import urllib
-import promotions as promo
 import webapp2
-from datetime import timedelta
-from google.appengine.ext import blobstore
 #from fnmatch import filter
 
 
@@ -1664,7 +1662,6 @@ def update_foursquare_business(foursquare_id,deal_status,token='random'):
 	for deal in deals:
 		if deal.foursquare_id not in foursquare_deal_ids:
 			#remove levr-stored foursquare deals not returned by the foursquare venue request (foursquare has removed them)
-			# FIXME: should remove memcache entry
 			deal.expire()
 			logging.info('The foursquare special '+deal.foursquare_id+' has been retired because it was not found on the foursquare servers.')
 			#put back
@@ -1730,7 +1727,7 @@ def rotate_image(blob_key):
 	blob = blobstore.BlobInfo.get(blob_key)
 	
 	img = images.Image(blob_key=blob_key)
-	
+
 	#execute a bullshit transform
 	img.rotate(0)
 	img.execute_transforms(output_encoding=images.JPEG,quality=100,parse_source_metadata=True)
@@ -2098,7 +2095,7 @@ class PromoteDeal(BaseClass):
 		'''
 		Increases the tags on a deal so that it is more visible
 		'''
-		# TODO: passing tags like this is shitty. Better way?
+		# FIXME: passing tags like this is shitty. Better way?
 		
 		# append new deal tags to the list of tags
 		assert type(self.tags) == list, 'tags must be a list'
@@ -2125,7 +2122,6 @@ class PromoteDeal(BaseClass):
 		'''
 		# Do nothing here. All is taken care of in self._remove_promo
 		#   because all actions taken for this promo happen at search time
-		# TODO: add radius alert to search
 		return
 	#===========================================================================
 	# Notify Previous Likes

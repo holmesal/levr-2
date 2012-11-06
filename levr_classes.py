@@ -680,19 +680,7 @@ def dealCreate(params,origin,upload_flag=True,**kwargs):
 	
 	
 	#==== create the deal entity ====#
-	if origin	== 'merchant_create':
-		#web deals get active status and are the child of the owner
-		ownerID = params['uid']
-		ownerID = enc.decrypt_key(ownerID)
-		
-		deal = Deal(parent = db.Key(ownerID))
-		deal.is_exclusive		= True
-
-	elif origin	=='merchant_edit':
-		dealID	= params['deal']
-		dealID	= enc.decrypt_key(dealID)
-		deal	= Deal.get(dealID)
-	elif origin == 'phone_merchant':
+	if origin == 'phone_merchant':
 		logging.info('Origin from phone_merchant')
 		user = params['user']
 		
@@ -706,7 +694,9 @@ def dealCreate(params,origin,upload_flag=True,**kwargs):
 		deal = Deal(
 				parent = user,
 				is_exclusive = True,
-				deal_status = deal_status
+				deal_status = deal_status,
+				origin = 'merchant',
+				pin_color = 'green',
 				)
 		
 	elif origin	=='phone_existing_business' or origin == 'phone_new_business':
@@ -741,32 +731,12 @@ def dealCreate(params,origin,upload_flag=True,**kwargs):
 		if development:
 			deal.deal_status = 'test'
 		
-		# FIXME: removed date end from deals for debugging
-#		deal.date_end = datetime.now() + timedelta(days=7)
-
-	elif origin == 'admin_review':
-		#deal has already been uploaded by ninja - rewriting info that has been reviewed
-		dealID = enc.decrypt_key(params['deal'])
-		deal = Deal.get(db.Key(dealID))
-		deal.been_reviewed		= True
-		deal.date_start			= datetime.now()
-		days_active				= int(params['days_active'])
-		deal.date_end			= datetime.now() + timedelta(days=days_active)
-		
-		new_tags = params['extra_tags']
-		tags.extend(tagger(new_tags))
-		logging.debug('!!!!!!!!!!!!')
-		logging.debug(tags)
-	
+		deal.date_end = datetime.now() + timedelta(days=7)
 	
 	#==== Link deal to blobstore image ====#
 	if upload_flag == True:
 		#an image has been uploaded, and the blob needs to be tied to the deal
 		logging.debug('image uploaded')
-		if origin == 'merchant_edit' or origin == 'admin_review':
-			#an image was uploaded, so remove the old one.
-			blob = deal.img
-			blob.delete()
 		#if an image has been uploaded, add it to the deal. otherwise do nothing.
 		#assumes that if an image already exists, that it the old one has been deleted elsewhere
 		blob_key = params['img_key']
