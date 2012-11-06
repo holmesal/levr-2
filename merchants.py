@@ -480,6 +480,43 @@ class MobileDealCreateHandler(blobstore_handlers.BlobstoreUploadHandler):
 		deal = merchant_utils.create_deal(deal,business,user)
 		
 		self.redirect('/merchants/mobile/manage')
+		
+		try:
+	#		approve_link = 'http://www.levr.com/admin/deal/{}/approve'.format(enc.encrypt_key(deal.key()))
+			reject_link = 'http://www.levr.com/admin/deal/{}/reject'.format(enc.encrypt_key(deal.key()))
+			
+#				message = mail.EmailMessage()
+#				message.to = ['patrick@levr.com','alonso@levr.com']
+			message = mail.AdminEmailMessage()
+			message.sender = 'patrick@levr.com'
+			message.subject = 'Erhmagerd! New Upload!'
+			
+			message.html = '<img src="{}"><br>'.format(deal.get('smallImg'))
+			message.html += '<h2>{}</h2>'.format(deal.deal_text)
+			message.html += '<h3>{}</h3>'.format(deal.description)
+			message.html += '<p>Uploaded by: {}</p>'.format(user.display_name)
+			message.html += '<p>deal_status: {}</p>'.format(deal.deal_status)
+			message.html += '<br>Reject: {}<br><br>'.format(reject_link)
+			message.html += levr.log_dict(deal, None, '<br>')
+			
+	#		message.body += '\n\n\n\n\n\nApprove: {}'.format(approve_link)
+			
+			message.check_initialized()
+			message.send()
+			
+			
+#				message = mail.EmailMessage()
+#				message.to = ['patrick@levr.com']
+##				message = mail.AdminEmailMessage()
+#				message.sender = 'new_deal@levr.com'
+#				message.subject = 'This is awkward but... you have a new upload'
+#				
+#				
+#				message.body = levr.log_dict(deal)
+#				message.check_initialized()
+#				message.send()
+		except:
+			levr.log_error()
 
 class MobileDealEditHandler(blobstore_handlers.BlobstoreUploadHandler):
 	def post(self):
