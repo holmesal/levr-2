@@ -1299,7 +1299,8 @@ def search_foursquare(geo_point,token,deal_status,already_found=[],**kwargs):
 	if result.status_code != 200:
 		# Foursquare request was not successful
 		logging.debug(result.content)
-		levr.log_error(result.headers.data)
+		logging.error('Failed response from foursquare with code: '+str(result.status_code))
+		logging.error(result.headers.data)
 		return
 	
 	result = json.loads(result.content)

@@ -1,4 +1,4 @@
-#  @PydevCodeAnalysisIgnore
+#@PydevCodeAnalysisIgnore
 from gaesessions import get_current_session
 from google.appengine.api import mail, taskqueue, images, files
 from google.appengine.ext import blobstore, db

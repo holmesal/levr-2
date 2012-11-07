@@ -539,24 +539,7 @@ class SearchQueryHandler(api_utils.SearchClass):
 		except:
 			levr.log_error()
 			self.send_error()
-			
-class SearchBusinessesHandler(api_utils.BaseClass):
-	'''
-	A handler for searching for deals by venue
-	'''
-	api_utils.validate(None, None,
-					geoPoint=True,
-					limit = False,
-					radius = False,
-					user = False,
-					levrToken = False
-					)
-	def get(self,*args,**kwargs):
-		'''
-		
-		'''
-		
-	
+
 class SearchNewHandler(webapp2.RequestHandler):
 	@api_utils.validate(None,None,
 					geoPoint=True,
