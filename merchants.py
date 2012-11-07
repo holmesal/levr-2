@@ -492,7 +492,7 @@ class MobileDealCreateHandler(blobstore_handlers.BlobstoreUploadHandler):
 			message.sender = 'patrick@levr.com'
 			message.subject = 'Erhmagerd! New Upload!'
 			
-			message.html = '<img src="{}"><br>'.format(deal.get('smallImg'))
+			message.html = '<img src="{}"><br>'.format('http://www.levr.com/admin/deal/{}/img?size=large'.format(enc.encrypt_key(deal.key())))
 			message.html += '<h2>{}</h2>'.format(deal.deal_text)
 			message.html += '<h3>{}</h3>'.format(deal.description)
 			message.html += '<p>Uploaded by: {}</p>'.format(user.display_name)
