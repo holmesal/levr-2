@@ -1,9 +1,5 @@
 application: levr-production
-<<<<<<< HEAD
-version: test
-=======
 version: 2
->>>>>>> 62e5ad6defb3bbaa1c521c6d47e097fb98cb4bae
 runtime: python27
 api_version: 1
 threadsafe: true
