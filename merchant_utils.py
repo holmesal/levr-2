@@ -150,4 +150,14 @@ def check_ua(self):
 	else:
 		logging.info('Serving desktop version')
 		return 'desktop'
-
+		
+def mobile_ua_bounce(self):
+	uastring = str(self.request.headers['user-agent'])
+	
+	logging.info(uastring)
+	
+	if 'mobile' in uastring.lower():
+		logging.info('Serving mobile version')
+	else:
+		logging.info('Not a mobile device - bounding to /merchants/mobile desktop version')
+		self.redirect('/merchants/mobileonly')

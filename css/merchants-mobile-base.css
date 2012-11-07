@@ -1,5 +1,5 @@
 body{
-	background-image: url('/img/low_contrast_linen.png');
+	background-image: url('/img/light_sketch.png');
 }
 
 .navbar-inner{
@@ -37,7 +37,8 @@ i{
 }
 
 .light{
-	color: #ebebeb;
+/* 	color: #ebebeb; */
+	color: #3f3f3f;
 }
 
 input,textarea{
