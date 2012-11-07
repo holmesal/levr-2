@@ -286,11 +286,18 @@ class MobileSignupHandler(webapp2.RequestHandler):
 			
 			#pull out the business information
 			business_name 	= deets["name"]
-			phone			= deets["formatted_phone_number"]
 			vicinity		= deets["vicinity"]
 			geo_point		= db.GeoPt(lat=deets["geometry"]["location"]["lat"],lon=deets["geometry"]["location"]["lng"])
-			types			= deets["types"]
 			
+			#optional fields
+			types = []
+			phone = ''
+			try:
+				types			= deets["types"]
+				phone			= deets["formatted_phone_number"]
+			except:
+				levr.log_error()
+				
 			#check if that business already exists
 			business = levr.Business.all().filter('business_name =', business_name).filter('vicinity =',vicinity).get()
 			
@@ -341,6 +348,19 @@ class MobileSignupHandler(webapp2.RequestHandler):
 			logging.debug(session)
 			
 			self.redirect('/merchants/mobile/manage')
+			
+			try:
+				message = mail.AdminEmailMessage()
+				message.sender = 'patrick@levr.com'
+				message.subject = 'Whoa! New Business Signup!'
+				
+				message.html = '<h2>{}</h2>'.format(owner.display_name)
+				message.html += '<h3>{}</h3>'.format(owner.email)
+				
+				message.check_initialized()
+				message.send()
+			except:
+				levr.log_error()
 
 class MobileManageHandler(webapp2.RequestHandler):
 	def get(self):
@@ -492,7 +512,7 @@ class MobileDealCreateHandler(blobstore_handlers.BlobstoreUploadHandler):
 			message.sender = 'patrick@levr.com'
 			message.subject = 'Erhmagerd! New Upload!'
 			
-			message.html = '<img src="{}"><br>'.format('http://www.levr.com/admin/deal/{}/img?size=large'.format(enc.encrypt_key(deal.key())))
+			message.html = '<img src="{}"><br>'.format('http://www.levr.com/api/deal/{}/img?size=large'.format(enc.encrypt_key(deal.key())))
 			message.html += '<h2>{}</h2>'.format(deal.deal_text)
 			message.html += '<h3>{}</h3>'.format(deal.description)
 			message.html += '<p>Uploaded by: {}</p>'.format(user.display_name)
