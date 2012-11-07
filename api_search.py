@@ -735,7 +735,6 @@ class SearchFoursquareHandler(webapp2.RequestHandler):
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 app = webapp2.WSGIApplication([(r'/api/search/new', SearchNewHandler),
-								('/api/search/venues',SearchBusinessesHandler),
 								('/api/search/hot', SearchHotHandler),
 								('/api/search/popular', SearchPopularHandler),
 								('/api/search/foursquare', SearchFoursquareHandler),
