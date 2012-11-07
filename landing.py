@@ -67,69 +67,69 @@ class landing(webapp2.RequestHandler):
 			logging.debug('Serving desktop version')
 			
 		#version = 'android'
-		
-		logging.info(self.request.get('city'))
-		
-		city = self.request.get('city')
-		logging.info(city)
-		
-		if city == 'sanfrancisco':
-			#huge san francisco geohashes (+ palo alto)
-			geo_hash_set = ['9q8z','9q8y','9q8v','9q8p','9q8n','9q8j','9q9h']
-		else:
-			#huge boston geohashes
-			geo_hash_set = ['drt3','drmr','drt8','drt0','drt1','drt9','drmx','drmp','drt2']
-		
-		logging.debug('\n\n\n \t\t\t START QUERYING \n\n\n')
-		query_start = datetime.now()
-		deal_keys = api_utils.get_deal_keys(geo_hash_set)
-		query_end = datetime.now()
-		
-		total_query_time = query_end-query_start
-		
-		logging.debug('\n\n\n \t\t\t END QUERYING \n\n\n ')
-		
-		logging.info('Query time: '+str(total_query_time))
-		
-		deals = db.get(deal_keys)
-		
-		sorted_deals = []
-		#remove the non-active and foursquare deals
-		for deal in deals:
-			logging.debug(deal.deal_status)
-			if deal.deal_status in ['active']:
-				logging.debug(deal.origin)
-				if deal.origin in ['levr','merchant']:
-					sorted_deals.append(deal)
-				else:
-					logging.info('deal not added because origin was: '+deal.origin)
-			else:
-				logging.info('deal not added because status was:' +deal.deal_status)
-		
-		packaged_deals = api_utils.package_deal_multi(sorted_deals)
-		
-# 		logging.info(packaged_deals)
-		
-		#go through and swap lat and lon
-		for deal in packaged_deals:
-			logging.info(deals)
-			#separate lat and lon
-			deal['lat'] = deal['business']['geoPoint'].split(',')[0]
-			deal['lon'] = deal['business']['geoPoint'].split(',')[1]
-			#fix image url
-			deal['imgURL'] = deal['largeImg'].split('?')[0]+'?size=webMapView'
-		
-
-		template_values = {
-			'deals'		: packaged_deals,
-			'version'	: version,
-			'city'		: city
-		}
+		# 
+# 		logging.info(self.request.get('city'))
+# 		
+# 		city = self.request.get('city')
+# 		logging.info(city)
+# 		
+# 		if city == 'sanfrancisco':
+# 			#huge san francisco geohashes (+ palo alto)
+# 			geo_hash_set = ['9q8z','9q8y','9q8v','9q8p','9q8n','9q8j','9q9h']
+# 		else:
+# 			#huge boston geohashes
+# 			geo_hash_set = ['drt3','drmr','drt8','drt0','drt1','drt9','drmx','drmp','drt2']
+# 		
+# 		logging.debug('\n\n\n \t\t\t START QUERYING \n\n\n')
+# 		query_start = datetime.now()
+# 		deal_keys = api_utils.get_deal_keys(geo_hash_set)
+# 		query_end = datetime.now()
+# 		
+# 		total_query_time = query_end-query_start
+# 		
+# 		logging.debug('\n\n\n \t\t\t END QUERYING \n\n\n ')
+# 		
+# 		logging.info('Query time: '+str(total_query_time))
+# 		
+# 		deals = db.get(deal_keys)
+# 		
+# 		sorted_deals = []
+# 		#remove the non-active and foursquare deals
+# 		for deal in deals:
+# 			logging.debug(deal.deal_status)
+# 			if deal.deal_status in ['active']:
+# 				logging.debug(deal.origin)
+# 				if deal.origin in ['levr','merchant']:
+# 					sorted_deals.append(deal)
+# 				else:
+# 					logging.info('deal not added because origin was: '+deal.origin)
+# 			else:
+# 				logging.info('deal not added because status was:' +deal.deal_status)
+# 		
+# 		packaged_deals = api_utils.package_deal_multi(sorted_deals)
+# 		
+# # 		logging.info(packaged_deals)
+# 		
+# 		#go through and swap lat and lon
+# 		for deal in packaged_deals:
+# 			logging.info(deals)
+# 			#separate lat and lon
+# 			deal['lat'] = deal['business']['geoPoint'].split(',')[0]
+# 			deal['lon'] = deal['business']['geoPoint'].split(',')[1]
+# 			#fix image url
+# 			deal['imgURL'] = deal['largeImg'].split('?')[0]+'?size=webMapView'
+# 		
+# 
+# 		template_values = {
+# 			'deals'		: packaged_deals,
+# 			'version'	: version,
+# 			'city'		: city
+# 		}
 		
 		#launch the jinja environment
 		jinja_environment = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
-		template = jinja_environment.get_template('templates/landing_v4.html')
-		self.response.out.write(template.render(template_values))
+		template = jinja_environment.get_template('templates/landing-v5.html')
+		self.response.out.write(template.render())
 
 		
 	def post(self):
