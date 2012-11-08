@@ -394,7 +394,7 @@ def fetch_all_users_deals(user):
 	
 	# sort the active and expired deals by their respecive sort properties
 	active_deals = sort_deals_by_property(active_deals, 'date_created')
-	expired_deals = sort_deals_by_property(expired_deals, 'date_expired')
+	expired_deals = sort_deals_by_property(expired_deals, 'date_end')
 	
 	# combine the two lists of deals into one
 	all_deals = []
@@ -1770,7 +1770,7 @@ def rotate_image(blob_key):
 			
 			#grab the reference to the old image
 			deal = levr.Deal.gql('WHERE img=:1',blob_key).get()
-			logging.debug('Old img key: '+blob_key)
+			logging.debug('Old img key: '+str(blob_key))
 			logging.debug('New img key: '+str(new_blob_key))
 			deal.img = new_blob_key
 			logging.debug(deal.img)

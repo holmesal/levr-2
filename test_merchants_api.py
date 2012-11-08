@@ -50,7 +50,7 @@ development = True
 #deal_id = test_deal_id
 #businessID = test_business_id
 
-refresh = True
+refresh = False
 
 class TestSequence(unittest.TestCase):
 	def test_connect(self):

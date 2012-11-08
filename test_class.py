@@ -14,6 +14,8 @@ import jinja2
 import os
 from google.appengine.api import mail
 import api_utils_social as social
+from lib.porterStemmer import PorterStemmer
+
 #import api_utils
 #import json
 #from google.appengine.api import taskqueue, urlfetch, memcache
@@ -24,7 +26,14 @@ import api_utils_social as social
 #import uuid
 #import geo.geohash as geohash
 
-
+class SandboxHandler(webapp2.RequestHandler):
+	'''
+	Dont delete this. This is my dev playground.
+	'''
+	def get(self):
+		pass
+		
+		
 class MainPage(webapp2.RequestHandler):
 	def get(self):
 		logging.info('hello'+'\xe9')
@@ -304,39 +313,6 @@ class TestHandler(webapp2.RequestHandler):
 			self.response.out.write(levr.log_model_props(n))
 		
 		
-	
-		
-class AddDealsHandler(webapp2.RequestHandler):
-	def get(self):
-		
-		lons = [x/1000. for x in range(72400,72600,10) if x%5 ==0]
-		lats = [x/1000. for x in range(42400,42600,10) if x%5 ==0]
-		self.response.out.write(lons.__len__()*lats.__len__())
-		self.response.out.write(lats)
-		
-		
-#		ethan = levr.Customer.all().filter('email','ethan@levr.com').get().key()
-#		
-#		for lat in lats:
-#			for lon in lons:
-#				
-#				params = {
-#							'uid'				: ethan,
-#							'business_name'		: 'Als Sweatshop',
-#							'geo_point'			: levr.geo_converter(str(lat)+','+str(lon)),
-#							'vicinity'			: '10 Buick St',
-#							'types'				: 'Establishment,Food',
-#							'deal_description'	: 'This is a description',
-#							'deal_line1'		: 'I am a deal',
-#							'distance'			: '10', #is -1 if unknown = double
-#	#						'img_key'			: img_key
-#							}
-#		
-#				dealID = levr.dealCreate(params,'phone_new_business',False)
-#				self.response.out.write(dealID)
-#		pass
-		self.response.out.write('<br>Done')
-	
 
 class TestNotificationHandler(webapp2.RequestHandler):
 	def get(self):
@@ -376,9 +352,6 @@ FEMALE_EMAIL = 'deadninja2@levr.com'
 MALE_EMAIL = 'deadninja1@levr.com'
 class Create100DeadNinjasHandler(webapp2.RequestHandler):
 	def get(self):
-		
-		logging.info('Creating 100 dead ninjas.')
-		
 #		#=======================================================================
 #		# Males
 #		#=======================================================================
@@ -451,10 +424,10 @@ class Create100DeadNinjasHandler(webapp2.RequestHandler):
 #		self.response.out.write(all_ninjas.__len__())
 #		#update photo url, and reference table with photo 
 #		
+		logging.info('Creating 100 dead ninjas.')
 		
 class CompleteNinjaReferencesHandler(webapp2.RequestHandler):
 	def get(self):
-		pass
 #		host_url = api_utils.host_url
 #		hook = 'api/user/'
 #		size = 'small'
@@ -527,29 +500,10 @@ class CompleteNinjaReferencesHandler(webapp2.RequestHandler):
 #			self.response.out.write(levr.log_model_props(user,projection))
 #		for img in all_img_objs:
 #			self.response.out.write(levr.log_model_props(img))
-
-		
-class HarmonizeVenuesHandler(webapp2.RequestHandler):
-	def get(self):
 		pass
-#		all_businesses = levr.Business.gql('WHERE foursquare_name = :1','notfound')
 		
-		# for business in all_businesses:
-# 			logging.info('launching task for business: ' + business.business_name)
-# 			task_params = {
-# 			'geo_str'		:	str(business.geo_point),
-# 			'query'			:	business.business_name,
-# 			'key'			:	str(business.key())
-# 			}
-# 			
-# 			t = taskqueue.add(url='/tasks/businessHarmonizationTask',payload=json.dumps(task_params))
 
-
-		
-class SandboxHandler(webapp2.RequestHandler):
-	'''
-	Dont delete this. This is my dev playground.
-	'''
+class ViewFoursquareDealsHandler(api_utils.BaseClass):
 	def get(self):
 		self.response.headers['Content-Type'] = 'text/plain'
 		deals = levr.Deal.all().filter('origin','foursquare').filter('deal_status','active').fetch(None)
@@ -566,8 +520,6 @@ class SandboxHandler(webapp2.RequestHandler):
 #		# expire all the foursquare deals to get rid of the redundant ones
 		for deal in deals:
 			deal.expire()
-		
-		
 		#=======================================================================
 		# now = datetime.now()
 		#	
@@ -584,13 +536,13 @@ class SandboxHandler(webapp2.RequestHandler):
 		# for deal in deals2:
 		#	self.response.out.write(str(deal.date_end)+' --> '+ deal.deal_text+ '\n')
 		#=======================================================================
-		
+		pass
 class UploadPhotoHandler(webapp2.RequestHandler):
 	'''
 	Form to upload photos for undead ninjas
 	'''
 	def get(self):
-		pass
+		
 #		upload_url = blobstore.create_upload_url('/new/store_upload')
 #		self.response.out.write('<html><body>')
 #		self.response.out.write('<form action="%s" method="POST" enctype="multipart/form-data">' % upload_url)
@@ -607,7 +559,7 @@ class UploadPhotoHandler(webapp2.RequestHandler):
 #		for i in range(0,50):
 #			self.response.out.write('Upload File: <input type="file" name="img'+str(i)+'"><br>')
 #		self.response.out.write(''' <input type="submit" name="submit" value="Create!"> </form></body></html>''')
-
+		pass
 class StorePhotoHandler(blobstore_handlers.BlobstoreUploadHandler):
 	'''
 	Stores a photo to the blobstore to be used as an undead ninja photo
@@ -630,41 +582,9 @@ class StorePhotoHandler(blobstore_handlers.BlobstoreUploadHandler):
 #			self.response.out.write(str(key)+'<br/>')
 #		db.put(imgs)
 #		self.response.out.write(blob_keys)
-
-
-
-class ClearOldNinjasHandler(webapp2.RequestHandler):
-	'''
-	Used to do two things BECAUSE I AM LAZY OK?! First section clears out the old ninjas and their tendrils,
-	second section resets all of the new ninjas emails to undeadninja@levr.com instead of undeadninja1 and 2 (for gender)
-	'''
-	def get(self):
 		pass
-##		taskqueue.add(url='/tasks/clearOldNinjas',payload=json.dumps({}))
-##		self.response.out.write('done!')
 
 
-
-
-
-##		ninjas = levr.Customer.all().filter('email',levr.UNDEAD_NINJA_EMAIL).fetch()
-#		ninjas = levr.Customer.all().filter('email',FEMALE_EMAIL).fetch(None)
-#		ninjas2 = levr.Customer.all().filter('email', MALE_EMAIL).fetch(None)
-#		
-#		all_ninjas = set([])
-#		for ninja in ninjas:
-#			n = [ninja]
-#			all_ninjas.update(n)
-#		for ninja in ninjas2:
-#			n = [ninja]
-#			all_ninjas.update(n)
-#		
-#		all_ninjas = list(all_ninjas)
-#		for ninja in all_ninjas:
-#			ninja.email = levr.UNDEAD_NINJA_EMAIL
-#		
-#		db.put(all_ninjas)
-#		self.response.out.write('done!')
 class TransferDealOwnershipToUndeadHandler(webapp2.RedirectHandler):
 	def get(self):
 		pass
@@ -713,95 +633,19 @@ class TransferDealOwnershipToUndeadHandler(webapp2.RedirectHandler):
 #			new_deals.update([deal])
 #		# finish
 #		db.put(new_deals)
-		
-
-class LandingTestHandler(webapp2.RequestHandler):
-	def get(self):
-		
-		uastring = str(self.request.headers['user-agent'])
-	
-		logging.info(uastring)
-			
-# 		if 'iphone' in uastring.lower():
-# 			version = 'iPhone'
-# 			logging.debug('Serving mobile version - iPhone')
-# 		elif 'android' in uastring.lower():
-# 			version = 'android'
-# 			logging.debug('Serving mobile version - android')
-# 		else:
-# 			version = 'desktop'
-# 			logging.debug('Serving desktop version')
-# 			
-# 		#version = 'android'
-# 		
-# 		#todo: grab deals from a few specific geohashes that cover boston
-# 		geo_hash_set = ['drt3','drmr','drt8','drt0','drt1','drt9','drmx','drmp','drt2']
-# 		
-# 		logging.debug('\n\n\n \t\t\t START QUERYING \n\n\n')
-# 		query_start = datetime.now()
-# 		deal_keys = api_utils.get_deal_keys(geo_hash_set)
-# 		query_end = datetime.now()
-# 		
-# 		total_query_time = query_end-query_start
-# 		
-# 		logging.debug('\n\n\n \t\t\t END QUERYING \n\n\n ')
-# 		
-# 		logging.info('Query time: '+str(total_query_time))
-# 		
-# 		deals = db.get(deal_keys)
-# 		
-# 		sorted_deals = []
-# 		#remove the non-active and foursquare deals
-# 		for deal in deals:
-# 			logging.debug(deal.deal_status)
-# 			if deal.deal_status in ['active']:
-# 				logging.debug(deal.origin)
-# 				if deal.origin in ['levr','merchant']:
-# 					sorted_deals.append(deal)
-# 				else:
-# 					logging.info('deal not added because origin was: '+deal.origin)
-# 			else:
-# 				logging.info('deal not added because status was:' +deal.deal_status)
-# 		
-# 		packaged_deals = api_utils.package_deal_multi(sorted_deals)
-# 		
-# # 		logging.info(packaged_deals)
-# 		
-# 		#go through and swap lat and lon
-# 		for deal in packaged_deals:
-# 			logging.info(deals)
-# 			#separate lat and lon
-# 			deal['lat'] = deal['business']['geoPoint'].split(',')[0]
-# 			deal['lon'] = deal['business']['geoPoint'].split(',')[1]
-# 			#fix image url
-# 			deal['imgURL'] = deal['largeImg'].split('?')[0]+'?size=webMapView'
-# 		
-# 
-# 		template_values = {
-# 			'deals'		: packaged_deals,
-# 			'version'	: version
-# 		}
-		
-		#launch the jinja environment
-		jinja_environment = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
-		template = jinja_environment.get_template('templates/landing-merchants-v5.html')
-		self.response.out.write(template.render())
+		pass
 
 
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload', DatabaseUploadHandler),
 								('/new/test', TestHandler),
-								('/new/inundate', AddDealsHandler),
 								('/new/notification', TestNotificationHandler),
 								('/new/deadNinjas', Create100DeadNinjasHandler),
 								('/new/deadNinjas/complete',CompleteNinjaReferencesHandler),
-								('/new/harmonizeVenues',HarmonizeVenuesHandler),
 								('/new/sandbox', SandboxHandler),
 								('/new/upload_ninjas',UploadPhotoHandler),
 								('/new/store_upload', StorePhotoHandler),
-								('/new/clear_old_ninjas', ClearOldNinjasHandler),
 								('/new/transfer_deals', TransferDealOwnershipToUndeadHandler),
-								('/new/landing', LandingTestHandler)
 								],debug=True)
 
 

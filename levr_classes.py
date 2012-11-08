@@ -3,22 +3,24 @@ from datetime import datetime, timedelta
 from google.appengine.api import taskqueue, memcache
 from google.appengine.ext import blobstore, db
 from google.appengine.ext.db import polymodel
+from lib.nltk.stem.porter import PorterStemmer
+from lib.nltk.tokenize.regexp import WhitespaceTokenizer
+from math import floor, sqrt
 import base_62_converter as converter
 import geo.geohash as geohash
 import json
 import levr_encrypt as enc
 import logging
 import os
+import promotions as promo
 import random
 import re
+import string
 import sys
 import traceback
 import uuid
-from math import floor, sqrt
-import promotions as promo
 #from random import randint
 #from math import floor
-
 
 
 #from gaesessions import get_current_session
@@ -286,25 +288,106 @@ def tagger(text):
 	# text is a string
 #	parsing function for creating tags from description, etc
 	#replace commas with spaces
-	text = text.replace(","," ")
-	#replace underscores with spaces
-	text = text.replace("_"," ")
-	text = text.replace("/"," ")
-	#remove all non text characters
-	text = re.sub(r"[^\w\s]", '', text)
-	#parse text string into a list of words if it is longer than 2 chars long
-	tags = [w.lower() for w in re.findall("[\'\w]+", text)]# if len(w)>2]
-	#remove redundancies
-	tags = list(set(tags))
-	#remove unwanted tags
-	filtered_tags = []
-	for tag in tags:
-		if tag.isdigit() == False:
-			#tag is not a number 
-			if tag not in blacklist:
-				filtered_tags.append(tag)
+#	text = text.replace(","," ")
+#	#replace underscores with spaces
+#	text = text.replace("_"," ")
+#	text = text.replace("/"," ")
+#	#remove all non text characters
+#	text = re.sub(r"[^\w\s]", '', text)
+#	#parse text string into a list of words if it is longer than 2 chars long
+#	tags = [w.lower() for w in re.findall("[\'\w]+", text)]# if len(w)>2]
+#	#remove redundancies
+#	tags = list(set(tags))
+#	#remove unwanted tags
+#	filtered_tags = []
+#	for tag in tags:
+#		if tag.isdigit() == False:
+#			#tag is not a number 
+#			if tag not in blacklist:
+#				filtered_tags.append(tag)
+#	
+#	return filtered_tags
+	return tokenize_and_stem(text,True)
+
+
+
+def tokenize_and_stem(text,filtered=True):
+	'''
+	Used to create a list of indexable strings from a single multiword string
+	Tokenizes the input string, and then stems each of the tokens
+	Also converts each token to lowercase
+	@param text: the text to be converted
+	@type text: str
+	@param filtered: Determines whether or not the tokens should be filtered
+	@type filtered: bool
+	@return: a list of tokenized and stemmed words
+	@rtype: list
+	'''
+	# tokenize the motherfuckers
+	tokens = tokenize(text)
+	# filter out black words if you so desire
+	if filtered == True:
+		tokens = filter_stop_words(tokens)
+	# Let's get to the root of this.
+	tokens = stem(tokens)
+	return tokens
+def tokenize_and_filter(text):
+	'''
+	Used to create a list of words that can be used for popular searches and stuff
+	@param text: the text to be converted
+	@type text: str
+	@return: a list of tokenized and filtered words
+	@rtype: list
+	'''
+	tokens = tokenize(text)
+	tokens = filter_stop_words(tokens)
+	return tokens
+def tokenize(text):
+	'''
+	Tokenizes an input string
+	Replaces certain delimeters with spaces, and removes punctuation
+	@param text: A string composed of at least one word
+	@type text: str
+	@return: A list of tokenized words
+	'''
+	# a list of chars that will be replaced with spaces
+	excludu = ['_','/',',','-','|']
+
+	# remove punctuation
+	for punct in string.punctuation:
+		if punct not in excludu:
+			text = text.replace(punct,'')
 	
-	return filtered_tags
+	# replace special chars with spaces
+	for character in excludu:
+		text = text.replace(character,' ')
+	
+	# tokenize the mofo!
+	tokenizer = WhitespaceTokenizer()
+	
+	# create tokens
+	return [token.lower() for token in tokenizer.tokenize(text)]
+def stem(tokens):
+	'''
+	Creates stemmed versions of words in a tokenized list
+	@param tokens: A tokenized list of words
+	@type tokens: list
+	@return: A list of stem words
+	@rtype: list
+	'''
+	stemmer = PorterStemmer()
+	return [stemmer.stem(token) for token in tokens]
+def filter_stop_words(tokens):
+	'''
+	Filters a list of strings
+	@param word_list: A tokenized, but not stemmed word list
+	@type word_list: list
+	@return: a list of words without stop words
+	@rtype: list
+	'''
+	return filter(lambda x: x.isdigit() == False \
+				and x not in blacklist,tokens)
+
 
 def log_error(message=''):
 	#called by: log_error(*self.request.body)
@@ -1094,13 +1177,15 @@ class Deal(polymodel.PolyModel):
 		@return: self
 		'''
 		# Eliminate the memcache entry
-		remove_memcache_key_by_deal(self)
+		
 		# Determine whether or not the deal status should be set to active or test
 		owner = self.parent()
 		if owner.tester:
 			self.deal_status = DEAL_STATUS_TEST
 		else:
 			self.deal_status = DEAL_STATUS_ACTIVE
+		
+		remove_memcache_key_by_deal(self)
 		
 		# reset the end date
 		self.date_end = date_end

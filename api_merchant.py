@@ -311,10 +311,10 @@ class ConnectMerchantHandler(api_utils.BaseClass):
 			self.send_response(response)
 			# TODO: Merchant connect - handle all cases - new and existing accounts
 		except AssertionError,e:
-			api_utils.send_error(self,e.message)
+			self.send_error(e)
 		except Exception,e:
 			levr.log_error(e)
-			api_utils.send_error(self,'Server Error')
+			self.send_error()
 			
 class MerchantDealsHandler(api_utils.BaseClass):
 	'''
@@ -385,9 +385,9 @@ class RequestUploadURLHandler(api_utils.BaseClass):
 			api_utils.send_response(self,response,user)
 			
 		except KeyError,e:
-			api_utils.send_error(self,e)
+			self.send_error(e)
 		except Exception,e:
-			api_utils.send_error(self,'Server Error')
+			self.send_error()
 
 class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 	'''
@@ -651,10 +651,12 @@ class ExpireDealHandler(api_utils.BaseClass):
 		try:
 			# assure that the user is the owner of the deal
 			assert deal.parent_key() == user.key(), 'User does not own that deal'
-			# expire the deal without a notification
-			deal.expire()
-			deal.put()
-			
+			# expire the deal without a notification only if active
+			if deal.deal_status == levr.DEAL_STATUS_ACTIVE \
+			or deal.deal_status == levr.DEAL_STATUS_TEST:
+				deal.expire()
+				deal.put()
+			# otherwise, do nothing.
 			private = True
 			packaged_deal = api_utils.package_deal(deal, private)
 			
@@ -665,10 +667,10 @@ class ExpireDealHandler(api_utils.BaseClass):
 			api_utils.send_response(self,response, user)
 			
 		except AssertionError,e:
-			api_utils.send_error(self,e)
+			self.send_error(e)
 		except Exception,e:
 			levr.log_error(e)
-			api_utils.send_error(self,'Server Error')
+			self.send_error()
 		
 class ReactivateDealHandler(api_utils.BaseClass):
 	'''
@@ -701,6 +703,7 @@ class ReactivateDealHandler(api_utils.BaseClass):
 			deal.reanimate()
 			deal.put()
 			
+			# TODO: this should package all of the deals
 			private = True
 			packaged_deal = api_utils.package_deal(deal, private)
 			response = {
@@ -710,9 +713,10 @@ class ReactivateDealHandler(api_utils.BaseClass):
 			api_utils.send_response(self,response, user)
 			
 		except AssertionError,e:
-			api_utils.send_error(self,e.message)
+			self.send_error(e)
 		except Exception,e:
-			api_utils.send_error(self,'Server Error')
+			levr.log_error()
+			self.send_error()
 
 class FetchPromotionOptionsHandler(api_utils.BaseClass):
 	'''
@@ -730,10 +734,10 @@ class FetchPromotionOptionsHandler(api_utils.BaseClass):
 			api_utils.send_response(self,response)
 			
 		except AssertionError,e:
-			api_utils.send_error(self,str(e))
+			self.send_error(e)
 		except Exception,e:
 			levr.log_error(e)
-			api_utils.send_error(self,'Server Error')
+			self.send_error()
 
 
 

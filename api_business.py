@@ -85,7 +85,9 @@ class ViewABusinessHandler(api_utils.BaseClass):
 		self.send_response(response)
 		
 
+FIND_A_BUSINESS_URL = '/api/businesses/find'
+VIEW_A_BUSINESS_URL = '/api/businesses/view'
 app = webapp2.WSGIApplication([
-							('/api/businesses/find', FindABusinessHandler),
-							('/api/businesses/view', ViewABusinessHandler),
+							(FIND_A_BUSINESS_URL, FindABusinessHandler),
+							(VIEW_A_BUSINESS_URL, ViewABusinessHandler),
 								],debug=True)
