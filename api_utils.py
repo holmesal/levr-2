@@ -393,7 +393,7 @@ def fetch_all_users_deals(user):
 	expired_deals = filter(lambda x: x.deal_status == 'expired',deals)
 	
 	# sort the active and expired deals by their respecive sort properties
-	active_deals = sort_deals_by_property(active_deals, 'date_created')
+	active_deals = sort_deals_by_property(active_deals, 'date_last_edited')
 	expired_deals = sort_deals_by_property(expired_deals, 'date_end')
 	
 	# combine the two lists of deals into one
