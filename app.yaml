@@ -10,6 +10,8 @@ default_expiration: "1m"
 handlers:
 - url: /
   script: landing.app
+- url: /offers
+  script: offers.app
 - url: /terms
   script: terms.app
 - url: /ninjas

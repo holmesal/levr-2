@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!--meta name="apple-itunes-app" content="app-id=564566794"-->
+      <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-responsive.min.css" rel="stylesheet">
+  <link href="/css/developers.css" rel='stylesheet' />
+  <style type="text/css">
+  
+  		.iphones{
+	  		text-align: center;
+  		}
+  		
+  		#appstore{
+	  		width: 200px;
+  		}
+  </style>
+  
+  <script>var startTime = (new Date()).getTime();</script>
+	<!-- start Mixpanel --><script type="text/javascript">(function(c,a){window.mixpanel=a;var b,d,h,e;b=c.createElement("script");b.type="text/javascript";b.async=!0;b.src=("https:"===c.location.protocol?"https:":"http:")+'//cdn.mxpnl.com/libs/mixpanel-2.1.min.js';d=c.getElementsByTagName("script")[0];d.parentNode.insertBefore(b,d);a._i=[];a.init=function(b,c,f){function d(a,b){var c=b.split(".");2==c.length&&(a=a[c[0]],b=c[1]);a[b]=function(){a.push([b].concat(Array.prototype.slice.call(arguments,0)))}}var g=a;"undefined"!==typeof f?
+g=a[f]=[]:f="mixpanel";g.people=g.people||[];h="disable track track_pageview track_links track_forms register register_once unregister identify name_tag set_config people.identify people.set people.increment".split(" ");for(e=0;e<h.length;e++)d(g,h[e]);a._i.push([b,c,f])};a.__SV=1.1})(document,window.mixpanel||[]);
+mixpanel.init("70b2a36876730d894bce115f3e89c055");</script><!-- end Mixpanel -->
+</head>
+
+<body data-spy="scroll" data-target=".docs-sidenav">
+
+<div class="navbar navbar-fixed-top">
+	<div class="navbar-inner">
+	  	<div class="navcontent">
+	  	<a class="brand" href='/'>Levr.</a>
+	  	<!a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+	  		<ul class="nav" id='navigation'>
+		  		<li><a id='offersNavbar' href='/'>Offers</a></li>
+		  		<li><a id='businessesNavbar' href='/merchants'>Businesses</a></li>
+		  		<li class="active"><a id='developersNavbar' href='http://www.getradi.us'>Developers</a></li>
+	  		</ul>
+	  	<!/a>
+	  	</div>
+	</div>
+</div>
+
+<div class="container">
+	<div class="row">
+		<div class="span3 bs-docs-sidebar">
+			<div class="well sidebar-nav">
+				<ul id="sidenav" class="nav nav-list">
+					<li class="nav-header">Welcome</li>
+					<li><a href="#hello">Hello</a></li>
+					<li><a href="#tryout">Try it out</a></li>
+					<li><a href="#access">Get Access</a></li>
+					<li class="nav-header">Documentation</li>
+					<li><a href="#location">Get offers near a location</a></li>
+					<li><a href="#business">Get offers at a business</a></li>
+					<li class="divider"></li>
+					<li><a href="#help">Call for backup</a></li>
+				</ul>
+			</div>
+		</div>
+		<div class="span9">
+			<section id="hello">
+				<h2 class="featurette-heading">Welcome to the Levr API</h2>
+				<p class="lead">This is an API that makes it ridonculously easy to get local offers.</p>
+				<p class="lead">How easy? Try it out below:</p>
+			</section>
+			
+			<section id="tryout">
+				<h2 class="featurette-heading headroom">Take it for a spin</h2>
+				<form class="well">
+					<div class="input-top">
+						<div id="type-select" class="btn-group" data-toggle="buttons-radio">
+						  <button id="locationButton" type="button" class="btn-type-select btn active">Search near a location</button>
+						  <button id="businessButton" type="button" class="btn-type-select btn">Search at a business</button>
+						</div>
+						<input type="submit" class="btn btn-info" value="See the response (>)">
+					</div>
+					<div class="row">
+						<div class="location span4 pull-left">
+							<label>Latitude,Longitude:</label>
+							<input id="latitude" name="latitude" type="text" placeholder="Latitude" value="{{latitude}}">
+							<label>Longitude:</label>
+							<input id="longitude" name="longitude" type="text" placeholder="Longitude" value="{{longitude}}">
+							<label>Radius (km):</label>
+							<input id="radius" name="radius" type="text" placeholder="Radius (km)" value="{{radius}}">
+						</div>
+						<div class="location span4 pull-right">
+							<label>Search term (optional):</label>
+							<input id="query" name="query" type="text" placeholder="Search term (optional)" value="{{query}}">
+						</div>
+						
+						<div class="business span4 pull-left" hidden>
+							<label>Business Origin:</label>
+							<div id="origin-select" class="btn-group" data-toggle="buttons-radio">
+							  <button id="googlePlacesButton" type="button" class="btn-origin-select btn active">Google places</button>
+							  <button id="foursquareButton" type="button" class="btn-origin-select btn">Foursquare</button>
+							</div>
+						</div>
+						
+						<div class="business span4 pull-right" hidden>
+							<label id='business-id-label'>Google Places Business ID:</label>
+							<input id="business_id" name="business_id" type="text" placeholder="Business ID" value="{{business_id}}">
+						</div>
+						
+						<input id="origin" name="origin" type="hidden" value="">
+						<input id="type" name="type" type="hidden" value="">
+					</div>
+					<p class="lead">The request:</p>
+					<code id="url"></code>
+					
+				</form>
+				<div class="well">
+					Results
+				</div>
+				
+			</section>
+			
+			<section id="access">
+				<h2 class="featurette-heading headroom">Getting access</h2>
+				<p class="lead">Getting access is as easy as something else that is easy.</p>
+			</section>
+			
+			<hr>
+			<h1 class="muted">Documentation</h1>
+			
+			<section id="location">
+				<h2 class="featurette-heading">Get offers near a location</h2>
+				<p class="lead">Endpoint to use.</p>
+				<p class="lead">Parameters to use.</p>
+				<p class="lead">Sample response.</p>
+			</section>
+			
+			<section id="business">
+				<h2 class="featurette-heading">Get offers at a business</h2>
+				<p class="lead">Endpoint to use.</p>
+				<p class="lead">Parameters to use.</p>
+				<p class="lead">Sample response.</p>
+			</section>
+			
+			
+		</div>
+	</div>
+	
+	
+	<img class="pin" src="/img/pin.png">
+	
+</div>
+
+<script src="http://code.jquery.com/jquery-latest.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script type="text/javascript">
+	//$('#sidenav').scrollspy()
+	
+	makeURL = function(type){
+		if (type=="location"){
+			endpoint = "http://www.levr.com/api/search"
+			
+			ll = "?ll="+$('#latitude').val()+","+$('#longitude').val()
+			
+			if ($('#radius').val() != ''){
+				radius = "&radius="+$('#radius').val()
+			} else{
+				radius = ''
+			}
+			
+			if ($('#query').val() != ''){
+				query = "&query="+$('#query').val()
+			} else{
+				query = ''
+			}
+			
+			token = '&token=YOUR_LEVR_TOKEN'
+			
+			
+			url = endpoint+ll+radius+query+token
+			
+			$('#url').text(url)
+			
+		} else if (type=="business"){
+			endpoint = "http://www.levr.com/api/search"
+			
+			origin = '?origin='+$('#origin').val()
+			
+			id = '&id='+$('#business_id').val()
+			
+			token = '&token=YOUR_LEVR_TOKEN'
+			
+			url = endpoint+origin+id+token
+			
+			$('#url').text(url)
+			
+		}
+	}
+	
+	$('.btn-type-select').button().click(function(){
+		if ($(this).attr("id") == 'locationButton'){
+			$('.business').hide()
+			$('.location').show()
+			$('#type').val('location')
+			makeURL('location')
+		} else{
+			$('.business').show()
+			$('.location').hide()
+			$('#type').val('business')
+			makeURL('business')
+		}
+	})
+	
+	$('.btn-origin-select').button().click(function(){
+		if ($(this).attr("id") == 'googlePlacesButton'){
+			$('#business-id-label').text('Google Places Business ID:')
+			$('#origin').val('google')
+			makeURL('business')
+		} else{
+			$('#business-id-label').text('Foursquare Venue ID:')
+			$('#origin').val('foursquare')
+			makeURL('business')
+		}
+	})
+	
+	$('input').keyup(function(){
+		if($('#type').val()=='location'){
+			makeURL('location')
+		} else{
+			makeURL('business')
+		}
+		
+	})
+	
+	$(document).ready(function(){
+	
+		{% if type %}
+			
+			type = '{{type}}'
+			$('#type').val(type)
+			
+			if (type == 'location'){
+				$('#locationButton').click()
+			} else{
+				$('#businessButton').click()
+			}
+		{%endif%}
+		
+		
+		{% if origin %}
+			
+			origin = '{{origin}}'
+			$('#origin').val(origin)
+			
+			if (origin == 'google'){
+				$('#googlePlacesButton').click()
+			} else{
+				$('#foursquareButton').click()
+			}
+		{%endif%}
+	})
+	
+	
+	
+	//set defaults
+	$('#origin').val('google')
+	$('#type').val('location')
+	//build first time
+	makeURL('location')
+</script>
+
+<!--script type="text/javascript">
+	
+	$(window).load(function(){
+		//track loadtime
+		var endTime = (new Date()).getTime();
+	    var millisecondsLoading = endTime - startTime;
+
+		mixpanel.track("Levr V5 User Landing Page Loaded",{"Load Time":millisecondsLoading})
+		
+		mixpanel.track_links('#downloadText','Download Text Clicked')
+		
+		mixpanel.track_links('#downloadImage','Download Image Clicked')
+		
+	})
+	
+	
+</script-->
+
+
+</body>
+</html>

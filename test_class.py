@@ -632,7 +632,99 @@ class TransferDealOwnershipToUndeadHandler(webapp2.RedirectHandler):
 #			new_deals.update([deal])
 #		# finish
 #		db.put(new_deals)
+<<<<<<< HEAD
 		pass
+=======
+		
+
+class LandingTestHandler(webapp2.RequestHandler):
+	def get(self):
+		
+		uastring = str(self.request.headers['user-agent'])
+	
+		logging.info(uastring)
+			
+# 		if 'iphone' in uastring.lower():
+# 			version = 'iPhone'
+# 			logging.debug('Serving mobile version - iPhone')
+# 		elif 'android' in uastring.lower():
+# 			version = 'android'
+# 			logging.debug('Serving mobile version - android')
+# 		else:
+# 			version = 'desktop'
+# 			logging.debug('Serving desktop version')
+# 			
+# 		#version = 'android'
+# 		
+# 		#todo: grab deals from a few specific geohashes that cover boston
+# 		geo_hash_set = ['drt3','drmr','drt8','drt0','drt1','drt9','drmx','drmp','drt2']
+# 		
+# 		logging.debug('\n\n\n \t\t\t START QUERYING \n\n\n')
+# 		query_start = datetime.now()
+# 		deal_keys = api_utils.get_deal_keys(geo_hash_set)
+# 		query_end = datetime.now()
+# 		
+# 		total_query_time = query_end-query_start
+# 		
+# 		logging.debug('\n\n\n \t\t\t END QUERYING \n\n\n ')
+# 		
+# 		logging.info('Query time: '+str(total_query_time))
+# 		
+# 		deals = db.get(deal_keys)
+# 		
+# 		sorted_deals = []
+# 		#remove the non-active and foursquare deals
+# 		for deal in deals:
+# 			logging.debug(deal.deal_status)
+# 			if deal.deal_status in ['active']:
+# 				logging.debug(deal.origin)
+# 				if deal.origin in ['levr','merchant']:
+# 					sorted_deals.append(deal)
+# 				else:
+# 					logging.info('deal not added because origin was: '+deal.origin)
+# 			else:
+# 				logging.info('deal not added because status was:' +deal.deal_status)
+# 		
+# 		packaged_deals = api_utils.package_deal_multi(sorted_deals)
+# 		
+# # 		logging.info(packaged_deals)
+# 		
+# 		#go through and swap lat and lon
+# 		for deal in packaged_deals:
+# 			logging.info(deals)
+# 			#separate lat and lon
+# 			deal['lat'] = deal['business']['geoPoint'].split(',')[0]
+# 			deal['lon'] = deal['business']['geoPoint'].split(',')[1]
+# 			#fix image url
+# 			deal['imgURL'] = deal['largeImg'].split('?')[0]+'?size=webMapView'
+# 		
+# 
+# 		template_values = {
+# 			'deals'		: packaged_deals,
+# 			'version'	: version
+# 		}
+		
+		#launch the jinja environment
+		jinja_environment = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
+		template = jinja_environment.get_template('templates/landing-merchants-v5.html')
+		self.response.out.write(template.render())
+		
+class DevelopersHandler(webapp2.RequestHandler):
+	def get(self):
+		
+		template_values = {
+			'latitude'		:	12345,
+			'longitude'		:	67890,
+			'origin'		:	'foursquare',
+			'type'			:	'business',
+			'radius'		:	5,
+			'query'			:	'hello',
+			'business_id'	:	'businessID'
+		}
+		
+		jinja_environment = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
+		template = jinja_environment.get_template('templates/developers.html')
+		self.response.out.write(template.render(template_values))
 
 
 app = webapp2.WSGIApplication([('/new', MainPage),
@@ -645,6 +737,8 @@ app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload_ninjas',UploadPhotoHandler),
 								('/new/store_upload', StorePhotoHandler),
 								('/new/transfer_deals', TransferDealOwnershipToUndeadHandler),
+								('/new/landing', LandingTestHandler),
+								('/new/developers', DevelopersHandler)
 								],debug=True)
 
 
