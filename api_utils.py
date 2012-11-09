@@ -501,7 +501,10 @@ def validate(url_param,authentication_source,*a,**to_validate): #@UnusedVariable
 						#promotion stuff
 						'tags'			: list,
 						'promotionID'	: str,
-						'receipt'		: str
+						'receipt'		: str,
+						
+						# other
+						'ignored'		: str
 						
 						}
 			defaults = {
@@ -549,7 +552,11 @@ def validate(url_param,authentication_source,*a,**to_validate): #@UnusedVariable
 						# Promotion stuff
 						'tags'			: [],
 						'promotionID'	: '',
-						'receipt'		: ''
+						'receipt'		: '',
+						
+						# other
+						'ignored'		: '',
+						
 						}
 			
 			try:
@@ -700,14 +707,28 @@ def validate(url_param,authentication_source,*a,**to_validate): #@UnusedVariable
 				#start parameter validation steps#
 				##################################
 				
-				
+				if self.request.get('ll'):
+					sent_as_ll = True
+				else:
+					sent_as_ll = False
 				#for each input=Bool where Bool is required or not
 				for (key,required) in to_validate.iteritems():
 					#special case, geopoint is complex
 					if key == 'geoPoint':
-						val = str(self.request.get('lat'))+","+str(self.request.get('lon'))
+						if not sent_as_ll:
+							# ll was sent as lat=&lon=
+							val = str(self.request.get('lat'))+","+str(self.request.get('lon'))
+						else:
+							key = 'ignored'
+							val = ''
 						msg = "lat,lon: "+val
-					
+					elif key == 'll':
+						if sent_as_ll:
+							val = str(self.request.get('ll'))
+							msg = 'll: '+val
+						else:
+							key = 'ignored'
+							val = ''
 					elif key == 'user':
 						val = self.request.get('uid')
 						msg = 'uid: '+ val
@@ -726,6 +747,11 @@ def validate(url_param,authentication_source,*a,**to_validate): #@UnusedVariable
 					else:
 						val = self.request.get(key)
 						msg = key+": "+val
+					
+					#===========================================================
+					# Operations
+					#===========================================================
+					
 					#requires is whether or not it is required
 					required	= to_validate.get(key)
 					#date_type pulls the type that the passed input should be
@@ -769,6 +795,11 @@ def validate(url_param,authentication_source,*a,**to_validate): #@UnusedVariable
 							logging.debug(type(val))
 							#convert to geopoint
 							val = levr.geo_converter(val)
+							key = 'geoPoint'
+							logging.debug('---')
+							logging.info(key)
+							logging.info(val)
+							logging.debug('---')
 						except Exception,e:
 							logging.debug(e)
 							raise TypeError(msg)
@@ -827,6 +858,8 @@ def validate(url_param,authentication_source,*a,**to_validate): #@UnusedVariable
 						pass
 						
 					#update the dictionary that is passed to the handler function with the key:val pair
+					logging.debug(key)
+					logging.debug(val)
 					kwargs.update({key:val})
 				
 				logging.debug(kwargs)

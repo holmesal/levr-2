@@ -15,7 +15,8 @@ from tasks import INCREMENT_DEAL_VIEW_URL
 
 class SearchQueryHandler(api_utils.SearchClass):
 	@api_utils.validate('query',None,
-					geoPoint=True,
+					geoPoint=False,
+					ll=False,
 					radius=False,
 					user=False,
 					latitudeHalfDelta=False,
@@ -41,6 +42,7 @@ class SearchQueryHandler(api_utils.SearchClass):
 	#		logging.debug(kwargs)
 			#GET PARAMS
 			logging.info(kwargs)
+			assert False
 			geo_point 		= kwargs.get('geoPoint')
 #			radius 			= kwargs.get('radius')
 #			limit 			= kwargs.get('limit')

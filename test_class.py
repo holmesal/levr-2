@@ -14,7 +14,6 @@ import jinja2
 import os
 from google.appengine.api import mail
 import api_utils_social as social
-from lib.porterStemmer import PorterStemmer
 
 #import api_utils
 #import json
