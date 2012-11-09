@@ -1121,6 +1121,12 @@ class Business(db.Model):
 	locu_id			= db.StringProperty()
 	widget_id		= db.StringProperty(default=create_unique_id())
 	creation_date	= db.DateTimeProperty(auto_now_add=True)
+	def create_keywords(self):
+		'''
+		Used to parse the business fields into indexed keywords
+		'''
+		tokens = tokenize_and_stem(text, False)
+		
 	def create_tags(self):
 		#create tags list
 		tags = []
