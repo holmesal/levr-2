@@ -9,12 +9,16 @@ body {
 }
 
 #top{
-	background-image: url(/img/coffee.jpg);
+	background-image: url(/img/cafe4.jpg);
 	/*background-image: url(/img/landing_background.jpeg);*/
 	background-size: cover;
 	background-position: center center;
 	width: 100%;
 	height: 600px;
+}
+
+#btnGet{
+	margin-top: 10px;
 }
 
 #bottom{
