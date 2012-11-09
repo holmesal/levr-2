@@ -36,7 +36,20 @@ class BaseClass(webapp2.RequestHandler):
 		'''
 		send_error(self,str(message))
 		
-	
+	def send_fail(self,log_message=''):
+		'''
+		Used for server error. Registers an error in the logs before
+		  returning an error
+		@param message: error message
+		@type message: str
+		'''
+		# register error in logs
+		levr.log_error(log_message)
+		
+		# return an error
+		self.send_error()
+		
+		
 	def send_response(self,response,user=None):
 		'''
 		This is just being used as a wrapper until all classes can be migrated

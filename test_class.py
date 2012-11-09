@@ -14,7 +14,6 @@ import jinja2
 import os
 from google.appengine.api import mail
 import api_utils_social as social
-from lib.porterStemmer import PorterStemmer
 
 #import api_utils
 #import json
@@ -31,7 +30,12 @@ class SandboxHandler(webapp2.RequestHandler):
 	Dont delete this. This is my dev playground.
 	'''
 	def get(self):
-		pass
+		deals = levr.Deal.all().fetch(None)
+		businesses = levr.Deal.all().fetch(None)
+		
+		db.put(deals)
+		db.put(businesses)
+		self.response.out.write('done!')
 		
 		
 class MainPage(webapp2.RequestHandler):

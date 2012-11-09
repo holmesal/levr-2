@@ -277,12 +277,65 @@ def create_notification(notification_type,to_be_notified,actor,deal=None,**kwarg
 
 
 def geo_converter(geo_str):
+	'''
+	Converts a geopoint in form := "<float>,<float>" to type db.GeoPt
+	@param geo_str: a geo point in string form
+	@type geo_str: str
+	@return: The geopoint in form:= db.GeoPt
+	@rtype: db.GeoPt
+	'''
 	try:
 		lat, lng = geo_str.split(',')
 		return db.GeoPt(lat=float(lat), lon=float(lng))
 	except Exception,e:
 		log_error(e)
 		raise TypeError('lat,lon: '+str(geo_str))
+
+def _convert_geo_point_to_prefixes(geo_point):
+	'''
+	Converts an entity of type == db.GeoPt or type == str
+		to a list of geo_hash prefixes
+	@param geo_point: the geopoint in question
+	@type geo_point: str or db.GeoPt
+	@return: a list of geohash prefixes
+	@rtype: list
+	'''
+	# if the geohash is in string form, convert to db.GeoPt
+	if type(geo_point) == str:
+		geo_point = geo_converter(geo_point)
+	# assure that the geopoint is the right type
+	assert type(geo_point) == db.GeoPt, \
+		'geo_point must be type == db.GeoPt or str: '+str(geo_point)+'; '+str(type(geo_point))
+	# create the base geo_hash
+	precision = 8
+	geo_hash = geohash.encode(geo_point.lat, geo_point.lon, precision)
+	# parse the geo_hash into prefixes
+	return _convert_geohash_to_prefixes(geo_hash)
+	
+	
+def _convert_geohash_to_prefixes(geo_hash):
+	'''
+	Takes a geohash, and converts it to a list of geohash prefixes
+	The list of prefixes is 
+	@param geo_hash: a geohash
+	@type geo_hash: str
+	@return: a list of geohash prefixes
+	@rtype: list
+	'''
+	# will not store prefixes that are shorter than the min_prefix
+	min_prefix = 4
+	max_prefix = 7
+	# create a bound on the number of prefixes we will store
+	length = geo_hash.__len__()
+	if length > max_prefix:
+		length = max_prefix
+	# constrain the parameters
+	assert length >min_prefix, \
+		'geo_hash length must be greater than {}'.format(min_prefix)
+	# create the prefixes from the geo_hash
+	prefixes = [geo_hash[:i] for i in range(min_prefix,length)]
+	logging.debug(prefixes)
+	return prefixes
 
 def tagger(text): 
 	# text is a string
@@ -1015,14 +1068,37 @@ class Customer(db.Model):
 		return notifications
 	
 
+class GeoHashPrefixList(db.StringListProperty):
+	'''
+	A property that automatically stores the geohash prefixes of an entity
+	@requires: the entity must have a db.GeoPtProperty
+	'''
+	data_type = list
+	def get_value_for_datastore(self, model_instance):
+		'''
+		Persist a list of geo_hash prefixes for the instance
+		@param model_instance:
+		@type model_instance:
+		'''
+		logging.debug('geohashprefixlist')
+		geo_point = getattr(model_instance, 'geo_point')
+		prefixes = _convert_geo_point_to_prefixes(geo_point)
+		logging.debug(prefixes)
+		return prefixes
 
-BUSINESS_MODEL_VERSION = 1
+
+BUSINESS_MODEL_VERSION = 2
 class Business(db.Model):
+	'''
+	Changelog:
+	v2: added geo_hash_prefixes
+	'''
 	#root class
 	business_name 	= db.StringProperty()
 	vicinity		= db.StringProperty()
 	geo_point		= db.GeoPtProperty() #latitude the longitude
 	geo_hash		= db.StringProperty()
+	geo_hash_prefixes = GeoHashPrefixList()
 	types			= db.ListProperty(str)
 	
 	owner			= db.ReferenceProperty(Customer,collection_name='businesses')
@@ -1067,11 +1143,12 @@ DEAL_STATUS_TEST = 'test'
 DEAL_STATUS_REJECTED = 'rejected'
 DEAL_STATUS_EXPIRED = 'expired'
 DEAL_STATUS_PENDING = 'pending'
-DEAL_MODEL_VERSION = 3
+DEAL_MODEL_VERSION = 4
 class Deal(polymodel.PolyModel):
 	'''
 	Changelog:
 	v3: added promotions property - for identifying what promotions the deal is affected by
+	v4: added geo_hash_prefixes
 	'''
 #Child of business owner OR customer ninja
 	#deal meta information
@@ -1093,6 +1170,7 @@ class Deal(polymodel.PolyModel):
 	deal_text		= db.StringProperty(default='')
 	geo_point		= db.GeoPtProperty() #latitude the longitude
 	geo_hash		= db.StringProperty()
+	geo_hash_prefixes = GeoHashPrefixList()
 	description 	= db.StringProperty(multiline=True,default='') #description of deal
 	img				= blobstore.BlobReferenceProperty()
 	share_id		= db.StringProperty(default=create_unique_id())
