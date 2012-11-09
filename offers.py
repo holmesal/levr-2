@@ -127,6 +127,6 @@ class OffersHandler(webapp2.RequestHandler):
 		#launch the jinja environment
 		jinja_environment = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
 		template = jinja_environment.get_template('templates/landing_v4.html')
-		self.response.out.write(template.render())
+		self.response.out.write(template.render(template_values))
 		
 app = webapp2.WSGIApplication([('/offers', OffersHandler)],debug=True)

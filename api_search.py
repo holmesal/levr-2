@@ -42,7 +42,7 @@ class SearchQueryHandler(api_utils.SearchClass):
 	#		logging.debug(kwargs)
 			#GET PARAMS
 			logging.info(kwargs)
-			assert False
+			#assert False
 			geo_point 		= kwargs.get('geoPoint')
 #			radius 			= kwargs.get('radius')
 #			limit 			= kwargs.get('limit')

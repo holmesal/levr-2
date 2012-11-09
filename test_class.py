@@ -632,9 +632,7 @@ class TransferDealOwnershipToUndeadHandler(webapp2.RedirectHandler):
 #			new_deals.update([deal])
 #		# finish
 #		db.put(new_deals)
-<<<<<<< HEAD
 		pass
-=======
 		
 
 class LandingTestHandler(webapp2.RequestHandler):
