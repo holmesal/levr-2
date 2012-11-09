@@ -19,7 +19,8 @@ class FindABusinessHandler (api_utils.SearchClass):
 					user = False,
 					levrToken = False,
 					# fields to identify a business
-					businessName = True,
+					foursquareID = False,
+					businessName = False,
 					vicinity = False,
 					geoPoint = False,
 					radius = False,

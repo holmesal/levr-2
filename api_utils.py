@@ -82,16 +82,23 @@ class SearchClass(BaseClass):
 			self.user = levr.Notification().create_radius_alert(self.user, deal)
 			
 		return
-def deprecated(handler_method):
-	'''
-	Decorator used to warn the coder that the function they are using is deprecated
-	'''
-	
-	def call(*args,**kwargs):
-		logging.warning('Call to deprecated function: {}'.format(handler_method.__name__))
-		handler_method(*args,**kwargs)
-	return call
-	
+	def search_popular_deals(self):
+		'''
+		Searches for popular deal tags
+		'''
+		
+	def search_deals(self,query):
+		'''
+		Searches the database for deals
+		
+		@return: a list of deals
+		
+		'''
+	def search_businesses(self):
+		'''
+		
+		'''
+		
 
 
 #@deprecated
