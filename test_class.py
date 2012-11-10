@@ -30,7 +30,25 @@ class SandboxHandler(webapp2.RequestHandler):
 	Dont delete this. This is my dev playground.
 	'''
 	def get(self):
-		pass
+		# change ownership of rednecks roast beef deals
+		
+		deals = levr.Deal.all(
+							).filter('businessID','tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fO3GJdErvitTapPLKLhLS0Ss5w_oaChA='
+							).fetch(None)
+		levr.Deal.properties()
+		ninja = api_utils.get_random_dead_ninja()
+		
+		for deal in deals:
+			new_deal = levr.Deal(parent=ninja)
+			for prop in deal.properties():
+				self.response.out.write(prop)
+				if prop[0] != '_':
+					val = getattr(deal, prop)
+					setattr(new_deal, prop, val)
+			
+			self.response.out.write(levr.log_model_props(new_deal))
+		
+		
 		
 		
 class MainPage(webapp2.RequestHandler):

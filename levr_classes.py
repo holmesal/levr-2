@@ -35,7 +35,15 @@ else:
 	URL = 'http://www.levr.com'
 	development = False
 # FUNCTIONS
-
+def deprecated(handler_method):
+	'''
+	Decorator used to warn the coder that the function they are using is deprecated
+	'''
+	
+	def call(*args,**kwargs):
+		logging.warning('Call to deprecated function: {}'.format(handler_method.__name__))
+		handler_method(*args,**kwargs)
+	return call
 def build_display_name(user):
 	'''Goes through cases of semi-populated user information from best to worst and updates display name.
 	To be used when the user is created, and every time an account is connected'''
@@ -82,6 +90,8 @@ def create_new_business(business_name,vicinity,geo_point,types,phone_number=None
 	@keyword owner: the owner of the business
 	@type owner: Customer
 	'''
+	if type(geo_point) == str:
+		geo_point = geo_converter(geo_point)
 	assert type(geo_point) == db.GeoPt, 'Must pass geo_point as a db.GeoPt property'
 	assert type(types) == list, 'Must pass types as a list'
 	
@@ -277,12 +287,65 @@ def create_notification(notification_type,to_be_notified,actor,deal=None,**kwarg
 
 
 def geo_converter(geo_str):
+	'''
+	Converts a geopoint in form := "<float>,<float>" to type db.GeoPt
+	@param geo_str: a geo point in string form
+	@type geo_str: str
+	@return: The geopoint in form:= db.GeoPt
+	@rtype: db.GeoPt
+	'''
 	try:
 		lat, lng = geo_str.split(',')
 		return db.GeoPt(lat=float(lat), lon=float(lng))
 	except Exception,e:
 		log_error(e)
 		raise TypeError('lat,lon: '+str(geo_str))
+
+def _convert_geo_point_to_prefixes(geo_point):
+	'''
+	Converts an entity of type == db.GeoPt or type == str
+		to a list of geo_hash prefixes
+	@param geo_point: the geopoint in question
+	@type geo_point: str or db.GeoPt
+	@return: a list of geohash prefixes
+	@rtype: list
+	'''
+	# if the geohash is in string form, convert to db.GeoPt
+	if type(geo_point) == str:
+		geo_point = geo_converter(geo_point)
+	# assure that the geopoint is the right type
+	assert type(geo_point) == db.GeoPt, \
+		'geo_point must be type == db.GeoPt or str: '+str(geo_point)+'; '+str(type(geo_point))
+	# create the base geo_hash
+	precision = 8
+	geo_hash = geohash.encode(geo_point.lat, geo_point.lon, precision)
+	# parse the geo_hash into prefixes
+	return _convert_geohash_to_prefixes(geo_hash)
+	
+	
+def _convert_geohash_to_prefixes(geo_hash):
+	'''
+	Takes a geohash, and converts it to a list of geohash prefixes
+	The list of prefixes is 
+	@param geo_hash: a geohash
+	@type geo_hash: str
+	@return: a list of geohash prefixes
+	@rtype: list
+	'''
+	# will not store prefixes that are shorter than the min_prefix
+	min_prefix = 4
+	max_prefix = 7
+	# create a bound on the number of prefixes we will store
+	length = geo_hash.__len__()
+	if length > max_prefix:
+		length = max_prefix
+	# constrain the parameters
+	assert length >min_prefix, \
+		'geo_hash length must be greater than {}'.format(min_prefix)
+	# create the prefixes from the geo_hash
+	prefixes = [geo_hash[:i] for i in range(min_prefix,length)]
+	logging.debug(prefixes)
+	return prefixes
 
 def tagger(text): 
 	# text is a string
@@ -307,11 +370,10 @@ def tagger(text):
 #				filtered_tags.append(tag)
 #	
 #	return filtered_tags
-	return tokenize_and_stem(text,True)
+	return create_tokens(text)
 
 
-
-def tokenize_and_stem(text,filtered=True):
+def create_tokens(text,stemmed=True,filtered=True):
 	'''
 	Used to create a list of indexable strings from a single multiword string
 	Tokenizes the input string, and then stems each of the tokens
@@ -323,26 +385,13 @@ def tokenize_and_stem(text,filtered=True):
 	@return: a list of tokenized and stemmed words
 	@rtype: list
 	'''
-	# tokenize the motherfuckers
-	tokens = tokenize(text)
-	# filter out black words if you so desire
-	if filtered == True:
-		tokens = filter_stop_words(tokens)
-	# Let's get to the root of this.
-	tokens = stem(tokens)
-	return tokens
-def tokenize_and_filter(text):
-	'''
-	Used to create a list of words that can be used for popular searches and stuff
-	@param text: the text to be converted
-	@type text: str
-	@return: a list of tokenized and filtered words
-	@rtype: list
-	'''
-	tokens = tokenize(text)
-	tokens = filter_stop_words(tokens)
-	return tokens
-def tokenize(text):
+	tokens = _tokenize(text)
+	if filtered:
+		tokens = _filter_stop_words(tokens)
+	if stemmed:
+		tokens = _stem(tokens)
+	return list(set(tokens))
+def _tokenize(text):
 	'''
 	Tokenizes an input string
 	Replaces certain delimeters with spaces, and removes punctuation
@@ -350,6 +399,11 @@ def tokenize(text):
 	@type text: str
 	@return: A list of tokenized words
 	'''
+	if type(text) == unicode:
+		pass
+		
+#	text = str(text)
+#	assert type(text) == str, 'input must be a string; type: {}'.format(type(text))
 	# a list of chars that will be replaced with spaces
 	excludu = ['_','/',',','-','|']
 
@@ -367,7 +421,7 @@ def tokenize(text):
 	
 	# create tokens
 	return [token.lower() for token in tokenizer.tokenize(text)]
-def stem(tokens):
+def _stem(tokens):
 	'''
 	Creates stemmed versions of words in a tokenized list
 	@param tokens: A tokenized list of words
@@ -377,7 +431,7 @@ def stem(tokens):
 	'''
 	stemmer = PorterStemmer()
 	return [stemmer.stem(token) for token in tokens]
-def filter_stop_words(tokens):
+def _filter_stop_words(tokens):
 	'''
 	Filters a list of strings
 	@param word_list: A tokenized, but not stemmed word list
@@ -874,6 +928,45 @@ def dealCreate(params,origin,upload_flag=True,**kwargs):
 		#return share url
 		return deal
 
+#===============================================================================
+# TODO: fit these into our system - needs to handle failure
+#===============================================================================
+#def prefetch_refprop(entities, prop):
+#	ref_keys = [prop.get_value_for_datastore(x) for x in entities]
+#	ref_entities = dict((x.key(), x) for x in db.get([i for i in set(ref_keys) if i]))
+#	for entity, ref_key in zip(entities, ref_keys):
+#		if ref_key:
+#			prop.__set__(entity, ref_entities[ref_key])
+#	return entities
+#def prefetch_refprops(entities, *props):
+#	'''
+#	Prefetches reference properties. Credit to Nick Johnson
+#	@param entities: a list of entities that reference other entities
+#	@type entities: list of entities
+#	@param *props: a list of reference property names in the entities
+#	@type *param: list of strings
+#	@return: the list of entities 
+#	'''
+#	fields = [(entity, prop) for entity in entities for prop in props]
+#	ref_keys = [prop.get_value_for_datastore(x) for x, prop in fields]
+#	ref_entities = dict((x.key(), x) for x in db.get(set(ref_keys)))
+#	for (entity, prop), ref_key in zip(fields, ref_keys):
+#		prop.__set__(entity, ref_entities[ref_key])
+#	return entities
+#def prefetch_parents(entities):
+#	'''
+#	Prefetches parent entities. Credit to Bryce Cutt
+#	Assigns parents 
+#	@param entities: a list of entities with parents
+#	@type entities: list
+#	@return: a list of 
+#	'''
+#	ref_keys = [x.parent_key() for x in entities if x.parent_key() is not None]
+#	ref_entities = dict((x.key(), x) for x in db.get(set(ref_keys)))
+#	ref_entities[None] = None
+#	for entity in entities:
+#		entity.parent_obj = ref_entities[entity.parent_key()]
+#	return entities
 
 
 
@@ -889,10 +982,41 @@ def dealCreate(params,origin,upload_flag=True,**kwargs):
 
 
 
-
-
-
-
+#===============================================================================
+# Custom Properties
+#===============================================================================
+class GeoHashPrefixListProperty(db.StringListProperty):
+	'''
+	A property that automatically stores the geohash prefixes of an entity
+	@requires: the entity must have a db.GeoPtProperty
+	'''
+	data_type = list
+	def get_value_for_datastore(self, model_instance):
+		'''
+		Persist a list of geo_hash prefixes for the instance
+		@param model_instance:
+		@type model_instance:
+		'''
+		logging.debug('geohashprefixlist')
+		geo_point = getattr(model_instance, 'geo_point')
+		prefixes = _convert_geo_point_to_prefixes(geo_point)
+		logging.debug(prefixes)
+		return prefixes
+class KeywordListProperty(db.StringListProperty):
+	'''
+	A property that creates a list of tags from the entity properties
+	'''
+	data_type = list
+	def get_value_for_datastore(self, model_instance):
+		'''
+		@attention:  entities may have additional tags that were added by a business
+		'''
+#		tags = model_instance.extra_tags
+		tags = []
+		tags.extend(model_instance.create_tags())
+		
+		return list(set(tags))
+		
 
 
 ###################################################
@@ -1014,17 +1138,24 @@ class Customer(db.Model):
 		#return all notifications
 		return notifications
 	
+	
 
 
-BUSINESS_MODEL_VERSION = 1
+BUSINESS_MODEL_VERSION = 2
 class Business(db.Model):
+	'''
+	Changelog:
+	v2: added geo_hash_prefixes
+	'''
 	#root class
 	business_name 	= db.StringProperty()
 	vicinity		= db.StringProperty()
 	geo_point		= db.GeoPtProperty() #latitude the longitude
 	geo_hash		= db.StringProperty()
+	geo_hash_prefixes = GeoHashPrefixListProperty()
 	types			= db.ListProperty(str)
-	
+	# TODO: add business tags
+	tags			= KeywordListProperty()
 	owner			= db.ReferenceProperty(Customer,collection_name='businesses')
 	upload_email	= db.EmailProperty()
 	date_created	= db.DateTimeProperty(auto_now_add=True)
@@ -1045,20 +1176,23 @@ class Business(db.Model):
 	locu_id			= db.StringProperty()
 	widget_id		= db.StringProperty(default=create_unique_id())
 	creation_date	= db.DateTimeProperty(auto_now_add=True)
-	def create_tags(self):
-		#create tags list
-		tags = []
-		
-		#takes a business, and returns critical properties taggified
-		business_name	= tagger(self.business_name)
-		tags.extend(business_name)
-#		vicinity		= tagger(self.vicinity)
-#		tags.extend(vicinity)
-#		
-		for t in self.types:
-			t			= tagger(t)
-			tags.extend(t)
-		
+	
+	def create_tags(self,stemmed=True):
+		'''
+		Used to parse the business fields into indexed keywords
+		@return: a list of tokenized and stemmed keywords
+		@rtype: list
+		'''
+		indexed_properties = ['business_name','types','foursquare_name']
+		items = [getattr(self, prop) for prop in indexed_properties]
+		text = ''
+		for item in items:
+			logging.info(item)
+			if type(item) == list:
+				text +=' '.join(item) + ' '
+			else:
+				text += item + ''
+		tags = create_tokens(text,stemmed)
 		return tags
 	
 MERCHANT_DEAL_LENGTH = 21 # days
@@ -1067,11 +1201,12 @@ DEAL_STATUS_TEST = 'test'
 DEAL_STATUS_REJECTED = 'rejected'
 DEAL_STATUS_EXPIRED = 'expired'
 DEAL_STATUS_PENDING = 'pending'
-DEAL_MODEL_VERSION = 3
+DEAL_MODEL_VERSION = 4
 class Deal(polymodel.PolyModel):
 	'''
 	Changelog:
 	v3: added promotions property - for identifying what promotions the deal is affected by
+	v4: added geo_hash_prefixes
 	'''
 #Child of business owner OR customer ninja
 	#deal meta information
@@ -1093,6 +1228,7 @@ class Deal(polymodel.PolyModel):
 	deal_text		= db.StringProperty(default='')
 	geo_point		= db.GeoPtProperty() #latitude the longitude
 	geo_hash		= db.StringProperty()
+	geo_hash_prefixes = GeoHashPrefixListProperty()
 	description 	= db.StringProperty(multiline=True,default='') #description of deal
 	img				= blobstore.BlobReferenceProperty()
 	share_id		= db.StringProperty(default=create_unique_id())
@@ -1115,19 +1251,45 @@ class Deal(polymodel.PolyModel):
 	
 	
 	#deprecated stuff
-	date_uploaded	= db.DateTimeProperty(auto_now_add=True)
-	date_start 		= db.DateTimeProperty(auto_now_add=False) #start date
-	has_been_shared	= db.BooleanProperty(default = False)
-	count_seen 		= db.IntegerProperty(default = 0)  #number seen
+	date_uploaded	= db.DateTimeProperty()
+	date_start 		= db.DateTimeProperty() #start date
+	has_been_shared	= db.BooleanProperty()
+	count_seen 		= db.IntegerProperty()  #number seen
 	deal_views		= db.IntegerProperty()
 	barcode			= blobstore.BlobReferenceProperty()
-	secondary_name 	= db.StringProperty(default='') #== with purchase of
-	deal_type 		= db.StringProperty(choices=set(["single","bundle"])) #two items or one item
+	secondary_name 	= db.StringProperty() #== with purchase of
+	deal_type 		= db.StringProperty() #two items or one item
 	count_redeemed 	= db.IntegerProperty() 	#total redemptions
 	vicinity		= db.StringProperty()
 	business_name 	= db.StringProperty() #name of business
-	is_exclusive	= db.BooleanProperty(default=False)
+	is_exclusive	= db.BooleanProperty()
 	locu_id			= db.StringProperty()
+	
+	def create_tags(self,business=None,stemmed=True,filtered=True):
+		'''
+		Creates a list of keywords from the indexed properties of the deal
+		
+		@param business: the business of the deal
+		@type business: Business
+		@param stemmed: Optional, if true, then will also stem the keywords
+		@type stemmed: bool
+		'''
+		# will pull the business from the db by default
+		if not business:
+			business = self.business
+		
+		indexed_properties = ['deal_text','description']
+		
+		# create tags from the deal properties
+		tags = [create_tokens(getattr(self, prop), stemmed, filtered) \
+			for prop in indexed_properties]
+		
+		# create tags from the business
+		tags.extend(business.create_tags())
+		
+		# return list of tags without redundancies
+		return list(set(tags))
+		
 	
 	def expire(self,notify=False):
 		'''
