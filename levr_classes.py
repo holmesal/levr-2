@@ -388,7 +388,7 @@ def create_tokens(text,stemmed=True,filtered=True):
 		tokens = _filter_stop_words(tokens)
 	if stemmed:
 		tokens = _stem(tokens)
-	return tokens
+	return list(set(tokens))
 def _tokenize(text):
 	'''
 	Tokenizes an input string
@@ -397,6 +397,15 @@ def _tokenize(text):
 	@type text: str
 	@return: A list of tokenized words
 	'''
+	if type(text) == unicode:
+		pass
+	elif 1 == 1:
+		pass
+	else:
+		pass
+		
+#	text = str(text)
+#	assert type(text) == str, 'input must be a string; type: {}'.format(type(text))
 	# a list of chars that will be replaced with spaces
 	excludu = ['_','/',',','-','|']
 
@@ -921,8 +930,45 @@ def dealCreate(params,origin,upload_flag=True,**kwargs):
 		#return share url
 		return deal
 
-
-
+#===============================================================================
+# TODO: fit these into our system - needs to handle failure
+#===============================================================================
+#def prefetch_refprop(entities, prop):
+#	ref_keys = [prop.get_value_for_datastore(x) for x in entities]
+#	ref_entities = dict((x.key(), x) for x in db.get([i for i in set(ref_keys) if i]))
+#	for entity, ref_key in zip(entities, ref_keys):
+#		if ref_key:
+#			prop.__set__(entity, ref_entities[ref_key])
+#	return entities
+#def prefetch_refprops(entities, *props):
+#	'''
+#	Prefetches reference properties. Credit to Nick Johnson
+#	@param entities: a list of entities that reference other entities
+#	@type entities: list of entities
+#	@param *props: a list of reference property names in the entities
+#	@type *param: list of strings
+#	@return: the list of entities 
+#	'''
+#	fields = [(entity, prop) for entity in entities for prop in props]
+#	ref_keys = [prop.get_value_for_datastore(x) for x, prop in fields]
+#	ref_entities = dict((x.key(), x) for x in db.get(set(ref_keys)))
+#	for (entity, prop), ref_key in zip(fields, ref_keys):
+#		prop.__set__(entity, ref_entities[ref_key])
+#	return entities
+#def prefetch_parents(entities):
+#	'''
+#	Prefetches parent entities. Credit to Bryce Cutt
+#	Assigns parents 
+#	@param entities: a list of entities with parents
+#	@type entities: list
+#	@return: a list of 
+#	'''
+#	ref_keys = [x.parent_key() for x in entities if x.parent_key() is not None]
+#	ref_entities = dict((x.key(), x) for x in db.get(set(ref_keys)))
+#	ref_entities[None] = None
+#	for entity in entities:
+#		entity.parent_obj = ref_entities[entity.parent_key()]
+#	return entities
 
 
 
@@ -967,8 +1013,9 @@ class KeywordListProperty(db.StringListProperty):
 		'''
 		@attention:  entities may have additional tags that were added by a business
 		'''
-		tags = model_instance.tags
-		tags.extend(model_instance.create(tags))
+#		tags = model_instance.extra_tags
+		tags = []
+		tags.extend(model_instance.create_tags())
 		
 		return list(set(tags))
 		
@@ -1109,7 +1156,8 @@ class Business(db.Model):
 	geo_hash		= db.StringProperty()
 	geo_hash_prefixes = GeoHashPrefixListProperty()
 	types			= db.ListProperty(str)
-	
+	# TODO: add business tags
+	tags			= KeywordListProperty()
 	owner			= db.ReferenceProperty(Customer,collection_name='businesses')
 	upload_email	= db.EmailProperty()
 	date_created	= db.DateTimeProperty(auto_now_add=True)
@@ -1138,9 +1186,16 @@ class Business(db.Model):
 		@rtype: list
 		'''
 		indexed_properties = ['business_name','types','foursquare_name']
-		tokens = list(set([create_tokens(getattr(self, prop),stemmed=stemmed) \
-					for prop in indexed_properties]))
-		return tokens
+		items = [getattr(self, prop) for prop in indexed_properties]
+		text = ''
+		for item in items:
+			logging.info(item)
+			if type(item) == list:
+				text +=' '.join(item) + ' '
+			else:
+				text += item + ''
+		tags = create_tokens(text,stemmed)
+		return tags
 	
 MERCHANT_DEAL_LENGTH = 21 # days
 DEAL_STATUS_ACTIVE = 'active'

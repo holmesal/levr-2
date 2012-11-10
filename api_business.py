@@ -11,38 +11,81 @@ import random
 import webapp2
 from tasks import INCREMENT_DEAL_VIEW_URL
 
-class FindABusinessHandler (api_utils.SearchClass):
+class FindABusinessHandler(api_utils.BaseClass):
 	'''
 	A handler for searching for a specific venue
 	'''
-	api_utils.validate(None, 'param',
+	@api_utils.validate(None, 'param',
 					user = False,
 					levrToken = False,
 					# fields to identify a business
 					foursquareID = False,
 					businessName = False,
 					vicinity = False,
-					geoPoint = False,
+					geoPoint = True,
 					radius = False,
 					)
 	def get(self,*args,**kwargs):
 		'''
 		@return: <business>
 		'''
+		logging.info(kwargs)
 		business_name = kwargs.get('businessName')
 		vicinity = kwargs.get('vicinity')
-		geoPoint = kwargs.get('geoPoint')
+		geo_point = kwargs.get('geoPoint')
 		radius = kwargs.get('radius')
 		try:
 			# create a set of geo hashes to search based on the radius
+			search = api_utils.Search(True)
+			precision = 5
+			ghash_list,bounding_box = search.create_ghash_list(geo_point, precision)
 			
-			# If 
+			logging.info(ghash_list)
+			# get deal keys
+			for ghash in ghash_list:
+				business_keys = levr.Business.all(keys_only=True
+											).filter('geo_hash_prefixes',ghash
+											).fetch(None)
 			
-			# construct a query for each of the tokens from the business name + geohash
+			# fetch all businesses
+			businesses = db.get(business_keys)
 			
-			# 
+			# filter the businesses by the tags
+			search_tags = set([])
+			if business_name:
+				search_tags.update(levr.create_tokens(business_name))
+			if vicinity:
+				search_tags.update(levr.create_tokens(vicinity))
+			logging.info(search_tags)
+			# map the quality of the match by the number of tags that match the business
+			for business in businesses:
+				business_tags = business.tags
+				business.rank = 0
+				for tag in business_tags:
+					if tag in search_tags:
+						business.rank += 1
+			# sort the businesses by their quality
+			ranks = [b.rank for b in businesses]
+			toop = zip(ranks,businesses)
+			toop.sort()
+			ranks,businesses = zip(*toop)
 			
-			pass
+			# get the highest ranking business
+			business = businesses[0]
+			
+			# get all deals from that business
+			deals = levr.Deal.all(keys_only=True
+								).ancestor(business.key()
+								).filter('deal_status',levr.DEAL_STATUS_ACTIVE
+								).fetch(None)
+			
+			packaged_deals = api_utils.package_deal_multi(deals)
+			packaged_business = api_utils.package_business(business)
+			response = {
+					'business' : packaged_business,
+					'deals' : packaged_deals
+					}
+			self.send_response(response)
 		except AssertionError,e:
 			self.send_error(e)
 		except Exception,e:
@@ -86,8 +129,8 @@ class ViewABusinessHandler(api_utils.BaseClass):
 		self.send_response(response)
 		
 
-FIND_A_BUSINESS_URL = '/api/businesses/find'
-VIEW_A_BUSINESS_URL = '/api/businesses/view'
+FIND_A_BUSINESS_URL = '/api/business/find'
+VIEW_A_BUSINESS_URL = '/api/business/view'
 app = webapp2.WSGIApplication([
 							(FIND_A_BUSINESS_URL, FindABusinessHandler),
 							(VIEW_A_BUSINESS_URL, ViewABusinessHandler),

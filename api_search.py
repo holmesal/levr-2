@@ -13,9 +13,10 @@ from tasks import INCREMENT_DEAL_VIEW_URL
 
 
 
-class SearchQueryHandler(api_utils.SearchClass):
+class SearchQueryHandler(api_utils.BaseClass):
 	@api_utils.validate('query',None,
-					geoPoint=True,
+					geoPoint=False,
+					ll=False,
 					radius=False,
 					user=False,
 					latitudeHalfDelta=False,
@@ -37,7 +38,7 @@ class SearchQueryHandler(api_utils.SearchClass):
 		&longitudeHalfDelta=0.027466
 		'''
 		try:	
-			logging.debug('SEARCH BY QUERY\n\n\n')
+			logging.debug('SEARCH BY QUERY \n\n\n')
 	#		logging.debug(kwargs)
 			#GET PARAMS
 			logging.info(kwargs)

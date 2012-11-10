@@ -352,8 +352,8 @@ class TestNotificationHandler(webapp2.RequestHandler):
 		self.response.out.write('HOLY SHIT NEW NOTIFICATIONS OMG OMG OMG')
 
 
-FEMALE_EMAIL = 'deadninja2@levr.com'
-MALE_EMAIL = 'deadninja1@levr.com'
+FEMALE_EMAIL = 'undeadninja@levr.com'
+MALE_EMAIL = 'undeadninja@levr.com'
 class Create100DeadNinjasHandler(webapp2.RequestHandler):
 	def get(self):
 #		#=======================================================================
