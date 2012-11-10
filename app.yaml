@@ -1,4 +1,4 @@
-application: levr-development2
+application: levr-development
 version: t
 runtime: python27
 api_version: 1
@@ -142,4 +142,4 @@ skip_files:
 - ^(.*/)?\..*
 - ^(.*/)?.*\.bak$
 - ^boto/
-#- ^Crypto/
+- ^Crypto/

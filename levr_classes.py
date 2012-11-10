@@ -90,6 +90,8 @@ def create_new_business(business_name,vicinity,geo_point,types,phone_number=None
 	@keyword owner: the owner of the business
 	@type owner: Customer
 	'''
+	if type(geo_point) == str:
+		geo_point = geo_converter(geo_point)
 	assert type(geo_point) == db.GeoPt, 'Must pass geo_point as a db.GeoPt property'
 	assert type(types) == list, 'Must pass types as a list'
 	
@@ -397,13 +399,12 @@ def _tokenize(text):
 	@type text: str
 	@return: A list of tokenized words
 	'''
+	# remove unicode characters
 	if type(text) == unicode:
-		pass
-	elif 1 == 1:
-		pass
-	else:
-		pass
-		
+		logging.info(text)
+		text = text.encode('ascii','ignore')
+		logging.info(text)
+		str(text)
 #	text = str(text)
 #	assert type(text) == str, 'input must be a string; type: {}'.format(type(text))
 	# a list of chars that will be replaced with spaces
@@ -614,11 +615,6 @@ def remove_memcache_key_by_geo_point(geo_point,namespace):
 			logging.debug('geohashes {} were deleted from memcache'.format(geo_hash_list))
 			break
 	return
-
-def create_deal():
-	'''
-	Non-shit version of the dealCreate function
-	'''
 
 def dealCreate(params,origin,upload_flag=True,**kwargs):
 	'''
@@ -987,7 +983,7 @@ def dealCreate(params,origin,upload_flag=True,**kwargs):
 #===============================================================================
 # Custom Properties
 #===============================================================================
-class GeoHashPrefixListProperty(db.StringListProperty):
+class GeoHashProperty(db.StringProperty):
 	'''
 	A property that automatically stores the geohash prefixes of an entity
 	@requires: the entity must have a db.GeoPtProperty
@@ -1001,9 +997,10 @@ class GeoHashPrefixListProperty(db.StringListProperty):
 		'''
 		logging.debug('geohashprefixlist')
 		geo_point = getattr(model_instance, 'geo_point')
-		prefixes = _convert_geo_point_to_prefixes(geo_point)
-		logging.debug(prefixes)
-		return prefixes
+		precision = 8
+		geo_hash = geohash.encode(geo_point.lat, geo_point.lon, precision)
+		
+		return geo_hash
 class KeywordListProperty(db.StringListProperty):
 	'''
 	A property that creates a list of tags from the entity properties
@@ -1016,7 +1013,9 @@ class KeywordListProperty(db.StringListProperty):
 #		tags = model_instance.extra_tags
 		tags = []
 		tags.extend(model_instance.create_tags())
-		
+		logging.info('hi')
+		logging.info(tags)
+		logging.info(type(tags))
 		return list(set(tags))
 		
 
@@ -1153,8 +1152,8 @@ class Business(db.Model):
 	business_name 	= db.StringProperty()
 	vicinity		= db.StringProperty()
 	geo_point		= db.GeoPtProperty() #latitude the longitude
-	geo_hash		= db.StringProperty()
-	geo_hash_prefixes = GeoHashPrefixListProperty()
+	geo_hash		= GeoHashProperty()#db.StringProperty()
+	
 	types			= db.ListProperty(str)
 	# TODO: add business tags
 	tags			= KeywordListProperty()
@@ -1193,7 +1192,7 @@ class Business(db.Model):
 			if type(item) == list:
 				text +=' '.join(item) + ' '
 			else:
-				text += item + ''
+				text += item + ' '
 		tags = create_tokens(text,stemmed)
 		return tags
 	
@@ -1215,7 +1214,7 @@ class Deal(polymodel.PolyModel):
 	deal_status		= db.StringProperty(choices=set(["pending","active","rejected","expired","test"]),default="active")
 	been_reviewed	= db.BooleanProperty(default=False)
 	reject_message	= db.StringProperty()
-	tags			= db.ListProperty(str)
+	tags			= KeywordListProperty()#db.ListProperty(str)
 	businessID 		= db.StringProperty()
 	business		= db.ReferenceProperty(Business,collection_name='deals')
 	origin			= db.StringProperty(default='levr')
@@ -1229,8 +1228,7 @@ class Deal(polymodel.PolyModel):
 	#deal display info
 	deal_text		= db.StringProperty(default='')
 	geo_point		= db.GeoPtProperty() #latitude the longitude
-	geo_hash		= db.StringProperty()
-	geo_hash_prefixes = GeoHashPrefixListProperty()
+	geo_hash		= GeoHashProperty()#db.StringProperty()
 	description 	= db.StringProperty(multiline=True,default='') #description of deal
 	img				= blobstore.BlobReferenceProperty()
 	share_id		= db.StringProperty(default=create_unique_id())
@@ -1288,9 +1286,12 @@ class Deal(polymodel.PolyModel):
 		
 		# create tags from the business
 		tags.extend(business.create_tags())
-		
+		logging.info('hi')
+		logging.info(tags)
+		logging.info(type(tags))
+		tags = list(set(tags))
 		# return list of tags without redundancies
-		return list(set(tags))
+		return tags
 		
 	
 	def expire(self,notify=False):

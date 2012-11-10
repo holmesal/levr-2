@@ -129,7 +129,17 @@ class ViewABusinessHandler(api_utils.BaseClass):
 		self.send_response(response)
 		
 
+class FindABusinessFromFourquareHandler(api_utils.BaseClass):
+	@api_utils.validate(None, 'param',
+					user = False,
+					levrToken = False,
+					foursquareID = True
+					)
+	def get(self,*args,**kwargs):
+		
+
 FIND_A_BUSINESS_URL = '/api/business/find'
+FOURSQUARE_BUSINESS_URL = '/api/business/foursquare'
 VIEW_A_BUSINESS_URL = '/api/business/view'
 app = webapp2.WSGIApplication([
 							(FIND_A_BUSINESS_URL, FindABusinessHandler),
