@@ -400,9 +400,7 @@ def _tokenize(text):
 	@return: A list of tokenized words
 	'''
 	if type(text) == unicode:
-		logging.info(text)
 		text = text.encode('ascii','ignore')
-		logging.info(text)
 		str(text)
 #	text = str(text)
 #	assert type(text) == str, 'input must be a string; type: {}'.format(type(text))
@@ -1014,13 +1012,10 @@ class KeywordListProperty(db.StringListProperty):
 		'''
 		@attention:  entities may have additional tags that were added by a business
 		'''
-		logging.info('tags!!')
 #		tags = model_instance.extra_tags
 		tags = []
 		tags.extend(model_instance.create_tags())
-		logging.info(tags)
 		tags = list(set(tags))
-		logging.info(tags)
 		return tags
 		
 
@@ -1194,7 +1189,7 @@ class Business(db.Model):
 		text = ''
 		logging.info('\n\n create business tags: '+repr(items)+' \n\n')
 		for item in items:
-			logging.info(item)
+#			logging.info(item)
 			if item:
 				if type(item) == list:
 					text +=' '.join(item) + ' '
@@ -1203,9 +1198,10 @@ class Business(db.Model):
 						text += item + ' '
 					except:
 						log_error('On busines: '+repr(self.business_name))
-			logging.info(text)
+#			logging.info(text)
 		logging.info('text: '+repr(text))
 		tags = create_tokens(text,stemmed)
+		logging.info('tags: '+str(tags))
 		return tags
 	
 MERCHANT_DEAL_LENGTH = 21 # days
@@ -1301,7 +1297,7 @@ class Deal(polymodel.PolyModel):
 					try:
 						text += item + ' '
 					except:
-						log_error('On busines: '+repr(self.business_name))
+						log_error('On deal: '+repr(self.key()))
 #			logging.info(text)
 		logging.info('text: '+repr(text))
 		

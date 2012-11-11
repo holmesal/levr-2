@@ -1406,7 +1406,7 @@ def search_foursquare(geo_point,token,deal_status,already_found=[],**kwargs):
 			
 			else:
 				deal = existing_deal
-				logging.info('Foursquare special '+deal.foursquare_id+' found in database but not in search. '+ str(deal.deal_text))
+				logging.info('Foursquare special '+deal.foursquare_id+' found in database but not in search. '+ repr(deal.deal_text))
 #				logging.debug('foursquare')
 				#logging.debug(levr.log_model_props(deal))
 			deal_business = db.get(deal.businessID)
