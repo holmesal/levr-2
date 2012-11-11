@@ -92,7 +92,8 @@ def create_new_business(business_name,vicinity,geo_point,types,phone_number=None
 	'''
 	if type(geo_point) == str:
 		geo_point = geo_converter(geo_point)
-	assert type(geo_point) == db.GeoPt, 'Must pass geo_point as a db.GeoPt property'
+	logging.info(geo_point)
+	assert type(geo_point) == db.GeoPt, 'Must pass geo_point as a db.GeoPt property: '
 	assert type(types) == list, 'Must pass types as a list'
 	
 	
@@ -301,51 +302,50 @@ def geo_converter(geo_str):
 		log_error(e)
 		raise TypeError('lat,lon: '+str(geo_str))
 
-def _convert_geo_point_to_prefixes(geo_point):
-	'''
-	Converts an entity of type == db.GeoPt or type == str
-		to a list of geo_hash prefixes
-	@param geo_point: the geopoint in question
-	@type geo_point: str or db.GeoPt
-	@return: a list of geohash prefixes
-	@rtype: list
-	'''
-	# if the geohash is in string form, convert to db.GeoPt
-	if type(geo_point) == str:
-		geo_point = geo_converter(geo_point)
-	# assure that the geopoint is the right type
-	assert type(geo_point) == db.GeoPt, \
-		'geo_point must be type == db.GeoPt or str: '+str(geo_point)+'; '+str(type(geo_point))
-	# create the base geo_hash
-	precision = 8
-	geo_hash = geohash.encode(geo_point.lat, geo_point.lon, precision)
-	# parse the geo_hash into prefixes
-	return _convert_geohash_to_prefixes(geo_hash)
-	
-	
-def _convert_geohash_to_prefixes(geo_hash):
-	'''
-	Takes a geohash, and converts it to a list of geohash prefixes
-	The list of prefixes is 
-	@param geo_hash: a geohash
-	@type geo_hash: str
-	@return: a list of geohash prefixes
-	@rtype: list
-	'''
-	# will not store prefixes that are shorter than the min_prefix
-	min_prefix = 4
-	max_prefix = 7
-	# create a bound on the number of prefixes we will store
-	length = geo_hash.__len__()
-	if length > max_prefix:
-		length = max_prefix
-	# constrain the parameters
-	assert length >min_prefix, \
-		'geo_hash length must be greater than {}'.format(min_prefix)
-	# create the prefixes from the geo_hash
-	prefixes = [geo_hash[:i] for i in range(min_prefix,length)]
-	logging.debug(prefixes)
-	return prefixes
+#def _convert_geo_point_to_prefixes(geo_point):
+#	'''
+#	Converts an entity of type == db.GeoPt or type == str
+#		to a list of geo_hash prefixes
+#	@param geo_point: the geopoint in question
+#	@type geo_point: str or db.GeoPt
+#	@return: a list of geohash prefixes
+#	@rtype: list
+#	'''
+#	# if the geohash is in string form, convert to db.GeoPt
+#	if type(geo_point) == str:
+#		geo_point = geo_converter(geo_point)
+#	# assure that the geopoint is the right type
+#	assert type(geo_point) == db.GeoPt, \
+#		'geo_point must be type == db.GeoPt or str: '+str(geo_point)+'; '+str(type(geo_point))
+#	# create the base geo_hash
+#	
+#	# parse the geo_hash into prefixes
+#	return _convert_geohash_to_prefixes(geo_hash)
+#	
+#	
+#def _convert_geohash_to_prefixes(geo_hash):
+#	'''
+#	Takes a geohash, and converts it to a list of geohash prefixes
+#	The list of prefixes is 
+#	@param geo_hash: a geohash
+#	@type geo_hash: str
+#	@return: a list of geohash prefixes
+#	@rtype: list
+#	'''
+#	# will not store prefixes that are shorter than the min_prefix
+#	min_prefix = 4
+#	max_prefix = 7
+#	# create a bound on the number of prefixes we will store
+#	length = geo_hash.__len__()
+#	if length > max_prefix:
+#		length = max_prefix
+#	# constrain the parameters
+#	assert length >min_prefix, \
+#		'geo_hash length must be greater than {}'.format(min_prefix)
+#	# create the prefixes from the geo_hash
+#	prefixes = [geo_hash[:i] for i in range(min_prefix,length)]
+#	logging.debug(prefixes)
+#	return prefixes
 
 def tagger(text): 
 	# text is a string
@@ -985,7 +985,7 @@ def dealCreate(params,origin,upload_flag=True,**kwargs):
 #===============================================================================
 # Custom Properties
 #===============================================================================
-class GeoHashPrefixListProperty(db.StringListProperty):
+class GeoHashProperty(db.StringProperty):
 	'''
 	A property that automatically stores the geohash prefixes of an entity
 	@requires: the entity must have a db.GeoPtProperty
@@ -993,15 +993,16 @@ class GeoHashPrefixListProperty(db.StringListProperty):
 	data_type = list
 	def get_value_for_datastore(self, model_instance):
 		'''
-		Persist a list of geo_hash prefixes for the instance
+		Returns a geo hash calculated from the geo_point
 		@param model_instance:
 		@type model_instance:
 		'''
-		logging.debug('geohashprefixlist')
+		logging.debug('geo hash')
 		geo_point = getattr(model_instance, 'geo_point')
-		prefixes = _convert_geo_point_to_prefixes(geo_point)
-		logging.debug(prefixes)
-		return prefixes
+		precision = 8
+		geo_hash = geohash.encode(geo_point.lat, geo_point.lon, precision)
+#		prefixes = _convert_geo_point_to_prefixes(geo_point)
+		return geo_hash
 class KeywordListProperty(db.StringListProperty):
 	'''
 	A property that creates a list of tags from the entity properties
@@ -1011,11 +1012,14 @@ class KeywordListProperty(db.StringListProperty):
 		'''
 		@attention:  entities may have additional tags that were added by a business
 		'''
+		logging.info('tags!!')
 #		tags = model_instance.extra_tags
 		tags = []
 		tags.extend(model_instance.create_tags())
-		
-		return list(set(tags))
+		logging.info(tags)
+		tags = list(set(tags))
+		logging.info(tags)
+		return tags
 		
 
 
@@ -1151,8 +1155,8 @@ class Business(db.Model):
 	business_name 	= db.StringProperty()
 	vicinity		= db.StringProperty()
 	geo_point		= db.GeoPtProperty() #latitude the longitude
-	geo_hash		= db.StringProperty()
-	geo_hash_prefixes = GeoHashPrefixListProperty()
+	geo_hash		= GeoHashProperty()#db.StringProperty()
+#	geo_hash_prefixes = GeoHashPrefixListProperty()
 	types			= db.ListProperty(str)
 	# TODO: add business tags
 	tags			= KeywordListProperty()
@@ -1186,12 +1190,19 @@ class Business(db.Model):
 		indexed_properties = ['business_name','types','foursquare_name']
 		items = [getattr(self, prop) for prop in indexed_properties]
 		text = ''
+		logging.info('\n\n create business tags: '+repr(items)+' \n\n')
 		for item in items:
 			logging.info(item)
-			if type(item) == list:
-				text +=' '.join(item) + ' '
-			else:
-				text += item + ''
+			if item:
+				if type(item) == list:
+					text +=' '.join(item) + ' '
+				else:
+					try:
+						text += item + ' '
+					except:
+						log_error('On busines: '+repr(self.business_name))
+			logging.info(text)
+		logging.info('text: '+repr(text))
 		tags = create_tokens(text,stemmed)
 		return tags
 	
@@ -1208,12 +1219,11 @@ class Deal(polymodel.PolyModel):
 	v3: added promotions property - for identifying what promotions the deal is affected by
 	v4: added geo_hash_prefixes
 	'''
-#Child of business owner OR customer ninja
 	#deal meta information
 	deal_status		= db.StringProperty(choices=set(["pending","active","rejected","expired","test"]),default="active")
 	been_reviewed	= db.BooleanProperty(default=False)
 	reject_message	= db.StringProperty()
-	tags			= db.ListProperty(str)
+	tags			= KeywordListProperty()#db.ListProperty(str)
 	businessID 		= db.StringProperty()
 	business		= db.ReferenceProperty(Business,collection_name='deals')
 	origin			= db.StringProperty(default='levr')
@@ -1228,7 +1238,7 @@ class Deal(polymodel.PolyModel):
 	deal_text		= db.StringProperty(default='')
 	geo_point		= db.GeoPtProperty() #latitude the longitude
 	geo_hash		= db.StringProperty()
-	geo_hash_prefixes = GeoHashPrefixListProperty()
+#	geo_hash_prefixes = GeoHashPrefixListProperty()
 	description 	= db.StringProperty(multiline=True,default='') #description of deal
 	img				= blobstore.BlobReferenceProperty()
 	share_id		= db.StringProperty(default=create_unique_id())
@@ -1274,21 +1284,43 @@ class Deal(polymodel.PolyModel):
 		@param stemmed: Optional, if true, then will also stem the keywords
 		@type stemmed: bool
 		'''
-		# will pull the business from the db by default
-		if not business:
-			business = self.business
 		
 		indexed_properties = ['deal_text','description']
 		
 		# create tags from the deal properties
-		tags = [create_tokens(getattr(self, prop), stemmed, filtered) \
-			for prop in indexed_properties]
+		items = [getattr(self, prop) for prop in indexed_properties]
+		text = ''
+		for item in items:
+#			logging.info(item)
+			if item:
+				if type(item) == list:
+					text +=' '.join(item) + ' '
+				else:
+					try:
+						text += item + ' '
+					except:
+						log_error('On busines: '+repr(self.business_name))
+#			logging.info(text)
+		logging.info('text: '+repr(text))
 		
+		# create the tags from the compiled string
+		tags = create_tokens(text,stemmed,filtered)
+		
+		logging.info('tags: '+str(tags))
+		
+		#=======================================================================
+		# Create tags from the business
+		#=======================================================================
+		# will pull the business from the db by default
+		if not business:
+			business = self.business
 		# create tags from the business
 		tags.extend(business.create_tags())
 		
+		tags = list(set(tags))
+		logging.info('total_tags: '+repr(tags))
 		# return list of tags without redundancies
-		return list(set(tags))
+		return tags
 		
 	
 	def expire(self,notify=False):

@@ -215,7 +215,7 @@ class ConnectMerchantHandler(api_utils.BaseClass):
 		password = kwargs.get('pw')
 		business_name = kwargs.get('businessName')
 		vicinity = kwargs.get('vicinity')
-		geo_point = kwargs.get('ll')
+		geo_point = kwargs.get('geoPoint')
 		types = kwargs.get('types')
 		development = kwargs.get('development',False) # TODO: switch this to False by default when changing to live
 		phone_number = kwargs.get('phoneNumber','')
@@ -311,6 +311,7 @@ class ConnectMerchantHandler(api_utils.BaseClass):
 			self.send_response(response)
 			# TODO: Merchant connect - handle all cases - new and existing accounts
 		except AssertionError,e:
+			levr.log_error()
 			self.send_error(e)
 		except Exception,e:
 			levr.log_error(e)

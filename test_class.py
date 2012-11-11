@@ -30,26 +30,33 @@ class SandboxHandler(webapp2.RequestHandler):
 	Dont delete this. This is my dev playground.
 	'''
 	def get(self):
+		deals = levr.Deal.all().fetch(None)
+		businesses = levr.Business.all().fetch(None)
+		
+		db.put(deals)
+#		db.put(businesses)
+		
+		
 		# change ownership of rednecks roast beef deals
+#		
+#		deals = levr.Deal.all(
+#							).filter('businessID','tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fO3GJdErvitTapPLKLhLS0Ss5w_oaChA='
+#							).fetch(None)
+#		levr.Deal.properties()
+#		ninja = api_utils.get_random_dead_ninja()
+#		
+#		for deal in deals:
+#			new_deal = levr.Deal(parent=ninja)
+#			for prop in deal.properties():
+#				self.response.out.write(prop)
+#				if prop[0] != '_':
+#					val = getattr(deal, prop)
+#					setattr(new_deal, prop, val)
+#			
+#			self.response.out.write(levr.log_model_props(new_deal))
+#			self.response.out.write(levr.log_model_props(deal) == levr.log_model_props(new_deal))
 		
-		deals = levr.Deal.all(
-							).filter('businessID','tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fO3GJdErvitTapPLKLhLS0Ss5w_oaChA='
-							).fetch(None)
-		levr.Deal.properties()
-		ninja = api_utils.get_random_dead_ninja()
-		
-		for deal in deals:
-			new_deal = levr.Deal(parent=ninja)
-			for prop in deal.properties():
-				self.response.out.write(prop)
-				if prop[0] != '_':
-					val = getattr(deal, prop)
-					setattr(new_deal, prop, val)
-			
-			self.response.out.write(levr.log_model_props(new_deal))
-		
-		
-		
+		self.response.out.write('done!')
 		
 class MainPage(webapp2.RequestHandler):
 	def get(self):
@@ -365,8 +372,8 @@ class TestNotificationHandler(webapp2.RequestHandler):
 		self.response.out.write('HOLY SHIT NEW NOTIFICATIONS OMG OMG OMG')
 
 
-FEMALE_EMAIL = 'deadninja2@levr.com'
-MALE_EMAIL = 'deadninja1@levr.com'
+FEMALE_EMAIL = 'undeadninja@levr.com'
+MALE_EMAIL = 'undeadninja@levr.com'
 class Create100DeadNinjasHandler(webapp2.RequestHandler):
 	def get(self):
 #		#=======================================================================
