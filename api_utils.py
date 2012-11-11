@@ -15,6 +15,7 @@ import random
 import urllib
 import webapp2
 from google.appengine.api import taskqueue
+from tasks import INCREMENT_DEAL_VIEW_URL
 #from fnmatch import filter
 
 
@@ -62,21 +63,14 @@ class Search(object):
 	'''
 	Base class for all search handlers
 	'''
-	precision		= 6
 	min_levr_deals = 5
 	foursquare_token = random.choice([
 					'IDMTODCAKR34GOI5MSLEQ1IWDJA5SYU0PGHT4F5CAIMPR4CR',
 					'ML4L1LW3SO0SKUXLKWMMBTSOWIUZ34NOTWTWRW41D0ANDBAX',
 					'RGTMFLSGVHNMZMYKSMW4HYFNEE0ZRA5PTD4NJE34RHUOQ5LZ'
 					])
-	def __init__(self,development,user=None):
-		self.user = user
+	def __init__(self,development,user = None):
 		# if the user has a token, override default selection of random dev token
-		try:
-			self.foursquare_token = self.user.foursquare_token
-		except:
-			pass
-		
 		# set namespace to active or test
 		self.development = development
 		if self.development:
@@ -84,9 +78,15 @@ class Search(object):
 		else:
 			self.deal_status = levr.DEAL_STATUS_ACTIVE
 		
+		# try to add a user and grab their fs token if the have one
+		# otherwise the foursquare token defaults to a random one
+		self.user = user
+		try:
+			self.foursquare_token = user.foursquare_token
+		except:
+			pass
 		
-		# calculate precision
-	def check_for_promotions(self,deals):
+	def check_for_promotions(self,deals,user=None):
 		'''
 		A function to check search results for any promotions that might apply
 		
@@ -98,58 +98,43 @@ class Search(object):
 		promoted_deals = filter(lambda x: promo.RADIUS_ALERT in x.promotions,deals)
 		logging.info('promoted_deals: {}'.format(promoted_deals))
 		# Filter deals that have already been sent to the user via alert
-		promoted_deals = filter(lambda x: x.key() not in self.user.been_radius_blasted,promoted_deals)
+		promoted_deals = filter(lambda x: x.key() not in user.been_radius_blasted,promoted_deals)
 		logging.info('promoted_deals: {}'.format(promoted_deals))
 		if promoted_deals:
 			# select only one deal to blast
 			deal = random.choice(promoted_deals)
 			# create the notification for the deal
-			self.user = levr.Notification().create_radius_alert(self.user, deal)
+			user = levr.Notification().create_radius_alert(user, deal)
 			
-		return
+		return user
 	def calc_precision_from_half_deltas(self,geo_point,lon_half_delta=0):
 		'''
 		Determines a geohash precision from the lat and long half deltas
-		Sets the precision as self.precision
 		
 		@type lat_half_delta: float
 		@type lon_half_delta: float
 		@return: time of operation
 		@rtype: datetime
 		'''
-		t1 = datetime.now()
-#		max([lat_half_delta,lon_half_delta])
-		center_right_lat = geo_point.lat
-		center_right_lon = geo_point.lon + lon_half_delta
-		center_left_lat = geo_point.lat
-		center_left_lon = geo_point.lon - lon_half_delta
-		# calculate the width in miles of the screen
-		width_in_miles = distance_between_points(center_right_lat,center_right_lon,center_left_lat,center_left_lon)
-		
-		if width_in_miles <2:
-			precision = 6
-		else:
-			precision = 5
-		
-		self.precision = precision
-		
-		t2 = datetime.now()
+		precision = 5
+		if lon_half_delta >0:
+	#		max([lat_half_delta,lon_half_delta])
+			center_right_lat = geo_point.lat
+			center_right_lon = geo_point.lon + lon_half_delta
+			center_left_lat = geo_point.lat
+			center_left_lon = geo_point.lon - lon_half_delta
+			# calculate the width in miles of the screen
+			width_in_miles = distance_between_points(center_right_lat,center_right_lon,center_left_lat,center_left_lon)
+			
+			if width_in_miles <2:
+				precision = 6
 		return precision
-	def _init_ghash_list(self,geo_point,precision):
-		'''
-		Converts self.geo_point into a geohash of a length specified by
-		self.precision
-		'''
-		ghash = geohash.encode(geo_point.lat, geo_point.lon, precision)
-		ghash_list = [ghash]
-		return ghash_list
-	def _expand_ghash_list(self,ghash_list,n):
+	def expand_ghash_list(self,ghash_list,n):
 		'''
 		Expands self.ghash n times
 		@param n: number of expansions
 		@type n: int
 		'''
-		t1 = datetime.now()
 		for i in range(0,n): #@UnusedVariable
 			# expand each ghash, and remove duplicates to expand a ring
 			new_ghashes = []
@@ -159,24 +144,23 @@ class Search(object):
 			ghash_list.extend(new_ghashes)
 			# remove duplicates
 			ghash_list = list(set(ghash_list))
-		t2 = datetime.now()
 		return ghash_list
 	def create_ghash_list(self,geo_point,precision):
 		'''
 		
 		'''
-		ghash_list = self._init_ghash_list(geo_point, precision)
+		
+		ghash = geohash.encode(geo_point.lat, geo_point.lon, precision)
+		ghash_list = [ghash]
 		
 		# determine number of iterations based on the precision
 		if precision == 6:
 			n = 3
 		else:
 			n = 1
-		ghash_list = self._expand_ghash_list(ghash_list, n)
-		# calc bounding box for search
-		bounding_box = self._calc_bounding_box(ghash_list)
-		return ghash_list,bounding_box
-	def _calc_bounding_box(self,ghash_list):
+		ghash_list = self.expand_ghash_list(ghash_list, n)
+		return ghash_list
+	def calc_bounding_box(self,ghash_list):
 		'''
 		Calculates a bounding box from a list of geohashes
 		@param ghash_list: a list of geo_hashes
@@ -215,8 +199,7 @@ class Search(object):
 					'top_right'		: top_right
 					}
 		return bounding_box
-	def fetch_deals(self,ghash_list):
-		# TODO: finish this
+	def fetch_deals(self,ghash_list,include_foursquare=True):
 		'''
 		Fetches deal entities from the db by their ghashes
 		Filters out deals that are nonetype
@@ -230,16 +213,16 @@ class Search(object):
 		
 		# fetch deal entities
 		deals = db.get(set(deal_keys))
-		# return deals and the ranks
 		
-		
+		if include_foursquare == False:
+			deals = filter(lambda x: x.origin != 'foursquare',deals)
 		
 		return deals
-	def _get_foursquare_ids(self,deals):
+	def get_foursquare_ids(self,deals):
 		'''
 		Creates a list of foursquare ids
 		'''
-		foursquare_ids = set([d.foursquare_id for d in deals])
+		foursquare_ids = set(filter(lambda x: x,[d.foursquare_id for d in deals]))
 		return foursquare_ids
 	
 	def sort_deals(self,deals):
@@ -257,14 +240,25 @@ class Search(object):
 				karma += 5
 			# set the deal rank as the karma
 			deal.rank = karma
-		logging.debug('deal.total_karma = '+str(deal.rank))
+			logging.debug('deal.rank = '+str(deal.rank))
 		
 		# sort the deals
 		ranks = [d.rank for d in deals]
 		toop = zip(ranks,deals)
-		toop.sort()
+		toop = sorted(toop,reverse=True)
 		ranks,deals = zip(*toop)
+		logging.info(ranks)
 		return deals,ranks
+	def filter_deals_by_origin(self,deals):
+		'''
+		Separates a list of deals into levr and foursquare deals
+		
+		@return: levr_deals,foursquare_deals
+		@rtype: (list,list)
+		'''
+		levr_deals = filter(lambda x: x.origin!='foursquare',deals)
+		foursquare_deals = filter(lambda x: x.origin=='foursquare',deals)
+		return levr_deals,foursquare_deals
 	def filter_deals_by_query(self,deals,query):
 		'''
 		Splits the deals into two lists of accepted and rejected deals
@@ -274,26 +268,46 @@ class Search(object):
 		@type deals:
 		@param query: the query string
 		@type query: str
-		@return: is_empty flag, and the list of deals
+		@return: num_results, which is the number of applicable deals from the query
 		@rtype
 		'''
 		search_tags = levr.create_tokens(query)
 		
-		accepted_deals, is_empty = [],False
+		accepted_deals = []
 		# compile list of deals whose tags match at least one tag
-		for deal in deals:
-			deal_tags = deal.tags
-			for tag in deal_tags:
-				# if a tag matches, will add to accepted deals
-				# TODO: rank deals by similarity frequency
-				if tag in search_tags:
-					accepted_deals.append(deal)
-					break
-		# if no acceptable deals are found, return all of the deals
-		if accepted_deals.__len__() == 0:
-			is_empty = True
+		if query != 'all':
+			for deal in deals:
+				deal_tags = deal.tags
+				for tag in deal_tags:
+					# if a tag matches, will add to accepted deals
+					# TODO: rank deals by similarity frequency
+					if tag in search_tags:
+						accepted_deals.append(deal)
+						break
+			# count all of the applicable deals
+			num_results = accepted_deals.__len__()
+			
+		else:
+			# if no acceptable deals are found, return all of the deals
 			accepted_deals = deals
-		return is_empty,accepted_deals
+			# count the number of applicable levr deals
+			levr_deals = filter(lambda x: x.origin != 'foursquare',accepted_deals)
+			num_results = levr_deals.__len__()
+		
+		return num_results,accepted_deals
+	def add_deal_views(self,deals):
+		'''
+		Adds a deal view for each deal
+		@param deals:
+		@type deals:
+		'''
+		try:
+			payload = {
+					'deal_keys' : [str(deal.key()) for deal in deals]
+					}
+			taskqueue.add(url=INCREMENT_DEAL_VIEW_URL,payload=json.dumps(payload))
+		except:
+			levr.log_error()
 	def sort_and_package(self,deals):
 		'''
 		Wrapper around the package_deals_multi
@@ -302,61 +316,15 @@ class Search(object):
 		@param deals:
 		@type deals:
 		'''
-		deals,ranks = self.sort_deals(deals)
-		
-		# sort deals based on their ranks
-		
-		# package
-		packaged_deals = package_deal_multi(deals, ranks=ranks)
-		
-		return packaged_deals
-	def search_deals(self,query,geo_point,lon_half_delta=0):
-		'''
-		Searches the database for deals
-		
-		@return: a list of deals
-		'''
-		# calculate precision
-		if lon_half_delta != 0:
-			precision = self.calc_precision_from_half_deltas(geo_point, lon_half_delta)
-		else:
-			precision = 5
-		
-		ghash_list,bounding_box = self.create_ghash_list(geo_point, precision)
-		deals = self.fetch_deals(ghash_list)
-		
-		# filter deals with the search
-		empty_search,deals = self.filter_deals_by_query(deals, query)
-		
-		# check for promoted deals - radius blast!
-		try:
-			self.check_for_promotions(deals)
-		except:
-			pass
-		
-		# if not enough levr deals or the search term led to no results, search foursquare
-		levr_deals = filter(lambda x: x.origin != 'foursquare',deals)
-		new_foursquare_deals = []
-		if levr_deals.__len__() < self.min_levr_deals or empty_search == True:
-			foursquare_deals = filter(lambda x: x.origin == 'foursquare',deals)
-			foursquare_ids = [deal.key() for deal in foursquare_deals]
+		if deals:
+			deals,ranks = self.sort_deals(deals)
+			# sort deals based on their ranks
 			
-			new_foursquare_deals = search_foursquare(geo_point, self.foursquare_token, self.deal_status, foursquare_ids)
-		
+			# package
+			packaged_deals = package_deal_multi(deals, ranks=ranks)
 		else:
-			# there are enough levr deals, so only use them
-			deals = levr_deals
-		
-		# package everything and add the oursquare deals
-		packaged_deals = self.sort_and_package(deals)
-		packaged_deals.extend(new_foursquare_deals)
-		return deals, bounding_box
-	def search_businesses(self):
-		'''
-		
-		'''
-		precision = 6
-		
+			packaged_deals = []
+		return packaged_deals
 
 
 #@deprecated
@@ -423,9 +391,9 @@ def package_deal_multi(deals,private=False,**kwargs):
 	deals = filter(lambda x: x,deals)
 	
 	# deal meta information
+	# will be lists of [None,] if not passed as kwargs
 	ranks = kwargs.get('ranks',[None for deal in deals]) #@UnusedVariable
 	distances = kwargs.get('distances',[None for deal in deals]) #@UnusedVariable
-	
 	
 	
 	
@@ -510,9 +478,9 @@ def _package_deal(deal,owner,business,private=False,rank=None,distance=None):
 				'owner'			: package_user(owner,private,False)
 				}
 	
-	if rank:
+	if rank is not None:
 		packaged_deal['rank'] = rank
-	if distance:
+	if distance is not None:
 		packaged_deal['distance'] = distance
 	
 	if private == True:

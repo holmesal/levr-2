@@ -1245,13 +1245,13 @@ class Deal(polymodel.PolyModel):
 	share_id		= db.StringProperty(default=create_unique_id())
 	#pin_color		= db.StringProperty(choices=set(['red','blue','green','pink','orange']),default='red')
 	pin_color		= db.StringProperty(default='red')
-	rank			= db.IntegerProperty(default = 0)
+	rank			= db.IntegerProperty(default = 1)
 	
 	
 	#deal interactions
 	upvotes			= db.IntegerProperty(default=0)
 	downvotes		= db.IntegerProperty(default=0)
-	karma			= db.IntegerProperty(default=0)
+	karma			= db.IntegerProperty(default=1)
 	promotions		= db.ListProperty(str)
 	
 	

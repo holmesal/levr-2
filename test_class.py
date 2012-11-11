@@ -25,17 +25,30 @@ import api_utils_social as social
 #import uuid
 #import geo.geohash as geohash
 
-class SandboxHandler(webapp2.RequestHandler):
+class SandboxHandler(api_utils.BaseClass):
 	'''
 	Dont delete this. This is my dev playground.
 	'''
 	def get(self):
-		deals = levr.Deal.all().fetch(None)
-		businesses = levr.Deal.all().fetch(None)
-		
-		db.put(deals)
-		db.put(businesses)
-		self.response.out.write('done!')
+		try:
+			search = api_utils.Search(False)
+			packaged_deals,bouding_box,times = search.search_deals('all', levr.geo_converter('42.343880,-71.059570'), 5, True, True)
+			
+			response = {
+					'deals' : packaged_deals
+					}
+			self.send_response(response)
+		except:
+			levr.log_error()
+			self.send_error()
+		#=======================================================================
+		# deals = levr.Deal.all().fetch(None)
+		# businesses = levr.Deal.all().fetch(None)
+		# 
+		# db.put(deals)
+		# db.put(businesses)
+		# self.response.out.write('done!')
+		#=======================================================================
 		
 		
 class MainPage(webapp2.RequestHandler):

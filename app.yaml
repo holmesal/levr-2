@@ -20,7 +20,7 @@ handlers:
   script: merchants.app
 - url: /new.*
   script: test_class.app
-  login: admin
+  # login: admin
 - url: /loginstate
   script: loginstate.app
 - url: /logout
