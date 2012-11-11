@@ -1187,15 +1187,24 @@ class Business(db.Model):
 		indexed_properties = ['business_name','types','foursquare_name']
 		items = [getattr(self, prop) for prop in indexed_properties]
 		text = ''
+		logging.info('\n\n create business tags: '+repr(items)+' \n\n')
 		for item in items:
-			logging.info(item)
-			if type(item) == list:
-				text +=' '.join(item) + ' '
-			else:
-				text += item + ' '
+#			logging.info(item)
+			if item:
+				if type(item) == list:
+					text +=' '.join(item) + ' '
+				else:
+					try:
+						text += item + ' '
+					except:
+						log_error('On busines: '+repr(self.business_name))
+#			logging.info(text)
+		logging.info('text: '+repr(text))
 		tags = create_tokens(text,stemmed)
+		logging.info('tags: '+str(tags))
 		return tags
 	
+
 MERCHANT_DEAL_LENGTH = 21 # days
 DEAL_STATUS_ACTIVE = 'active'
 DEAL_STATUS_TEST = 'test'
@@ -1274,25 +1283,43 @@ class Deal(polymodel.PolyModel):
 		@param stemmed: Optional, if true, then will also stem the keywords
 		@type stemmed: bool
 		'''
-		# will pull the business from the db by default
-		if not business:
-			business = self.business
 		
 		indexed_properties = ['deal_text','description']
 		
 		# create tags from the deal properties
-		tags = [create_tokens(getattr(self, prop), stemmed, filtered) \
-			for prop in indexed_properties]
+		items = [getattr(self, prop) for prop in indexed_properties]
+		text = ''
+		for item in items:
+#			logging.info(item)
+			if item:
+				if type(item) == list:
+					text +=' '.join(item) + ' '
+				else:
+					try:
+						text += item + ' '
+					except:
+						log_error('On deal: '+repr(self.key()))
+#			logging.info(text)
+		logging.info('text: '+repr(text))
 		
+		# create the tags from the compiled string
+		tags = create_tokens(text,stemmed,filtered)
+		
+		logging.info('tags: '+str(tags))
+		
+		#=======================================================================
+		# Create tags from the business
+		#=======================================================================
+		# will pull the business from the db by default
+		if not business:
+			business = self.business
 		# create tags from the business
 		tags.extend(business.create_tags())
-		logging.info('hi')
-		logging.info(tags)
-		logging.info(type(tags))
+		
 		tags = list(set(tags))
+		logging.info('total_tags: '+repr(tags))
 		# return list of tags without redundancies
 		return tags
-		
 	
 	def expire(self,notify=False):
 		'''
