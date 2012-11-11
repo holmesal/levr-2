@@ -33,7 +33,7 @@ class FindABusinessHandler(api_utils.BaseClass):
 		business_name = kwargs.get('businessName')
 		vicinity = kwargs.get('vicinity')
 		geo_point = kwargs.get('geoPoint')
-		radius = kwargs.get('radius')
+		radius = kwargs.get('radius') # TODO: implement radius to search
 		try:
 			# create a set of geo hashes to search based on the radius
 			search = api_utils.Search(True)
@@ -64,6 +64,8 @@ class FindABusinessHandler(api_utils.BaseClass):
 				for tag in business_tags:
 					if tag in search_tags:
 						business.rank += 1
+			# assure that a business was found
+			assert businesses, 'Could not find a business'
 			# sort the businesses by their quality
 			ranks = [b.rank for b in businesses]
 			toop = zip(ranks,businesses)
@@ -105,29 +107,24 @@ class ViewABusinessHandler(api_utils.BaseClass):
 		business = kwargs.get('business')
 		development = kwargs.get('development',False)
 		
-		# set deal_status
-		if development:
-			deal_status = levr.DEAL_STATUS_TEST
-		else:
-			deal_status = levr.DEAL_STATUS_ACTIVE
-		
-		
-		# grab all of the businesses deals
-		
-		deals = levr.Deal.all().filter('businessID',str(business.key())).filter('deal_status',deal_status).fetch(None)
-		
-		# package.
-		packaged_deals = api_utils.package_deal_multi(deals, False)
-		
-		packaged_business = api_utils.package_business(business)
-		
-		# respond
-		response = {
-				'deals' : packaged_deals,
-				'business' : packaged_business
-				}
-		self.send_response(response)
-		
+		try:
+			deals = api_utils.fetch_all_businesses_deals(business, development)
+			
+			# TODO: take another look at the business packaging for the api
+			# package.
+			packaged_deals = api_utils.package_deal_multi(deals, False)
+			
+			packaged_business = api_utils.package_business(business)
+			
+			# respond
+			response = {
+					'deals' : packaged_deals,
+					'business' : packaged_business
+					}
+			self.send_response(response)
+		except:
+			levr.log_error()
+			self.send_error()
 
 class FindABusinessFromFourquareHandler(api_utils.BaseClass):
 	@api_utils.validate(None, 'param',
@@ -139,9 +136,22 @@ class FindABusinessFromFourquareHandler(api_utils.BaseClass):
 		user = kwargs.get('actor')
 		levrToken = kwargs.get('levrToken')
 		foursquare_id = kwargs.get('foursquareID')
+		development = kwargs.get('development')
 		try:
-			pass
-		except Exception,e:
+			business = levr.Business.all().filter('foursquare_id',foursquare_id)
+			deals = api_utils.fetch_all_businesses_deals(business, development)
+			# package.
+			packaged_deals = api_utils.package_deal_multi(deals, False)
+			
+			packaged_business = api_utils.package_business(business)
+			
+			# respond
+			response = {
+					'deals' : packaged_deals,
+					'business' : packaged_business
+					}
+			self.send_response(response)
+		except	 Exception,e:
 			levr.log_error(e)
 			self.send_error()
 
