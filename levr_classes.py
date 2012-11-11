@@ -400,8 +400,10 @@ def _tokenize(text):
 	@return: A list of tokenized words
 	'''
 	if type(text) == unicode:
-		pass
-		
+		logging.info(text)
+		text = text.encode('ascii','ignore')
+		logging.info(text)
+		str(text)
 #	text = str(text)
 #	assert type(text) == str, 'input must be a string; type: {}'.format(type(text))
 	# a list of chars that will be replaced with spaces
