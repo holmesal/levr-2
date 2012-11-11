@@ -995,7 +995,7 @@ class GeoHashProperty(db.StringProperty):
 		@param model_instance:
 		@type model_instance:
 		'''
-		logging.debug('geohashprefixlist')
+		logging.debug('geo hash property')
 		geo_point = getattr(model_instance, 'geo_point')
 		precision = 8
 		geo_hash = geohash.encode(geo_point.lat, geo_point.lon, precision)
@@ -1011,11 +1011,11 @@ class KeywordListProperty(db.StringListProperty):
 		@attention:  entities may have additional tags that were added by a business
 		'''
 #		tags = model_instance.extra_tags
-		tags = []
+		try:
+			tags = model_instance.extra_tags
+		except:
+			tags = []
 		tags.extend(model_instance.create_tags())
-		logging.info('hi')
-		logging.info(tags)
-		logging.info(type(tags))
 		return list(set(tags))
 		
 
@@ -1157,6 +1157,7 @@ class Business(db.Model):
 	types			= db.ListProperty(str)
 	# TODO: add business tags
 	tags			= KeywordListProperty()
+	extra_tags		= db.StringListProperty()
 	owner			= db.ReferenceProperty(Customer,collection_name='businesses')
 	upload_email	= db.EmailProperty()
 	date_created	= db.DateTimeProperty(auto_now_add=True)
@@ -1224,6 +1225,7 @@ class Deal(polymodel.PolyModel):
 	been_reviewed	= db.BooleanProperty(default=False)
 	reject_message	= db.StringProperty()
 	tags			= KeywordListProperty()#db.ListProperty(str)
+	extra_tags		= db.StringListProperty()
 	businessID 		= db.StringProperty()
 	business		= db.ReferenceProperty(Business,collection_name='deals')
 	origin			= db.StringProperty(default='levr')

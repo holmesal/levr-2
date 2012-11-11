@@ -136,7 +136,14 @@ class FindABusinessFromFourquareHandler(api_utils.BaseClass):
 					foursquareID = True
 					)
 	def get(self,*args,**kwargs):
-		
+		user = kwargs.get('actor')
+		levrToken = kwargs.get('levrToken')
+		foursquare_id = kwargs.get('foursquareID')
+		try:
+			pass
+		except Exception,e:
+			levr.log_error(e)
+			self.send_error()
 
 FIND_A_BUSINESS_URL = '/api/business/find'
 FOURSQUARE_BUSINESS_URL = '/api/business/foursquare'

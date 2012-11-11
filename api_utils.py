@@ -1652,7 +1652,7 @@ def search_foursquare(geo_point,token,deal_status,already_found=[],**kwargs):
 			
 			else:
 				deal = existing_deal
-				logging.info('Foursquare special '+deal.foursquare_id+' found in database but not in search. '+ str(deal.deal_text))
+				logging.info('Foursquare special '+deal.foursquare_id+' found in database but not in search. '+ repr(deal.deal_text))
 #				logging.debug('foursquare')
 				#logging.debug(levr.log_model_props(deal))
 			deal_business = db.get(deal.businessID)
@@ -1662,8 +1662,8 @@ def search_foursquare(geo_point,token,deal_status,already_found=[],**kwargs):
 			distance2 = distance_between_points(geo_point.lat, geo_point.lon, business.geo_point.lat, business.geo_point.lon)
 
 # 			logging.debug('DISTANCE!!!: '+str(distance))
-			logging.debug('distance: '+str(distance)+ ' or '+ str(distance2))
-			logging.warning('geopoint1: '+str(deal_business.geo_point)+', geopoint2: '+ str(business.geo_point))
+			logging.debug('distance: '+repr(distance)+ ' or '+ repr(distance2))
+			logging.warning('geopoint1: '+repr(deal_business.geo_point)+', geopoint2: '+ repr(business.geo_point))
 			if distance < 10:
 				#package deal
 				packaged_deal = package_deal(deal,distance=distance)
@@ -2247,12 +2247,12 @@ class PromoteDeal(BaseClass):
 		if tags:
 			for tag in tags:
 				try:
-					self.deal.tags.remove(tag)
+					self.deal.extra_tags.remove(tag)
 				except ValueError,e:
 					logging.error('A tag could not be removed from a deal. This should not happen')
 					logging.info('deal key: '+str(self.deal.key()))
 					logging.info('tag: '+str(tag))
-					logging.info('deal tags: '+str(self.deal.tags))
+					logging.info('deal tags: '+str(self.deal.extra_tags))
 					levr.log_error(e)
 					
 		
@@ -2379,7 +2379,7 @@ class PromoteDeal(BaseClass):
 		
 		# append new deal tags to the list of tags
 		assert type(self.tags) == list, 'tags must be a list'
-		self.deal.tags.extend(self.tags)
+		self.deal.extra_tags.extend(self.tags)
 		return
 	def _remove_more_tags(self):
 		'''
