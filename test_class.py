@@ -30,33 +30,44 @@ class SandboxHandler(webapp2.RequestHandler):
 	Dont delete this. This is my dev playground.
 	'''
 	def get(self):
-		deals = levr.Deal.all().fetch(None)
-		businesses = levr.Business.all().fetch(None)
 		
-		db.put(deals)
-#		db.put(businesses)
-		
-		
+		self.response.headers['Content-Type'] = 'text/plain'
 		# change ownership of rednecks roast beef deals
-#		
-#		deals = levr.Deal.all(
-#							).filter('businessID','tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fO3GJdErvitTapPLKLhLS0Ss5w_oaChA='
-#							).fetch(None)
-#		levr.Deal.properties()
-#		ninja = api_utils.get_random_dead_ninja()
-#		
-#		for deal in deals:
-#			new_deal = levr.Deal(parent=ninja)
-#			for prop in deal.properties():
-#				self.response.out.write(prop)
-#				if prop[0] != '_':
-#					val = getattr(deal, prop)
-#					setattr(new_deal, prop, val)
-#			
-#			self.response.out.write(levr.log_model_props(new_deal))
-#			self.response.out.write(levr.log_model_props(deal) == levr.log_model_props(new_deal))
 		
-		self.response.out.write('done!')
+		deals = levr.Deal.all(
+							).filter('businessID','ahRkZXZ-bGV2ci1kZXZlbG9wbWVudHIPCxIIQnVzaW5lc3MY2AIM' # test - berklee boloco
+#							).filter('businessID','ahFzfmxldnItcHJvZHVjdGlvbnIQCxIIQnVzaW5lc3MY2-wKDA' # Rednecks
+							).filter('deal_status','active'
+							).fetch(None)
+		for deal in deals:
+			self.response.out.write(levr.log_model_props(deal,['deal_text','deal_status']))
+			self.response.out.write(deal.parent_key())
+		levr.Deal.properties()
+		ninja = api_utils.get_random_dead_ninja()
+		self.response.out.write('\n\n'+str(ninja.key())) # ahRkZXZ-bGV2ci1kZXZlbG9wbWVudHIPCxIIQ3VzdG9tZXIY8wEM
+		new_deals = []
+		for deal in deals:
+			new_deal = levr.Deal(parent=ninja)
+			for prop in deal.properties():
+				if prop[0] != '_':
+					val = getattr(deal, prop)
+					setattr(new_deal, prop, val)
+			
+			new_deals.append(new_deal)
+			# expire the old deal
+#			self.response.out.write(levr.log_model_props(new_deal))
+			self.response.out.write('\n')
+			self.response.out.write(levr.log_model_props(deal) == levr.log_model_props(new_deal))
+			self.response.out.write('\n')
+			deal.expire()
+		
+		# compile into one list
+		deals.extend(new_deals)
+#		db.put(deals)
+		for deal in deals:
+			self.response.out.write(levr.log_model_props(deal,['deal_text','deal_status']))
+			self.response.out.write(deal.parent_key())
+		self.response.out.write('\n\ndone!')
 		
 class MainPage(webapp2.RequestHandler):
 	def get(self):
