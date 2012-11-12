@@ -749,6 +749,7 @@ def validate(url_param,authentication_source,*a,**to_validate): #@UnusedVariable
 						'dealText'		: str,
 						'distance'		: float,
 						'action'		: str,
+						'daysToExpire'	: int,
 						
 						#business upload stuff
 						'businessName'	: str,
@@ -799,6 +800,7 @@ def validate(url_param,authentication_source,*a,**to_validate): #@UnusedVariable
 						'dealText'		: '',
 						'distance'		: -1,
 						'action'		: '',
+						'daysToExpire'	: 7,
 						
 						#business upload stuff
 						'businessName'	: '',
@@ -1007,11 +1009,12 @@ def validate(url_param,authentication_source,*a,**to_validate): #@UnusedVariable
 					
 					#handle case where input should be an integer
 					elif data_type == int: 
-						if val.isdigit():
+						try:
+							logging.error(val)
 							#convert to int
 							val = int(val)
 							
-						else:
+						except:
 							levr.log_error()
 							raise TypeError(msg)
 					#handle case where input should be numerical 

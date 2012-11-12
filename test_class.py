@@ -31,24 +31,19 @@ class SandboxHandler(api_utils.BaseClass):
 	'''
 	def get(self):
 		try:
-			search = api_utils.Search(False)
-			packaged_deals,bouding_box,times = search.search_deals('all', levr.geo_converter('42.343880,-71.059570'), 5, True, True)
 			
-			response = {
-					'deals' : packaged_deals
-					}
-			self.send_response(response)
+			pass
+			
+#			deals = levr.Deal.all().fetch(None)
+#			businesses = levr.Deal.all().fetch(None)
+#			
+#			db.put(deals)
+#			db.put(businesses)
+#			self.response.out.write('done!')
+			
 		except:
 			levr.log_error()
 			self.send_error()
-		#=======================================================================
-		# deals = levr.Deal.all().fetch(None)
-		# businesses = levr.Deal.all().fetch(None)
-		# 
-		# db.put(deals)
-		# db.put(businesses)
-		# self.response.out.write('done!')
-		#=======================================================================
 		
 		
 class MainPage(webapp2.RequestHandler):
