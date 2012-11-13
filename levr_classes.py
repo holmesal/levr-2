@@ -401,10 +401,9 @@ def _tokenize(text):
 	'''
 	# remove unicode characters
 	if type(text) == unicode:
-		logging.info(text)
+#		logging.info(text)
 		text = text.encode('ascii','ignore')
-		logging.info(text)
-		str(text)
+#		logging.info(text)
 #	text = str(text)
 #	assert type(text) == str, 'input must be a string; type: {}'.format(type(text))
 	# a list of chars that will be replaced with spaces
@@ -1179,33 +1178,60 @@ class Business(db.Model):
 	widget_id		= db.StringProperty(default=create_unique_id())
 	creation_date	= db.DateTimeProperty(auto_now_add=True)
 	
-	def create_tags(self,stemmed=True):
+	def create_tags(self,stemmed=True,filtered=True):
 		'''
 		Used to parse the business fields into indexed keywords
 		@return: a list of tokenized and stemmed keywords
 		@rtype: list
 		'''
 		indexed_properties = ['business_name','types','foursquare_name']
-		items = [getattr(self, prop) for prop in indexed_properties]
-		text = ''
-		logging.info('\n\n create business tags: '+repr(items)+' \n\n')
-		for item in items:
-#			logging.info(item)
-			if item:
-				if type(item) == list:
-					text +=' '.join(item) + ' '
-				else:
-					try:
-						text += item + ' '
-					except:
-						log_error('On busines: '+repr(self.business_name))
-#			logging.info(text)
-		logging.info('text: '+repr(text))
-		tags = create_tokens(text,stemmed)
-		logging.info('tags: '+str(tags))
+		tags = create_tags_from_entity(self, indexed_properties, stemmed, filtered)
+#		items = [getattr(self, prop) for prop in indexed_properties]
+#		text = ''
+##		logging.info('\n\n create business tags: '+repr(items)+' \n\n')
+#		for item in items:
+##			logging.info(item)
+#			if item:
+#				if type(item) == list:
+#					text +=' '.join(item) + ' '
+#				else:
+#					try:
+#						text += item + ' '
+#					except:
+#						log_error('On busines: '+repr(self.business_name))
+##			logging.info(text)
+##		logging.info('text: '+repr(text))
+#		tags = create_tokens(text,stemmed,filtered)
+#		logging.info('tags: '+str(tags))
 		return tags
+def create_tags_from_entity(entity,indexed_properties,stemmed=True,filtered=True):
+	'''
+	Creates a list of tags from an entity given a list of properties
+		on that entity that you wish to create tags from
+	@param entity:
+	@type entity:
+	@param indexed_properties:
+	@type indexed_properties:
+	@param stemmed:
+	@type stemmed:
+	@param filtered:
+	@type filtered:
+	'''
+	items = [getattr(entity, prop) for prop in indexed_properties]
+	text = ''
+	for item in items:
+		if item:
+			if type(item) == list:
+				text +=' '.join(item) + ' '
+			else:
+				try:
+					text += item + ' '
+				except:
+					log_error('On enitity: '+log_model_props(entity))
+	tags = create_tokens(text,stemmed,filtered)
 	
-
+	
+	return tags
 MERCHANT_DEAL_LENGTH = 21 # days
 DEAL_STATUS_ACTIVE = 'active'
 DEAL_STATUS_TEST = 'test'
@@ -1276,7 +1302,7 @@ class Deal(polymodel.PolyModel):
 	is_exclusive	= db.BooleanProperty()
 	locu_id			= db.StringProperty()
 	
-	def create_tags(self,business=None,stemmed=True,filtered=True):
+	def create_tags(self,business=None,stemmed=True,filtered=True,include_business=True):
 		'''
 		Creates a list of keywords from the indexed properties of the deal
 		
@@ -1286,40 +1312,26 @@ class Deal(polymodel.PolyModel):
 		@type stemmed: bool
 		'''
 		
-		indexed_properties = ['deal_text','description']
+		# create tags from properties
+		indexed_properties = ['deal_text','description','extra_tags']
+		tags = create_tags_from_entity(self, indexed_properties, stemmed, filtered)
+#		logging.info('tags: '+str(tags))
 		
-		# create tags from the deal properties
-		items = [getattr(self, prop) for prop in indexed_properties]
-		text = ''
-		for item in items:
-#			logging.info(item)
-			if item:
-				if type(item) == list:
-					text +=' '.join(item) + ' '
-				else:
-					try:
-						text += item + ' '
-					except:
-						log_error('On deal: '+repr(self.key()))
-#			logging.info(text)
-		logging.info('text: '+repr(text))
-		
-		# create the tags from the compiled string
-		tags = create_tokens(text,stemmed,filtered)
-		
-		logging.info('tags: '+str(tags))
-		
-		#=======================================================================
-		# Create tags from the business
-		#=======================================================================
-		# will pull the business from the db by default
-		if not business:
-			business = self.business
-		# create tags from the business
-		tags.extend(business.create_tags())
-		
-		tags = list(set(tags))
-		logging.info('total_tags: '+repr(tags))
+		if include_business:
+			#=======================================================================
+			# Create tags from the business
+			#=======================================================================
+			# will pull the business from the db by default
+			if not business:
+				business = self.business
+			# create tags from the business
+			try:
+				tags.extend(business.create_tags(stemmed,filtered))
+			except:
+				# deal doesnt have deal.business. only deal.businessID...
+				business = db.get(self.businessID)
+				tags.extend(business.create_tags(stemmed,filtered))
+			tags = list(set(tags))
 		# return list of tags without redundancies
 		return tags
 	

@@ -10,6 +10,7 @@ import logging
 import random
 import webapp2
 from tasks import INCREMENT_DEAL_VIEW_URL
+from common_word_list import popular_blacklist
 
 
 
@@ -162,7 +163,7 @@ class SearchQueryHandler(api_utils.BaseClass):
 								'user' : api_utils.package_user(self.user, True, False)
 								})
 			except:
-				levr.log_error()
+				logging.info('user not passed')
 			
 #			assert False, response
 			self.send_response(response)
@@ -214,132 +215,109 @@ class SearchHotHandler(webapp2.RequestHandler):
 		except:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
-class SearchPopularHandler(webapp2.RequestHandler):
-	@api_utils.validate(None,None,geoPoint=True,limit=False,radius=False,user=False,levrToken=False)
+class SearchPopularHandler(api_utils.BaseClass):
+	@api_utils.validate(None,None,
+					geoPoint=True,
+					)
 	def get(self,**kwargs):
 		'''
 		inputs: lat,lon,limit
-		Output:{
-			meta:{
-				success
-				errorMsg
-				}
-			response:{
-				searches :[string,string]
-				}
+		response:{
+			searches :[string,string]
+			}
 		'''
 		try:
-			logging.info('SEARCH POPULAR\n\n\n')
-			#GET PARAMS
-			logging.debug(kwargs)
-			request_point 	= kwargs.get('geoPoint')
+			logging.info('\n\n\n SEARCH POPULAR\n\n\n')
+			geo_point 	= kwargs.get('geoPoint')
 #			radius 		= kwargs.get('radius')
 #			limit 		= kwargs.get('limit')
 			development = kwargs.get('development',False)
 			
-			logging.debug("request_point type: "+str(type(request_point)))
-			logging.debug('')
-			deals = []
-			t1 = datetime.now()
-			#fetch deals
-			#hash the reuqested geo_point
-			center_hash = geohash.encode(request_point.lat,request_point.lon,precision=5)
-			logging.debug(center_hash)
+			search = api_utils.Search(development)
 			
-			#get the hashes of the center geo_point and the 8 surrounding hashes
-			hash_set = geohash.expand(center_hash)
-			logging.debug(hash_set)
+			# create ghash list
+			precision = 5
+			ghash_list = search.create_ghash_list(geo_point, precision)
 			
-			#set deal status to active or test
-			if development: deal_status = 'test'
-			else: deal_status = 'active'
-			
-			for query_hash in hash_set:
-				#only grab keys for deals that have active status
-				q = levr.Deal.all(projection=['tags']).filter('deal_status',deal_status)
-				#FILTER BY GEOHASH
-				q.filter('geo_hash >=',query_hash).filter('geo_hash <=',query_hash+"{") #max bound
-				
-#				logging.debug(levr.log_dir(q))
-				#FETCH DEAL KEYS
-				fetched_deals = q.fetch(None)
-				logging.info('From: '+query_hash+", fetched: "+str(fetched_deals.__len__()))
-				
-				deals.extend(fetched_deals)
-		#					logging.debug(deal_keys)
-			t2 = datetime.now()
+			# fetch all of the deals!
+			include_foursquare = True
+			deals = search.fetch_deals(ghash_list, include_foursquare)
 			
 			
-			#===================================================================
-			# Get all deal tags
-			#===================================================================
-			tags = []
+			# if there arent enough levr deals, include the foursquare ones
+			# filter out all the repeat deals i.e. the same fs deal at multiple locations
+			unique_deal_texts = []
+			unique_deals = []
 			for deal in deals:
-#				logging.debug(dir(deals))
-				tags.extend(deal.tags)
-			logging.debug(tags)
+				deal_text = deal.deal_text
+				if deal_text not in unique_deal_texts:
+					unique_deal_texts.append(deal_text)
+					unique_deals.append(deal)
 			
-			# filter tags
-			try:
-				tags = filter(lambda x: x not in blacklist, tags)
-			except:
-				levr.log_error()
-			#convert list of all tags to a dict of key=tag, val=frequency
-			count = {}
+			deals = unique_deals
+			# grab all of the tags from the deals
+			for deal in deals:
+				deal.raw_tags = deal.create_tags(stemmed=False,include_business=False)
+			
+#			assert False, sorted([d.tags for d in deals])
+			
+			
+			
+			# get a big ol' list of all the tags
+			tags = set([tag for deal in deals for tag in deal.raw_tags])
+			tags = sorted(tags)
+			
+			# filter out popular search blacklisted terms
+			tags = filter(lambda x: x not in popular_blacklist,tags)
+			
+			logging.info('\n'.join(tags))
+			
+			# init ranks toop for scoring the deals
+			toops = []
+			
+			# rank the deals according to criteria
 			for tag in tags:
-#					logging.debug(tag in count)
-				if tag in count:
-					count[tag] += 1
-				else:
-					count[tag] = 1
-			
-			#===================================================================
-			# convert dict of tag:freq into list of tuples
-			#===================================================================
-			tuple_list = []
-			for key in count:
-				tuple_list.append((count[key],key))
-				
-			#sort tags by frequency, highest first
-			tuple_list.sort()
-			tuple_list.reverse()
-
-			#select only the most popular ones, and convert to list
-			word_list = [x[1] for x in tuple_list if x[1] not in blacklist]
+				rank = 0
+				for deal in deals:
+					if tag in deal.raw_tags:
+						if deal.origin == 'foursquare':
+							rank += 1.
+						else:
+							rank += 2.
+						
+						rank += deal.upvotes/10.
+						
+				toops.append((rank,tag))
+			# sort deals based on their ranks
+			toops = sorted(toops,reverse=True)
+			for toop in toops:
+				logging.info(toop)
+#			assert False, toops
+			ranks,tags = zip(*toops) #@UnusedVariable
 			
 			
-			####DEBUG
 			#if the popular items list is longer than 6, send entire list, else only send 6
 			try:
-				logging.debug(word_list.__len__())
-				if word_list.__len__()<6:
-					popular_items = word_list
+				logging.debug(tags.__len__())
+				if tags.__len__()<6:
+					popular_items = tags
 				else:
-					popular_items = word_list[:6]
+					popular_items = tags[:6]
 			
-			### SWITCH
 			except:
-				popular_items = word_list
+				popular_items = tags
 				levr.log_error('popular searches')
-			#### /DEBUG
-			
-			#BATCH GET RESULTS
-			t3 = datetime.now()
-			
 			
 			
 			#create response dict
 			response = {
 					'numResults': popular_items.__len__(),
-					'fetching'	: str(t2-t1),
-					'packaging'	: str(t3-t2),
-					'total'		: str(t3-t1),
 					'searches'	: popular_items
 					}
-			api_utils.send_response(self,response)
+			self.send_response(response)
 		except:
 			levr.log_error()
-			api_utils.send_error(self,'Server Error')
+			self.send_error()
 
 class SearchFoursquareHandler(webapp2.RequestHandler):
 	'''
