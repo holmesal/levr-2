@@ -62,6 +62,8 @@ handlers:
   script: facebook.app
 - url: /mobile.*
   script: mobile.app
+- url: /investors
+  script: investors.app
 #  secure: always
 
 #tasks and cronjobs

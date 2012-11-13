@@ -112,6 +112,7 @@ class MobileLoginHandler(webapp2.RequestHandler):
 			session['loggedIn'] = True
 			session['owner_of']	=	enc.encrypt_key(user.owner_of)
 			
+			
 			#send to the merchants page
 			self.redirect('/merchants/mobile/manage')
 			

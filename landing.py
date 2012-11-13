@@ -178,6 +178,6 @@ class landing(webapp2.RequestHandler):
 			message.body = body
 			message.send()
 			#self.response.out.write(message.body)
-	
+
 
 app = webapp2.WSGIApplication([('/', landing)],debug=True)
