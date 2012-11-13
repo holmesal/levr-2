@@ -25,7 +25,7 @@ import api_utils_social as social
 #import uuid
 #import geo.geohash as geohash
 
-class SandboxHandler(webapp2.RequestHandler):
+class SandboxHandler(api_utils.BaseClass):
 	'''
 	Dont delete this. This is my dev playground.
 	'''

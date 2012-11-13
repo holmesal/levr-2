@@ -1,4 +1,4 @@
-application: levr-production
+application: levr-development
 version: t
 runtime: python27
 api_version: 1
@@ -22,7 +22,7 @@ handlers:
   script: merchants.app
 - url: /new.*
   script: test_class.app
-  login: admin
+  # login: admin
 - url: /loginstate
   script: loginstate.app
 - url: /logout
@@ -94,8 +94,8 @@ handlers:
   script: api_merchant.app
 - url: /api/deeplink.*
   script: api_deeplink.app
-- url: /api/business
-  script: api_businesses.app
+- url: /api/business.*
+  script: api_business.app
 
 
 - url: /img

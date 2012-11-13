@@ -14,6 +14,8 @@ import promotions as promo
 import random
 import urllib
 import webapp2
+from google.appengine.api import taskqueue
+from tasks import INCREMENT_DEAL_VIEW_URL
 #from fnmatch import filter
 
 
@@ -36,7 +38,20 @@ class BaseClass(webapp2.RequestHandler):
 		'''
 		send_error(self,str(message))
 		
-	
+	def send_fail(self,log_message=''):
+		'''
+		Used for server error. Registers an error in the logs before
+		  returning an error
+		@param message: error message
+		@type message: str
+		'''
+		# register error in logs
+		levr.log_error(log_message)
+		
+		# return an error
+		self.send_error()
+		
+		
 	def send_response(self,response,user=None):
 		'''
 		This is just being used as a wrapper until all classes can be migrated
@@ -44,41 +59,272 @@ class BaseClass(webapp2.RequestHandler):
 		'''
 		send_response(self,response, user)
 		
-class SearchClass(BaseClass):
+class Search(object):
 	'''
 	Base class for all search handlers
 	'''
-	
-	def check_for_promotions(self,deals):
+	min_levr_deals = 5
+	foursquare_token = random.choice([
+					'IDMTODCAKR34GOI5MSLEQ1IWDJA5SYU0PGHT4F5CAIMPR4CR',
+					'ML4L1LW3SO0SKUXLKWMMBTSOWIUZ34NOTWTWRW41D0ANDBAX',
+					'RGTMFLSGVHNMZMYKSMW4HYFNEE0ZRA5PTD4NJE34RHUOQ5LZ'
+					])
+	def __init__(self,development,user = None):
+		# if the user has a token, override default selection of random dev token
+		# set namespace to active or test
+		self.development = development
+		if self.development:
+			self.deal_status = levr.DEAL_STATUS_TEST
+		else:
+			self.deal_status = levr.DEAL_STATUS_ACTIVE
+		
+		# try to add a user and grab their fs token if the have one
+		# otherwise the foursquare token defaults to a random one
+		self.user = user
+		try:
+			self.foursquare_token = user.foursquare_token
+		except:
+			pass
+		
+	def check_for_promotions(self,deals,user=None):
 		'''
 		A function to check search results for any promotions that might apply
 		
 		@status: Only handles a radius blast alert
 		'''
+		# TODO: if the user is a developer, do not check alert
 		# Find deals that have a radius blast promotion
 		#	and that have not been blasted to this user before
 		promoted_deals = filter(lambda x: promo.RADIUS_ALERT in x.promotions,deals)
 		logging.info('promoted_deals: {}'.format(promoted_deals))
 		# Filter deals that have already been sent to the user via alert
-		promoted_deals = filter(lambda x: x.key() not in self.user.been_radius_blasted,promoted_deals)
+		promoted_deals = filter(lambda x: x.key() not in user.been_radius_blasted,promoted_deals)
 		logging.info('promoted_deals: {}'.format(promoted_deals))
 		if promoted_deals:
 			# select only one deal to blast
 			deal = random.choice(promoted_deals)
 			# create the notification for the deal
-			self.user = levr.Notification().create_radius_alert(self.user, deal)
+			user = levr.Notification().create_radius_alert(user, deal)
 			
-		return
-def deprecated(handler_method):
-	'''
-	Decorator used to warn the coder that the function they are using is deprecated
-	'''
+		return user
+	def calc_precision_from_half_deltas(self,geo_point,lon_half_delta=0):
+		'''
+		Determines a geohash precision from the lat and long half deltas
+		
+		@type lat_half_delta: float
+		@type lon_half_delta: float
+		@return: time of operation
+		@rtype: datetime
+		'''
+		precision = 5
+		if lon_half_delta >0:
+	#		max([lat_half_delta,lon_half_delta])
+			center_right_lat = geo_point.lat
+			center_right_lon = geo_point.lon + lon_half_delta
+			center_left_lat = geo_point.lat
+			center_left_lon = geo_point.lon - lon_half_delta
+			# calculate the width in miles of the screen
+			width_in_miles = distance_between_points(center_right_lat,center_right_lon,center_left_lat,center_left_lon)
+			
+			if width_in_miles <2:
+				precision = 6
+		return precision
+	def expand_ghash_list(self,ghash_list,n):
+		'''
+		Expands self.ghash n times
+		@param n: number of expansions
+		@type n: int
+		'''
+		for i in range(0,n): #@UnusedVariable
+			# expand each ghash, and remove duplicates to expand a ring
+			new_ghashes = []
+			for ghash in ghash_list:
+				new_ghashes.extend(geohash.expand(ghash))
+			# add new hashes to master list
+			ghash_list.extend(new_ghashes)
+			# remove duplicates
+			ghash_list = list(set(ghash_list))
+		return ghash_list
+	def create_ghash_list(self,geo_point,precision):
+		'''
+		
+		'''
+		
+		ghash = geohash.encode(geo_point.lat, geo_point.lon, precision)
+		ghash_list = [ghash]
+		
+		# determine number of iterations based on the precision
+		if precision == 6:
+			n = 3
+		else:
+			n = 1
+		ghash_list = self.expand_ghash_list(ghash_list, n)
+		return ghash_list
+	def calc_bounding_box(self,ghash_list):
+		'''
+		Calculates a bounding box from a list of geohashes
+		@param ghash_list: a list of geo_hashes
+		@type ghash_list: list
+		@return: {'bottom_left':<float>,'top_right':<float>}
+		@rtype: dict
+		'''
+		points = [geohash.decode(ghash) for ghash in ghash_list]
+		
+		# calc precision from one the ghashes
+		precision = max([ghash.__len__() for ghash in ghash_list])
+		
+		#unzip lat,lons into two separate lists
+		lat,lon = zip(*points)
+		
+		#find max lat, long
+		max_lat = max(lat)
+		max_lon = max(lon)
+		#find min lat, long
+		min_lat = min(lat)
+		min_lon = min(lon)
+		
+		# encode the corner points
+		bottom_left_hash = geohash.encode(min_lat,min_lon,precision)
+		top_right_hash = geohash.encode(max_lat, max_lon, precision)
+		
+		# get bounding boxes for the corner hashes
+		tr = geohash.bbox(top_right_hash)
+		bl = geohash.bbox(bottom_left_hash)
+		# get the corner coordinates for the two corner hashes
+		top_right = (tr['n'],tr['e'])
+		bottom_left = (bl['s'],bl['w'])
+		# compile into dict
+		bounding_box = {
+					'bottom_left'	: bottom_left,
+					'top_right'		: top_right
+					}
+		return bounding_box
+	def fetch_deals(self,ghash_list,include_foursquare=True):
+		'''
+		Fetches deal entities from the db by their ghashes
+		Filters out deals that are nonetype
+		
+		@todo: filter nonetype deals
+		@return: deals and the bounding box of the search
+		@rtype: list,dict
+		'''
+		# get keys
+		deal_keys = get_deal_keys(ghash_list,development=self.development)
+		
+		# fetch deal entities
+		deals = db.get(set(deal_keys))
+		
+		if include_foursquare == False:
+			deals = filter(lambda x: x.origin != 'foursquare',deals)
+		
+		return deals
+	def get_foursquare_ids(self,deals):
+		'''
+		Creates a list of foursquare ids
+		'''
+		foursquare_ids = set(filter(lambda x: x,[d.foursquare_id for d in deals]))
+		return foursquare_ids
 	
-	def call(*args,**kwargs):
-		logging.warning('Call to deprecated function: {}'.format(handler_method.__name__))
-		handler_method(*args,**kwargs)
-	return call
-	
+	def sort_deals(self,deals):
+		'''
+		Calculates the ranks of each deal.
+		Assigns rank as a property to the deal
+		@return: deals
+		@rtype: list
+		'''
+		for deal in deals:
+			# calculate total karma
+			karma = deal.upvotes - deal.downvotes + deal.karma
+			# add bias towards levr deals
+			if deal.origin == 'levr' or deal.origin == 'merchant':
+				karma += 5
+			# set the deal rank as the karma
+			deal.rank = karma
+			logging.debug('deal.rank = '+str(deal.rank))
+		
+		# sort the deals
+		ranks = [d.rank for d in deals]
+		toop = zip(ranks,deals)
+		toop = sorted(toop,reverse=True)
+		ranks,deals = zip(*toop)
+		logging.info(ranks)
+		return deals,ranks
+	def filter_deals_by_origin(self,deals):
+		'''
+		Separates a list of deals into levr and foursquare deals
+		
+		@return: levr_deals,foursquare_deals
+		@rtype: (list,list)
+		'''
+		levr_deals = filter(lambda x: x.origin!='foursquare',deals)
+		foursquare_deals = filter(lambda x: x.origin=='foursquare',deals)
+		return levr_deals,foursquare_deals
+	def filter_deals_by_query(self,deals,query):
+		'''
+		Splits the deals into two lists of accepted and rejected deals
+			based on the query tags
+		If no deals match, is_empty is set to True, and all deals are returned
+		@param deals:
+		@type deals:
+		@param query: the query string
+		@type query: str
+		@return: num_results, which is the number of applicable deals from the query
+		@rtype
+		'''
+		search_tags = levr.create_tokens(query)
+		
+		accepted_deals = []
+		# compile list of deals whose tags match at least one tag
+		if query != 'all':
+			for deal in deals:
+				deal_tags = deal.tags
+				for tag in deal_tags:
+					# if a tag matches, will add to accepted deals
+					# TODO: rank deals by similarity frequency
+					if tag in search_tags:
+						accepted_deals.append(deal)
+						break
+			# count all of the applicable deals
+			num_results = accepted_deals.__len__()
+			
+		else:
+			# if no acceptable deals are found, return all of the deals
+			accepted_deals = deals
+			# count the number of applicable levr deals
+			levr_deals = filter(lambda x: x.origin != 'foursquare',accepted_deals)
+			num_results = levr_deals.__len__()
+		
+		return num_results,accepted_deals
+	def add_deal_views(self,deals):
+		'''
+		Adds a deal view for each deal
+		@param deals:
+		@type deals:
+		'''
+		try:
+			payload = {
+					'deal_keys' : [str(deal.key()) for deal in deals]
+					}
+			taskqueue.add(url=INCREMENT_DEAL_VIEW_URL,payload=json.dumps(payload))
+		except:
+			levr.log_error()
+	def sort_and_package(self,deals):
+		'''
+		Wrapper around the package_deals_multi
+		Pulls out the ranks from the deals to send
+		Sorts deals based on their rank
+		@param deals:
+		@type deals:
+		'''
+		if deals:
+			deals,ranks = self.sort_deals(deals)
+			# sort deals based on their ranks
+			
+			# package
+			packaged_deals = package_deal_multi(deals, ranks=ranks)
+		else:
+			packaged_deals = []
+		return packaged_deals
 
 
 #@deprecated
@@ -145,9 +391,9 @@ def package_deal_multi(deals,private=False,**kwargs):
 	deals = filter(lambda x: x,deals)
 	
 	# deal meta information
+	# will be lists of [None,] if not passed as kwargs
 	ranks = kwargs.get('ranks',[None for deal in deals]) #@UnusedVariable
 	distances = kwargs.get('distances',[None for deal in deals]) #@UnusedVariable
-	
 	
 	
 	
@@ -232,9 +478,9 @@ def _package_deal(deal,owner,business,private=False,rank=None,distance=None):
 				'owner'			: package_user(owner,private,False)
 				}
 	
-	if rank:
+	if rank is not None:
 		packaged_deal['rank'] = rank
-	if distance:
+	if distance is not None:
 		packaged_deal['distance'] = distance
 	
 	if private == True:
@@ -402,7 +648,20 @@ def fetch_all_users_deals(user):
 	all_deals.extend(expired_deals)
 	
 	return all_deals
+def fetch_all_businesses_deals(business,development=False):
+	'''
+	Fetches all of the deals from a business
+	@param business:
+	@type business:
+	'''
+	if development == True:
+		deal_status = levr.DEAL_STATUS_TEST
+	else:
+		deal_status = levr.DEAL_STATUS_ACTIVE
 	
+	deals = levr.Deal.all().filter('businessID',str(business.key())).filter('deal_status',deal_status).fetch(None)
+		
+	return deals
 def sort_deals_by_property(deals,prop):
 	if deals:
 		extracted_props = [getattr(deal,prop) for deal in deals]
@@ -472,6 +731,7 @@ def validate(url_param,authentication_source,*a,**to_validate): #@UnusedVariable
 						'query'				: str,
 						'latitudeHalfDelta' : float,
 						'longitudeHalfDelta': float,
+						'foursquareID'		: str,
 						
 						
 						#login and connect stuff
@@ -489,6 +749,7 @@ def validate(url_param,authentication_source,*a,**to_validate): #@UnusedVariable
 						'dealText'		: str,
 						'distance'		: float,
 						'action'		: str,
+						'daysToExpire'	: int,
 						
 						#business upload stuff
 						'businessName'	: str,
@@ -525,6 +786,7 @@ def validate(url_param,authentication_source,*a,**to_validate): #@UnusedVariable
 						'query'				: 'all',
 						'latitudeHalfDelta'	: None,
 						'longitudeHalfDelta': None,
+						'foursquareID'		: '',
 						
 						#login and connect stuff
 						'levrToken'			: '',
@@ -541,6 +803,7 @@ def validate(url_param,authentication_source,*a,**to_validate): #@UnusedVariable
 						'dealText'		: '',
 						'distance'		: -1,
 						'action'		: '',
+						'daysToExpire'	: 7,
 						
 						#business upload stuff
 						'businessName'	: '',
@@ -773,11 +1036,12 @@ def validate(url_param,authentication_source,*a,**to_validate): #@UnusedVariable
 					
 					#handle case where input should be an integer
 					elif data_type == int: 
-						if val.isdigit():
+						try:
+							logging.error(val)
 							#convert to int
 							val = int(val)
 							
-						else:
+						except:
 							levr.log_error()
 							raise TypeError(msg)
 					#handle case where input should be numerical 
@@ -1193,7 +1457,7 @@ def distance_between_points(lat1, lon1, lat2, lon2):
 	h = haversine(dlat) + cos(lat1) * cos(lat2) * haversine(dlon)
 	return RADIUS * inverse_haversine(h)
 
-def bounding_box(lat, lon, distance): #@UnusedVariable
+def create_bounding_box(lat, lon, distance): #@UnusedVariable
 	# Input and output lats/longs are in degrees.
 	# Distance arg must be in same units as RADIUS.
 	# Returns (dlat, dlon) such that
@@ -1332,7 +1596,7 @@ def search_foursquare(geo_point,token,deal_status,already_found=[],**kwargs):
 	if result.status_code != 200:
 		# Foursquare request was not successful
 		logging.debug(result.content)
-		logging.error('Failed response from foursquare with code: '+str(result.status_code))
+		logging.error('Failed response from foursquare with code: '+repr(result.status_code))
 		logging.error(result.headers.data)
 		return
 	
@@ -1416,8 +1680,8 @@ def search_foursquare(geo_point,token,deal_status,already_found=[],**kwargs):
 			distance2 = distance_between_points(geo_point.lat, geo_point.lon, business.geo_point.lat, business.geo_point.lon)
 
 # 			logging.debug('DISTANCE!!!: '+str(distance))
-			logging.debug('distance: '+str(distance)+ ' or '+ str(distance2))
-			logging.warning('geopoint1: '+str(deal_business.geo_point)+', geopoint2: '+ str(business.geo_point))
+			logging.debug('distance: '+repr(distance)+ ' or '+ repr(distance2))
+			logging.warning('geopoint1: '+repr(deal_business.geo_point)+', geopoint2: '+ repr(business.geo_point))
 			if distance < 10:
 				#package deal
 				packaged_deal = package_deal(deal,distance=distance)
@@ -1432,6 +1696,7 @@ def search_foursquare(geo_point,token,deal_status,already_found=[],**kwargs):
 #	for deal in response_deals:
 #		logging.info(deal['dealText'])
 	return response_deals
+
 
 def add_foursquare_deal(foursquare_deal,business,deal_status):
 	# TODO: consolidate this into a general add deal function
@@ -2001,12 +2266,12 @@ class PromoteDeal(BaseClass):
 		if tags:
 			for tag in tags:
 				try:
-					self.deal.tags.remove(tag)
+					self.deal.extra_tags.remove(tag)
 				except ValueError,e:
 					logging.error('A tag could not be removed from a deal. This should not happen')
 					logging.info('deal key: '+str(self.deal.key()))
 					logging.info('tag: '+str(tag))
-					logging.info('deal tags: '+str(self.deal.tags))
+					logging.info('deal tags: '+str(self.deal.extra_tags))
 					levr.log_error(e)
 					
 		
@@ -2133,7 +2398,7 @@ class PromoteDeal(BaseClass):
 		
 		# append new deal tags to the list of tags
 		assert type(self.tags) == list, 'tags must be a list'
-		self.deal.tags.extend(self.tags)
+		self.deal.extra_tags.extend(self.tags)
 		return
 	def _remove_more_tags(self):
 		'''

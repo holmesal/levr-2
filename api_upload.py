@@ -142,10 +142,12 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 			#===================================================================
 			try:
 		#		approve_link = 'http://www.levr.com/admin/deal/{}/approve'.format(enc.encrypt_key(deal_entity.key()))
+				base_url = 'http://www.levr.com/admin/deal/{}/expiration?daysToExpire='.format(enc.encrypt_key(deal_entity.key()))
+				today_only_link = base_url+'0'
+				one_week_link = base_url+'7'
+				one_month_link = base_url+'30'
+				never_link = base_url+'-1'
 				reject_link = 'http://www.levr.com/admin/deal/{}/reject'.format(enc.encrypt_key(deal_entity.key()))
-				
-#				message = mail.EmailMessage()
-#				message.to = ['patrick@levr.com','alonso@levr.com']
 				message = mail.AdminEmailMessage()
 				message.sender = 'patrick@levr.com'
 				message.subject = 'New Upload'
@@ -153,11 +155,15 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 				message.html = '<img src="{}"><br>'.format(deal.get('smallImg'))
 				message.html += '<h2>{}</h2>'.format(deal_entity.deal_text)
 				message.html += '<h3>{}</h3>'.format(deal_entity.description)
-				message.html += '<p>Uploaded by: {}</p>'.format(user.display_name)
-				message.html += '<p>deal_status: {}</p>'.format(deal_entity.deal_status)
-				message.html += '<br>Reject: {}<br><br>'.format(reject_link)
+				message.html += '<h4>Uploaded by: {}</h4>'.format(user.display_name)
+				message.html += '<h5>deal_status: {}</h5>'.format(deal_entity.deal_status)
+				message.html += '<br/><p>Set deal expiration.</p>'
+				message.html += '<br><a href="{}">Reject</a><br><br>'.format(reject_link)
+				message.html += '<br><a href="{}">Today Only</a><br><br>'.format(today_only_link)
+				message.html += '<br><a href="{}">One Week</a><br><br>'.format(one_week_link)
+				message.html += '<br><a href="{}">One Month</a><br><br>'.format(one_month_link)
+				message.html += '<br><a href="{}">Forever!!!</a><br><br>'.format(never_link)
 				message.html += levr.log_dict(deal, None, '<br>')
-				
 		#		message.body += '\n\n\n\n\n\nApprove: {}'.format(approve_link)
 				
 				message.check_initialized()
