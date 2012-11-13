@@ -30,14 +30,20 @@ class SandboxHandler(webapp2.RequestHandler):
 	Dont delete this. This is my dev playground.
 	'''
 	def get(self):
-		
+		pass
+class CombineNinjaOwnership(api_utils.BaseClass):
+	def get(self):
+		'''
+		Grabs all of the deals at a business, and sets all of the deals to the same ninja owner
+		'''
+		assert False, 'You shouldnt be here. this handler is dangerous unless used wisely'
 		self.response.headers['Content-Type'] = 'text/plain'
 		# change ownership of rednecks roast beef deals
 		
 		deals = levr.Deal.all(
 							).filter('businessID','ahRkZXZ-bGV2ci1kZXZlbG9wbWVudHIPCxIIQnVzaW5lc3MY2AIM' # test - berklee boloco
 #							).filter('businessID','ahFzfmxldnItcHJvZHVjdGlvbnIQCxIIQnVzaW5lc3MY2-wKDA' # Rednecks
-							).filter('deal_status','active'
+							).filter('deal_status','test'
 							).fetch(None)
 		for deal in deals:
 			self.response.out.write(levr.log_model_props(deal,['deal_text','deal_status']))
@@ -63,7 +69,7 @@ class SandboxHandler(webapp2.RequestHandler):
 		
 		# compile into one list
 		deals.extend(new_deals)
-#		db.put(deals)
+		db.put(deals)
 		for deal in deals:
 			self.response.out.write(levr.log_model_props(deal,['deal_text','deal_status']))
 			self.response.out.write(deal.parent_key())
