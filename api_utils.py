@@ -1036,10 +1036,8 @@ def validate(url_param,authentication_source,*a,**to_validate): #@UnusedVariable
 					#handle case where input should be an integer
 					elif data_type == int: 
 						try:
-							logging.error(val)
 							#convert to int
 							val = int(val)
-							
 						except:
 							levr.log_error()
 							raise TypeError(msg)
@@ -1584,7 +1582,7 @@ def merge_customer_info_from_B_into_A(user,donor,service):
 def search_foursquare(geo_point,token,deal_status,already_found=[],**kwargs):
 	assert deal_status != 'random', 'Deal status is being set as random'
 	#if token is passes as 'random', use a hardcoded token
-	if token == 'random':
+	if not token or token == 'random':
 		hardcoded = ['IDMTODCAKR34GOI5MSLEQ1IWDJA5SYU0PGHT4F5CAIMPR4CR','ML4L1LW3SO0SKUXLKWMMBTSOWIUZ34NOTWTWRW41D0ANDBAX','RGTMFLSGVHNMZMYKSMW4HYFNEE0ZRA5PTD4NJE34RHUOQ5LZ']
 		token = random.choice(hardcoded)
 	logging.info('Using token: '+token)

@@ -1196,7 +1196,7 @@ class Deal(polymodel.PolyModel):
 	'''
 	Changelog:
 	v3: added promotions property - for identifying what promotions the deal is affected by
-	v4: added geo_hash_prefixes
+	v4: 
 	'''
 	#deal meta information
 	deal_status		= db.StringProperty(choices=set(["pending","active","rejected","expired","test"]),default="active")
@@ -1280,6 +1280,10 @@ class Deal(polymodel.PolyModel):
 				tags.extend(business.create_tags(stemmed,filtered))
 			except:
 				# deal doesnt have deal.business. only deal.businessID...
+				try:
+					logging.warning('Deal does not have business property, only businessID: '+str(self.key()))
+				except:
+					log_error()
 				business = db.get(self.businessID)
 				tags.extend(business.create_tags(stemmed,filtered))
 			tags = list(set(tags))

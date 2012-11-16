@@ -135,7 +135,6 @@ class SignupTwitterHandler(webapp2.RequestHandler):
 													twitter_token_secret	= twitter_token_secret
 													)
 				except Exception,e:
-					#delete the new user that was created because the signup failed
 					levr.log_error()
 					assert False, 'Could not connect with foursquare. '.format('')
 				#return the user

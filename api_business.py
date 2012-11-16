@@ -156,7 +156,6 @@ class FindABusinessFromFourquareHandler(api_utils.BaseClass):
 			self.send_error()
 
 FIND_A_BUSINESS_URL = '/api/business/find'
-FOURSQUARE_BUSINESS_URL = '/api/business/foursquare'
 VIEW_A_BUSINESS_URL = '/api/business/view'
 app = webapp2.WSGIApplication([
 							(FIND_A_BUSINESS_URL, FindABusinessHandler),

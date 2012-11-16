@@ -102,18 +102,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		img_key = blob_key
 		logging.info(upload)
 		
-		refresh = self.request.get('refresh',False)
-		if refresh:
-			entities = levr.Customer.all(keys_only=True).filter('tester',True).fetch(None)
-			notes = []
-			for e in entities:
-				notes += levr.Notification.all(keys_only=True).filter('actor',e).fetch(None)
-				
-			entities += notes
-			
-			entities += levr.Deal.all(keys_only=True).filter('deal_status','test').fetch(None)
-			
-			db.delete(entities)
+		
 		
 #		ethan = pat = alonso = ninja = False
 		# new customer
