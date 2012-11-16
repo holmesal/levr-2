@@ -60,6 +60,21 @@
 
 {% block javascript %}
 <script type="text/javascript">
+$(window).load(function(){
+	//track loadtime
+	var endTime = (new Date()).getTime();
+    var millisecondsLoading = endTime - startTime;
+    if ($('#business').val().length != 0){
+		fail = $('#business').val()
+	} else{
+		fail = false
+	}
+	mixpanel.track('Business select page loaded',{"Load Time":millisecondsLoading,"fail":fail})
+	
+	mixpanel.track_links('.back','Business select back button clicked',{"Business search val":$('#business').val()})
+});
+</script>
+<script type="text/javascript">
 
 	var delay = (function(){
 	  var timer = 0;
@@ -89,7 +104,9 @@
 		
 		//re-register the listeners
 		$('.result').on('click',function(e){
-			window.location = '/merchants/mobile/businessdetails?reference='+e.currentTarget.id+'&query='+$('#business').val()
+			mixpanel.track("Business select result clicked",{"Business text entered":$('#business').val(),"Number characters entered":$('#business').val().length})
+			setTimeout(function(){window.location = '/merchants/mobile/businessdetails?reference='+e.currentTarget.id+'&query='+$('#business').val()},300);
+			//window.location = '/merchants/mobile/businessdetails?reference='+e.currentTarget.id+'&query='+$('#business').val()
 		})
 	}
 	

@@ -30,12 +30,25 @@
 {% block content %}
 	<p class="top">Put your offers on a bigger blackboard.</p>
 	<p class="subtop">Levr takes the offers that you already run in-store, and puts them in front of a wide, mobile audience.</p>
-	<a class="btn btn-block btn-info btn-large" href="/merchants/mobile/businessselect">Sign up</a>
-	<a class="btn btn-block btn-success btn-large" href="/merchants/mobile/login">Log in</a>
+	<a id="btnSignup" class="btn btn-block btn-info btn-large" href="/merchants/mobile/businessselect">Sign up</a>
+	<a id="btnLogin" class="btn btn-block btn-success btn-large" href="/merchants/mobile/login">Log in</a>
 	<a id="full" class="btn btn-block btn-large" href="/merchants?version=desktop">View full site</a>
 
 {% endblock %}
 
 
 
-{% block javascript %}{% endblock %}
+{% block javascript %}
+<script type="text/javascript">
+$(window).load(function(){
+	//track loadtime
+	var endTime = (new Date()).getTime();
+    var millisecondsLoading = endTime - startTime;
+	mixpanel.track('Mobile landing page loaded',{"Load Time":millisecondsLoading})
+	
+	mixpanel.track_links('#btnSignup','Signup Button Clicked')
+	mixpanel.track_links("#btnLogin","Login Button Clicked")
+	mixpanel.track_links("#full","Full Site Button Clicked")
+});
+</script>
+{% endblock %}

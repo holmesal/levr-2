@@ -186,16 +186,18 @@ class MobileBusinessDetailsHandler(webapp2.RequestHandler):
 			logging.debug(reply)
 			deets = reply['result']
 			
+			
+			
 			template_values = {
-				"vicinity"	:	deets["vicinity"],
-				"phone"		:	deets["formatted_phone_number"],
+				"vicinity"	:	deets.get("vicinity",""),
+				"phone"		:	deets.get("formatted_phone_number",""),
 				"name"		:	deets["name"],
 				"lat"		:	deets["geometry"]["location"]["lat"],
 				"lon"		:	deets["geometry"]["location"]["lng"],
 				"reference"	:	reference,
 				"query"		:	query,
 				"title"		:	"Is this you?",
-				"back_link"	:	"/merchants/mobile"
+				"back_link"	:	"/merchants/mobile/businessselect?query="+query
 			}
 			
 			template = jinja_environment.get_template('templates/merchants-mobile-business-details.html')
@@ -339,6 +341,27 @@ class MobileSignupHandler(webapp2.RequestHandler):
 			owner.put()
 			
 			logging.debug(levr.log_model_props(owner))
+			
+			#track via mixpanel
+			try:
+				#track event via mixpanel (asynchronous)
+				properties = {
+					'time'				:	time.time(),
+					'distinct_id'		:	enc.encrypt_key(owner.key()),		
+					'mp_name_tag'		:	owner.display_name
+				}
+				mp_track.track('Business Account Created',"332a4cca692ee77560433b00c148eaec",properties)
+				
+				user_props = {
+					'$first_name'	:	owner.business_name,
+					'$last_name'	:	owner.last_name,
+					'$email'		:	owner.email
+				}
+				
+				mp_track.person(enc.encrypt_key(owner.key()),"332a4cca692ee77560433b00c148eaec",user_props)
+				
+			except:
+				levr.log_error()
 			
 			#log the owner in
 			session = get_current_session()

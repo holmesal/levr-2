@@ -50,14 +50,26 @@
 	<p class="name light">{{name}}</p>
 	<p class="phone light">{{phone}}</p>
 	<p class="vicinity light">{{vicinity}}</p>
-	<a class="btn btn-large btn-block btn-danger" href="/merchants/mobile/businessselect?query={{query}}"><i class="icon-white icon-arrow-left" style="float: left;margin-left: 20px;"></i> That's not me</a>
-	<a id="verify" class="btn btn-large btn-block btn-success"><i class="icon-white icon-ok" style="float: left;margin-left: 20px;"></i> Yes, that's me</a>
+	<a id="antiVerify" class="btn btn-large btn-block btn-danger" href="/merchants/mobile/businessselect?query={{query}}"><i class="icon-white icon-arrow-left" style="float: left;margin-left: 20px;"></i> That's not me</a>
+	<a id="verify" class="btn btn-large btn-block btn-success" href="/merchants/mobile/signup?reference={{reference}}"><i class="icon-white icon-ok" style="float: left;margin-left: 20px;"></i> Yes, that's me</a>
 </div>
 {% endblock %}
 
 
 
 {% block javascript %}
+<script type="text/javascript">
+$(window).load(function(){
+	//track loadtime
+	var endTime = (new Date()).getTime();
+    var millisecondsLoading = endTime - startTime;
+	mixpanel.track('Business details loaded',{"Load Time":millisecondsLoading})
+	
+	mixpanel.track_links('.back','Business details back button clicked')
+	mixpanel.track_links('#verify','Business confirmed')
+	mixpanel.track_links('#antiVerify','Business NOT confirmed')
+});
+</script>
 <script type="text/javascript">
 	
 	var features = [{
@@ -81,10 +93,6 @@
 	        "marker-symbol"	:	"star"
 	  }
 	});
-
-	$("#verify").on('click',function(){
-		window.location = '/merchants/mobile/signup?reference={{reference}}'
-	})
 	
 </script>
 

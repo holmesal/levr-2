@@ -7,8 +7,9 @@
 {% block content %}
 	{%if error%}
 		<div class="alert alert-error">{{error}}</div>
+		<script>mixpanel.track("Signup Error",{"Error":"{{error}}"})</script>
 	{%endif%}
-	<form action="/merchants/mobile/signup" method="post"  enctype="multipart/form-data">
+	<form id="signupForm" action="/merchants/mobile/signup" method="post"  enctype="multipart/form-data">
 			<input id="email" name="email" placeholder="Email" type="text" value="{{email}}">
 			<input id="pw1" name="pw1" placeholder="Password" type="password" value="{{pw1}}">
 			<input id="pw2" name="pw2" placeholder="Confirm Password" type="password" value="{{pw2}}">
@@ -19,4 +20,14 @@
 
 
 
-{% block javascript %}{% endblock %}
+{% block javascript %}
+<script type="text/javascript">
+$(window).load(function(){
+	//track loadtime
+	var endTime = (new Date()).getTime();
+    var millisecondsLoading = endTime - startTime;
+	mixpanel.track('Business signup loaded',{"Load Time":millisecondsLoading})
+	mixpanel.track_forms("#signupForm","Signup form submitted")
+});
+</script>
+{% endblock %}
