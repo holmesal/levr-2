@@ -1,8 +1,9 @@
 #from common_word_list import blacklist
 from datetime import datetime, timedelta
-from google.appengine.api import files, images, urlfetch, memcache
+from google.appengine.api import files, images, urlfetch, memcache, taskqueue
 from google.appengine.ext import blobstore, db
 from math import sin, cos, asin, degrees, radians, floor, sqrt
+#from tasks import INCREMENT_DEAL_VIEW_URL
 import api_utils_social as social
 import geo.geohash as geohash
 import json
@@ -14,10 +15,8 @@ import promotions as promo
 import random
 import urllib
 import webapp2
-from google.appengine.api import taskqueue
-from tasks import INCREMENT_DEAL_VIEW_URL
 #from fnmatch import filter
-
+INCREMENT_DEAL_VIEW_URL = '/tasks/incrementDealView'
 
 #creates a url for remote or local server
 if os.environ['SERVER_SOFTWARE'].startswith('Development') == True:
@@ -2013,7 +2012,7 @@ def update_foursquare_business(foursquare_id,deal_status,token='random'):
 	
 #delete account and all follower references
 
-def rotate_image(blob_key):
+def rotate_image(blob_key,deal=None):
 	'''
 	Checks the orientation of an image in the blobstore.
 	If the image is rotated, rotate it again until it is in a natural orientation
@@ -2066,8 +2065,9 @@ def rotate_image(blob_key):
 			# Get the file's blob key
 			new_blob_key = files.blobstore.get_blob_key(overwrite)
 			
-			#grab the reference to the old image
-			deal = levr.Deal.gql('WHERE img=:1',blob_key).get()
+			if deal is None:
+				#grab the reference to the old image
+				deal = levr.Deal.gql('WHERE img=:1',blob_key).get()
 			logging.debug('Old img key: '+str(blob_key))
 			logging.debug('New img key: '+str(new_blob_key))
 			deal.img = new_blob_key

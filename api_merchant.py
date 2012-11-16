@@ -251,11 +251,8 @@ class ConnectMerchantHandler(api_utils.BaseClass):
 					logging.debug('User owns a business')
 #					logging.debug(levr.log_model_props(business.owner))
 #					logging.debug(levr.log_model_props(requested_business.owner))
-					if requested_business:
-						assert business.key() == requested_business.key(), user_doesnt_own_business_message
-				
-				
-				
+#					if requested_business:
+#						assert business.key() == requested_business.key(), user_doesnt_own_business_message
 			else:
 				logging.debug('User does not exist. Create a new one!!')
 				# Create an account for the user with that business
@@ -264,7 +261,6 @@ class ConnectMerchantHandler(api_utils.BaseClass):
 										pw=password,
 										email=email,
 										display_name=business_name,
-										
 										)
 				logging.debug(business_name)
 				logging.debug(levr.log_model_props(user))
@@ -450,18 +446,7 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 				upload_flag = True
 				
 				
-				try:
-					# Synchronously rotate the image
-					api_utils.rotate_image(blob_key)
-				except:
-					levr.log_error('An image could not be rotated. It was sent to the task que: '+str(blob_key))
-					# Send the image to the img rotation task que
-					task_params = {
-									'blob_key'	:	str(blob_key)
-									}
-					logging.info('Sending this to the img rotation task: '+str(task_params))
-					
-					taskqueue.add(url=IMAGE_ROTATION_TASK_URL,payload=json.dumps(task_params))
+				
 			else:
 				upload_flag = False
 				raise KeyError('Image was not uploaded')
@@ -482,7 +467,20 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 			# TODO: add origin = 'merchant'
 			deal_entity = levr.dealCreate(params, 'phone_merchant', upload_flag)
 			
-			
+			# if an image was uploaded, rotate it.
+			if upload_flag == True:
+				try:
+					# Synchronously rotate the image
+					api_utils.rotate_image(blob_key,deal_entity)
+				except:
+					levr.log_error('An image could not be rotated. It was sent to the task que: '+str(blob_key))
+					# Send the image to the img rotation task que
+					task_params = {
+									'blob_key'	:	str(blob_key)
+									}
+					logging.info('Sending this to the img rotation task: '+str(task_params))
+					
+					taskqueue.add(url=IMAGE_ROTATION_TASK_URL,payload=json.dumps(task_params))
 			
 			#===================================================================
 			# Aw hell.. why not give them some karma too.
