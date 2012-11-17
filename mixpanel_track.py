@@ -19,14 +19,20 @@ def track(event,token,properties=None):
 		raise Exception('mixpanel token not passed')
 	
 	params = {"event": event, "properties": properties}
+	
+	logging.info(params)
 		
 	data = base64.b64encode(json.dumps(params))
 	request = "http://api.mixpanel.com/track/?data=" + data
 	
-	rpc = urlfetch.create_rpc()
-	urlfetch.make_fetch_call(rpc, request)
+# 	rpc = urlfetch.create_rpc()
+# 	urlfetch.make_fetch_call(rpc, request)
+
+	response = urlfetch.fetch(request)
+	reply = json.loads(response.content)
+	logging.info(reply)
 	
-	logging.debug(rpc)
+# 	logging.debug(rpc)
 	
 	return True
 	
@@ -42,14 +48,20 @@ def person(distinct_id,token,properties):
 		"$distinct_id"	:	distinct_id
 	}
 	
+	logging.info(params)
+	
 	data = base64.b64encode(json.dumps(params))
 	request = "http://api.mixpanel.com/engage/?data="+data
 	
-	rpc = urlfetch.create_rpc()
-	urlfetch.make_fetch_call(rpc, request)
+# 	rpc = urlfetch.create_rpc()
+# 	urlfetch.make_fetch_call(rpc, request)
+
+	response = urlfetch.fetch(request)
+	reply = json.loads(response.content)
+	logging.info(reply)
 	
-	logging.debug('RPC FROM MIXPANEL:')
-	logging.debug(rpc)
+# 	logging.debug('RPC FROM MIXPANEL:')
+# 	logging.debug(rpc)
 	
 	return True
 	
@@ -68,11 +80,15 @@ def increment(distinct_id,token,to_increment):
 	data = base64.b64encode(json.dumps(params))
 	request = "http://api.mixpanel.com/engage/?data="+data
 	
-	rpc = urlfetch.create_rpc()
-	urlfetch.make_fetch_call(rpc, request)
+# 	rpc = urlfetch.create_rpc()
+# 	urlfetch.make_fetch_call(rpc, request)
+
+	response = urlfetch.fetch(request)
+	reply = json.loads(response.content)
+	logging.info(reply)
 	
-	logging.debug('RPC FROM MIXPANEL:')
-	logging.debug(rpc)
+# 	logging.debug('RPC FROM MIXPANEL:')
+# 	logging.debug(rpc)
 	
 	return True
 	

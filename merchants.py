@@ -345,20 +345,22 @@ class MobileSignupHandler(webapp2.RequestHandler):
 			#track via mixpanel
 			try:
 				#track event via mixpanel (asynchronous)
+				
+				
+				user_props = {
+					'$first_name'	:	business.business_name,
+					'$email'		:	owner.email
+				}
+				
+				mp_track.person(enc.encrypt_key(owner.key()),"332a4cca692ee77560433b00c148eaec",user_props)
+				
 				properties = {
 					'time'				:	time.time(),
 					'distinct_id'		:	enc.encrypt_key(owner.key()),		
 					'mp_name_tag'		:	owner.display_name
 				}
-				mp_track.track('Business Account Created',"332a4cca692ee77560433b00c148eaec",properties)
-				
-				user_props = {
-					'$first_name'	:	owner.business_name,
-					'$last_name'	:	owner.last_name,
-					'$email'		:	owner.email
-				}
-				
-				mp_track.person(enc.encrypt_key(owner.key()),"332a4cca692ee77560433b00c148eaec",user_props)
+				# mp_track.track("Business Account Created","332a4cca692ee77560433b00c148eaec",properties)
+				mp_track.track("Business Account Created","332a4cca692ee77560433b00c148eaec")
 				
 			except:
 				levr.log_error()
