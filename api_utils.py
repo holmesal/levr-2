@@ -843,7 +843,7 @@ def validate(url_param,authentication_source,*a,**to_validate): #@UnusedVariable
 						#pass the deal object, not the id, to the handler
 						kwargs.update({'deal':deal})
 					except:
-						levr.log_error()
+#						levr.log_error()
 						raise TypeError('dealID: '+str(enc.encrypt_key(dealID)))
 					
 					
@@ -862,7 +862,7 @@ def validate(url_param,authentication_source,*a,**to_validate): #@UnusedVariable
 						#pass the user OBJECT, not the id, to the handler
 						kwargs.update({'user':user})
 					except Exception,e:
-						levr.log_error()
+#						levr.log_error()
 						raise TypeError('uid: '+str(enc.encrypt_key(uid)))
 				
 				

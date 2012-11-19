@@ -136,7 +136,7 @@ class SignupTwitterHandler(webapp2.RequestHandler):
 													)
 				except Exception,e:
 					levr.log_error()
-					assert False, 'Could not connect with foursquare. '.format('')
+					assert False, 'Could not connect with twitter. '.format('')
 				#return the user
 				response = {
 						'user':api_utils.package_user(user,True,send_token=True),

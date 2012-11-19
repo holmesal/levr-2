@@ -30,7 +30,25 @@ class SandboxHandler(api_utils.BaseClass):
 	Dont delete this. This is my dev playground.
 	'''
 	def get(self):
-		pass
+		self.response.headers['Content-Type'] = 'text/plain'
+		deals = levr.Deal.all(
+							).filter('deal_status','active'
+							).fetch(None)
+		deals = filter(lambda x: x.origin=='levr',deals)
+		dates = [deal.date_created for deal in deals]
+		toop = zip(dates,deals)
+		toop = sorted(toop,reverse=True)
+		dates,deals = zip(*toop)
+		self.response.out.write(str(deals.__len__())+'\n\n')
+		for deal in deals:
+			self.response.out.write(levr.log_model_props(deal, ['deal_text','date_created']))
+		
+		
+		business_ids = list(set([deal.businessID for deal in deals]))
+		self.response.out.write('\n\n'+str(business_ids.__len__()))
+		
+		
+		self.response.out.write('\n\n Done!')
 class CombineNinjaOwnership(api_utils.BaseClass):
 	def get(self):
 		'''

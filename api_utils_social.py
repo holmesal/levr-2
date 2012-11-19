@@ -64,6 +64,7 @@ class SocialClass:
 		
 		if auto_put:
 			#put the user before returnsing
+			logging.info(levr.log_model_props(self.user))
 			user = self.put()
 		else: 
 			user = self.return_user()
@@ -152,6 +153,7 @@ class SocialClass:
 												).order('-facebook_friends'
 												).fetch(None)
 			levr_friends.extend(facebook_friends)
+			logging.debug(facebook_friends)
 		#TWITTER BY ID
 		logging.debug('twitter_id: ' + str(self.user.twitter_id))
 		if self.user.twitter_id:
@@ -160,6 +162,7 @@ class SocialClass:
 													).order('-twitter_friends_by_id'
 													).fetch(None)
 			levr_friends.extend(twitter_friends)
+			logging.debug(twitter_friends)
 		#TWITTER BY SCREEN NAME
 		logging.debug('twitter_screen_name: ' + str(self.user.twitter_screen_name))
 		if self.user.twitter_screen_name:
@@ -177,6 +180,7 @@ class SocialClass:
 													).order('-email_friends'
 													).fetch(None)
 			levr_friends.extend(email_friends)
+			logging.debug(email_friends)
 		
 		#levr friends is a list of keys of all friends who have indicated connections with the actor
 		logging.debug(levr_friends)
@@ -218,7 +222,7 @@ class SocialClass:
 			response['new_twitter_friends_by_sn'] = new_twitter_friends_by_sn
 		if twitter_friends_by_id:
 			new_twitter_friends_by_id = filter(lambda friend:friend not in self.user.twitter_friends_by_id and friend != self.user.twitter_id, twitter_friends_by_id)
-			self.user.twitter_friends_by_sn.extend(new_twitter_friends_by_id)
+			self.user.twitter_friends_by_id.extend(new_twitter_friends_by_id)
 			response['new_twitter_friends_by_id'] = new_twitter_friends_by_id
 		return response
 	
@@ -237,10 +241,10 @@ class SocialClass:
 					url=url,
 					method=method,
 					headers=headers)
-#		logging.debug(levr.log_dir(result))
+#		logging.debug(levr.log_dir(response))
 #		logging.debug(result.status_code)
 #		logging.debug(result.headers.data)
-#		logging.debug(result.content)
+#		logging.debug(response.content)
 		
 		logging.debug(response.status_code)
 		logging.debug(response.headers.data)
@@ -724,7 +728,6 @@ class Twitter(SocialClass):
 		#get the users friends
 		#friends is a list of twitter ids, type: int
 		twitter_friends_by_id = content['ids']
-		
 		#store the information for the users facebook friends that were just found
 		self.extend_friends(twitter_friends_by_id=twitter_friends_by_id)
 		
