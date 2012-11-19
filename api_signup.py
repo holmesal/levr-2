@@ -144,7 +144,14 @@ class SignupTwitterHandler(webapp2.RequestHandler):
 						'new_user_details'	: new_user_details
 						}
 			try:
-				levr.text_notify(user.display_name+' from Twitter!')
+				if user.display_name == 'Jason K.':
+					from google.appengine.api import mail
+					mail.send_mail(sender="patrick@levr.com",
+					to="patrick@levr.com",
+					subject="Signup",
+					body='Jason signed up')
+				else:
+					levr.text_notify(user.display_name+' from Twitter!')
 			except:
 				levr.log_error()
 				

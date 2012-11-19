@@ -4,7 +4,7 @@ import unittest
 import urllib2 as u
 import sys
 
-test_url = 'http://test.levr-production.appspot.com'
+test_url = 'http://t.levr-production.appspot.com'
 fuckery_url = 'http://fuckery.levr-production.appspot.com'
 live_url = 'http://www.levr.com'
 local_url = 'http://0.0.0.0:8080'
