@@ -37,7 +37,7 @@ handlers:
   script: payments.app
   login: admin
   secure: always
-- url: /sandbox
+- url: /sandbox.*
   script: test.app
   login: admin
 - url: /mixmap

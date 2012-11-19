@@ -2288,13 +2288,27 @@ class PromoteDeal(BaseHandler):
 				promo.NOTIFY_RELATED_LIKES : self._set_notify_related_likes,
 				promo.RADIUS_ALERT : self._set_radius_alert
 				}
+		handler_args = {
+					promo.MORE_TAGS : kwargs.get('tags'),
+					}
+		
 		# Assure that the requested promotion is available for hire
 		assert promotion_id in [key for key in handlers], \
 			'Promotion not available: {}'.format(promotion_id)
 		
-		# run the required function
-		handlers[promotion_id]()
-		
+		try:
+			funct = handlers[promotion_id]
+			try:
+				# run the promotion with args
+				args = handler_args[promotion_id]
+				funct(args)
+			except:
+				# run the required function without args
+				funct()
+		except:
+			levr.log_error()
+			# run the promotion
+			handlers[promotion_id]()
 		# create the promotion entity
 		self._add_promo(promotion_id)
 		# return
