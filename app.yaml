@@ -146,4 +146,4 @@ skip_files:
 - ^(.*/)?\..*
 - ^(.*/)?.*\.bak$
 - ^boto/
-#- ^Crypto/
+- ^Crypto/
