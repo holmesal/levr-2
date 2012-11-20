@@ -33,7 +33,7 @@ PROMOTIONS = {
 					},
 			RADIUS_ALERT : {
 						'name'	: RADIUS_ALERT,
-						'readableName' : 'Notify Fans',
+						'readableName' : 'Radius Alert',
 						'img'	: 'http://www.levr.com/img/promo_radius.png',
 						'img2x'	: 'http://www.levr.com/img/promo_radius_2x.png',
 						'description' : 'Alert customers in your area',
@@ -47,7 +47,7 @@ PROMOTIONS = {
 								},
 			NOTIFY_RELATED_LIKES:{
 								'name'	: NOTIFY_RELATED_LIKES,
-								'readableName' : 'Radius Alert',
+								'readableName' : 'Notify Fans',
 								'img'	: 'http://www.levr.com/img/promo_similar.png',
 								'img2x'	: 'http://www.levr.com/img/promo_similar_2x.png',
 								'description' : 'Alert customers who have liked similar deals',
