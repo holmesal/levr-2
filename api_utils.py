@@ -539,6 +539,16 @@ def package_user(user,private=False,followers=False,**kwargs):
 	
 	return packaged_user
 def package_notification(notification):
+	'''
+	Switch case on notification based on the version of notification, old or new
+	@param notification: Notification entity
+	@type notification: levr.Notification or levr.Notification_2
+	'''
+	if type(notification) == levr.Notification:
+		return _package_notification(notification)
+	elif type(notification) == levr.Notification_2:
+		return _package_notification_2(notification)
+def _package_notification(notification):
 	packaged_notification = {
 		'notificationID'	: enc.encrypt_key(str(notification.key())),
 #		'date'				: str(notification.date)[:19],
@@ -555,7 +565,17 @@ def package_notification(notification):
 		packaged_notification['user']['alias'] = 'Level up!'
 	
 	return packaged_notification
-	
+def _package_notification_2(notification):
+	packaged_notification = {
+		'notificationID'	: enc.encrypt_key(notification.key()),
+		'date'				: notification.date_in_seconds,
+		'actionType'		: notification.action_type,
+		'actionData'		: notification.action_data,
+		'line1'				: notification.line_1,
+		'line2'				: notification.line_2,
+		'line3'				: notification.line_3,
+		'photo'				: notification.photo
+		}
 def package_business(business):
 
 	packaged_business = {

@@ -1491,7 +1491,150 @@ class Notification(db.Model):
 		self.put()
 		
 		return self._return(to_be_notified)
+class BaseModel(db.Model):
+	pass
 
+
+class Notification_2(BaseModel):
+	# meta properties
+	_justify_left = 'left' # recommendations, sponsored
+	_justify_right = 'right' # interactions with people
+	_deal_action = 'deal'
+	_user_action = 'user'
+	_business_action = 'business'
+	_search_action = 'search'
+	
+	# datastore properties
+	date = db.DateTimeProperty(auto_now_add=True)
+	date_in_seconds = db.IntegerProperty()
+	to_be_notified = db.ListProperty()
+	# new properties
+	justify = db.StringProperty(choices=set([_justify_left,_justify_right]))
+	action_type = db.StringProperty(choices=set([_deal_action,_user_action,_business_action,_search_action]))
+	action_data = db.StringProperty()
+	line_1 = db.StringProperty()
+	line_2 = db.StringProperty()
+	line_3 = db.StringProperty()
+	photo = blobstore.BlobReferenceProperty()
+	
+	def __init__(self,*args,**kwargs):
+		self.date_in_seconds = long(unix_time(datetime.now()))
+		super(Notification_2,self).__init__(*args,**kwargs)
+	def _return(self):
+		'''
+		Wrapper for the return keyword to be used when notifications are being created
+		'''
+		assert self.date_in_seconds, 'Did not set date_in_seconds'
+		assert self.to_be_notified, 'Did not set to_be_notified'
+		assert self.action_type, 'Did not set action'
+		assert self.action_data, 'Did not set action_data'
+		assert self.line_1, 'Did not set line_1'
+		assert self.line_2, 'Did not set line_2'
+		assert self.line_3, 'Did not set line_3'
+		assert self.photo, 'Did not set photo'
+		key = self.put()
+		return key
+	@staticmethod
+	def _update_users_notifications(to_be_notified):
+		'''
+		Updates the users of their new notification
+		@param to_be_notified: single entity or a list of entities who will be notified
+		@type to_be_notified: Customer or [Customer,]
+		'''
+		if type(to_be_notified) == Customer:
+			to_be_notified = [to_be_notified]
+		elif type(to_be_notified) != list:
+			raise Exception('to_be_notified must be list or customer')
+		
+		for user in to_be_notified:
+			user.new_notifications += 1
+		
+		db.put(to_be_notified)
+		return to_be_notified
+		
+	@staticmethod
+	def _deal_img(deal):
+		'''
+		Creates an img url from a deal
+		'''
+		return URL + '/api/deal/{}/img?size=small'.format(enc.encrypt_key(deal.key()))
+	def radius_alert(self,to_be_notified,deal):
+		'''
+		Creates a notification when someone searches within a radius of the deal
+		
+		@param to_be_notified: The user that searched
+		@type to_be_notified: Customer
+		@param deal: The deal that the customer is being notified of
+		@type deal: Deal
+		'''
+		deal_key = enc.encrypt_key(deal.key())
+		# signify that this user has been blasted
+		to_be_notified.been_radius_blasted.append(deal.key())
+		# send the user notifications
+		self.to_be_notified  = self._update_users_notifications(to_be_notified)
+		self.justify = self._justify_left
+		self.action_type = self._deal_action
+		self.action_data = URL + '/api/deal/{}'.format(deal_key) # url
+		self.line_1 = 'line 1'
+		self.line_2 = 'line 2'
+		self.line_3 = 'line 3'
+		self.photo = self._deal_img(deal)
+		
+		return self._return()
+#	def good_taste_alert(self,):
+	def new_follower(self,to_be_notified,actor):
+		'''
+		The user in to_be_notified has a new follower
+		@param to_be_notified: The user being followed
+		@type to_be_notified: Customer
+		@param actor: The person following to_be_notified
+		@type actor: Customer
+		'''
+		self.to_be_notified = self._update_users_notifications(to_be_notified)
+		self.justify = self._justify_right
+		self.action_type = self._user_action
+		self.action_data = URL + '/api/user/{}'.format(enc.encrypt_key(actor.key()))
+		self.line_1 = 'line_1'
+		self.line_2 = 'line_2'
+		self.line_3 = 'line_3'
+		self.photo = actor.photo
+		
+		return self._return()
+	def follower_upload(self,to_be_notified,actor,deal):
+		'''
+		A ninja has uploaded a deal, notify their followers
+		@param to_be_notified: The followers of the actor
+		@type to_be_notified: list(Customer)
+		@param actor: The user that uploaded the deal
+		@type actor: Customer
+		@param deal: The deal that the user uploaded
+		@type deal: Deal
+		'''
+		self.to_be_notified = self._update_users_notifications(to_be_notified)
+		self.justify = self._justify_right
+		self.action_type = self._deal_action
+		self.action_data = URL+'/api/deal/{}'.format(enc.encrypt_key(deal.key()))
+		self.line_1 = 'line_1'
+		self.line_2 = 'line_2'
+		self.line_3 = 'line_3'
+		self.photo = self._deal_img(deal)
+		
+		
+	def upvote(self,to_be_notified,actor,deal):
+		'''
+		
+		@param actor: deal clicker
+		@type actor: Customer
+		'''
+		self.to_be_notified = self._update_users_notifications(to_be_notified)
+		self.justify = self._justify_right
+		self.action_type = self._deal_action
+		self.action_data = URL+'/api/deal/{}'.format(enc.encrypt_key(deal.key()))
+		self.line_1 = 'line_1'
+		self.line_2 = 'line_2'
+		self.line_3 = 'line_3'
+		self.photo = self._deal_img(deal)
+		
 REPORTED_DEAL_MODEL_VERSION = 1
 class ReportedDeal(db.Model):
 	# Only has outbound references, no inbound
