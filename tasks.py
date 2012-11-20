@@ -361,8 +361,11 @@ class IncrementDealViewHandler(webapp2.RequestHandler):
 			deal_keys = payload['deal_keys']
 			deals = db.get(deal_keys)
 			for deal in deals:
-				deal.increment_views()
-				logging.debug(deal.views)
+				try:
+					deal.increment_views()
+				except:
+					levr.log_error()
+#				logging.debug(deal.views)
 		except Exception,e:
 			levr.log_error(e)
 IMAGE_ROTATION_TASK_URL = '/tasks/checkImageRotationTask'

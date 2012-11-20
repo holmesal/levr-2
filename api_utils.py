@@ -239,7 +239,7 @@ class Search(object):
 				karma += 5
 			# set the deal rank as the karma
 			deal.rank = karma
-			logging.debug('deal.rank = '+str(deal.rank))
+#			logging.debug('deal.rank = '+str(deal.rank))
 		
 		# sort the deals
 		ranks = [d.rank for d in deals]

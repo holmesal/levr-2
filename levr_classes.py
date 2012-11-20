@@ -1380,7 +1380,7 @@ class Deal(polymodel.PolyModel):
 		counter.put()
 		return
 	
-NUM_DEAL_VIEW_COUNTERS = 10
+NUM_DEAL_VIEW_COUNTERS = 20
 class DealViewCounter(db.Model):
 	'''
 	Sharded deal view counters
