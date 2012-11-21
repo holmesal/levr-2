@@ -137,7 +137,6 @@ class landing(webapp2.RequestHandler):
 				template = jinja_environment.get_template('templates/landing-v6-mobile.html')
 		else:
 			template = jinja_environment.get_template('templates/landing-v6.html')
-			return 'desktop'
 			
 		self.response.out.write(template.render())
 
