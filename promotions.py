@@ -40,14 +40,14 @@ PROMOTIONS = {
 						},
 			NOTIFY_PREVIOUS_LIKES:{
 								'name'	: NOTIFY_PREVIOUS_LIKES,
-								'readableName' : 'Good Taste',
+								'readableName' : 'Notify Fans',
 								'img'	: 'http://www.levr.com/img/promo_likes.png',
 								'img2x'	: 'http://www.levr.com/img/promo_likes_2x.png',
 								'description' : 'Alert customers who have visited you before',
 								},
 			NOTIFY_RELATED_LIKES:{
 								'name'	: NOTIFY_RELATED_LIKES,
-								'readableName' : 'Notify Fans',
+								'readableName' : 'Good Taste',
 								'img'	: 'http://www.levr.com/img/promo_similar.png',
 								'img2x'	: 'http://www.levr.com/img/promo_similar_2x.png',
 								'description' : 'Alert customers who have liked similar deals',
