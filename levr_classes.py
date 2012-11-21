@@ -1507,7 +1507,7 @@ class Notification_2(BaseModel):
 	# datastore properties
 	date = db.DateTimeProperty(auto_now_add=True)
 	date_in_seconds = db.IntegerProperty()
-	to_be_notified = db.ListProperty()
+	to_be_notified = db.ListProperty(db.Key)
 	# new properties
 	justify = db.StringProperty(choices=set([_justify_left,_justify_right]))
 	action_type = db.StringProperty(choices=set([_deal_action,_user_action,_business_action,_search_action]))
@@ -1515,15 +1515,18 @@ class Notification_2(BaseModel):
 	line_1 = db.StringProperty()
 	line_2 = db.StringProperty()
 	line_3 = db.StringProperty()
-	photo = blobstore.BlobReferenceProperty()
+	photo = db.StringProperty()
 	
-	def __init__(self,*args,**kwargs):
-		self.date_in_seconds = long(unix_time(datetime.now()))
-		super(Notification_2,self).__init__(*args,**kwargs)
+	actor = db.Reference(Customer)
+	deal = db.ReferenceProperty(Deal)
 	def _return(self):
 		'''
 		Wrapper for the return keyword to be used when notifications are being created
+		Validates the entity before putting it
+		@return: self
+		@rtype: Notification_2
 		'''
+		self.date_in_seconds = long(unix_time(datetime.now()))
 		assert self.date_in_seconds, 'Did not set date_in_seconds'
 		assert self.to_be_notified, 'Did not set to_be_notified'
 		assert self.action_type, 'Did not set action'
@@ -1532,8 +1535,8 @@ class Notification_2(BaseModel):
 		assert self.line_2, 'Did not set line_2'
 		assert self.line_3, 'Did not set line_3'
 		assert self.photo, 'Did not set photo'
-		key = self.put()
-		return key
+		self.put()
+		return self
 	#===========================================================================
 	# # notification definition functions by action
 	#===========================================================================
@@ -1541,12 +1544,10 @@ class Notification_2(BaseModel):
 		deal_key = enc.encrypt_key(deal.key())
 		self.action_type = self._deal_action
 		self.action_data = URL+'/api/deal/{}'.format(deal_key)
-		self.photo = self._deal_img(deal)
 	def _set_user_action(self,actor):
 		user_key = enc.encrypt_key(actor.key())
 		self.action_type = self._user_action
 		self.action_data = URL+'/api/user/{}'.format(user_key)
-		self.photo = actor.photo
 	def _set_search_action(self,query):
 		self.action_type = self._search_action
 		self.action_data = URL+'/api/search/{}'.format(query)
@@ -1565,7 +1566,9 @@ class Notification_2(BaseModel):
 		'''
 		Updates the users of their new notification
 		@param to_be_notified: single entity or a list of entities who will be notified
-		@type to_be_notified: Customer or [Customer,]
+		@type to_be_notified: Customer or list
+		@return: to_be_notified
+		@rtype: list
 		'''
 		if type(to_be_notified) == Customer:
 			to_be_notified = [to_be_notified]
@@ -1575,19 +1578,35 @@ class Notification_2(BaseModel):
 		for user in to_be_notified:
 			user.new_notifications += 1
 		
-		db.put(to_be_notified)
-		return to_be_notified
+		keys = db.put(to_be_notified)
+		return keys
 		
 	@staticmethod
 	def _deal_img(deal):
 		'''
 		Creates an img url from a deal
+		@return: img_url
+		@rtype: str
 		'''
 		return URL + '/api/deal/{}/img?size=small'.format(enc.encrypt_key(deal.key()))
-	
+	@staticmethod
+	def _business_name(deal):
+		'''
+		Grabs the business name from the deal.
+		Necessary because there is a chance that a deal is still following the old
+		schema of having only businessID instead of a business property
+		@return: business_name
+		@rtype: str
+		'''
+		try:
+			return deal.business.business_name
+		except:
+			business = db.get(deal.businessID)
+			return business.business_name
 	#===========================================================================
 	# # Notification creation
 	#===========================================================================
+	# Business promotion notifications
 	def radius_alert(self,to_be_notified,deal):
 		'''
 		Creates a notification when someone searches within a radius of the deal
@@ -1597,35 +1616,64 @@ class Notification_2(BaseModel):
 		@param deal: The deal that the customer is being notified of
 		@type deal: Deal
 		'''
-		deal_key = enc.encrypt_key(deal.key())
+		# set references
+		self.deal = deal
+		assert self.deal, 'Did not set deal'
 		# signify that this user has been blasted
 		to_be_notified.been_radius_blasted.append(deal.key())
 		# send the user notifications
 		self.to_be_notified  = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_left
 		self._set_deal_action(deal)
-		self.line_1 = 'line_1'
-		self.line_2 = 'line_2'
-		self.line_3 = 'line_3'
+		self.line_1 = 'CHECK THIS OUT!'
+		self.line_2 = deal.deal_text
+		self.line_3 = self._business_name(deal)
+		self.photo = self._deal_img(deal)
 		return self._return()
-	
 	
 	def good_taste_alert(self,to_be_notified,deal):
 		'''
 		A business is notifying people that have liked similar deals before
 		@param to_be_notified: The users who have liked similar deals
-		@type to_be_notified: list or Customer
+		@type to_be_notified: list
 		@param deal: The deal that is being promoted
 		@type deal: Deal
 		'''
+		# set references
+		self.deal = deal
+		assert self.deal, 'Did not set deal'
+		
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_left
 		self._set_deal_action(deal)
-		self.line_1 = 'line_1'
-		self.line_2 = 'line_2'
-		self.line_3 = 'line_3'
+		self.line_1 = 'BECAUSE YOU LIKED SIMILAR'
+		self.line_2 = deal.deal_text
+		self.line_3 = self._business_name(deal)
+		self.photo = self._deal_img(deal)
 		return self._return()
+	
+	def previous_like(self,to_be_notified,deal):
+		'''
+		A business is notifying people that have liked deals at their business before
+		@param to_be_notified: Users who have liked a deal at the business
+		@type to_be_notified: list
+		@param deal: The deal that is being promoted
+		@type deal: Deal
+		'''
+		# set references
+		self.deal = deal
+		assert self.deal, 'Did not set deal'
 		
+		self.to_be_notified = self._update_users_notifications(to_be_notified)
+		self.justify = self._justify_left
+		self._set_deal_action(deal)
+		self.line_1 = 'BECAUSE YOU LIKED'
+		self.line_2 = deal.deal_text
+		self.line_3 = self._business_name(deal)
+		self.photo = self._deal_img(deal)
+		return self._return()
+	
+	# Natural notifications
 	def new_follower(self,to_be_notified,actor):
 		'''
 		The user in to_be_notified has a new follower
@@ -1634,13 +1682,19 @@ class Notification_2(BaseModel):
 		@param actor: The person following to_be_notified
 		@type actor: Customer
 		'''
+		# set references
+		self.actor = actor
+		assert self.actor, 'Did not set actor'
+		
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_right
 		self._set_user_action(actor)
-		self.line_1 = 'line_1'
-		self.line_2 = 'line_2'
-		self.line_3 = 'line_3'
+		self.line_1 = 'YOU\'RE BEING FOLLOWED'
+		self.line_2 = actor.display_name
+		self.line_3 = ' '
+		self.photo = actor.photo
 		return self._return()
+	
 	def follower_upload(self,to_be_notified,actor,deal):
 		'''
 		A ninja has uploaded a deal, notify their followers
@@ -1651,26 +1705,43 @@ class Notification_2(BaseModel):
 		@param deal: The deal that the user uploaded
 		@type deal: Deal
 		'''
+		# set references
+		self.actor = actor
+		self.deal = deal
+		assert self.actor, 'Did not set actor'
+		assert self.deal, 'Did not set deal'
+		
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_right
-		self._set_user_action(actor)
-		self.line_1 = 'line_1'
-		self.line_2 = 'line_2'
-		self.line_3 = 'line_3'
+		self._set_deal_action(deal)
+		self.line_1 = 'YOUR FRIEND UPLOADED A DEAL'
+		self.line_2 = deal.deal_text
+		self.line_3 = self._business_name(deal)
+		self.photo = actor.photo # which picture do we want? user or deal?
 		return self._return()
-		
 	def upvote(self,to_be_notified,actor,deal):
 		'''
 		
-		@param actor: deal clicker
+		@param to_be_notified: The ninja that owns the deal that was upvoted
+		@type to_be_notified: Customer
+		@param actor: The user that clicked the deal
 		@type actor: Customer
+		@param deal: The deal that was upvoted
+		@type deal: Deal
 		'''
+		# set references
+		self.actor = actor
+		self.deal = deal
+		assert self.actor, 'Did not set actor'
+		assert self.deal, 'Did not set deal'
+		
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_right
 		self._set_user_action(actor)
-		self.line_1 = 'line_1'
-		self.line_2 = 'line_2'
-		self.line_3 = 'line_3'
+		self.line_1 = 'YOU GOT THANKED!'
+		self.line_2 = actor.display_name
+		self.line_3 = 'for '+deal.deal_text
+		self.photo = actor.photo
 		return self._return()
 		
 REPORTED_DEAL_MODEL_VERSION = 1

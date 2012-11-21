@@ -129,6 +129,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			ethan.email	= 'ethan@levr.com'
 			ethan.pw 	= enc.encrypt_password('ethan')
 			ethan.alias	= 'ethan owns the deals'
+			ethan.display_name = 'Ethans S.'
 			ethan.favorites	= []
 			ethan.tester = True
 			ethan.levr_token = 'tlvXNw9F5Qgnqm_uKxYUx9xeyJHSRDnfBbVmUwvDWzQ'
@@ -145,6 +146,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			pat.email	= 'patrick@levr.com'
 			pat.pw 	= enc.encrypt_password('patrick')
 			pat.alias	= 'patrick'
+			pat.display_name = 'Patricks W.'
 			pat.favorites	= []
 			pat.tester = True
 			pat.levr_token = 'tlvXNw9F5Qgnqm_uKxYUx9xeyJHSRDnfBbVmUwvDWzQ'
@@ -160,6 +162,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			alonso.email	= 'alonso@levr.com'
 			alonso.pw 	= enc.encrypt_password('alonso')
 			alonso.alias	= 'alonso'
+			alonso.display_name = 'Alonsos H.'
 			alonso.favorites	= []
 #			alonso.foursquare_token = '4PNJWJM0CAJ4XISEYR4PWS1DUVGD0MKFDMC4ODL3XGU115G0'
 			alonso.tester = True
@@ -176,6 +179,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			ninja.email	= 'santa@levr.com'
 			ninja.pw 	= enc.encrypt_password('santa')
 			ninja.alias	= 'Followed'
+			ninja.display_name = 'Ninja F.'
 			ninja.favorites = []
 			ninja.tester = True
 			ninja.levr_token = 'tlvXNw9F5Qgnqm_uKxYUx9xeyJHSRDnfBbVmUwvDWzQ'
