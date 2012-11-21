@@ -1534,8 +1534,34 @@ class Notification_2(BaseModel):
 		assert self.photo, 'Did not set photo'
 		key = self.put()
 		return key
-	@staticmethod
-	def _update_users_notifications(to_be_notified):
+	#===========================================================================
+	# # notification definition functions by action
+	#===========================================================================
+	def _set_deal_action(self,deal):
+		deal_key = enc.encrypt_key(deal.key())
+		self.action_type = self._deal_action
+		self.action_data = URL+'/api/deal/{}'.format(deal_key)
+		self.photo = self._deal_img(deal)
+	def _set_user_action(self,actor):
+		user_key = enc.encrypt_key(actor.key())
+		self.action_type = self._user_action
+		self.action_data = URL+'/api/user/{}'.format(user_key)
+		self.photo = actor.photo
+	def _set_search_action(self,query):
+		self.action_type = self._search_action
+		self.action_data = URL+'/api/search/{}'.format(query)
+		self.photo = '' # TODO: search photos - map
+	def _set_business_action(self,business):
+		business_key = enc.encrypt_key(business.key())
+		self.action_type = self._business_action
+		self.action_data = URL+'/api/business/{}'.format(business_key)
+		self.photo = '' # TODO: business photos - map
+	
+	#===========================================================================
+	# # Utilities
+	#===========================================================================
+	@classmethod
+	def _update_users_notifications(cls,to_be_notified):
 		'''
 		Updates the users of their new notification
 		@param to_be_notified: single entity or a list of entities who will be notified
@@ -1558,6 +1584,10 @@ class Notification_2(BaseModel):
 		Creates an img url from a deal
 		'''
 		return URL + '/api/deal/{}/img?size=small'.format(enc.encrypt_key(deal.key()))
+	
+	#===========================================================================
+	# # Notification creation
+	#===========================================================================
 	def radius_alert(self,to_be_notified,deal):
 		'''
 		Creates a notification when someone searches within a radius of the deal
@@ -1573,15 +1603,29 @@ class Notification_2(BaseModel):
 		# send the user notifications
 		self.to_be_notified  = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_left
-		self.action_type = self._deal_action
-		self.action_data = URL + '/api/deal/{}'.format(deal_key) # url
-		self.line_1 = 'line 1'
-		self.line_2 = 'line 2'
-		self.line_3 = 'line 3'
-		self.photo = self._deal_img(deal)
-		
+		self._set_deal_action(deal)
+		self.line_1 = 'line_1'
+		self.line_2 = 'line_2'
+		self.line_3 = 'line_3'
 		return self._return()
-#	def good_taste_alert(self,):
+	
+	
+	def good_taste_alert(self,to_be_notified,deal):
+		'''
+		A business is notifying people that have liked similar deals before
+		@param to_be_notified: The users who have liked similar deals
+		@type to_be_notified: list or Customer
+		@param deal: The deal that is being promoted
+		@type deal: Deal
+		'''
+		self.to_be_notified = self._update_users_notifications(to_be_notified)
+		self.justify = self._justify_left
+		self._set_deal_action(deal)
+		self.line_1 = 'line_1'
+		self.line_2 = 'line_2'
+		self.line_3 = 'line_3'
+		return self._return()
+		
 	def new_follower(self,to_be_notified,actor):
 		'''
 		The user in to_be_notified has a new follower
@@ -1592,13 +1636,10 @@ class Notification_2(BaseModel):
 		'''
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_right
-		self.action_type = self._user_action
-		self.action_data = URL + '/api/user/{}'.format(enc.encrypt_key(actor.key()))
+		self._set_user_action(actor)
 		self.line_1 = 'line_1'
 		self.line_2 = 'line_2'
 		self.line_3 = 'line_3'
-		self.photo = actor.photo
-		
 		return self._return()
 	def follower_upload(self,to_be_notified,actor,deal):
 		'''
@@ -1612,13 +1653,11 @@ class Notification_2(BaseModel):
 		'''
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_right
-		self.action_type = self._deal_action
-		self.action_data = URL+'/api/deal/{}'.format(enc.encrypt_key(deal.key()))
+		self._set_user_action(actor)
 		self.line_1 = 'line_1'
 		self.line_2 = 'line_2'
 		self.line_3 = 'line_3'
-		self.photo = self._deal_img(deal)
-		
+		return self._return()
 		
 	def upvote(self,to_be_notified,actor,deal):
 		'''
@@ -1628,12 +1667,11 @@ class Notification_2(BaseModel):
 		'''
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_right
-		self.action_type = self._deal_action
-		self.action_data = URL+'/api/deal/{}'.format(enc.encrypt_key(deal.key()))
+		self._set_user_action(actor)
 		self.line_1 = 'line_1'
 		self.line_2 = 'line_2'
 		self.line_3 = 'line_3'
-		self.photo = self._deal_img(deal)
+		return self._return()
 		
 REPORTED_DEAL_MODEL_VERSION = 1
 class ReportedDeal(db.Model):
