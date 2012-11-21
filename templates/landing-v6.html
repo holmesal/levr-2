@@ -6,6 +6,8 @@
     <link href="../css/bootstrap-responsive.min.css" rel="stylesheet">
     <link rel="icon" href="/img/favicon.png" type="image/x-icon">
     <link rel="shortcut icon" href="/img/favicon.png" type="image/x-icon">
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,400,300,800,700,600' rel='stylesheet' type='text/css'>
+    <link href="css/m-styles.min.css" rel="stylesheet">
   <link href="/css/landing_v6.css" rel='stylesheet' />
   <title>Levr</title>
   <style type="text/css">
@@ -19,30 +21,50 @@
   		}
   </style>
   
+  
+  
   <script>var startTime = (new Date()).getTime();</script>
 	<!-- start Mixpanel --><script type="text/javascript">(function(c,a){window.mixpanel=a;var b,d,h,e;b=c.createElement("script");b.type="text/javascript";b.async=!0;b.src=("https:"===c.location.protocol?"https:":"http:")+'//cdn.mxpnl.com/libs/mixpanel-2.1.min.js';d=c.getElementsByTagName("script")[0];d.parentNode.insertBefore(b,d);a._i=[];a.init=function(b,c,f){function d(a,b){var c=b.split(".");2==c.length&&(a=a[c[0]],b=c[1]);a[b]=function(){a.push([b].concat(Array.prototype.slice.call(arguments,0)))}}var g=a;"undefined"!==typeof f?
 g=a[f]=[]:f="mixpanel";g.people=g.people||[];h="disable track track_pageview track_links track_forms register register_once unregister identify name_tag set_config people.identify people.set people.increment".split(" ");for(e=0;e<h.length;e++)d(g,h[e]);a._i.push([b,c,f])};a.__SV=1.1})(document,window.mixpanel||[]);
 mixpanel.init("70b2a36876730d894bce115f3e89c055");</script><!-- end Mixpanel -->
 </head>
 <body>
-<div class="bg-image"></div>
-	<div class="custom-nav">
-		Hi there
-	</div>
-	<!--div class="navbar navbar-fixed-top">
+	<div class="navbar navbar-fixed-top">
 		<div class="navbar-inner">
-		  	<div class="navcontent">
-		  	<a class="brand" href='/'>Levr.</a>
-		  	<!a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+		  	<div class="navcontent container-fluid">
+		  	<a class="brand" href='/'>Levr</a>
+<!-- 		  	<a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse"></a> -->
+<!-- 		  	<div class="nav-collapse collapse"> -->
 		  		<ul class="nav" id='navigation'>
 			  		<li class="active"><a id='offersNavbar' href='/'>Offers</a></li>
 			  		<li><a id='businessesNavbar' href='/merchants'>Businesses</a></li>
 			  		<li><a id='developersNavbar' href='http://www.getradi.us'>Developers</a></li>
 			  		<li><a id='investorsNavbar' href='/investors'>Investors</a></li>
 		  		</ul>
-		  	<!/a>
+<!-- 		  	</div> -->
 		  	</div>
 		</div>
+	</div>
+	
+	<div class="bg-image">
+		<!-- <div class="corner"></div> -->
+	</div>
+	
+	
+	<div class="paneDisplay">
+		<p class="welcomeText">Welcome to Levr</p>
+		<p class="aboutText">Awesome local offers, added by businesses and found by users.</p>
+		<p class="available">Available on the iPhone in Boston.</p>
+		<a id="itunesButton" href="https://itunes.apple.com/us/app/levr/id564566794?mt=8"><img src="/img/appstore.png"></a>
+		<a href="/offers" class="m-btn blue showMe">Just show me some offers <i class="m-icon-swapright m-icon-white"></i></a>
+	</div>
+	<!--div class="custom-nav">
+		Hi there
+	</div-->
+	
+	<!--div class="copy">
+		<h2 class="featurette-heading great">Truly great local offers.</h2>
+		<a id="itunesButton" href="https://itunes.apple.com/us/app/levr/id564566794?mt=8"><img src="/img/appstore.png"></a>
 	</div-->
 <!--div id="top">
 	<div class="container">
@@ -129,10 +151,12 @@ mixpanel.init("70b2a36876730d894bce115f3e89c055");</script><!-- end Mixpanel -->
 		//track loadtime
 		var endTime = (new Date()).getTime();
 	    var millisecondsLoading = endTime - startTime;
+	    
+	    $('.paneDisplay').delay(1200).animate({'opacity':1,'width':'432px'}).animate({'height':'420px'})
 
-		mixpanel.track("Levr V5 User Landing Page Loaded",{"Load Time":millisecondsLoading})
+		mixpanel.track("Levr V6 User Landing Page Loaded",{"Load Time":millisecondsLoading})
 		
-		mixpanel.track_links('#downloadText','Download Text Clicked')
+		/* mixpanel.track_links('#downloadText','Download Text Clicked') */
 		
 		mixpanel.track_links('#downloadImage','Download Image Clicked')
 		

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+
+<html>
+	
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1,user-scalable=no">
+		<link rel="apple-touch-icon" href="/img/128.png"/>
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<title>{{title}}</title>
+		<!-- Le Bootstrap -->
+	    <link href="/css/bootstrap.min.css" rel="stylesheet">
+	    <!-- Le font awesome -->
+	    <link rel="stylesheet" href="/css/font-awesome.css">
+	    <!-- Navbar fix for top-fixed-->
+	    <style type="text/css">body{padding-top: 40px;}</style>
+	    <link href="/css/bootstrap-responsive.min.css" rel="stylesheet">
+	    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,400,300,800,700,600' rel='stylesheet' type='text/css'>
+    <link href="css/m-styles.min.css" rel="stylesheet">
+		<!-- Le base styles -->
+		<link rel="stylesheet" href="/css/merchants-mobile-base.css">
+		 <link href="/css/landing_v6.css" rel='stylesheet'>
+		 
+		 <style>
+		 	
+		 	body{
+			 	margin: 0px;
+		 	}
+		 	
+		 	.navbar{
+			 	/*
+padding-left: 20px;
+			 	padding-right: 20px;
+*/
+			 	margin-bottom: 10px;
+		 	}
+			 .brand{
+				 float: left !important;
+			 }
+			 
+			 .mobileImage{
+			 	 width: 100%;
+			 	 height: 200px;
+			 	 background-image: url(/img/levr_launch_photo2.jpg);
+			 	 background-size: cover;
+			 }
+			 
+			 .mobilePane{
+				 /*
+padding-left: 10px;
+				 padding-right: 10px;
+*/
+				 text-align: center;
+			 }
+			 
+			 .aboutText{
+				 margin-top: 20px;
+				 font-weight: 200;
+			 }
+			 
+			 .available{
+				 margin-top: 20px;
+			 }
+			 
+			 .showMe{
+				 margin-top: 20px;
+				 margin-bottom: 20px;
+			 }
+			 
+		 </style>
+		<!-- Styles applied by subtemplates -->
+		<script>var startTime = (new Date()).getTime();</script>
+		<!-- start Mixpanel --><script type="text/javascript">(function(c,a){window.mixpanel=a;var b,d,h,e;b=c.createElement("script");b.type="text/javascript";b.async=!0;b.src=("https:"===c.location.protocol?"https:":"http:")+'//cdn.mxpnl.com/libs/mixpanel-2.1.min.js';d=c.getElementsByTagName("script")[0];d.parentNode.insertBefore(b,d);a._i=[];a.init=function(b,c,f){function d(a,b){var c=b.split(".");2==c.length&&(a=a[c[0]],b=c[1]);a[b]=function(){a.push([b].concat(Array.prototype.slice.call(arguments,0)))}}var g=a;"undefined"!==typeof f?
+g=a[f]=[]:f="mixpanel";g.people=g.people||[];h="disable track track_pageview track_links track_forms register register_once unregister identify name_tag set_config people.identify people.set people.increment".split(" ");for(e=0;e<h.length;e++)d(g,h[e]);a._i.push([b,c,f])};a.__SV=1.1})(document,window.mixpanel||[]);
+mixpanel.init("332a4cca692ee77560433b00c148eaec");</script><!-- end Mixpanel -->
+	</head>
+	
+	<body>
+		<!--Bootstrap navbar -->
+		<div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand " href="#">Welcome to Levr</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="active"><a id='offersNavbar' href='/'>Offers</a></li>
+		  		<li><a id='businessesNavbar' href='/merchants'>Businesses</a></li>
+		  		<li><a id='developersNavbar' href='http://www.getradi.us'>Developers</a></li>
+		  		<li><a id='investorsNavbar' href='/investors'>Investors</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+	    
+		<div class="mobileImage"></div>
+		<div class="mobilePane">
+			<p class="aboutText">Awesome local offers, added by businesses and found by users.</p>
+			<p class="available">Available on the iPhone in Boston.</p>
+			<a id="itunesButton" href="https://itunes.apple.com/us/app/levr/id564566794?mt=8"><img src="/img/appstore.png"></a>
+			<a href="/offers" class="m-btn blue showMe">Just show me some offers <i class="m-icon-swapright m-icon-white"></i></a>
+		</div>
+		
+		<!-- Bootstrap and jquery -->
+		<script src="http://code.jquery.com/jquery-latest.js"></script>
+		<script src="/js/bootstrap.min.js"></script>
+		<!--additional scripts-->
+	</body>
+	
+</html>

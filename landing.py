@@ -52,19 +52,19 @@ class landing(webapp2.RequestHandler):
 # 		template = jinja_environment.get_template('templates/landing_v3_final.html')
 # 		self.response.out.write(template.render(template_values))
 
-		uastring = str(self.request.headers['user-agent'])
-	
-		logging.info(uastring)
-			
-		if 'iphone' in uastring.lower():
-			version = 'iPhone'
-			logging.debug('Serving mobile version - iPhone')
-		elif 'android' in uastring.lower():
-			version = 'android'
-			logging.debug('Serving mobile version - android')
-		else:
-			version = 'desktop'
-			logging.debug('Serving desktop version')
+		# uastring = str(self.request.headers['user-agent'])
+# 	
+# 		logging.info(uastring)
+# 			
+# 		if 'iphone' in uastring.lower():
+# 			version = 'iPhone'
+# 			logging.debug('Serving mobile version - iPhone')
+# 		elif 'android' in uastring.lower():
+# 			version = 'android'
+# 			logging.debug('Serving mobile version - android')
+# 		else:
+# 			version = 'desktop'
+# 			logging.debug('Serving desktop version')
 			
 		#version = 'android'
 		# 
@@ -125,10 +125,20 @@ class landing(webapp2.RequestHandler):
 # 			'version'	: version,
 # 			'city'		: city
 # 		}
-		
-		#launch the jinja environment
-		jinja_environment = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
-		template = jinja_environment.get_template('templates/landing-v5.html')
+
+		uastring = str(self.request.headers['user-agent'])
+	
+		logging.info(uastring)
+			
+		if 'mobile' in uastring.lower():
+			if 'ipad' in uastring.lower():
+				template = jinja_environment.get_template('templates/landing-v6.html')
+			else:
+				template = jinja_environment.get_template('templates/landing-v6-mobile.html')
+		else:
+			template = jinja_environment.get_template('templates/landing-v6.html')
+			return 'desktop'
+			
 		self.response.out.write(template.render())
 
 		
