@@ -1334,13 +1334,7 @@ def get_from_memcache(mem_keys,namespace):
 
 def get_deal_keys_from_db(hash_set,deal_status,namespace):
 	'''
-	Returns a dict mapping of hashes and deal keys
-	
-	tags = list of tags that are strings
-	request point is db.GeoPt format
-	
-	optional parameters:
-	development		default=False
+
 	
 	'''
 	logging.debug('\n\n\n\t\t\t GET FROM DB \n\n\n')
@@ -1365,7 +1359,8 @@ def get_deal_keys_from_db(hash_set,deal_status,namespace):
 	# add keys to memcache
 	logging.debug('keys from db')
 	logging.debug(levr.log_dict(hashes_and_keys))
-	set_deal_keys_to_memcache(hashes_and_keys,namespace)
+	if namespace is not None:
+		set_deal_keys_to_memcache(hashes_and_keys,namespace)
 	
 	return hashes_and_keys
 

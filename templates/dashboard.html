@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>You win, Admin.</title>
+<meta name="apple-itunes-app" content="app-id=564566794">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+
+	<script>var startTime = (new Date()).getTime();</script>
+	<!-- start Mixpanel --><script type="text/javascript">(function(c,a){window.mixpanel=a;var b,d,h,e;b=c.createElement("script");b.type="text/javascript";b.async=!0;b.src=("https:"===c.location.protocol?"https:":"http:")+'//cdn.mxpnl.com/libs/mixpanel-2.1.min.js';d=c.getElementsByTagName("script")[0];d.parentNode.insertBefore(b,d);a._i=[];a.init=function(b,c,f){function d(a,b){var c=b.split(".");2==c.length&&(a=a[c[0]],b=c[1]);a[b]=function(){a.push([b].concat(Array.prototype.slice.call(arguments,0)))}}var g=a;"undefined"!==typeof f?
+g=a[f]=[]:f="mixpanel";g.people=g.people||[];h="disable track track_pageview track_links track_forms register register_once unregister identify name_tag set_config people.identify people.set people.increment".split(" ");for(e=0;e<h.length;e++)d(g,h[e]);a._i.push([b,c,f])};a.__SV=1.1})(document,window.mixpanel||[]);
+mixpanel.init("70b2a36876730d894bce115f3e89c055");</script><!-- end Mixpanel -->
+  <script src='http://api.tiles.mapbox.com/mapbox.js/v0.6.6/mapbox.js'></script>
+      <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/bootstrap-responsive.min.css" rel="stylesheet">
+    <link rel="icon" href="/img/favicon.png" type="image/x-icon">
+    <link rel="shortcut icon" href="/img/favicon.png" type="image/x-icon">
+    <link href="/css/map.css" rel='stylesheet' />
+  
+  <link href='http://api.tiles.mapbox.com/mapbox.js/v0.6.6/mapbox.css' rel='stylesheet' >
+  <link href="/css/landing_v4.css" rel='stylesheet' >
+  
+<style>
+  #map-ui {
+    position:absolute;
+    top:10px;left:10px;
+    list-style:none;
+    margin:0;padding:0;
+    z-index:100;
+    }
+    #map-ui a {
+      font:normal 13px/18px 'Helvetica Neue',Helvetica,sans-serif;
+      background:#FFF;
+      color:#3C4E5A;
+      display:block;
+      margin:0;padding:0;
+      border:1px solid #BBB;
+      border-bottom-width:0;
+      min-width:138px;
+      padding:10px;
+      text-decoration:none;
+      }
+    #map-ui a:hover { background:#ECF5FA; }
+    #map-ui li:last-child a {
+      border-bottom-width:1px;
+      -webkit-border-radius:0 0 3px 3px;
+              border-radius:0 0 3px 3px;
+      }
+    #map-ui li:first-child a {
+      -webkit-border-radius:3px 3px 0 0;
+              border-radius:3px 3px 0 0;
+            }
+    #map-ui a.active {
+      background:#3887BE;
+      border-color:#3887BE;
+      border-top-color:#FFF;
+      color:#FFF;
+      }
+</style>
+  
+  
+</head>
+<body>
+  	
+<div id='mapContainer'>
+	<div id='map-ui'>
+		<!--div class="btn-group">
+		  <a href='/?city=boston' id='toggleBoston' class="btn btn-success">Boston</a>
+		  <a href='/?city=sanfrancisco' id='toggleSanFrancisco' class="btn btn-success">San Francisco</a>
+		</div-->
+	</div>
+	<div id='map'>
+	</div>
+</div>
+
+<script src="http://code.jquery.com/jquery-latest.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script>
+
+    
+    //mapbox.load('http://a.tiles.mapbox.com/v3/alonsoholmes.map-7b8eyy4m.jsonp', function(o) {
+	    var map = mapbox.map('map');
+	    
+	    
+	    
+	    
+	    map.setZoomRange(3,20)
+	    map.ui.zoomer.add()
+	
+    
+	    var active_features = [
+	    {% for deal in active_deals %}
+	    {
+	        "geometry": { "type": "Point", "coordinates": [{{deal.lon}},{{deal.lat}}]},
+	        "properties": {
+	            "dealID"		:	"{{deal.dealID}}",
+	            "img"			: 	"{{deal.imgURL}}",
+	            "deal_text"		:	"{{deal.dealText|escape}}",
+	            "description"	:	"{{deal.description|escape}}",
+	            "location"		:	"{{deal.business.businessName|escape}} - {{deal.business.vicinity|escape}}",
+	            "userImg"		:	"{{deal.owner.photoURL}}",
+	            "userName"		:	"{{deal.owner.alias|escape}}",
+	            "marker-size"	:	"medium",
+	            "marker-color"	:	"{{deal.pin_color}}",
+	            "marker-symbol"	:	"{{deal.pin_style}}"
+	        }
+	    },
+	    {% endfor %}
+	    ];
+	    
+	    var expired_features = [
+	    {% for deal in expired_deals %}
+	    {
+	        "geometry": { "type": "Point", "coordinates": [{{deal.lon}},{{deal.lat}}]},
+	        "properties": {
+	            "dealID"		:	"{{deal.dealID}}",
+	            "img"			: 	"{{deal.imgURL}}",
+	            "deal_text"		:	"{{deal.dealText|escape}}",
+	            "description"	:	"{{deal.description|escape}}",
+	            "location"		:	"{{deal.business.businessName|escape}} - {{deal.business.vicinity|escape}}",
+	            "userImg"		:	"{{deal.owner.photoURL}}",
+	            "userName"		:	"{{deal.owner.alias|escape}}",
+	            "marker-size"	:	"medium",
+	            "marker-color"	:	"{{deal.pin_color}}",
+	            "marker-symbol"	:	"{{deal.pin_style}}"
+	        }
+	    },
+	    {% endfor %}
+	    ];
+	    
+	    var rejected_features = [
+	    {% for deal in rejected_deals %}
+	    {
+	        "geometry": { "type": "Point", "coordinates": [{{deal.lon}},{{deal.lat}}]},
+	        "properties": {
+	        	"dealID"		:	"{{deal.dealID}}",
+	            "img"			: 	"{{deal.imgURL}}",
+	            "deal_text"		:	"{{deal.dealText|escape}}",
+	            "description"	:	"{{deal.description|escape}}",
+	            "location"		:	"{{deal.business.businessName|escape}} - {{deal.business.vicinity|escape}}",
+	            "userImg"		:	"{{deal.owner.photoURL}}",
+	            "userName"		:	"{{deal.owner.alias|escape}}",
+	            "marker-size"	:	"medium",
+	            "marker-color"	:	"{{deal.pin_color}}",
+	            "marker-symbol"	:	"{{deal.pin_style}}"
+	        }
+	    },
+	    {% endfor %}
+	    ];
+	
+	    // Create map
+	    //var map = mapbox.map('map');
+	    //mapbox.auto('map', 'examples.map-vyofok3q');
+	    //var map = mapbox.auto('map','alonsoholmes.map-7b8eyy4m');
+	    //var map = mapbox.load('examples.map-vyofok3q',doStuff())
+	    
+	    map.addLayer(mapbox.layer().id('alonsoholmes.map-7b8eyy4m'));
+	
+	    // Create and add leyers
+	    var active_layer = mapbox.markers.layer().features(active_features).named('active');
+	    alert(active_layer.named())
+	    var expired_layer = mapbox.markers.layer().features(expired_features).named('expired');
+	    var rejected_layer = mapbox.markers.layer().features(rejected_features).named('rejected');
+	    var active_interaction = mapbox.markers.interaction(active_layer);
+	    var expired_interaction = mapbox.markers.interaction(expired_layer);
+	    var rejected_interaction = mapbox.markers.interaction(rejected_layer);
+	    map.addLayer(active_layer);
+	    map.addLayer(expired_layer);
+	    map.addLayer(rejected_layer);
+	    var layers = document.getElementById('map-ui');
+	
+	    // Set a custom formatter for tooltips
+	    // Provide a function that returns html to be used in tooltip
+	    active_interaction.formatter(function(feature) {
+	    
+	    	mixpanel.track("Offer hover",{"offer":feature.properties.deal_text,"location":feature.properties.location})
+	        
+	        var o = '<div class="imgDiv" style="background-image:url('+feature.properties.img+');"><div class="infoDiv"><p class="deal_text">'+feature.properties.deal_text+'</p><p class="description">'+feature.properties.description+'</p><div class="userDiv"><a href="/admin/deal/"'+feature.properties.dealID+'/reject>Reject</a></div></div></div>'
+	
+	        return o;
+	    });
+	    
+	    expired_interaction.formatter(function(feature) {
+	    
+	    	mixpanel.track("Offer hover",{"offer":feature.properties.deal_text,"location":feature.properties.location})
+	        
+	        var o = '<div class="imgDiv" style="background-image:url('+feature.properties.img+');"><div class="infoDiv"><p class="deal_text">'+feature.properties.deal_text+'</p><p class="description">'+feature.properties.description+'</p><div class="userDiv"><a href="/admin/deal/"'+feature.properties.dealID+'/reanimate>Reanimate</a></div></div></div>'
+	        
+	        return o;
+	    });
+	    
+	    rejected_interaction.formatter(function(feature) {
+	    
+	    	mixpanel.track("Offer hover",{"offer":feature.properties.deal_text,"location":feature.properties.location})
+	        
+	        var o = '<div class="imgDiv" style="background-image:url('+feature.properties.img+');"><div class="infoDiv"><p class="deal_text">'+feature.properties.deal_text+'</p><p class="description">'+feature.properties.description+'</p><div class="userDiv"><a href="/admin/deal/"'+feature.properties.dealID+'/reanimate>Reanimate</a></div></div></div>'
+			
+	        return o;
+	    });
+	    
+
+		 	var city = 'boston'
+		 	$('#toggleBoston').addClass('active')
+		 	map.centerzoom({
+		        lat: 42.360607,
+		        lon: -71.075493
+		    }, 14);
+		    
+		    map.disableLayer(expired_layer)
+		    map.refresh()
+		    
+		 
+		 /* Add callbacks */
+/*
+		map.addCallback("zoomed", function(map, zoomOffset, city) {
+		    mixpanel.track("Map zoomed",{"Zoom offset":zoomOffset,"Zoom level":map.zoom(),"city":city})
+		});
+		
+		map.addCallback("panned", function(map, panOffset, city) {
+		    mixpanel.track("Map panned",{"Pan-X offset":zoomOffset[0],"Pan-Y offset":zoomOffset[1],"city":city})
+		});
+*/
+			
+			
+		  for (var i = 0; i < map.getLayers().length; i++) {
+		      var n = map.getLayerAt(i).name;
+		      var item = document.createElement('li');
+		      var layer = document.createElement('a');
+		          layer.href = '#';
+		          layer.id = n; 
+		          layer.className = 'active'; 
+		          layer.innerHTML = n;
+		
+		      layer.onclick = function(e) {
+		          e.preventDefault();
+		          e.stopPropagation();
+		          map.getLayer(this.id).enabled ? map.getLayer(this.id).disable() : map.getLayer(this.id).enable();
+		          this.className = map.getLayer(this.id).enabled ? 'active' : '';
+		      };
+		      item.appendChild(layer);
+		      layers.appendChild(item);
+		  }
+    
+    	/*replace map icons
+    	var elems = document.getElementsByTagName('*'),i;
+	    for (i in elems)
+	        {
+	        if((" "+elems[i].className+" ").indexOf(" "+"simplestyle-marker"+" ") > -1)
+	            {
+	            elems[i].src = 'https://tiles.mapbox.com/v3/marker/pin-m-star+FA6900.png';
+	            }
+	        }*/
+
+    	//$('.simplestyle-marker').attr('src','http://tiles.mapbox.com/v3/marker/pin-m-star+FA6900.png');
+    
+    //});
+
+    
+</script>
+
+<script type="text/javascript">
+
+	$('#buildFaster').click(function(){
+		$('#buildFaster').text("We're on it.").attr('disabled','disabled')
+		mixpanel.track("Build faster button clicked",{"city":'{{city}}'})
+	});
+	
+	$(window).load(function(){
+		//track loadtime
+		var endTime = (new Date()).getTime();
+	    var millisecondsLoading = endTime - startTime;
+		mixpanel.track("Levr Landing Page Loaded",{"Load Time":millisecondsLoading,"Version":'{{version}}',"City":'{{city}}'})
+		
+		mixpanel.track_links("#offersNavbar", "Offers navbar click");
+		
+		mixpanel.track_links("#businessesNavbar", "Business navbar click");
+		
+		mixpanel.track_links("#developersNavbar", "Developers navbar click");
+		
+		mixpanel.track_links("#toggleBoston", "Boston button clicked");
+		
+		mixpanel.track_links("#toggleSanFrancisco", "San Francisco button clicked");
+		
+		mixpanel.track_links("#appstorebtn", "App store button clicked");
+		
+	})
+</script>
+
+<!--div class="imgDiv"><p class="deal_text"></p><p class="description"></p><p class="business_name"></p><p class="vicinity"></p></div-->
+<!--script type=text/javascript>
+	$('.simplestyle-marker').attr('img','http://tiles.mapbox.com/v3/marker/pin-m-star+FA6900.png');
+</script-->
+
+
+</body>
+</html>

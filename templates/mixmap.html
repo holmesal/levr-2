@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src='http://api.tiles.mapbox.com/mapbox.js/v0.6.6/mapbox.js'></script>
+  <link href='http://api.tiles.mapbox.com/mapbox.js/v0.6.6/mapbox.css' rel='stylesheet' />
+  <style>
+	body { margin:0; padding:0; }
+	#map { position:absolute; top:0; bottom:0; width:100%; }
+    #marker {
+        position:absolute;
+        margin-top:-25px;
+        margin-left:-25px;
+        width:50px;
+        height:50px;
+        display:none;
+        pointer-events:all;
+    }
+    #slider{
+	    position: absolute;
+	    z-index: 1000;
+	    background-color: rgba(255,255,255,0.6);
+	    padding: 10px;
+    }
+    
+    
+  </style>
+  
+</head>
+<body>
+<div id="slider">
+	<input class="bar" type="range" id="rangeinput" min="1" max="30" value="{{days}}"/>
+	<output id="rangevalue">Last {{days}} days</output>
+</div>
+<div id='map'></div>
+<svg id='marker' xmlns="http://www.w3.org/2000/svg" version="1.1">
+	<circle cx="25" cy="25" r="25" style="fill:#FA6900;opacity:0.7" />
+</svg>
+<script src="http://code.jquery.com/jquery-latest.js"></script>
+
+<script>
+
+	//Drawing constants (in pixels)
+	var draw_max_size = 50;
+	var draw_min_size = 15;
+	var draw_range = draw_max_size - draw_min_size;
+	
+	
+	//DATA - I'm using jinja2 out of google app engine, hence the curly braces
+	var features = [
+	{% for feature in  features%}
+		{{feature}},
+	{%endfor%}
+	];
+
+
+
+  var map = mapbox.map('map');
+  var layers = document.getElementById('map-ui');
+  
+  map.addLayer(mapbox.layer().id('examples.map-vyofok3q'));
+  map.setExtent({{extent}})
+  
+  var markerLayer = mapbox.markers.layer().features(features);
+  markerLayer.factory(function(f) {
+
+  	  var m = document.getElementById('marker').cloneNode(true);
+  	  
+  	  draw_size = f.properties.scale*draw_range + draw_min_size
+  	  
+  	  //visual
+  	  $(m).css({'width':draw_size+'px','height':draw_size+'px','margin-left':-draw_size/2+'px','margin-top':-draw_size/2+'px'})
+  	  $(m).children().attr({"r":draw_size/2,"cx":draw_size/2,"cy":draw_size/2})
+      
+      m.style.display = 'block';
+      return m;
+  });
+  map.addLayer(markerLayer)
+  
+  
+  //slider
+  $('#rangeinput').change(function(){
+	  $('#rangevalue').text('Last '+$('#rangeinput').val()+' days')
+  }).mouseup(function() { 
+  	  window.location = '/?days='+$('#rangeinput').val()
+  })
+  
+  
+  
+  
+/*
+  map.addLayer(markerLayer);
+  
+  markerLayer.add_feature({
+      geometry: {
+          coordinates: [-77, 37.9]
+      },
+      properties: {
+          'marker-color': '#000',
+          'marker-symbol': 'star-stroked',
+          title: 'Example Marker',
+          description: 'This is a single marker.'
+      }
+  });
+*/
+  
+  
+</script>
+</body>
+</html>

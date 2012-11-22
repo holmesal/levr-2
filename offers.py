@@ -116,6 +116,7 @@ class OffersHandler(webapp2.RequestHandler):
 			deal['lon'] = deal['business']['geoPoint'].split(',')[1]
 			#fix image url
 			deal['imgURL'] = deal['largeImg'].split('?')[0]+'?size=webMapView'
+			deal['description'] = deal['description'].replace('\n',' ')
 		
 
 		template_values = {

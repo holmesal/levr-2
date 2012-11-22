@@ -5,7 +5,7 @@ import logging
 import os
 import webapp2
 from datetime import datetime,timedelta
-#from google.appengine.ext import db
+from google.appengine.ext import db
 #from google.appengine.api import images
 #from gaesessions import get_current_session
 #from datetime import datetime
@@ -88,8 +88,107 @@ class SetExpirationHandler(api_utils.BaseClass):
 		except Exception,e:
 			levr.log_error()
 			self.response.out.write('Error rejecting: '+str(e))
+
+class ReanimateHandler(api_utils.BaseClass):
+	@api_utils.validate('deal',None)
+	def get(self,*args,**kwargs):
+	
+		deal = kwargs.get('deal')
+		
+		try:
+			deal.deal_status = 'active'
+			deal.put()
+			
+			
+			
+		except AssertionError,e:
+			self.response.out.write(e)
+		except Exception,e:
+			levr.log_error()
+			
+class DashboardHandler(webapp2.RequestHandler):
+		def get(self):
+			
+			geo_hash_set = ['drt3','drmr','drt8','drt0','drt1','drt9','drmx','drmp','drt2']
+			
+			active_dict = api_utils.get_deal_keys_from_db(geo_hash_set,'active',None)
+			active_keys = []
+			for active in active_dict:
+				active_keys.extend(active_dict[active])
+				
+			expired_dict = api_utils.get_deal_keys_from_db(geo_hash_set,'expired',None)
+			expired_keys = []
+			for expired in expired_dict:
+				expired_keys.extend(expired_dict[expired])
+				
+			rejected_dict = api_utils.get_deal_keys_from_db(geo_hash_set,'rejected',None)
+			rejected_keys = []
+			for rejected in rejected_dict:
+				rejected_keys.extend(rejected_dict[rejected])
+			
+			deals = db.get(active_keys+expired_keys+rejected_keys)
+			
+			packaged_deals = api_utils.package_deal_multi(deals)
+			
+# 			logging.info(packaged_deals)
+			
+
+			
+			active_deals = []
+			expired_deals = []
+			rejected_deals = []
+			
+			
+			for deal in packaged_deals:
+				
+				deal['lat'] = deal['business']['geoPoint'].split(',')[0]
+				deal['lon'] = deal['business']['geoPoint'].split(',')[1]
+				#fix image url
+				deal['imgURL'] = deal['largeImg'].split('?')[0]+'?size=webMapView'
+				#links
+				
+				
+# 				logging.info(deal['origin'])
+				if deal['origin'] != 'foursquare':
+					if deal['origin'] == 'levr':
+						deal['pin_style'] = 'star'
+					elif deal['origin'] == 'merchant':
+						deal['pin_style'] = 'dot'
+					else:
+						deal['pin_style'] = 'question-mark'
+					
+	# 				logging.info(deal['status'])
+					if deal['status'] == 'active':
+						deal['pin_color'] = '60b03c'
+						active_deals.append(deal)
+					elif deal['status'] == 'expired':
+						deal['pin_color'] = 'dfb72a'
+						expired_deals.append(deal)
+					elif deal['status'] == 'rejected':
+						deal['pin_color'] = 'df2a2a'
+						rejected_deals.append(deal)
+				
+				
+				
+				
+			template_values = {
+				"active_deals"		:	active_deals,
+				"expired_deals"		:	expired_deals,
+				"rejected_deals"	:	rejected_deals
+			}
+			
+# 			logging.info(template_values)
+			
+			#launch the jinja environment
+			jinja_environment = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
+			template = jinja_environment.get_template('templates/dashboard.html')
+			self.response.out.write(template.render(template_values))
+		
+
 app = webapp2.WSGIApplication([
 								('/admin/deal/(.*)/approve', ApproveHandler),
 								('/admin/deal/(.*)/reject',RejectHandler),
-								('/admin/deal/(.*)/expiration',SetExpirationHandler)
+								('/admin/deal/(.*)/reanimate',ReanimateHandler),
+								('/admin/deal/(.*)/expiration',SetExpirationHandler),
+								('/admin/dashboard',DashboardHandler)
 								],debug=True)
