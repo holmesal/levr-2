@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 application: levr-production
 version: test
-=======
-application: levr-development
-version: t
->>>>>>> merge
 runtime: python27
 api_version: 1
 threadsafe: true
