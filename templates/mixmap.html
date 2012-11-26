@@ -45,7 +45,7 @@
 	var draw_range = draw_max_size - draw_min_size;
 	
 	
-	//DATA - I'm using jinja2 out of google app engine, hence the curly braces
+	//DATA - using jinja2 out of google app engine, hence the curly braces
 	var features = [
 	{% for feature in  features%}
 		{{feature}},
@@ -81,7 +81,7 @@
   $('#rangeinput').change(function(){
 	  $('#rangevalue').text('Last '+$('#rangeinput').val()+' days')
   }).mouseup(function() { 
-  	  window.location = '/?days='+$('#rangeinput').val()
+  	  window.location = '/mixmap?days='+$('#rangeinput').val()
   })
   
   

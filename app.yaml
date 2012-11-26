@@ -1,5 +1,5 @@
 application: levr-production
-version: fuckery
+version: test
 runtime: python27
 api_version: 1
 threadsafe: true
@@ -42,7 +42,6 @@ handlers:
   login: admin
 - url: /mixmap
   script: mixmap.app
-  login: admin
 - url: /password.*
   script: password.app
 - url: /widget.*
