@@ -1755,7 +1755,17 @@ class Notification_2(db.Model):
 		self.line_3 = 'for '+deal.deal_text
 		self.photo = actor.photo
 		return self._return()
-		
+
+class Playlist(db.Model):
+	date_created = db.DateTimeProperty(auto_now_add=True)
+	date_last_edited = db.DateTimeProperty(auto_now=True)
+	geo_point = db.GeoPtProperty()
+	geo_hash = GeoHashProperty()
+	deals = db.ListProperty(db.Key)
+	
+
+
+
 REPORTED_DEAL_MODEL_VERSION = 1
 class ReportedDeal(db.Model):
 	# Only has outbound references, no inbound
