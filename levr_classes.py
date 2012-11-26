@@ -1491,18 +1491,19 @@ class Notification(db.Model):
 		self.put()
 		
 		return self._return(to_be_notified)
-class BaseModel(db.Model):
-	pass
 
 
-class Notification_2(BaseModel):
+class Notification_2(db.Model):
 	# meta properties
 	_justify_left = 'left' # recommendations, sponsored
 	_justify_right = 'right' # interactions with people
+	
+	# notification types
 	_deal_action = 'deal'
 	_user_action = 'user'
 	_business_action = 'business'
 	_search_action = 'search'
+	_internet_action = 'internet'
 	
 	# datastore properties
 	date = db.DateTimeProperty(auto_now_add=True)
@@ -1510,7 +1511,7 @@ class Notification_2(BaseModel):
 	to_be_notified = db.ListProperty(db.Key)
 	# new properties
 	justify = db.StringProperty(choices=set([_justify_left,_justify_right]))
-	action_type = db.StringProperty(choices=set([_deal_action,_user_action,_business_action,_search_action]))
+	action_type = db.StringProperty(choices=set([_deal_action,_user_action,_business_action,_search_action,_internet_action]))
 	action_data = db.StringProperty()
 	line_1 = db.StringProperty()
 	line_2 = db.StringProperty()
@@ -1519,6 +1520,32 @@ class Notification_2(BaseModel):
 	
 	actor = db.Reference(Customer)
 	deal = db.ReferenceProperty(Deal)
+	
+	#===========================================================================
+	# # notification definition functions by action
+	#===========================================================================
+	def _set_deal_action(self,deal):
+		deal_key = enc.encrypt_key(deal.key())
+		self.action_type = self._deal_action
+		self.action_data = URL+'/api/deal/{}'.format(deal_key)
+	def _set_user_action(self,actor):
+		user_key = enc.encrypt_key(actor.key())
+		self.action_type = self._user_action
+		self.action_data = URL+'/api/user/{}'.format(user_key)
+	def _set_search_action(self,query):
+		self.action_type = self._search_action
+		self.action_data = URL+'/api/search/{}'.format(query)
+	def _set_business_action(self,business):
+		business_key = enc.encrypt_key(business.key())
+		self.action_type = self._business_action
+		self.action_data = URL+'/api/business/{}'.format(business_key)
+	def _set_internet_action(self,url):
+		self.action_type = self._internet_action
+		self.action_data = url
+		
+	#===========================================================================
+	# # Utilities
+	#===========================================================================
 	def _return(self):
 		'''
 		Wrapper for the return keyword to be used when notifications are being created
@@ -1537,30 +1564,23 @@ class Notification_2(BaseModel):
 		assert self.photo, 'Did not set photo'
 		self.put()
 		return self
-	#===========================================================================
-	# # notification definition functions by action
-	#===========================================================================
-	def _set_deal_action(self,deal):
-		deal_key = enc.encrypt_key(deal.key())
-		self.action_type = self._deal_action
-		self.action_data = URL+'/api/deal/{}'.format(deal_key)
-	def _set_user_action(self,actor):
-		user_key = enc.encrypt_key(actor.key())
-		self.action_type = self._user_action
-		self.action_data = URL+'/api/user/{}'.format(user_key)
-	def _set_search_action(self,query):
-		self.action_type = self._search_action
-		self.action_data = URL+'/api/search/{}'.format(query)
-		self.photo = '' # TODO: search photos - map
-	def _set_business_action(self,business):
-		business_key = enc.encrypt_key(business.key())
-		self.action_type = self._business_action
-		self.action_data = URL+'/api/business/{}'.format(business_key)
-		self.photo = '' # TODO: business photos - map
 	
-	#===========================================================================
-	# # Utilities
-	#===========================================================================
+	def package(self):
+		'''
+		Packaging function
+		'''
+		packaged_notification = {
+			'notificationID'	: enc.encrypt_key(self.key()),
+			'date'				: self.date_in_seconds,
+			'actionType'		: self.action_type,
+			'actionData'		: self.action_data,
+			'line1'				: self.line_1,
+			'line2'				: self.line_2,
+			'line3'				: self.line_3,
+			'photo'				: self.photo
+			}
+		return packaged_notification
+		
 	@classmethod
 	def _update_users_notifications(cls,to_be_notified):
 		'''
@@ -1618,7 +1638,6 @@ class Notification_2(BaseModel):
 		'''
 		# set references
 		self.deal = deal
-		assert self.deal, 'Did not set deal'
 		# signify that this user has been blasted
 		to_be_notified.been_radius_blasted.append(deal.key())
 		# send the user notifications
@@ -1641,7 +1660,6 @@ class Notification_2(BaseModel):
 		'''
 		# set references
 		self.deal = deal
-		assert self.deal, 'Did not set deal'
 		
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_left
@@ -1662,7 +1680,6 @@ class Notification_2(BaseModel):
 		'''
 		# set references
 		self.deal = deal
-		assert self.deal, 'Did not set deal'
 		
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_left
@@ -1684,7 +1701,6 @@ class Notification_2(BaseModel):
 		'''
 		# set references
 		self.actor = actor
-		assert self.actor, 'Did not set actor'
 		
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_right
@@ -1708,8 +1724,6 @@ class Notification_2(BaseModel):
 		# set references
 		self.actor = actor
 		self.deal = deal
-		assert self.actor, 'Did not set actor'
-		assert self.deal, 'Did not set deal'
 		
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_right
@@ -1732,8 +1746,6 @@ class Notification_2(BaseModel):
 		# set references
 		self.actor = actor
 		self.deal = deal
-		assert self.actor, 'Did not set actor'
-		assert self.deal, 'Did not set deal'
 		
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_right

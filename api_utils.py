@@ -544,10 +544,15 @@ def package_notification(notification):
 	@param notification: Notification entity
 	@type notification: levr.Notification or levr.Notification_2
 	'''
+	# Old notifications
 	if type(notification) == levr.Notification:
 		return _package_notification(notification)
+	# New notification
 	elif type(notification) == levr.Notification_2:
-		return _package_notification_2(notification)
+		return notification.package()
+	else:
+		logging.error('Incorrect notification type in package: {}'.format(type(notification)))
+		return {}
 def _package_notification(notification):
 	packaged_notification = {
 		'notificationID'	: enc.encrypt_key(str(notification.key())),
@@ -565,17 +570,6 @@ def _package_notification(notification):
 		packaged_notification['user']['alias'] = 'Level up!'
 	
 	return packaged_notification
-def _package_notification_2(notification):
-	packaged_notification = {
-		'notificationID'	: enc.encrypt_key(notification.key()),
-		'date'				: notification.date_in_seconds,
-		'actionType'		: notification.action_type,
-		'actionData'		: notification.action_data,
-		'line1'				: notification.line_1,
-		'line2'				: notification.line_2,
-		'line3'				: notification.line_3,
-		'photo'				: notification.photo
-		}
 def package_business(business):
 
 	packaged_business = {

@@ -33,20 +33,34 @@ class SandboxHandler(api_utils.BaseHandler):
 		Grabs all levr deals and backs them up as DealBackup entities
 		'''
 		self.response.headers['Content-Type'] = 'text/plain'
-		deal_backups = levr.DealBackup.all().fetch(None)
-		db.delete(deal_backups)
-		deals = levr.Deal.all().filter('origin','levr').fetch(None)
-		news = []
-		for deal in deals:
-			new_deal = levr.DealBackup(parent=deal.parent_key())
-			for key in deal.properties():
-				if key[0] != '_':
-					setattr(new_deal, key, getattr(deal, key))
-			news.append(new_deal)
-#		self.response.out.write(levr.log_model_props(new_deal))
-#		self.response.out.write(levr.log_model_props(deal))
-		db.put(news)
-		self.response.out.write('\n\n Done!')
+		
+		users = levr.Customer.all().fetch(None)
+		to_be_notified = users[0]
+		actor = users[1]
+		deal = levr.Deal.all().get()
+		note = levr.Notification_2().new_follower(to_be_notified, actor)
+		self.response.out.write(levr.log_model_props(note))
+		
+		packaged_note = api_utils.package_notification(note)
+		self.response.out.write(levr.log_dict(packaged_note))
+		
+		self.response.out.write('<=====================>')
+		#=======================================================================
+		# Old notes
+		#=======================================================================
+		#new follower notification
+		notification = levr.Notification(
+			notification_type	= 'favorite',
+			line2				= 'line2',
+			to_be_notified		= [to_be_notified.key()],
+			actor				= actor,
+			deal				= deal, #default to None,
+			date_in_seconds		= long(levr.unix_time(datetime.now()))
+			)
+		notification.put()
+		
+		packaged_old_note = api_utils.package_notification(notification)
+		self.response.out.write(levr.log_dict(packaged_old_note))
 class CombineNinjaOwnership(api_utils.BaseHandler):
 	def get(self):
 		'''
@@ -363,6 +377,42 @@ class TestHandler(webapp2.RequestHandler):
 			self.response.out.write(levr.log_model_props(n))
 		
 		
+
+class TestNotificationHandler(webapp2.RequestHandler):
+	def get(self):
+		
+		logging.info('WTFFFF')
+		logging.debug('HOLY SHIT NEW NOTIFICATIONS OMG OMG OMG')
+		
+		#go get the ninja
+		user = levr.Customer.gql('WHERE email=:1','q').get()
+		#go get the user
+		actor = levr.Customer.gql('WHERE email=:1','alonso@levr.com').get()
+		#go get the deal
+		try:
+			deal = levr.Deal.all().ancestor(user.key()).get()
+		except:
+			deal = None
+		if not deal:
+			deal = levr.Deal.all().get()
+		
+		assert deal, 'Cannot find any deals. Try uploading one. If that doesnt work, abandon all hope.' 
+		
+		#new follower notification
+		levr.create_notification('newFollower',user.key(),actor)
+		
+		#followed upload notification
+		levr.create_notification('followedUpload',user.key(),actor,deal.key())
+		
+		#favorite notification
+		levr.create_notification('favorite',user.key(),actor,deal.key())
+		
+		#levelup notification
+		user.new_notifications += 1
+		levr.create_notification('levelup',user.key(),actor,new_level='inf')
+		user.put()
+		self.response.out.write('HOLY SHIT NEW NOTIFICATIONS OMG OMG OMG')
+
 
 FEMALE_EMAIL = 'undeadninja@levr.com'
 MALE_EMAIL = 'undeadninja@levr.com'
