@@ -1433,67 +1433,15 @@ class DealPromotion(db.Model):
 	model_version = db.IntegerProperty(default=PROMOTION_MODEL_VERSION)
 
 
-NOTIFICATION_MODEL_VERSION = 1
+NOTIFICATION_MODEL_VERSION = 2
 class Notification(db.Model):
-	# Only has outbound references, no inbound
-	date				= db.DateTimeProperty(auto_now_add=True)
-	date_in_seconds		= db.IntegerProperty()
-	notification_type	= db.StringProperty(choices=set(['favorite','followedUpload','newFollower','levelup','shared','levr','expired']))
-	to_be_notified		= db.ListProperty(db.Key)
-	line2				= db.StringProperty(default='')
-	actor				= db.ReferenceProperty(Customer)
-	deal				= db.ReferenceProperty(Deal,collection_name='notifications')
-	#metadata used for migrations
-	model_version		= db.IntegerProperty(default=NOTIFICATION_MODEL_VERSION)
+	'''
+	@version: 2
+		added new notification types
+		added line1,line3, justify, photo
+		added creation functions
+	'''
 	
-	def _add_basics(self):
-		self.date_in_seconds = long(unix_time(datetime.now()))
-		return
-	def _return(self,to_be_returned):
-		'''
-		A wrapper for returning to valididate the notification creation process
-		Because of the way the notification creation functions are called,
-			properties cannot be required. This serves that function instead.
-		
-		@param to_be_returned: Whatever you want to return
-		@type to_be_returned: Whatever.
-		'''
-		assert self.date_in_seconds, 'Did not set date_in_seconds'
-		assert self.notification_type, 'Did not set notification_type'
-		assert self.to_be_notified, 'Did not set to_be_notified'
-		assert self.line2, 'Did not set line2'
-		assert self.actor, 'Did not set actor'
-		
-		return to_be_returned
-		
-	def create_radius_alert(self,to_be_notified,deal):
-		'''
-		Creates a notification when someone searches within a radius of the deal
-		@param to_be_notified: a single customer, because only one person searches at a time
-		@type to_be_notified: Customer
-		@param deal: deal entity
-		@type deal: Deal
-		
-		@return: the user that is being notified
-		@rtype: Customer
-		'''
-		to_be_notified.new_notifications += 1
-		to_be_notified.been_radius_blasted.append(deal.key())
-		to_be_notified.put()
-		
-		self.notification_type = 'followedUpload'
-		self.line2 = 'wants to share a deal with you.'
-		self.to_be_notified = [to_be_notified.key()]
-		self.deal = deal
-		self.actor = deal.parent_key()
-		# add uni
-		self._add_basics()
-		self.put()
-		
-		return self._return(to_be_notified)
-
-
-class Notification_2(db.Model):
 	# meta properties
 	_justify_left = 'left' # recommendations, sponsored
 	_justify_right = 'right' # interactions with people
@@ -1505,43 +1453,55 @@ class Notification_2(db.Model):
 	_search_action = 'search'
 	_internet_action = 'internet'
 	
-	# datastore properties
-	date = db.DateTimeProperty(auto_now_add=True)
-	date_in_seconds = db.IntegerProperty()
-	to_be_notified = db.ListProperty(db.Key)
-	# new properties
+	# db properties
+	date				= db.DateTimeProperty(auto_now_add=True)
+	date_in_seconds		= db.IntegerProperty()
+	to_be_notified		= db.ListProperty(db.Key)
+	notification_type	= db.StringProperty(choices=set(
+					# v1
+					['favorite','followedUpload','newFollower','levelup','shared','levr','expired',
+					# v2
+					_deal_action,
+					_user_action,
+					_business_action,
+					_search_action,
+					_internet_action
+					]))
+	notification_data	= db.StringProperty()
+	
+	line1 = db.StringProperty()
+	line2 = db.StringProperty()
+	line3 = db.StringProperty()
+	
+	
 	justify = db.StringProperty(choices=set([_justify_left,_justify_right]))
-	action_type = db.StringProperty(choices=set([_deal_action,_user_action,_business_action,_search_action,_internet_action]))
-	action_data = db.StringProperty()
-	line_1 = db.StringProperty()
-	line_2 = db.StringProperty()
-	line_3 = db.StringProperty()
+	actor				= db.ReferenceProperty(Customer)
+	deal				= db.ReferenceProperty(Deal,collection_name='notifications')
 	photo = db.StringProperty()
-	
-	actor = db.Reference(Customer)
-	deal = db.ReferenceProperty(Deal)
-	
+	#metadata used for migrations
+	model_version		= db.IntegerProperty(default=NOTIFICATION_MODEL_VERSION)
+
 	#===========================================================================
 	# # notification definition functions by action
 	#===========================================================================
 	def _set_deal_action(self,deal):
 		deal_key = enc.encrypt_key(deal.key())
-		self.action_type = self._deal_action
-		self.action_data = URL+'/api/deal/{}'.format(deal_key)
+		self.notification_type = self._deal_action
+		self.notification_data = URL+'/api/deal/{}'.format(deal_key)
 	def _set_user_action(self,actor):
 		user_key = enc.encrypt_key(actor.key())
-		self.action_type = self._user_action
-		self.action_data = URL+'/api/user/{}'.format(user_key)
+		self.notification_type = self._user_action
+		self.notification_data = URL+'/api/user/{}'.format(user_key)
 	def _set_search_action(self,query):
-		self.action_type = self._search_action
-		self.action_data = URL+'/api/search/{}'.format(query)
+		self.notification_type = self._search_action
+		self.notification_data = URL+'/api/search/{}'.format(query)
 	def _set_business_action(self,business):
 		business_key = enc.encrypt_key(business.key())
-		self.action_type = self._business_action
-		self.action_data = URL+'/api/business/{}'.format(business_key)
+		self.notification_type = self._business_action
+		self.notification_data = URL+'/api/business/{}'.format(business_key)
 	def _set_internet_action(self,url):
-		self.action_type = self._internet_action
-		self.action_data = url
+		self.notification_type = self._internet_action
+		self.notification_data = url
 		
 	#===========================================================================
 	# # Utilities
@@ -1556,11 +1516,11 @@ class Notification_2(db.Model):
 		self.date_in_seconds = long(unix_time(datetime.now()))
 		assert self.date_in_seconds, 'Did not set date_in_seconds'
 		assert self.to_be_notified, 'Did not set to_be_notified'
-		assert self.action_type, 'Did not set action'
-		assert self.action_data, 'Did not set action_data'
-		assert self.line_1, 'Did not set line_1'
-		assert self.line_2, 'Did not set line_2'
-		assert self.line_3, 'Did not set line_3'
+		assert self.notification_type, 'Did not set notification_type'
+		assert self.notification_data, 'Did not set notification_data'
+		assert self.line1, 'Did not set line1'
+		assert self.line2, 'Did not set line2'
+		assert self.line3, 'Did not set line3'
 		assert self.photo, 'Did not set photo'
 		self.put()
 		return self
@@ -1572,11 +1532,11 @@ class Notification_2(db.Model):
 		packaged_notification = {
 			'notificationID'	: enc.encrypt_key(self.key()),
 			'date'				: self.date_in_seconds,
-			'actionType'		: self.action_type,
-			'actionData'		: self.action_data,
-			'line1'				: self.line_1,
-			'line2'				: self.line_2,
-			'line3'				: self.line_3,
+			'notificationType'	: self.notification_type,
+			'notificationData'	: self.notification_data,
+			'line1'				: self.line1,
+			'line2'				: self.line2,
+			'line3'				: self.line3,
 			'photo'				: self.photo
 			}
 		return packaged_notification
@@ -1644,9 +1604,9 @@ class Notification_2(db.Model):
 		self.to_be_notified  = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_left
 		self._set_deal_action(deal)
-		self.line_1 = 'CHECK THIS OUT!'
-		self.line_2 = deal.deal_text
-		self.line_3 = self._business_name(deal)
+		self.line1 = 'CHECK THIS OUT!'
+		self.line2 = deal.deal_text
+		self.line3 = self._business_name(deal)
 		self.photo = self._deal_img(deal)
 		return self._return()
 	
@@ -1664,9 +1624,9 @@ class Notification_2(db.Model):
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_left
 		self._set_deal_action(deal)
-		self.line_1 = 'BECAUSE YOU LIKED SIMILAR'
-		self.line_2 = deal.deal_text
-		self.line_3 = self._business_name(deal)
+		self.line1 = 'BECAUSE YOU LIKED SIMILAR'
+		self.line2 = deal.deal_text
+		self.line3 = self._business_name(deal)
 		self.photo = self._deal_img(deal)
 		return self._return()
 	
@@ -1684,9 +1644,9 @@ class Notification_2(db.Model):
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_left
 		self._set_deal_action(deal)
-		self.line_1 = 'BECAUSE YOU LIKED'
-		self.line_2 = deal.deal_text
-		self.line_3 = self._business_name(deal)
+		self.line1 = 'BECAUSE YOU LIKED'
+		self.line2 = deal.deal_text
+		self.line3 = self._business_name(deal)
 		self.photo = self._deal_img(deal)
 		return self._return()
 	
@@ -1705,9 +1665,9 @@ class Notification_2(db.Model):
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_right
 		self._set_user_action(actor)
-		self.line_1 = 'YOU\'RE BEING FOLLOWED'
-		self.line_2 = actor.display_name
-		self.line_3 = ' '
+		self.line1 = 'YOU\'RE BEING FOLLOWED'
+		self.line2 = actor.display_name
+		self.line3 = ' '
 		self.photo = actor.photo
 		return self._return()
 	
@@ -1728,9 +1688,9 @@ class Notification_2(db.Model):
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_right
 		self._set_deal_action(deal)
-		self.line_1 = 'YOUR FRIEND UPLOADED A DEAL'
-		self.line_2 = deal.deal_text
-		self.line_3 = self._business_name(deal)
+		self.line1 = 'YOUR FRIEND UPLOADED A DEAL'
+		self.line2 = deal.deal_text
+		self.line3 = self._business_name(deal)
 		self.photo = actor.photo # which picture do we want? user or deal?
 		return self._return()
 	def upvote(self,to_be_notified,actor,deal):
@@ -1750,10 +1710,15 @@ class Notification_2(db.Model):
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_right
 		self._set_user_action(actor)
-		self.line_1 = 'YOU GOT THANKED!'
-		self.line_2 = actor.display_name
-		self.line_3 = 'for '+deal.deal_text
+		self.line1 = 'YOU GOT THANKED!'
+		self.line2 = actor.display_name
+		self.line3 = 'for '+deal.deal_text
 		self.photo = actor.photo
+		return self._return()
+	def internet(self):
+		'''
+		Stub. This is not being used yet.
+		'''
 		return self._return()
 
 class Playlist(db.Model):

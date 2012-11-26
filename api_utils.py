@@ -542,17 +542,13 @@ def package_notification(notification):
 	'''
 	Switch case on notification based on the version of notification, old or new
 	@param notification: Notification entity
-	@type notification: levr.Notification or levr.Notification_2
+	@type notification: levr.Notification
 	'''
-	# Old notifications
-	if type(notification) == levr.Notification:
-		return _package_notification(notification)
-	# New notification
-	elif type(notification) == levr.Notification_2:
+	# New notifications
+	if notification.model_version == 2:
 		return notification.package()
 	else:
-		logging.error('Incorrect notification type in package: {}'.format(type(notification)))
-		return {}
+		return _package_notification(notification)
 def _package_notification(notification):
 	packaged_notification = {
 		'notificationID'	: enc.encrypt_key(str(notification.key())),
@@ -561,7 +557,7 @@ def _package_notification(notification):
 		'notificationType'	: notification.notification_type,
 		'line2'				: notification.line2,
 		'user'				: package_user(notification.actor),
-		'notificationID'	: enc.encrypt_key(notification.key())
+#		'notificationID'	: enc.encrypt_key(notification.key())
 		}
 	if notification.deal:
 		packaged_notification['deal'] = package_deal(notification.deal)
@@ -570,6 +566,7 @@ def _package_notification(notification):
 		packaged_notification['user']['alias'] = 'Level up!'
 	
 	return packaged_notification
+
 def package_business(business):
 
 	packaged_business = {
