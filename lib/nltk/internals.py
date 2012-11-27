@@ -529,7 +529,7 @@ def find_binary(name, path_to_bin=None, env_vars=(), searchpath=(),
 
 ##########################################################################
 # Find Java JAR files
-# TODO: Add support for jar names specified as regular expressions
+# todo: Add support for jar names specified as regular expressions
 ##########################################################################
 
 def find_jar(name, path_to_jar=None, env_vars=(),

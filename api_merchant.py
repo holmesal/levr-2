@@ -463,8 +463,6 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 					'development'		: development,
 					'img_key'			: img_key
 					}
-			# TODO: add pin_color = 'green' to the deal
-			# TODO: add origin = 'merchant'
 			deal_entity = levr.dealCreate(params, 'phone_merchant', upload_flag)
 			
 			# if an image was uploaded, rotate it.
@@ -496,7 +494,7 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 				actor = user
 				deal = deal_entity
 				levr.Notification().following_upload(to_be_notified, actor, deal)
-				# TODO: notification to test
+				# TEST: new notification
 			except:
 				levr.log_error()
 			
@@ -605,7 +603,6 @@ class EditDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 			if deal_text:
 				deal.deal_text = deal_text
 			
-			# TODO: add new tags to the deal for the new information that was added
 			
 			
 			

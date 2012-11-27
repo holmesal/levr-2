@@ -1,4 +1,4 @@
-application: levr-production
+application: levr-development
 version: test
 runtime: python27
 api_version: 1

@@ -796,8 +796,6 @@ class MobileDealReanimateHandler(webapp2.RequestHandler):
 		dealID = self.request.get('dealID')
 		
 		deal = levr.Deal.get(enc.decrypt_key(dealID))
-		# TODO: set deal status to active via deal.reactivate
-#		deal.deal_status = 'active'
 		deal.reanimate()
 		deal.put()
 		
@@ -1546,7 +1544,6 @@ class DealUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 				upload_flag = False
 				raise KeyError('Image was not uploaded')
 			
-			# TODO: too many deal creations
 			#initialize the deal - just the stuff from the input here
 			deal = levr.Deal(
 				img				=	img_key,

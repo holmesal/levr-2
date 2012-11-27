@@ -14,6 +14,7 @@ from tasks import INCREMENT_DEAL_VIEW_URL
 class FindABusinessHandler(api_utils.BaseHandler):
 	'''
 	A handler for searching for a specific venue
+	@todo: this whole handler
 	'''
 	@api_utils.validate(None, 'param',
 					user = False,
@@ -32,7 +33,7 @@ class FindABusinessHandler(api_utils.BaseHandler):
 		business_name = kwargs.get('businessName')
 		vicinity = kwargs.get('vicinity')
 		geo_point = kwargs.get('geoPoint')
-		radius = kwargs.get('radius') # TODO: implement radius to search
+		radius = kwargs.get('radius') 
 		try:
 			# create a set of geo hashes to search based on the radius
 			search = api_utils.Search(True)

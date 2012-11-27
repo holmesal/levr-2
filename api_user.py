@@ -190,7 +190,7 @@ class UserAddFollowHandler(api_utils.BaseClass):
 			to_be_notified = user
 			
 			levr.Notification().new_follower(to_be_notified, actor)
-			# TODO: test new notification
+			# TEST: new notification
 			
 			#get notifications
 			db.put([user,actor])
@@ -288,16 +288,13 @@ class UserNotificationsHandler(api_utils.BaseClass):
 	@api_utils.validate('user','url',limit=False,offset=False,since=False,levrToken=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
-		# TODO: test this
+		# TEST: Does this handler work as it should?
 		'''
 		#RESTRICTED
 		inputs: limit,offset,since
-		response:{
-				numResults : <int>
-				notifications:[
-					<NOTIFICATION OBJECT>
-					]
-			}
+		
+		@todo: instead of sending back notifications since some date, 
+			send 20 most recent w/ pagination
 		'''
 		try:
 			logging.info('\n\n\nNOTIFICATIONS\n\n\n')

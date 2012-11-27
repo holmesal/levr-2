@@ -112,7 +112,7 @@ class UpvoteHandler(webapp2.RequestHandler):
 					actor = user
 					deal = deal
 					levr.Notification().upvote(to_be_notified, actor, deal)
-					# TODO: test new notification
+					# TEST: new notification
 				
 				db.put([user,deal])
 				#put actor and ninja and deal back

@@ -119,7 +119,7 @@ class SocialClass:
 			if to_be_notified:
 				actor = self.user
 				levr.Notification().new_follower(to_be_notified, actor)
-				# TODO: test new notification
+				# TEST: new notification
 		else:
 			pass
 		logging.debug("To be notified: "+str(to_be_notified))
@@ -476,7 +476,7 @@ class Foursquare(SocialClass):
 		1. Makes a call to foursquare to pull all of the users friends
 		2. Pulls the facebook, twitter, email, and foursquare info from each friend with that info
 		3. Adds that information to a corresponding list on the user entity
-		4. Creates the db linkage between user and friends by calling create_notification @todo: uh... this.
+		4. Creates the db linkage between user and friends by calling create_notification
 		'''
 		logging.debug('\n\n FOURSQUARE UPDATE FRIENDS \n\n')
 		#get the users friends

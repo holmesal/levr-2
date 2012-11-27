@@ -749,9 +749,9 @@ def dealCreate(params,origin,upload_flag=True,**kwargs):
 			uid = random.choice(undead_ninjas)
 		
 		deal = Deal(
-						parent			= uid,
-						is_exclusive	= False
-						)
+				parent			= uid,
+				is_exclusive	= False
+				)
 		
 		if 'shareURL' in params:
 			shareURL = params['shareURL']
@@ -828,46 +828,6 @@ def dealCreate(params,origin,upload_flag=True,**kwargs):
 		#return share url
 		return deal
 
-#===============================================================================
-# TODO: fit these into our system - needs to handle failure
-#===============================================================================
-#def prefetch_refprop(entities, prop):
-#	ref_keys = [prop.get_value_for_datastore(x) for x in entities]
-#	ref_entities = dict((x.key(), x) for x in db.get([i for i in set(ref_keys) if i]))
-#	for entity, ref_key in zip(entities, ref_keys):
-#		if ref_key:
-#			prop.__set__(entity, ref_entities[ref_key])
-#	return entities
-#def prefetch_refprops(entities, *props):
-#	'''
-#	Prefetches reference properties. Credit to Nick Johnson
-#	@param entities: a list of entities that reference other entities
-#	@type entities: list of entities
-#	@param *props: a list of reference property names in the entities
-#	@type *param: list of strings
-#	@return: the list of entities 
-#	'''
-#	fields = [(entity, prop) for entity in entities for prop in props]
-#	ref_keys = [prop.get_value_for_datastore(x) for x, prop in fields]
-#	ref_entities = dict((x.key(), x) for x in db.get(set(ref_keys)))
-#	for (entity, prop), ref_key in zip(fields, ref_keys):
-#		prop.__set__(entity, ref_entities[ref_key])
-#	return entities
-#def prefetch_parents(entities):
-#	'''
-#	Prefetches parent entities. Credit to Bryce Cutt
-#	Assigns parents 
-#	@param entities: a list of entities with parents
-#	@type entities: list
-#	@return: a list of 
-#	'''
-#	ref_keys = [x.parent_key() for x in entities if x.parent_key() is not None]
-#	ref_entities = dict((x.key(), x) for x in db.get(set(ref_keys)))
-#	ref_entities[None] = None
-#	for entity in entities:
-#		entity.parent_obj = ref_entities[entity.parent_key()]
-#	return entities
-
 
 
 
@@ -910,15 +870,9 @@ class KeywordListProperty(db.StringListProperty):
 	data_type = list
 	def get_value_for_datastore(self, model_instance):
 		'''
-		@attention:  entities may have additional tags that were added by a business
+		@test: Are the extra tags being added to a deal?
 		'''
-#		tags = model_instance.extra_tags
-		# TODO: stem the extra tags
-		try:
-			tags = model_instance.extra_tags
-		except:
-			tags = []
-		tags.extend(model_instance.create_tags())
+		tags = model_instance.create_tags()
 		return list(set(tags))
 		
 
@@ -1101,7 +1055,6 @@ class Business(db.Model):
 	geo_point		= db.GeoPtProperty() #latitude the longitude
 	geo_hash		= GeoHashProperty()#db.StringProperty()
 	types			= db.ListProperty(str)
-	# TODO: add business tags
 	tags			= KeywordListProperty()
 	extra_tags		= db.StringListProperty()
 	owner			= db.ReferenceProperty(Customer,collection_name='businesses')
@@ -1130,8 +1083,10 @@ class Business(db.Model):
 		Used to parse the business fields into indexed keywords
 		@return: a list of tokenized and stemmed keywords
 		@rtype: list
+		
+		@test: added an additional indexed property
 		'''
-		indexed_properties = ['business_name','types','foursquare_name']
+		indexed_properties = ['business_name','types','foursquare_name','extra_tags']
 		tags = create_tags_from_entity(self, indexed_properties, stemmed, filtered)
 #		items = [getattr(self, prop) for prop in indexed_properties]
 #		text = ''
@@ -1570,6 +1525,7 @@ class Notification(db.Model):
 		'''
 		# set references
 		self.deal = deal
+		self.actor = deal.parent()
 		# signify that this user has been blasted
 		to_be_notified.been_radius_blasted.append(deal.key())
 		# send the user notifications
@@ -1592,6 +1548,7 @@ class Notification(db.Model):
 		'''
 		# set references
 		self.deal = deal
+		self.actor = deal.parent()
 		
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_left
@@ -1612,6 +1569,8 @@ class Notification(db.Model):
 		'''
 		# set references
 		self.deal = deal
+		self.actor = deal.parent() # TEST: is this reference created?
+		
 		
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_left

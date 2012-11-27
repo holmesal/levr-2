@@ -11,9 +11,12 @@ import webapp2
 class ExpireDealsHandler(webapp2.RequestHandler):
 	'''
 	A cron job to expire deals that are more than 7 days old
+	
+	@test: does this still work?
 	'''
 	def get(self):
 		try:
+			
 			now = datetime.now()
 			#fetch all deals that are set to expire
 			deals = levr.Deal.all().filter('deal_status','active').filter('date_end <=',now).filter('date_end !=',None).fetch(None)
@@ -37,7 +40,6 @@ class ExpireDealsHandler(webapp2.RequestHandler):
 #				deal.expire()
 			
 			deals = [deal.expire for deal in deals]
-			# TODO: test this
 			#replace deals
 			db.put(deals)
 			

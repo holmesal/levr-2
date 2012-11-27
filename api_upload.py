@@ -130,7 +130,7 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 				actor = user
 				deal = deal_entity
 				levr.Notification().following_upload(to_be_notified, actor, deal)
-				# TODO: test new notification
+				# TEST: new notification
 			except:
 				levr.log_error()
 			

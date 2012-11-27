@@ -76,6 +76,9 @@ def validated_check(user):
 		return False
 		
 def create_deal(deal,business,owner):
+	#===========================================================================
+	# # Why? Why does this exist?
+	#===========================================================================
 	'''deal: a deal object
 	merchant: the merchant to be set as the owner of the deal'''
 	

@@ -91,7 +91,6 @@ class Search(object):
 		
 		@status: Only handles a radius blast alert
 		'''
-		# TODO: if the user is a developer, do not check alert
 		# Find deals that have a radius blast promotion
 		#	and that have not been blasted to this user before
 		promoted_deals = filter(lambda x: promo.RADIUS_ALERT in x.promotions,deals)
@@ -106,7 +105,7 @@ class Search(object):
 #			user = levr.Notification().create_radius_alert(user, deal)
 			to_be_notified = user
 			levr.Notification().radius_alert(to_be_notified, deal)
-			# TODO: test new notification
+			# TEST: new notification
 		return user
 	def calc_precision_from_half_deltas(self,geo_point,lon_half_delta=0):
 		'''
@@ -205,9 +204,8 @@ class Search(object):
 		Fetches deal entities from the db by their ghashes
 		Filters out deals that are nonetype
 		
-		@todo: filter nonetype deals
-		@return: deals and the bounding box of the search
-		@rtype: list,dict
+		@return: deals from the ghash
+		@rtype: list
 		'''
 		# get keys
 		deal_keys = get_deal_keys(ghash_list,development=self.development)
@@ -215,6 +213,8 @@ class Search(object):
 		# fetch deal entities
 		deals = db.get(set(deal_keys))
 		
+		# remove faulty deal references
+		deals = filter(None,deals)
 		return deals
 	
 	def sort_deals(self,deals):
@@ -262,7 +262,6 @@ class Search(object):
 				deal_tags = deal.tags
 				for tag in deal_tags:
 					# if a tag matches, will add to accepted deals
-					# TODO: rank deals by similarity frequency
 					if tag in search_tags:
 						accepted_deals.append(deal)
 						break
@@ -2463,9 +2462,9 @@ class PromoteDeal(BaseHandler):
 		to_be_notified = list(user_keys)
 		
 		# add a notification for each of the users
-		levr.Notification().following_upload(to_be_notified, self.user, self.deal)
+		levr.Notification().previous_like(to_be_notified, self.deal)
 		
-		# TODO: test new notification
+		# TEST: new notification
 		
 		return
 	
@@ -2477,7 +2476,7 @@ class PromoteDeal(BaseHandler):
 		notification = levr.Notification.all(
 											).filter('actor',self.user
 											).filter('deal',self.deal
-											).filter('notification_type','followedUpload'
+											).filter('notification_type',levr.Notification._deal_action
 											).get()
 		if notification:
 			notification.delete()
@@ -2521,14 +2520,15 @@ class PromoteDeal(BaseHandler):
 		notification = levr.Notification.all(
 											).filter('actor',self.user
 											).filter('deal',self.deal
-											).filter('notification_type','followedUpload'
+											).filter('notification_type',levr.Notification._deal_action
 											).get()
 		if notification:
 			notification.delete()
 		
 		return
 
-class SpoofUndeadNinjaActivity:
+class SpoofUndeadNinjaActivity(object):
+	# TEST: added an inheritence from object. does this still work?
 	'''
 	The undead walk the earth! And they like things!
 	Takes a user, calculates the time since their last login, and creates a number of 
