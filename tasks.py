@@ -165,19 +165,19 @@ class NewUserTextTaskHandler(webapp2.RequestHandler):
 			auth_header = 'Basic '+base64.b64encode(sid+':'+token)
 			logging.info(auth_header)
 			
-			numbers = ['+16052610083','+16035605655']
+			numbers = ['+16052610083','+16035605655','+16173124536','+16173124536','+12036329029']
 			
 			for number in numbers:
 				request = {'From':'+16173608582',
 							'To':number,
 							'Body':'Awwwww yeeeaahhhhh. You have a new user: '+payload['user_string']}
 			
-			result = urlfetch.fetch(url=twiliourl,
-								payload=urllib.urlencode(request),
-								method=urlfetch.POST,
-								headers={'Authorization':auth_header})
-								
-			logging.info(levr.log_dict(result.__dict__))
+				result = urlfetch.fetch(url=twiliourl,
+									payload=urllib.urlencode(request),
+									method=urlfetch.POST,
+									headers={'Authorization':auth_header})
+									
+				logging.info(levr.log_dict(result.__dict__))
 			
 		except:
 			levr.log_error()
