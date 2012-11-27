@@ -42,6 +42,8 @@ handlers:
   login: admin
 - url: /mixmap
   script: mixmap.app
+- url: /analytics
+  script: analytics.app
 - url: /password.*
   script: password.app
 - url: /widget.*

@@ -1,14 +1,31 @@
-{% extends "templates/merchantsBase.html" %}
+<!DOCTYPE html>
 
-{% block htmlhead %}
-<link rel="stylesheet" href="/css/myAccount.css">
-{% endblock %}
-
-{% block content %}
-<div id='main'>
-	<div id="left">
-		email: {{ owner.email }}
+<html>
+	
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1,user-scalable=no">
+		<link rel="apple-touch-icon" href="/img/128.png"/>
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<title>Feel Good, Inc.</title>
+		<!-- Le Bootstrap -->
+	    <link href="/css/bootstrap.min.css" rel="stylesheet">
+	    <link href="/css/bootstrap-responsive.min.css" rel="stylesheet">
+		<!-- Le base styles -->
+		<link rel="stylesheet" href="/css/analytics.css">
+	</head>
+	
+	<body>
+		<!--Bootstrap navbar -->
+		<p class="inspiration">IT'S GOING TO BE A GOOD DAY</p>
+		<p><span class="bignum">{{dau_mau}}</span></br>DAU/MAU</br>{{daily}} daily, {{monthly}} monthly</p>
+		<p><span class="bignum">{{signups}}</span></br>Signups</p>
+		<p><span class="bignum">{{searches}}</span></br>Searches</br>({{searches_non_exp}} non-expanded)</p>
+		<p><span class="bignum">{{uploads}}</span></br>Uploads</p>
 		
-	</div>
-</div>
-{% endblock %}
+		<!-- Bootstrap and jquery -->
+		<script src="http://code.jquery.com/jquery-latest.js"></script>
+		<script src="/js/bootstrap.min.js"></script>
+		<!--additional scripts-->
+	</body>
+	
+</html>

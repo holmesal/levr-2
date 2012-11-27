@@ -1,0 +1,21 @@
+body{
+	color: #031634;
+	text-align: center;
+	background-color: #D5DED9;
+}
+
+p{
+	margin-bottom: 20px;
+}
+
+.inspiration{
+	font-weight: 600;
+	margin-top: 15px;
+}
+
+.bignum{
+	font-size: 40pt;
+	font-weight: 600;
+	line-height: 100%;
+}
+
