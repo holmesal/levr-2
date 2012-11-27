@@ -492,7 +492,11 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 			# Create some nifty notifications
 			#===================================================================
 			try:
-				levr.create_notification('followedUpload',user.followers,user.key(),deal_entity)
+				to_be_notified = db.get(user.followers)
+				actor = user
+				deal = deal_entity
+				levr.Notification().following_upload(to_be_notified, actor, deal)
+				# TODO: notification to test
 			except:
 				levr.log_error()
 			

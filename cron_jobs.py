@@ -31,17 +31,13 @@ class ExpireDealsHandler(webapp2.RequestHandler):
 			## /DEBUG ###
 			
 			
-			#set deal_status to expired
-			for deal in deals:
-				# expire the deal
-				deal.expire()
-#				levr.remove_memcache_key_by_deal(deal)
-#				#set expired deal status
-#				deal.deal_status = 'expired'
-#				#grab the deal owner
-#				to_be_notified = deal.key().parent()
-#				#create the notification
-#				levr.create_notification('expired',to_be_notified,None,deal.key())
+#			#set deal_status to expired
+#			for deal in deals:
+#				# expire the deal
+#				deal.expire()
+			
+			deals = [deal.expire for deal in deals]
+			# TODO: test this
 			#replace deals
 			db.put(deals)
 			

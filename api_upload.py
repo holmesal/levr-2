@@ -9,6 +9,7 @@ import logging
 import os
 import webapp2
 import levr_encrypt as enc
+from google.appengine.ext import db
 #import geo.geohash as geohash
 #from datetime import datetime
 #from google.appengine.ext import db
@@ -125,7 +126,11 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 			
 			#go notify everyone that should be informed
 			try:
-				levr.create_notification('followedUpload',user.followers,user.key(),deal_entity)
+				to_be_notified = db.get(user.followers)
+				actor = user
+				deal = deal_entity
+				levr.Notification().following_upload(to_be_notified, actor, deal)
+				# TODO: test new notification
 			except:
 				levr.log_error()
 			

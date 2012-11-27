@@ -114,7 +114,6 @@ def create_new_business(business_name,vicinity,geo_point,types,phone_number=None
 	business.put()
 	
 	return business
-
 def create_notification(notification_type,to_be_notified,actor,deal=None,**kwargs):
 	'''
 	notification_type	= choices: 
@@ -223,7 +222,7 @@ def create_notification(notification_type,to_be_notified,actor,deal=None,**kwarg
 			
 			new_level = kwargs.get('new_level')
 			assert new_level,'Must pass new_level as kwarg to create new levelup notification'
-			#write line2
+			#write line_2
 			line2 = 'Good work! You are now Level {}.'.format(new_level)
 			logging.info(line2)
 			#replace user
@@ -287,28 +286,6 @@ def geo_converter(geo_str):
 
 
 def tagger(text): 
-	# text is a string
-#	parsing function for creating tags from description, etc
-	#replace commas with spaces
-#	text = text.replace(","," ")
-#	#replace underscores with spaces
-#	text = text.replace("_"," ")
-#	text = text.replace("/"," ")
-#	#remove all non text characters
-#	text = re.sub(r"[^\w\s]", '', text)
-#	#parse text string into a list of words if it is longer than 2 chars long
-#	tags = [w.lower() for w in re.findall("[\'\w]+", text)]# if len(w)>2]
-#	#remove redundancies
-#	tags = list(set(tags))
-#	#remove unwanted tags
-#	filtered_tags = []
-#	for tag in tags:
-#		if tag.isdigit() == False:
-#			#tag is not a number 
-#			if tag not in blacklist:
-#				filtered_tags.append(tag)
-#	
-#	return filtered_tags
 	return create_tokens(text)
 def create_tokens(text,stemmed=True,filtered=True):
 	'''
@@ -1307,7 +1284,7 @@ class Deal(db.Model):
 		# return list of tags without redundancies
 		return tags
 	
-	def expire(self,notify=False):
+	def expire(self):
 		'''
 		Sets the deal_status to expired and performs any other actions necessary
 			to expire the deal properly
@@ -1332,15 +1309,6 @@ class Deal(db.Model):
 		# set the expiration date to right now
 		self.date_end = datetime.now()
 		
-		if notify:
-			pass
-			# notifies the owner that their deal has been expired
-			# TODO: notify the deals owner that their deal has expired
-			
-			#grab the deal owner
-	#		to_be_notified = deal.key().parent()
-	#		#create the notification
-	#		levr.create_notification('expired',to_be_notified,None,deal.key())
 		return self
 	def reanimate(self,date_end=None):
 		'''
@@ -1438,7 +1406,7 @@ class Notification(db.Model):
 	'''
 	@version: 2
 		added new notification types
-		added line1,line3, justify, photo
+		added line_1,line_3, justify, photo
 		added creation functions
 	'''
 	
@@ -1467,11 +1435,11 @@ class Notification(db.Model):
 					_search_action,
 					_internet_action
 					]))
-	notification_data	= db.StringProperty()
+	action	= db.StringProperty()
 	
-	line1 = db.StringProperty()
-	line2 = db.StringProperty()
-	line3 = db.StringProperty()
+	line_1 = db.StringProperty()
+	line_2 = db.StringProperty()
+	line_3 = db.StringProperty()
 	
 	
 	justify = db.StringProperty(choices=set([_justify_left,_justify_right]))
@@ -1480,28 +1448,30 @@ class Notification(db.Model):
 	photo = db.StringProperty()
 	#metadata used for migrations
 	model_version		= db.IntegerProperty(default=NOTIFICATION_MODEL_VERSION)
-
+	
+	# DEPRECATED
+	line2 = db.StringProperty()
 	#===========================================================================
 	# # notification definition functions by action
 	#===========================================================================
 	def _set_deal_action(self,deal):
 		deal_key = enc.encrypt_key(deal.key())
 		self.notification_type = self._deal_action
-		self.notification_data = URL+'/api/deal/{}'.format(deal_key)
+		self.action = URL+'/api/deal/{}'.format(deal_key)
 	def _set_user_action(self,actor):
 		user_key = enc.encrypt_key(actor.key())
 		self.notification_type = self._user_action
-		self.notification_data = URL+'/api/user/{}'.format(user_key)
+		self.action = URL+'/api/user/{}'.format(user_key)
 	def _set_search_action(self,query):
 		self.notification_type = self._search_action
-		self.notification_data = URL+'/api/search/{}'.format(query)
+		self.action = URL+'/api/search/{}'.format(query)
 	def _set_business_action(self,business):
 		business_key = enc.encrypt_key(business.key())
 		self.notification_type = self._business_action
-		self.notification_data = URL+'/api/business/{}'.format(business_key)
+		self.action = URL+'/api/business/{}'.format(business_key)
 	def _set_internet_action(self,url):
 		self.notification_type = self._internet_action
-		self.notification_data = url
+		self.action = url
 		
 	#===========================================================================
 	# # Utilities
@@ -1517,10 +1487,10 @@ class Notification(db.Model):
 		assert self.date_in_seconds, 'Did not set date_in_seconds'
 		assert self.to_be_notified, 'Did not set to_be_notified'
 		assert self.notification_type, 'Did not set notification_type'
-		assert self.notification_data, 'Did not set notification_data'
-		assert self.line1, 'Did not set line1'
-		assert self.line2, 'Did not set line2'
-		assert self.line3, 'Did not set line3'
+		assert self.action, 'Did not set action'
+		assert self.line_1, 'Did not set line_1'
+		assert self.line_2, 'Did not set line_2'
+		assert self.line_3, 'Did not set line_3'
 		assert self.photo, 'Did not set photo'
 		self.put()
 		return self
@@ -1533,10 +1503,10 @@ class Notification(db.Model):
 			'notificationID'	: enc.encrypt_key(self.key()),
 			'date'				: self.date_in_seconds,
 			'notificationType'	: self.notification_type,
-			'notificationData'	: self.notification_data,
-			'line1'				: self.line1,
-			'line2'				: self.line2,
-			'line3'				: self.line3,
+			'action'			: self.action,
+			'line_1'				: self.line_1,
+			'line_2'				: self.line_2,
+			'line_3'				: self.line_3,
 			'photo'				: self.photo
 			}
 		return packaged_notification
@@ -1545,6 +1515,7 @@ class Notification(db.Model):
 	def _update_users_notifications(cls,to_be_notified):
 		'''
 		Updates the users of their new notification
+		Also filters out users that might not exist
 		@param to_be_notified: single entity or a list of entities who will be notified
 		@type to_be_notified: Customer or list
 		@return: to_be_notified
@@ -1555,10 +1526,11 @@ class Notification(db.Model):
 		elif type(to_be_notified) != list:
 			raise Exception('to_be_notified must be list or customer')
 		
-		for user in to_be_notified:
+		users = filter(None,to_be_notified)
+		for user in users:
 			user.new_notifications += 1
 		
-		keys = db.put(to_be_notified)
+		keys = db.put(users)
 		return keys
 		
 	@staticmethod
@@ -1604,9 +1576,9 @@ class Notification(db.Model):
 		self.to_be_notified  = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_left
 		self._set_deal_action(deal)
-		self.line1 = 'CHECK THIS OUT!'
-		self.line2 = deal.deal_text
-		self.line3 = self._business_name(deal)
+		self.line_1 = 'CHECK THIS OUT!'
+		self.line_2 = deal.deal_text
+		self.line_3 = self._business_name(deal)
 		self.photo = self._deal_img(deal)
 		return self._return()
 	
@@ -1624,9 +1596,9 @@ class Notification(db.Model):
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_left
 		self._set_deal_action(deal)
-		self.line1 = 'BECAUSE YOU LIKED SIMILAR'
-		self.line2 = deal.deal_text
-		self.line3 = self._business_name(deal)
+		self.line_1 = 'BECAUSE YOU LIKED SIMILAR'
+		self.line_2 = deal.deal_text
+		self.line_3 = self._business_name(deal)
 		self.photo = self._deal_img(deal)
 		return self._return()
 	
@@ -1644,9 +1616,9 @@ class Notification(db.Model):
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_left
 		self._set_deal_action(deal)
-		self.line1 = 'BECAUSE YOU LIKED'
-		self.line2 = deal.deal_text
-		self.line3 = self._business_name(deal)
+		self.line_1 = 'BECAUSE YOU LIKED'
+		self.line_2 = deal.deal_text
+		self.line_3 = self._business_name(deal)
 		self.photo = self._deal_img(deal)
 		return self._return()
 	
@@ -1665,13 +1637,13 @@ class Notification(db.Model):
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_right
 		self._set_user_action(actor)
-		self.line1 = 'YOU\'RE BEING FOLLOWED'
-		self.line2 = actor.display_name
-		self.line3 = ' '
+		self.line_1 = 'YOU\'RE BEING FOLLOWED'
+		self.line_2 = actor.display_name
+		self.line_3 = ' '
 		self.photo = actor.photo
 		return self._return()
 	
-	def follower_upload(self,to_be_notified,actor,deal):
+	def following_upload(self,to_be_notified,actor,deal):
 		'''
 		A ninja has uploaded a deal, notify their followers
 		@param to_be_notified: The followers of the actor
@@ -1688,9 +1660,9 @@ class Notification(db.Model):
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_right
 		self._set_deal_action(deal)
-		self.line1 = 'YOUR FRIEND UPLOADED A DEAL'
-		self.line2 = deal.deal_text
-		self.line3 = self._business_name(deal)
+		self.line_1 = 'YOUR FRIEND UPLOADED A DEAL'
+		self.line_2 = deal.deal_text
+		self.line_3 = self._business_name(deal)
 		self.photo = actor.photo # which picture do we want? user or deal?
 		return self._return()
 	def upvote(self,to_be_notified,actor,deal):
@@ -1710,9 +1682,9 @@ class Notification(db.Model):
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_right
 		self._set_user_action(actor)
-		self.line1 = 'YOU GOT THANKED!'
-		self.line2 = actor.display_name
-		self.line3 = 'for '+deal.deal_text
+		self.line_1 = 'YOU GOT THANKED!'
+		self.line_2 = actor.display_name
+		self.line_3 = 'for '+deal.deal_text
 		self.photo = actor.photo
 		return self._return()
 	def internet(self):

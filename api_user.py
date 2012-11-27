@@ -163,7 +163,7 @@ class UserGetFollowersHandler(webapp2.RequestHandler):
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 		
-class UserAddFollowHandler(webapp2.RequestHandler):
+class UserAddFollowHandler(api_utils.BaseClass):
 	@api_utils.validate('user','param',user=True,levrToken=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
@@ -179,7 +179,6 @@ class UserAddFollowHandler(webapp2.RequestHandler):
 		try:
 			logging.info('\n\n\n\t\t\t USER ADD FOLLOWER\n\n\n')
 			user 	= kwargs.get('user')
-#			uid 	= user.key()
 			actor	= kwargs.get('actor')
 			actorID = actor.key()
 			private = kwargs.get('private')
@@ -188,20 +187,21 @@ class UserAddFollowHandler(webapp2.RequestHandler):
 			if actorID not in user.followers:
 				user.followers.append(actorID)
 			
-			#PERFORM ACTIONS
-			if not levr.create_notification('newFollower',user.key(),actorID):
-				api_utils.send_error(self,'Server Error')
-				return
+			to_be_notified = user
+			
+			levr.Notification().new_follower(to_be_notified, actor)
+			# TODO: test new notification
 			
 			#get notifications
 			db.put([user,actor])
 			
-			#respond
-			api_utils.send_response(self,{'dt':str(actor.date_last_notified)},actor)
+			response = {
+					'dt':str(actor.date_last_notified)
+					}
+			self.send_response(response, actor)
 			
 		except:
-			levr.log_error()
-			api_utils.send_error(self,'Server Error')
+			self.send_fail()
 
 class UserUnfollowHandler(webapp2.RequestHandler):
 	@api_utils.validate('user','param',user=True,levrToken=True)
@@ -284,10 +284,11 @@ class UserImgHandler(webapp2.RequestHandler):
 			self.response.out.write(None)
 
 
-class UserNotificationsHandler(webapp2.RequestHandler):
+class UserNotificationsHandler(api_utils.BaseClass):
 	@api_utils.validate('user','url',limit=False,offset=False,since=False,levrToken=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
+		# TODO: test this
 		'''
 		#RESTRICTED
 		inputs: limit,offset,since
@@ -299,10 +300,7 @@ class UserNotificationsHandler(webapp2.RequestHandler):
 			}
 		'''
 		try:
-			logging.info('NOTIFICATIONS\n\n\n')
-			logging.debug('NOTIFICATIONS\n\n\n')
-			logging.debug(kwargs)
-			
+			logging.info('\n\n\nNOTIFICATIONS\n\n\n')
 			
 			user		= kwargs.get('user')
 			private		= kwargs.get('private')
@@ -316,23 +314,20 @@ class UserNotificationsHandler(webapp2.RequestHandler):
 			logging.debug('notifications: '+str(notifications.__len__()))
 			
 			#package up the notifications
-			packaged_notifications = [api_utils.package_notification(n) for n in notifications]
-			
+			packaged_notifications = api_utils.package_notification_multi(notifications)
 			
 			response = {
 					'numResults'	: packaged_notifications.__len__(),
 					'notifications'	: packaged_notifications
 					}
 			
-			api_utils.send_response(self,response)
-#			logging.debug(notes)
+			self.send_response(response)
 			
 			#replace user
 			#!!!!!!!IMPORTANT!!!!
 			user.put()
 		except:
-			levr.log_error()
-			api_utils.send_error(self,'Server Error')
+			self.send_fail()
 		
 		
 class UserInfoHandler(webapp2.RequestHandler):

@@ -21,7 +21,6 @@ class UpvoteHandler(webapp2.RequestHandler):
 			
 			
 			user 	= kwargs.get('actor')
-			uid 	= user.key()
 			deal 	= kwargs.get('deal')
 			dealID 	= deal.key()
 			
@@ -109,8 +108,11 @@ class UpvoteHandler(webapp2.RequestHandler):
 				if dealID not in user.favorites:
 					user.favorites.append(dealID)
 					#create favorite notification for the ninja that uploaded
-					levr.create_notification('favorite',ninja.key(),uid,dealID)
-				
+					to_be_notified = ninja
+					actor = user
+					deal = deal
+					levr.Notification().upvote(to_be_notified, actor, deal)
+					# TODO: test new notification
 				
 				db.put([user,deal])
 				#put actor and ninja and deal back
@@ -131,7 +133,7 @@ class UpvoteHandler(webapp2.RequestHandler):
 class DownvoteHandler(webapp2.RequestHandler):
 	@api_utils.validate('deal','param',user=True,levrToken=True)
 	@api_utils.private
-	def get(self,dealID,*args,**kwargs):
+	def get(self,dealID,*args,**kwargs): #@UnusedVariable
 		try:
 			logging.debug('DOWNVOTE\n\n\n')
 			logging.debug(kwargs)
@@ -207,7 +209,7 @@ class DownvoteHandler(webapp2.RequestHandler):
 class DeleteFavoriteHandler(webapp2.RequestHandler):
 	@api_utils.validate('deal','param',user=True,levrToken=True)
 	@api_utils.private
-	def get(self,*args,**kwargs):
+	def get(self,*args,**kwargs): #@UnusedVariable
 		'''
 		Input: uid
 		response: {}
@@ -243,7 +245,7 @@ class DeleteFavoriteHandler(webapp2.RequestHandler):
 class ReportHandler(webapp2.RequestHandler):
 	@api_utils.validate('deal','param',user=True,levrToken=True)
 	@api_utils.private
-	def get(self,*args,**kwargs):
+	def get(self,*args,**kwargs): #@UnusedVariable
 		'''
 		Input: uid
 		'''

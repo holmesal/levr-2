@@ -1,8 +1,6 @@
 #from __future__ import with_statement
-#from google.appengine.api import files
-from datetime import datetime,time
-from google.appengine.api import images, urlfetch, files, mail, \
-	taskqueue #@UnusedImport
+from datetime import datetime #@UnusedImport
+from google.appengine.api import images, urlfetch, files, taskqueue #@UnusedImport
 from google.appengine.ext import blobstore, db
 from google.appengine.ext.webapp import blobstore_handlers
 import api_utils
@@ -15,52 +13,46 @@ import logging
 import os
 import webapp2
 
-#import api_utils
-#import json
-#from google.appengine.api import taskqueue, urlfetch, memcache
-#from random import randint
-#import api_utils_social
-#import base_62_converter as converter
-#import geo.geohash as geohash
-#import uuid
-#import geo.geohash as geohash
 class SandboxHandler(api_utils.BaseHandler):
 	'''
 	Dont delete this. This is my dev playground.
 	'''
-	def backup_deals(self):
-		'''
-		Grabs all levr deals and backs them up as DealBackup entities
-		'''
+	def get(self):
+		# aliases cus im laaaaazy
+		say = self.response.out.write
+		log = levr.log_model_props
+		note = levr.Notification
+		
 		self.response.headers['Content-Type'] = 'text/plain'
 		
 		users = levr.Customer.all().fetch(None)
 		to_be_notified = users[0]
 		actor = users[1]
 		deal = levr.Deal.all().get()
-		note = levr.Notification_2().new_follower(to_be_notified, actor)
-		self.response.out.write(levr.log_model_props(note))
 		
-		packaged_note = api_utils.package_notification(note)
-		self.response.out.write(levr.log_dict(packaged_note))
+		notifications = [
+				note().radius_alert(to_be_notified, deal),
+				note().good_taste_alert(to_be_notified, deal),
+				note().previous_like(to_be_notified, deal),
+				note().new_follower(to_be_notified, actor),
+				note().follower_upload(to_be_notified, actor, deal),
+				note().upvote(to_be_notified, actor, deal)
+				]
+		
+		say(log(note().radius_alert(to_be_notified, deal)))
+		say(log(note().good_taste_alert(to_be_notified, deal)))
+		say(log(note().previous_like(to_be_notified, deal)))
+		say(log(note().new_follower(to_be_notified, actor)))
+		say(log(note().follower_upload(to_be_notified, actor, deal)))
+		say(log(note().upvote(to_be_notified, actor, deal)))
+		
 		
 		self.response.out.write('<=====================>')
-		#=======================================================================
-		# Old notes
-		#=======================================================================
-		#new follower notification
-		notification = levr.Notification(
-			notification_type	= 'favorite',
-			line2				= 'line2',
-			to_be_notified		= [to_be_notified.key()],
-			actor				= actor,
-			deal				= deal, #default to None,
-			date_in_seconds		= long(levr.unix_time(datetime.now()))
-			)
-		notification.put()
+		packaged_notes = api_utils.package_notification_multi(notifications)
+		say(packaged_notes)
 		
-		packaged_old_note = api_utils.package_notification(notification)
-		self.response.out.write(levr.log_dict(packaged_old_note))
+		
+		
 class CombineNinjaOwnership(api_utils.BaseHandler):
 	def get(self):
 		'''

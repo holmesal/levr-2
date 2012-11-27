@@ -103,8 +103,10 @@ class Search(object):
 			# select only one deal to blast
 			deal = random.choice(promoted_deals)
 			# create the notification for the deal
-			user = levr.Notification().create_radius_alert(user, deal)
-			
+#			user = levr.Notification().create_radius_alert(user, deal)
+			to_be_notified = user
+			levr.Notification().radius_alert(to_be_notified, deal)
+			# TODO: test new notification
 		return user
 	def calc_precision_from_half_deltas(self,geo_point,lon_half_delta=0):
 		'''
@@ -538,6 +540,17 @@ def package_user(user,private=False,followers=False,**kwargs):
 # 							})
 	
 	return packaged_user
+def package_notification_multi(notifications):
+	'''
+	@param notifications: a list of notification entities
+	@type notifications: list
+	@return: a list of packaged notiications
+	@rtype: list
+	'''
+	packaged_notifications = [package_notification(notification) for notification in notifications]
+	
+	return packaged_notifications
+	
 def package_notification(notification):
 	'''
 	Switch case on notification based on the version of notification, old or new
@@ -555,7 +568,7 @@ def _package_notification(notification):
 #		'date'				: str(notification.date)[:19],
 		'date'				: notification.date_in_seconds,
 		'notificationType'	: notification.notification_type,
-		'line2'				: notification.line2,
+		'line2'				: notification.line_2,
 		'user'				: package_user(notification.actor),
 #		'notificationID'	: enc.encrypt_key(notification.key())
 		}
@@ -2077,7 +2090,8 @@ class KWLinker(object):
 
 class PromoteDeal(BaseHandler):
 	'''
-	Class for promoting deals. Mostly for namespacing.
+	Class for promoting deals.
+	@todo: make this a standalone class, remove webapp request handler inheritance
 	'''
 	def __initialize__(self,deal,user,**kwargs):
 		'''
@@ -2446,12 +2460,12 @@ class PromoteDeal(BaseHandler):
 		user_keys = set([])
 		for dk in deal_keys:
 			user_keys.update(levr.Customer.all(keys_only=True).filter('upvotes',dk).fetch(None))
-		user_keys = list(user_keys)
-		logging.debug(user_keys)
+		to_be_notified = list(user_keys)
 		
 		# add a notification for each of the users
-		assert levr.create_notification('followedUpload', user_keys, self.user.key(), self.deal.key()), \
-			'Notifications could not be created'
+		levr.Notification().following_upload(to_be_notified, self.user, self.deal)
+		
+		# TODO: test new notification
 		
 		return
 	
@@ -2494,10 +2508,10 @@ class PromoteDeal(BaseHandler):
 		user_keys = set([])
 		for dk in deal_keys:
 			user_keys.update(levr.Customer.all(keys_only=True).filter('upvotes',dk).fetch(None))
-		user_keys = list(user_keys)
+		to_be_notified = list(user_keys)
 		# add a notification for all of the users
-		assert levr.create_notification('followedUpload', user_keys, self.user.key(), self.deal.key()), \
-			'Notifications could not be created'
+		levr.Notification().following_upload(to_be_notified, self.user.actor, self.deal)
+		
 		return
 	def _remove_notify_related_likes(self):
 		'''
