@@ -2336,21 +2336,6 @@ class PromoteDeal(object):
 			action()
 		
 		
-#		try:
-#			funct = handlers[promotion_id]
-#			logging.info(funct)
-#			try:
-#				# run the promotion with args
-#				args = handler_args[promotion_id]
-#				funct(args)
-#			except:
-#				levr.log_error()
-#				# run the required function without args
-#				funct()
-#		except:
-#			levr.log_error()
-#			# run the promotion
-#			handlers[promotion_id]()
 		# create the promotion entity
 		self._add_promo(promotion_id,*action_args)
 		# return
@@ -2495,7 +2480,7 @@ class PromoteDeal(object):
 		notification = levr.Notification.all(
 											).filter('actor',self.user
 											).filter('deal',self.deal
-											).filter('notification_type',levr.Notification._deal_action
+											).filter('notification_type','goodTaste'
 											).get()
 		if notification:
 			notification.delete()
@@ -2538,7 +2523,7 @@ class PromoteDeal(object):
 		notification = levr.Notification.all(
 											).filter('actor',self.user
 											).filter('deal',self.deal
-											).filter('notification_type',levr.Notification._deal_action
+											).filter('notification_type','notifyFans'
 											).get()
 		if notification:
 			notification.delete()

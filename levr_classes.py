@@ -1361,7 +1361,7 @@ class Notification(db.Model):
 	'''
 	@version: 2
 		added new notification types
-		added line_1,line_3, justify, photo
+		added line_1,line_3, justify, photo, action_type
 		added creation functions
 	'''
 	
@@ -1385,19 +1385,15 @@ class Notification(db.Model):
 													# v1
 					['favorite','followedUpload','newFollower','levelup','shared','levr','expired',
 					# v2
-					_deal_action,
-					_user_action,
-					_business_action,
-					_search_action,
-					_internet_action
+					'radiusAlert','goodTaste','notifyFans','upvote'
 					]))
-#	action_type = db.StringProperty(choices=set([
-#												_deal_action,
-#												_user_action,
-#												_business_action,
-#												_search_action,
-#												_internet_action
-#												]))
+	action_type = db.StringProperty(choices=set([
+												_deal_action,
+												_user_action,
+												_business_action,
+												_search_action,
+												_internet_action
+												]))
 	action	= db.StringProperty()
 	
 	line_1 = db.StringProperty()
@@ -1419,21 +1415,21 @@ class Notification(db.Model):
 	#===========================================================================
 	def _set_deal_action(self,deal):
 		deal_key = enc.encrypt_key(deal.key())
-		self.notification_type = self._deal_action
+		self.action_type = self._deal_action
 		self.action = URL+'/api/deal/{}'.format(deal_key)
 	def _set_user_action(self,actor):
 		user_key = enc.encrypt_key(actor.key())
-		self.notification_type = self._user_action
+		self.action_type = self._user_action
 		self.action = URL+'/api/user/{}'.format(user_key)
 	def _set_search_action(self,query):
-		self.notification_type = self._search_action
+		self.action_type = self._search_action
 		self.action = URL+'/api/search/{}'.format(query)
 	def _set_business_action(self,business):
 		business_key = enc.encrypt_key(business.key())
-		self.notification_type = self._business_action
+		self.action_type = self._business_action
 		self.action = URL+'/api/business/{}'.format(business_key)
 	def _set_internet_action(self,url):
-		self.notification_type = self._internet_action
+		self.action_type = self._internet_action
 		self.action = url
 		
 	#===========================================================================
@@ -1466,10 +1462,11 @@ class Notification(db.Model):
 			'notificationID'	: enc.encrypt_key(self.key()),
 			'date'				: self.date_in_seconds,
 			'notificationType'	: self.notification_type,
+			'actionType'		: self.action_type,
 			'action'			: self.action,
-			'line_1'				: self.line_1,
-			'line_2'				: self.line_2,
-			'line_3'				: self.line_3,
+			'line_1'			: self.line_1,
+			'line_2'			: self.line_2,
+			'line_3'			: self.line_3,
 			'photo'				: self.photo
 			}
 		return packaged_notification
@@ -1534,6 +1531,7 @@ class Notification(db.Model):
 		# set references
 		self.deal = deal
 		self.actor = deal.parent()
+		self.notification_type = 'radiusAlert'
 		# signify that this user has been blasted
 		to_be_notified.been_radius_blasted.append(deal.key())
 		# send the user notifications
@@ -1557,7 +1555,7 @@ class Notification(db.Model):
 		# set references
 		self.deal = deal
 		self.actor = deal.parent()
-		
+		self.notification_type = 'goodTaste'
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_left
 		self._set_deal_action(deal)
@@ -1578,7 +1576,7 @@ class Notification(db.Model):
 		# set references
 		self.deal = deal
 		self.actor = deal.parent() # TEST: is this reference created?
-		
+		self.notification_type = 'notifyFans'
 		
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_left
@@ -1600,7 +1598,7 @@ class Notification(db.Model):
 		'''
 		# set references
 		self.actor = actor
-		
+		self.notification_type = 'newFollower'
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_right
 		self._set_user_action(actor)
@@ -1623,7 +1621,7 @@ class Notification(db.Model):
 		# set references
 		self.actor = actor
 		self.deal = deal
-		
+		self.notification_type = 'followedUpload'
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_right
 		self._set_deal_action(deal)
@@ -1645,7 +1643,7 @@ class Notification(db.Model):
 		# set references
 		self.actor = actor
 		self.deal = deal
-		
+		self.notification_type = 'upvote'
 		self.to_be_notified = self._update_users_notifications(to_be_notified)
 		self.justify = self._justify_right
 		self._set_user_action(actor)
@@ -1658,6 +1656,7 @@ class Notification(db.Model):
 		'''
 		Stub. This is not being used yet.
 		'''
+		self.notification_type = 'levr'
 		return self._return()
 
 class Playlist(db.Model):

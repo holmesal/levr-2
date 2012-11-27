@@ -68,8 +68,6 @@ handlers:
   script: mobile.app
 - url: /investors
   script: investors.app
-- url: /test.*
-  script: gaeunit.app
 #  secure: always
 
 #tasks and cronjobs

@@ -909,17 +909,18 @@ class TestPromotionsHandler(api_utils.MerchantHandler):
 		
 		for promotion_id in promotion_types:
 			promo.run_promotion(promotion_id,tags = tags,auto_put=False)
-		
 		promo.put()
+		
 		say('\n\n<<<====================== DEAL >>>\n\n')
 		say(levr.log_model_props(promo.deal))
 		say('\n\n<<<====================== NOTIFICATIONS >>>\n\n')
-		
 		notifications = levr.Notification.all().fetch(None)
 		for n in notifications:
 			say(log(n))
-		
-		
+		say('\n\n<<<====================== PROMOTIONS >>>\n\n')
+		promos = levr.DealPromotion.all().fetch(None)
+		for p in promos:
+			say(log(p))
 		#=======================================================================
 		# receipts
 		#=======================================================================
@@ -927,30 +928,36 @@ class TestPromotionsHandler(api_utils.MerchantHandler):
 		for promotion_id in promotion_types:
 			promo.confirm_promotion(promotion_id, receipt,auto_put=False)
 		promo.put()
+		
 		say('\n\n<<<====================== DEAL >>>\n\n')
 		say(levr.log_model_props(promo.deal))
 		say('\n\n<<<====================== NOTIFICATIONS >>>\n\n')
-		
-		
 		notifications = levr.Notification.all().fetch(None)
 		for n in notifications:
 			say(log(n))
+		say('\n\n<<<====================== PROMOTIONS >>>\n\n')
+		promos = levr.DealPromotion.all().fetch(None)
+		for p in promos:
+			say(log(p))
 		
-		
-		say('\n\n<<<====================== DEAL >>>\n\n')
 		#=======================================================================
 		# Remove promotions
 		#=======================================================================
 		for promotion_id in promotion_types:
 			promo.remove_promotion(promotion_id,auto_put=False)
 		promo.put()
-		assert promo.deal, '??'
+		
+		say('\n\n<<<====================== DEAL >>>\n\n')
 		say(log(promo.deal))
 #		say(levr.log_model_props(promo.deal))
 		say('\n\n<<<====================== NOTIFICATIONS >>>\n\n')
 		notifications = levr.Notification.all().fetch(None)
 		for n in notifications:
 			say(log(n))
+		say('\n\n<<<====================== PROMOTIONS >>>\n\n')
+		promos = levr.DealPromotion.all().fetch(None)
+		for p in promos:
+			say(log(p))
 # Quality Assurance for generating the upload urls
 NEW_DEAL_UPLOAD_URL = '/api/merchant/upload/add'
 EDIT_DEAL_UPLOAD_URL = '/api/merchant/upload/edit'
