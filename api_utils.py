@@ -10,11 +10,12 @@ import levr_classes as levr
 import levr_encrypt as enc
 import logging
 import os
-import promotions as promo
+import promotions
 import random
 import urllib
 import webapp2
-#from tasks import INCREMENT_DEAL_VIEW_URL
+from google.appengine.ext import testbed
+import unittest
 #from fnmatch import filter
 INCREMENT_DEAL_VIEW_URL = '/tasks/incrementDealView'
 
@@ -93,7 +94,7 @@ class Search(object):
 		'''
 		# Find deals that have a radius blast promotion
 		#	and that have not been blasted to this user before
-		promoted_deals = filter(lambda x: promo.RADIUS_ALERT in x.promotions,deals)
+		promoted_deals = filter(lambda x: promotions.RADIUS_ALERT in x.promotions,deals)
 		logging.info('promoted_deals: {}'.format(promoted_deals))
 		# Filter deals that have already been sent to the user via alert
 		promoted_deals = filter(lambda x: x.key() not in user.been_radius_blasted,promoted_deals)
@@ -467,7 +468,7 @@ def _package_deal(deal,owner,business,private=False,rank=None,distance=None):
 		
 		packaged_deal.update({
 							'views'	: deal.views,
-							'promotions' : [promo.PROMOTIONS[p] for p in deal.promotions],
+							'promotions' : [promotions.PROMOTIONS[p] for p in deal.promotions],
 							'status': deal.deal_status
 							})
 	
@@ -2085,14 +2086,29 @@ class KWLinker(object):
 		for link in node_links:
 			link.strength += strength
 		ndb.put_multi(node_links)
-
-
-class PromoteDeal(BaseHandler):
+class MerchantHandler(BaseHandler):
+	def get_all_deals_response(self):
+		'''
+		Packages all deals into a json
+		
+		@return: the base json for the reply in merchants api
+		@rtype: dict
+		'''
+		private = True
+		deals = fetch_all_users_deals(self.user)
+		packaged_deals = package_deal_multi(deals, private)
+		
+		response = {
+				'deals'	: packaged_deals
+				}
+		return response
+	
+class PromoteDeal(object):
 	'''
 	Class for promoting deals.
 	@todo: make this a standalone class, remove webapp request handler inheritance
 	'''
-	def __initialize__(self,deal,user,**kwargs):
+	def __init__(self,deal,user,**kwargs):
 		'''
 		This is named _initialize__ instead of init because of the
 		way that webapp2 creates an instance of the class before the
@@ -2103,8 +2119,6 @@ class PromoteDeal(BaseHandler):
 		@type deal: Deal
 		@param purchaser: The Customer who purchased the promotion
 		@type purchaser: Customer
-		@param promotion_id: The form of promotion being applied
-		@type promotion_id: str
 		
 		@keyword development: A flag to run this in development mode
 			If true, will only affect test deals and test people
@@ -2123,7 +2137,7 @@ class PromoteDeal(BaseHandler):
 				self.business = levr.Business.get(self.deal.businessID)
 		except:
 			
-			logging.debug(levr.log_model_props(deal))
+			logging.warning(levr.log_model_props(deal))
 			self.business = levr.Business.get(self.deal.businessID)
 		
 		
@@ -2136,21 +2150,7 @@ class PromoteDeal(BaseHandler):
 		logging.debug(levr.log_model_props(self.purchaser))
 	
 	
-	def get_all_deals_response(self):
-		'''
-		Packages all deals into a json
-		
-		@return: the base json for the reply in merchants api
-		@rtype: dict
-		'''
-		private = True
-		deals = fetch_all_users_deals(self.user)
-		packaged_deals = package_deal_multi(deals, private)
-		
-		response = {
-				'deals'	: packaged_deals
-				}
-		return response
+
 	def get_promotion_by_promotionID(self,promotion_id):
 		'''
 		Pulls a promotion for self.deal from the db based on the promotionID
@@ -2228,7 +2228,7 @@ class PromoteDeal(BaseHandler):
 	#===========================================================================
 	# Interfaces with the promotion entity in the db
 	#===========================================================================
-	def _add_promo(self,promotion_id):
+	def _add_promo(self,promotion_id,*tags):
 		'''
 		Adds the promotion to the list of promotions
 		Also creates a promotion entity to log the event
@@ -2246,10 +2246,10 @@ class PromoteDeal(BaseHandler):
 							promotion_id = promotion_id
 							)
 		# add the deal tags to the promotion
-		if promotion_id == promo.MORE_TAGS:
-			if not self.tags:
+		if promotion_id == promotions.MORE_TAGS:
+			if not tags:
 				logging.error('No self.tags were passed to Promotion._add_promo')
-			promotion.tags = list(self.tags)
+			promotion.tags = list(tags)
 		promotion.put()
 		return
 	def _remove_promo(self,promotion_id):
@@ -2260,7 +2260,7 @@ class PromoteDeal(BaseHandler):
 		@param promotionID: one of the available promotions
 		@type promotionID: str
 		'''
-		# remove the promo entity
+		# remove the promotions entity
 		promo_entity = self.get_promotion_by_promotionID(promotion_id)
 		
 		# remove tags
@@ -2279,7 +2279,7 @@ class PromoteDeal(BaseHandler):
 		
 		promo_entity.delete()
 		
-		# remove promo id from the deal entity
+		# remove promotions id from the deal entity
 		self.deal.promotions.remove(promotion_id)
 		return
 		
@@ -2306,35 +2306,53 @@ class PromoteDeal(BaseHandler):
 			'Deal already has promotion: {}'.format(promotion_id)
 		
 		handlers = {
-				promo.BOOST_RANK : self._set_boost_rank,
-				promo.MORE_TAGS : self._set_more_tags,
-				promo.NOTIFY_PREVIOUS_LIKES : self._set_notify_previous_likes,
-				promo.NOTIFY_RELATED_LIKES : self._set_notify_related_likes,
-				promo.RADIUS_ALERT : self._set_radius_alert
+				promotions.BOOST_RANK : self._set_boost_rank,
+				promotions.MORE_TAGS : self._set_more_tags,
+				promotions.NOTIFY_PREVIOUS_LIKES : self._set_notify_previous_likes,
+				promotions.NOTIFY_RELATED_LIKES : self._set_notify_related_likes,
+				promotions.RADIUS_ALERT : self._set_radius_alert
 				}
 		handler_args = {
-					promo.MORE_TAGS : kwargs.get('tags'),
+					promotions.MORE_TAGS : kwargs.get('tags'),
 					}
 		
+		
+		logging.info('\n\n\n\n\n LET IT BEGIN \n\n\n\n\n\n')
 		# Assure that the requested promotion is available for hire
 		assert promotion_id in [key for key in handlers], \
 			'Promotion not available: {}'.format(promotion_id)
 		
+		action = handlers[promotion_id]
+		
 		try:
-			funct = handlers[promotion_id]
-			try:
-				# run the promotion with args
-				args = handler_args[promotion_id]
-				funct(args)
-			except:
-				# run the required function without args
-				funct()
+			action_args = handler_args[promotion_id]
 		except:
-			levr.log_error()
-			# run the promotion
-			handlers[promotion_id]()
+			action_args = []
+		
+		
+		if action_args:
+			action(action_args)
+		else:
+			action()
+		
+		
+#		try:
+#			funct = handlers[promotion_id]
+#			logging.info(funct)
+#			try:
+#				# run the promotion with args
+#				args = handler_args[promotion_id]
+#				funct(args)
+#			except:
+#				levr.log_error()
+#				# run the required function without args
+#				funct()
+#		except:
+#			levr.log_error()
+#			# run the promotion
+#			handlers[promotion_id]()
 		# create the promotion entity
-		self._add_promo(promotion_id)
+		self._add_promo(promotion_id,*action_args)
 		# return
 		auto_put = kwargs.get('auto_put',True)
 		return self._return(auto_put)
@@ -2364,11 +2382,11 @@ class PromoteDeal(BaseHandler):
 		if promotion_id not in self.deal.promotions:
 			return
 		handlers = {
-				promo.BOOST_RANK : self._remove_boost_rank,
-				promo.MORE_TAGS : self._remove_more_tags,
-				promo.NOTIFY_PREVIOUS_LIKES : self._remove_notify_previous_likes,
-				promo.NOTIFY_RELATED_LIKES : self._remove_notify_related_likes,
-				promo.RADIUS_ALERT : self._remove_radius_alert
+				promotions.BOOST_RANK : self._remove_boost_rank,
+				promotions.MORE_TAGS : self._remove_more_tags,
+				promotions.NOTIFY_PREVIOUS_LIKES : self._remove_notify_previous_likes,
+				promotions.NOTIFY_RELATED_LIKES : self._remove_notify_related_likes,
+				promotions.RADIUS_ALERT : self._remove_radius_alert
 				}
 		# Assure that the requested promotion is available for hire
 		assert promotion_id in [key for key in handlers], \
@@ -2406,15 +2424,16 @@ class PromoteDeal(BaseHandler):
 	#===========================================================================
 	# More Tags
 	#===========================================================================
-	def _set_more_tags(self):
+	def _set_more_tags(self,tags):
 		'''
 		Increases the tags on a deal so that it is more visible
+		@todo: are tags being passed properly?
 		'''
-		# FIXME: passing tags like this is shitty. Better way?
 		
 		# append new deal tags to the list of tags
-		assert type(self.tags) == list, 'tags must be a list'
-		self.deal.extra_tags.extend(self.tags)
+		assert type(tags) == list, 'tags must be a list'
+		
+		self.deal.extra_tags.extend(tags)
 		return
 	def _remove_more_tags(self):
 		'''
@@ -2436,7 +2455,7 @@ class PromoteDeal(BaseHandler):
 		Removes the effects from setting a radius alert
 		'''
 		# Do nothing here. All is taken care of in self._remove_promo
-		#   because all actions taken for this promo happen at search time
+		#   because all actions taken for this promotions happen at search time
 		return
 	#===========================================================================
 	# Notify Previous Likes
@@ -2459,7 +2478,7 @@ class PromoteDeal(BaseHandler):
 		user_keys = set([])
 		for dk in deal_keys:
 			user_keys.update(levr.Customer.all(keys_only=True).filter('upvotes',dk).fetch(None))
-		to_be_notified = list(user_keys)
+		to_be_notified = db.get(user_keys)
 		
 		# add a notification for each of the users
 		levr.Notification().previous_like(to_be_notified, self.deal)
@@ -2472,7 +2491,7 @@ class PromoteDeal(BaseHandler):
 		'''
 		Removes the actions taken by the set_notify_previous_likes
 		'''
-#		self.promotion_id = promo.NOTIFY_PREVIOUS_LIKES
+#		self.promotion_id = promotions.NOTIFY_PREVIOUS_LIKES
 		notification = levr.Notification.all(
 											).filter('actor',self.user
 											).filter('deal',self.deal
@@ -2487,7 +2506,6 @@ class PromoteDeal(BaseHandler):
 	def _set_notify_related_likes(self):
 		'''
 		Sends a notification to everyone who has likes a deal that is similar to this one
-		
 		'''
 		# get deal tags
 		tags = list(set(self.deal.tags))
@@ -2507,9 +2525,9 @@ class PromoteDeal(BaseHandler):
 		user_keys = set([])
 		for dk in deal_keys:
 			user_keys.update(levr.Customer.all(keys_only=True).filter('upvotes',dk).fetch(None))
-		to_be_notified = list(user_keys)
+		to_be_notified = db.get(user_keys)
 		# add a notification for all of the users
-		levr.Notification().following_upload(to_be_notified, self.user.actor, self.deal)
+		levr.Notification().good_taste_alert(to_be_notified, self.deal)
 		
 		return
 	def _remove_notify_related_likes(self):
@@ -2526,6 +2544,7 @@ class PromoteDeal(BaseHandler):
 			notification.delete()
 		
 		return
+
 
 class SpoofUndeadNinjaActivity(object):
 	# TEST: added an inheritence from object. does this still work?

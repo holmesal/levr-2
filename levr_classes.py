@@ -12,7 +12,7 @@ import json
 import levr_encrypt as enc
 import logging
 import os
-import promotions as promo
+import promotions
 import random
 import re
 import string
@@ -1344,11 +1344,11 @@ class DealPromotion(db.Model):
 	deal = db.ReferenceProperty(Deal,required=True,collection_name='purchased_promotions_history')
 	date = db.DateTimeProperty(auto_now_add=True)
 	promotion_id = db.StringProperty(required=True,choices=set([
-													promo.BOOST_RANK,
-													promo.MORE_TAGS,
-													promo.NOTIFY_PREVIOUS_LIKES,
-													promo.NOTIFY_RELATED_LIKES,
-													promo.RADIUS_ALERT
+													promotions.BOOST_RANK,
+													promotions.MORE_TAGS,
+													promotions.NOTIFY_PREVIOUS_LIKES,
+													promotions.NOTIFY_RELATED_LIKES,
+													promotions.RADIUS_ALERT
 													])
 									)
 	receipt = db.StringProperty()
@@ -1380,8 +1380,9 @@ class Notification(db.Model):
 	date				= db.DateTimeProperty(auto_now_add=True)
 	date_in_seconds		= db.IntegerProperty()
 	to_be_notified		= db.ListProperty(db.Key)
-	notification_type	= db.StringProperty(choices=set(
-					# v1
+	notification_type	= db.StringProperty(
+											choices=set(
+													# v1
 					['favorite','followedUpload','newFollower','levelup','shared','levr','expired',
 					# v2
 					_deal_action,
@@ -1390,6 +1391,13 @@ class Notification(db.Model):
 					_search_action,
 					_internet_action
 					]))
+#	action_type = db.StringProperty(choices=set([
+#												_deal_action,
+#												_user_action,
+#												_business_action,
+#												_search_action,
+#												_internet_action
+#												]))
 	action	= db.StringProperty()
 	
 	line_1 = db.StringProperty()

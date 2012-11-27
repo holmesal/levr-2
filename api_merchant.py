@@ -9,7 +9,7 @@ import json
 import levr_classes as levr
 import levr_encrypt as enc
 import logging
-import promotions as promo
+import promotions
 import time
 import urllib
 import webapp2
@@ -723,7 +723,7 @@ class FetchPromotionOptionsHandler(api_utils.BaseHandler):
 	'''
 	def get(self):
 		try:
-			promotions = [promo.PROMOTIONS[key] for key in promo.PROMOTIONS]
+			promotions = [promotions.PROMOTIONS[key] for key in promotions.PROMOTIONS]
 			
 			
 			response = {
@@ -740,7 +740,7 @@ class FetchPromotionOptionsHandler(api_utils.BaseHandler):
 
 
 
-class SetPromotionHandler(api_utils.PromoteDeal):
+class SetPromotionHandler(api_utils.MerchantHandler):
 	'''
 	A handler for activating a promotion. Will accept a users information and
 		an identifier for a promotion. The types of promotions correspond to the
@@ -758,24 +758,25 @@ class SetPromotionHandler(api_utils.PromoteDeal):
 		user = kwargs.get('actor')
 		promotion_id = kwargs.get('promotionID')
 		deal = kwargs.get('deal')
-		self.tags = kwargs.get('tags',[])
+		tags = kwargs.get('tags',[])
 #		development = kwargs.get('development')
 		
 		try:
 			# init super class
-			super(SetPromotionHandler,self).__initialize__(deal,user)
+#			super(SetPromotionHandler,self).__initialize__(deal,user)
 			
-			self.run_promotion(promotion_id,tags=self.tags,auto_put=True)
+			promo = api_utils.PromoteDeal(deal,user)
+			
+			promo.run_promotion(promotion_id,tags=tags)
 			
 			# return success
 			response = self.get_all_deals_response()
 			api_utils.send_response(self,response, user)
 		except AssertionError,e:
 			self.send_error(str(e))
-		except Exception,e:
-			levr.log_error(e)
-			self.send_error()
-class ConfirmPromotionHandler(api_utils.PromoteDeal):
+		except:
+			self.send_fail()
+class ConfirmPromotionHandler(api_utils.MerchantHandler):
 	@api_utils.validate(None, 'param',
 					user = True,
 					levrToken = True,
@@ -795,9 +796,13 @@ class ConfirmPromotionHandler(api_utils.PromoteDeal):
 		
 		try:
 			# init the super class
-			super(ConfirmPromotionHandler,self).__initialize__(deal,user)
-			# confirm the promotion
-			self.confirm_promotion(promotion_id, receipt)
+#			super(ConfirmPromotionHandler,self).__initialize__(deal,user)
+#			# confirm the promotion
+#			self.confirm_promotion(promotion_id, receipt)
+			
+			promo = api_utils.PromoteDeal(deal,user)
+			promo.confirm_promotion(promotion_id, receipt)
+			
 			# return success - send all deals
 			response = self.get_all_deals_response()
 			self.send_response(response, self.user)
@@ -806,11 +811,10 @@ class ConfirmPromotionHandler(api_utils.PromoteDeal):
 			self.send_error(e)
 			logging.warning(e)
 		except Exception,e:
-			levr.log_error(e)
-			self.send_error()
+			self.send_fail()
 
 
-class CancelPromotionHandler(api_utils.PromoteDeal):
+class CancelPromotionHandler(api_utils.MerchantHandler):
 	@api_utils.validate(None, 'param',
 					user = True,
 					levrToken = True,
@@ -827,58 +831,126 @@ class CancelPromotionHandler(api_utils.PromoteDeal):
 			# init super class
 			super(CancelPromotionHandler,self).__initialize__(deal,user)
 			
+			promo = api_utils.PromoteDeal(deal,user)
+			
+			
 			# remove the promotion
 			if promotion_id == 'all':
-				for p in self.deal.promotions:
-					self.remove_promotion(p)
+				for p in promo.deal.promotions:
+					promo.remove_promotion(p)
 			else:
-				self.remove_promotion(promotion_id)
+				promo.remove_promotion(promotion_id)
+			
 			# send success
 			response = self.get_all_deals_response()
 			self.send_response(response,self.user)
 		except AssertionError,e:
 			self.send_error(e)
-			logging.warning(e)
 		except Exception,e:
-			levr.log_error(e)
-			self.send_error()
-class TestPromotionsHandler(api_utils.PromoteDeal):
+			self.send_fail()
+
+class TestPromotionsHandler(api_utils.MerchantHandler):
 	def get(self):
+		
+		say = self.response.out.write
+		log = levr.log_model_props
 		self.response.headers['Content-Type'] = 'text/plain'
-		user = levr.Customer.all().filter('email','ethan@levr.com').get()
-		deal = levr.Deal.all().ancestor(user).get()
-		assert user, 'No user'
-		assert deal, 'No deal'
-		self.response.out.write('Deal key: {}'.format(str(deal.key())))
-		super(TestPromotionsHandler,self).__initialize__(deal,user)
-		self.response.out.write(levr.log_model_props(self.deal))
-		self.tags = ['one','tags2','tag3','butt']
-		promotions = [key for key in promo.PROMOTIONS]
-		# run all the promotions
-		for promotion_id in promotions:
-			self.run_promotion(promotion_id,tags=self.tags,auto_put=False)
-		self.put()
-		self.response.out.write(levr.log_model_props(self.deal))
-		
-		receipt = 'hi'
-		# confirm all the promotions
-		for promotion_id in promotions:
-			self.confirm_promotion(promotion_id, receipt)
-		
-		notifications = levr.Notification.all().fetch(None)
-		for n in notifications:
-			self.response.out.write('\n'+promotion_id+'\n')
-			self.response.out.write(levr.log_model_props(n))
-		
+#		user = levr.Customer.all().filter('email','ethan@levr.com').get()
+#		deal = levr.Deal.all().ancestor(user).get()
+#		assert user, 'No user'
+#		assert deal, 'No deal'
+#		self.response.out.write('Deal key: {}'.format(str(deal.key())))
+#		super(TestPromotionsHandler,self).__initialize__(deal,user)
+#		
+#		self.tags = ['one','tags2','tag3','butt']
+#		promotions = [key for key in promotions.PROMOTIONS]
+#		# run all the promotions
+#		for promotion_id in promotions:
+#			self.run_promotion(promotion_id,tags=self.tags,auto_put=False)
+#		self.put()
+#		self.response.out.write(levr.log_model_props(self.deal))
+#		
+#		receipt = 'hi'
+#		# confirm all the promotions
+#		for promotion_id in promotions:
+#			self.confirm_promotion(promotion_id, receipt)
+#		
+#		notifications = levr.Notification.all().fetch(None)
+#		for n in notifications:
+#			self.response.out.write('\n'+promotion_id+'\n')
+#			self.response.out.write(levr.log_model_props(n))
 		
 #		# remove all the promotions
 #		for promotion_id in promotions:
 #			self.remove_promotion(promotion_id,auto_put=False)
 #		self.response.out.write(levr.log_model_props(self.deal))
 #		self.put()
-#		
+		#=======================================================================
+		#=======================================================================
+		#=======================================================================
+		#=======================================================================
+		# # # # 
+		#=======================================================================
+		#=======================================================================
+		#=======================================================================
+		#=======================================================================
+		user_key = db.Key.from_path('Customer','ethan')
+		user = levr.Customer.get(user_key)
+		deal = levr.Deal.all().ancestor(user_key).get()
+		
+		assert user, 'No user'
+		assert deal, 'No deal'
+		promo = api_utils.PromoteDeal(deal,user)
+		assert log(deal) == log(promo.deal), 'Deal not assigned properly'
+		assert log(user) == log(promo.user), 'User not assigned properly'
+		promotion_types = [key for key in promotions.PROMOTIONS]
+		
+		tags = ['one','tags2','tag3','butt']
+		
+		for promotion_id in promotion_types:
+			promo.run_promotion(promotion_id,tags = tags,auto_put=False)
+		
+		promo.put()
+		say('\n\n<<<====================== DEAL >>>\n\n')
+		say(levr.log_model_props(promo.deal))
+		say('\n\n<<<====================== NOTIFICATIONS >>>\n\n')
+		
+		notifications = levr.Notification.all().fetch(None)
+		for n in notifications:
+			say(log(n))
 		
 		
+		#=======================================================================
+		# receipts
+		#=======================================================================
+		receipt = 'This is a receipt'
+		for promotion_id in promotion_types:
+			promo.confirm_promotion(promotion_id, receipt,auto_put=False)
+		promo.put()
+		say('\n\n<<<====================== DEAL >>>\n\n')
+		say(levr.log_model_props(promo.deal))
+		say('\n\n<<<====================== NOTIFICATIONS >>>\n\n')
+		
+		
+		notifications = levr.Notification.all().fetch(None)
+		for n in notifications:
+			say(log(n))
+		
+		
+		say('\n\n<<<====================== DEAL >>>\n\n')
+		#=======================================================================
+		# Remove promotions
+		#=======================================================================
+		for promotion_id in promotion_types:
+			promo.remove_promotion(promotion_id,auto_put=False)
+		promo.put()
+		assert promo.deal, '??'
+		say(log(promo.deal))
+#		say(levr.log_model_props(promo.deal))
+		say('\n\n<<<====================== NOTIFICATIONS >>>\n\n')
+		notifications = levr.Notification.all().fetch(None)
+		for n in notifications:
+			say(log(n))
 # Quality Assurance for generating the upload urls
 NEW_DEAL_UPLOAD_URL = '/api/merchant/upload/add'
 EDIT_DEAL_UPLOAD_URL = '/api/merchant/upload/edit'

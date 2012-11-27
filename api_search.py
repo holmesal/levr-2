@@ -11,6 +11,8 @@ import random
 import webapp2
 from tasks import INCREMENT_DEAL_VIEW_URL
 from common_word_list import popular_blacklist
+from google.appengine.ext import testbed
+import unittest
 
 
 

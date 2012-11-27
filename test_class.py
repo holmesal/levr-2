@@ -131,7 +131,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		ethan = levr.Customer.all(keys_only=True).filter('email','ethan@levr.com').get()
 		levr_token = 'tlvXNw9F5Qgnqm_uKxYUx9xeyJHSRDnfBbVmUwvDWzQ'
 		if not ethan:
-			ethan = levr.Customer(levr_token = levr_token)
+			ethan = levr.Customer(levr_token = levr_token,key_name = 'ethan')
 			ethan.email	= 'ethan@levr.com'
 			ethan.pw 	= enc.encrypt_password('ethan')
 			ethan.alias	= 'ethan owns the deals'
@@ -148,7 +148,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		'AAACEdEose0cBANvf0FVOdH0NpoqLDZCnt8ZAlVfiYqe90CH1S7rOAEZC7ZChI340ElsX0bYXXOZC1Ks1kWU4JmsGMpUWzp7fm6CfIHKdXwN4ZAvVCFfGMa'
 		pat = levr.Customer.all(keys_only=True).filter('email','patrick@levr.com').get()
 		if not pat:
-			pat = levr.Customer(levr_token = levr_token)
+			pat = levr.Customer(levr_token = levr_token, key_name = 'pat')
 			pat.email	= 'patrick@levr.com'
 			pat.pw 	= enc.encrypt_password('patrick')
 			pat.alias	= 'patrick'
@@ -164,7 +164,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		
 		alonso = levr.Customer.all(keys_only=True).filter('email','alonso@levr.com').get()
 		if not alonso:
-			alonso = levr.Customer(levr_token = levr_token)
+			alonso = levr.Customer(levr_token = levr_token,key_name = 'alonso')
 			alonso.email	= 'alonso@levr.com'
 			alonso.pw 	= enc.encrypt_password('alonso')
 			alonso.alias	= 'alonso'
@@ -181,7 +181,7 @@ class DatabaseUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		
 		ninja = levr.Customer.all(keys_only=True).filter('email','santa@levr.com').get()
 		if not ninja:
-			ninja = levr.Customer(levr_token = levr_token)
+			ninja = levr.Customer(levr_token = levr_token, key_name = 'ninja')
 			ninja.email	= 'santa@levr.com'
 			ninja.pw 	= enc.encrypt_password('santa')
 			ninja.alias	= 'Followed'

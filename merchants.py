@@ -493,7 +493,7 @@ class MobileDealHandler(webapp2.RequestHandler):
 			
 class MobileDealCreateHandler(blobstore_handlers.BlobstoreUploadHandler):
 	def post(self):
-		# TODO: combine this
+		# todo: combine this
 		meta = merchant_utils.login_check_mobile(self)
 		uid = meta['uid']
 		user = levr.Customer.get(uid)
