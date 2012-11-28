@@ -286,13 +286,14 @@ def geo_converter(geo_str):
 
 
 def tagger(text): 
-	return create_tokens(text)
+	return create_tokens(text,stemmed=True,filtered=True)
 def create_tokens(text,stemmed=True,filtered=True):
 	'''
 	Used to create a list of indexable strings from a single multiword string
 	Tokenizes the input string, and then stems each of the tokens
 	Also converts each token to lowercase
-	@param text: the text to be converted
+	
+	@param text: the text to be converted, e.g. 'token' OR 'multiple tokens'
 	@type text: str
 	@param filtered: Determines whether or not the tokens should be filtered
 	@type filtered: bool
@@ -309,9 +310,10 @@ def _tokenize(text):
 	'''
 	Tokenizes an input string
 	Replaces certain delimeters with spaces, and removes punctuation
-	@param text: A string composed of at least one word
+	@param text: A string of at least one word
 	@type text: str
 	@return: A list of tokenized words
+	@rtype: list
 	'''
 	# remove unicode characters
 	if type(text) == unicode:
@@ -345,13 +347,14 @@ def _stem(tokens):
 	@return: A list of stem words
 	@rtype: list
 	'''
+	assert type(tokens) == list, 'tokens must be a list; type == ' + type(tokens)
 	stemmer = PorterStemmer()
 	return [stemmer.stem(token) for token in tokens]
 def _filter_stop_words(tokens):
 	'''
 	Filters a list of strings
-	@param word_list: A tokenized, but not stemmed word list
-	@type word_list: list
+	@param tokens: A tokenized, but not stemmed word list
+	@type tokens: list
 	@return: a list of words without stop words
 	@rtype: list
 	'''
@@ -877,6 +880,7 @@ class KeywordListProperty(db.StringListProperty):
 		
 
 
+
 ###################################################
 ###					CLASSES						###
 ###################################################
@@ -925,7 +929,6 @@ class KWLink(ndb.Model):
 		'''
 		# if we want to be able to query 
 		return ndb.Key(KWNode,self.key.string_id())
-
 UNDEAD_NINJA_EMAIL = 'undeadninja@levr.com'
 CUSTOMER_MODEL_VERSION = 1
 class Customer(db.Model):

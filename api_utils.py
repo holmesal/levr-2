@@ -16,6 +16,7 @@ import urllib
 import webapp2
 from google.appengine.ext import testbed
 import unittest
+from google.appengine.ext import ndb
 #from fnmatch import filter
 INCREMENT_DEAL_VIEW_URL = '/tasks/incrementDealView'
 
