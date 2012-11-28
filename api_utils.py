@@ -505,10 +505,87 @@ def package_deal_external(externalDeal,externalBusiness,fake_owner):
 	
 	return packaged_deal
 
-def package_user(user,private=False,followers=False,**kwargs):
+def package_user_multi(users,private=False,include_followers=False,include_deals=False,**kwargs):
+	'''
+	
+	@param user: The customer entities that are being packaged
+	@type user: list
+	@param private: Should the private version of the information be sent
+	@type private: bool
+	@param include_followers: Should a list of follower entities be sent
+	@type include_followers: bool
+	@param include_deals: Should a list of the deals that the user has uploaded be sent
+	@type include_deals: bool
+	
+	@return: a list of dictionaries that represent users
+	@rtype: list
+	
+	@todo: if followers or deals are included, prefetch them
+	'''
+	# this is just a stub until the relations can be prefetched
+	packaged_users = [package_user(u,private,include_followers,include_deals) for u in users]
+	
+	return packaged_users
+def package_user(user,private=False,include_followers=None,include_deals=None,**kwargs):
 
 	# logging.debug(levr.log_model_props(user))
-	
+	# this is the old version of packaging
+	if kwargs.get('new',False)==False:
+		# this is where the api versioning comes into play maybe?
+		return _package_user_v1(user, private, include_followers,**kwargs)
+	# this is the new version of packaging
+	else:
+		# fetch the users followers if they are to be included
+		if include_followers == True:
+			# the users followers
+			followers = db.get(user.followers)
+			followers = filter(None,followers)
+			packaged_followers = package_user_multi(
+												followers,
+												private=False,
+												include_followers=False,
+												include_deals=False
+												)
+		else:
+			packaged_followers = None
+		# fetch the users uploads if they are to be included
+		if include_deals == True:
+			# set the namespace of the deals that should be fetched
+			if user.tester == True:
+				# in development namespace
+				deal_status = levr.DEAL_STATUS_TEST
+			else:
+				# in active namespace
+				deal_status = levr.DEAL_STATUS_ACTIVE
+			deals = levr.Deal.all().ancestor(user).filter('deal_status',deal_status).fetch(None)
+			deals = filter(None,deals)
+			packaged_deals = package_deal_multi(deals, private)
+		else:
+			packaged_deals = None
+		# package the users
+		return _package_user_v2(user, private, packaged_followers, packaged_deals)
+def _package_user_v2(user,private=False,packaged_followers=None,packaged_deals=None):
+	packaged_user = {
+					'uid' : enc.encrypt_key(user.key()),
+					'alias' : user.display_name,
+					'dateCreated' : user.date_created.__str__()[:19],
+					'displayName' : user.display_name,
+					'photoURL' : user.photo,
+					'karma' : user.karma,
+					'twitterScreenName' : user.twitter_screen_name,
+					}
+	if packaged_deals:
+		assert type(packaged_deals[0]) == dict, type(packaged_deals[0])
+		packaged_user.update({'deals': packaged_deals})
+	if packaged_followers:
+		assert type(packaged_followers) == dict
+		packaged_user.update({'followers':packaged_followers})
+	if private:
+		pass
+	return packaged_user
+
+
+def _package_user_v1(user,private,followers,**kwargs):
 	packaged_user = {
 		'uid'			: enc.encrypt_key(str(user.key())),
 		'alias'			: user.display_name,
@@ -517,7 +594,7 @@ def package_user(user,private=False,followers=False,**kwargs):
 		'lastName'		: user.last_name,
 		'photoURL'		: user.photo,
 		'level'			: user.level,
-		'karma'			: user.karma,
+		'karma'			: user.karma, # upvotes
 		'twitterScreenName'	: user.twitter_screen_name,
 		'email'			: user.email
 		}
@@ -538,7 +615,6 @@ def package_user(user,private=False,followers=False,**kwargs):
 # 							'moneyAvailable'	: 1,
 # 							'moneyEarned'		: 1,
 # 							})
-	
 	return packaged_user
 def package_notification_multi(notifications):
 	'''

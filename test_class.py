@@ -21,12 +21,16 @@ class SandboxHandler(api_utils.BaseHandler):
 		self.response.out.write(stuff)
 	def get(self):
 		self.response.headers['Content-Type'] = 'text/plain'
-		user_key = db.Key.from_path('Customer','pat')
-		limit = 20
-		offset = 3
-		notes = api_utils.fetch_notifications(user_key, limit, offset)
-		self.say('\n\n\n\n\n\n')
-		self.say(''.join([levr.log_model_props(note, ['date']) for note in notes]))
+		users = levr.Customer.all().fetch(None)
+#		users = [db.get(db.Key.from_path('Customer','ethan'))]
+#		for u in users:
+#			self.say(u)
+		packaged_users = api_utils.package_user_multi(users,
+													private=True, 
+													include_followers=True, 
+													include_deals=True,
+													new=True)
+		self.response.out.write('\n\t\t<=========>\n'.join([levr.log_dict(u) for u in packaged_users]))
 class TestNotificationHandler(api_utils.BaseClass):
 	def get(self):
 		# aliases cus im laaaaazy
