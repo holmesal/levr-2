@@ -15,7 +15,39 @@ from google.appengine.ext import testbed
 import unittest
 
 
-
+class SearchQueryHandler_v2(api_utils.BaseHandler):
+	@api_utils.validate('query', None,
+					ghashes=False,
+					ll=False,
+					user=False,
+					levrToken=False,
+					limit=False,
+					offset=False
+					)
+	def get(self,*args,**kwargs):
+		'''
+		Searches for deals in the ghashes provided
+		OR takes a geo_point and searches in that area
+		'''
+		ghash_list = kwargs.get('ghashes',[])
+		geo_point = kwargs.get('geo_point',None)
+		query = kwargs.get('query','all')
+		development = kwargs.get('development',False)
+		limit = kwargs.get('limit',50)
+		offset = kwargs.get('offset',0)
+		user = kwargs.get('actor',None)
+		
+		try:
+			search = api_utils.Search(development,user)
+			
+			deals = search.fetch_deals(ghash_list, include_foursquare=False)
+			query_ranks = search.rank_deals_by_query(deals, query)
+			
+		except:
+			self.send_fail()
+		
+		
+		
 class SearchQueryHandler(api_utils.BaseHandler):
 	@api_utils.validate('query',None,
 					geoPoint=False,
@@ -26,19 +58,6 @@ class SearchQueryHandler(api_utils.BaseHandler):
 					longitudeHalfDelta=False)
 	def get(self,*args,**kwargs): #@UnusedVariable
 		'''
-		inputs: lat,lon,limit, query
-		response:{
-			[string,string]
-			}
-		/api/search/all?
-		lat=42.357632
-		&lon=-71.089432
-		&limit=50
-		&offset=0
-		&uid=tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fO3GJdErv19TaoeLGNiu51St9sfoYChA=
-		&levrToken=7ALUawsTs1R3_z_pK0YTx4cCkpfSFzuDCOM1XQCXWDM
-		&latitudeHalfDelta=0.023277
-		&longitudeHalfDelta=0.027466
 		'''
 		try:
 			tstart = datetime.now()

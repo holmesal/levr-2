@@ -829,6 +829,7 @@ def validate(url_param,authentication_source,*a,**to_validate): #@UnusedVariable
 						'latitudeHalfDelta' : float,
 						'longitudeHalfDelta': float,
 						'foursquareID'		: str,
+						'ghashes'			: list,
 						
 						
 						#login and connect stuff
@@ -884,6 +885,7 @@ def validate(url_param,authentication_source,*a,**to_validate): #@UnusedVariable
 						'latitudeHalfDelta'	: None,
 						'longitudeHalfDelta': None,
 						'foursquareID'		: '',
+						'ghashes'			: [],
 						
 						#login and connect stuff
 						'levrToken'			: '',
