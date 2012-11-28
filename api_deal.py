@@ -12,9 +12,16 @@ from google.appengine.api import taskqueue
 
 
 class UpvoteHandler(api_utils.BaseHandler):
-	@api_utils.validate('deal','param',user=True,levrToken=True)
+	@api_utils.validate('deal','param',
+					user=True,
+					levrToken=True,
+					query=False
+					)
 	@api_utils.private
-	def get(self,dealID,*args,**kwargs):
+	def get(self,*args,**kwargs):
+		'''
+		@todo: 
+		'''
 		try:
 			logging.debug('UPVOTE\n\n\n')
 			logging.debug(kwargs)
@@ -23,6 +30,10 @@ class UpvoteHandler(api_utils.BaseHandler):
 			user 	= kwargs.get('actor')
 			deal 	= kwargs.get('deal')
 			dealID 	= deal.key()
+			query	= kwargs.get('query')
+			
+			if query:
+				api_utils.KWLinker.register_like(deal, query)
 			
 			
 			#===================================================================
@@ -98,7 +109,7 @@ class UpvoteHandler(api_utils.BaseHandler):
 				#add to upvote list
 				user.upvotes.append(dealID)
 				
-#				#increase the deal upvotes
+				#increase the deal upvotes
 				deal.upvotes += 1
 				
 				
@@ -131,7 +142,7 @@ class UpvoteHandler(api_utils.BaseHandler):
 class DownvoteHandler(api_utils.BaseHandler):
 	@api_utils.validate('deal','param',user=True,levrToken=True)
 	@api_utils.private
-	def get(self,dealID,*args,**kwargs): #@UnusedVariable
+	def get(self,*args,**kwargs): #@UnusedVariable
 		try:
 			logging.debug('DOWNVOTE\n\n\n')
 			logging.debug(kwargs)
@@ -319,16 +330,6 @@ class DealInfoHandler(api_utils.BaseHandler):
 		'''
 		Get information about a deal.
 		
-		Input: None
-		Output:{
-			meta:{
-				success
-				errorMsg
-				}
-			response:{
-				<DEAL OBJECT>
-				}
-			}
 		'''
 		try:
 			logging.debug('DEAL INFO\n\n\n')
@@ -347,7 +348,31 @@ class DealInfoHandler(api_utils.BaseHandler):
 			self.send_fail()
 
 class DealClickHandler(api_utils.BaseHandler):
-	pass
+	@api_utils.validate('deal','param',
+					user=True,
+					levrToken=True,
+					query=True
+					)
+	def post(self,*args,**kwargs):
+		'''
+		@todo: Test 
+		'''
+#		user = kwargs.get('actor')
+#		query = kwargs.get('query')
+#		deal = kwargs.get('deal')
+#		development = kwargs.get('development')
+		
+		try:
+			### SPOOF ###
+			query = 'Food'
+			user = db.get(db.Key.from_path('Customer','pat'))
+			deal = levr.Deal.all().get()
+			### /SPOOF ###
+			api_utils.KWLinker.register_like(deal, query)
+			
+		except:
+			self.send_fail()
+			
 app = webapp2.WSGIApplication([ #('/api/deal/(.*)/redeem.*', RedeemHandler),
 								#('/api/deal/(.*)/favorite.*', AddFavoriteHandler),
 								('/api/deal/(.*)/upvote', UpvoteHandler),
@@ -355,5 +380,6 @@ app = webapp2.WSGIApplication([ #('/api/deal/(.*)/redeem.*', RedeemHandler),
 								('/api/deal/(.*)/deleteFavorite.*', DeleteFavoriteHandler),
 								('/api/deal/(.*)/report.*', ReportHandler),
 								('/api/deal/(.*)/img.*', DealImgHandler),
+								('/api/deal/(.*)/click',DealClickHandler),
 								('/api/deal/(.*)', DealInfoHandler)
 								],debug=True)
