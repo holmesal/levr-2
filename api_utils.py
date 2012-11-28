@@ -563,6 +563,12 @@ def package_notification(notification):
 	else:
 		return _package_notification(notification)
 def _package_notification(notification):
+	'''
+	Package function for the v1 notification
+	@param notification: notification entity
+	@type notification: levr.Notification
+	'''
+	
 	packaged_notification = {
 		'notificationID'	: enc.encrypt_key(str(notification.key())),
 #		'date'				: str(notification.date)[:19],
@@ -596,10 +602,21 @@ def package_business(business):
 			'owner':	package_user(business.owner)
 		})
 	return packaged_business
+
+def fetch_notifications(user_key,limit=20,offset=0):
+	'''
+	fetches a users notification
+	defaults to the 20 most recent notifications, 0 offset
+	@param user: The key of the user who is requesting notifications
+	@type user: db.Key
+	@param limit: the max number of notifications that should be returned
+	@type limit: int
+	@param offset: the index in a sorted list of the starting notification to be returned
+	@type offset: int
+	'''
+	notes = levr.Notification.all().filter('to_be_notified',user_key).order('-date').fetch(limit, offset)
 	
-
-
-
+	return notes
 def create_share_url(deal_entity):
 	#creates a share url for a deal
 	share_url = host_url+deal_entity.share_id
@@ -779,7 +796,7 @@ def validate(url_param,authentication_source,*a,**to_validate): #@UnusedVariable
 						'development'	: False,
 						
 						#searching, user info, deal info stuff
-						'limit'				: 50,
+						'limit'				: 20,
 						'offset'			: 0,
 						'geoPoint'			: levr.geo_converter('42.349798,-71.120000'), #want to phase this out
 						'll'				: levr.geo_converter('42.349798,-71.120000'),
@@ -1127,7 +1144,7 @@ def validate(url_param,authentication_source,*a,**to_validate): #@UnusedVariable
 					logging.debug(val)
 					kwargs.update({key:val})
 				
-				logging.debug(kwargs)
+				logging.info(kwargs)
 			
 			except AttributeError,e:
 #				levr.log_error()

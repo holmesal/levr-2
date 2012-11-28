@@ -285,14 +285,17 @@ class UserImgHandler(webapp2.RequestHandler):
 
 
 class UserNotificationsHandler(api_utils.BaseClass):
-	@api_utils.validate('user','url',limit=False,offset=False,since=False,levrToken=True)
+	@api_utils.validate('user','url',
+					limit=False,
+					offset=False,
+					since=False,
+					levrToken=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
 		# TEST: Does this handler work as it should?
 		'''
-		#RESTRICTED
-		inputs: limit,offset,since
-		
+		@change: no longer accepting since
+		@deprecated: since parameter is no longer accepted
 		@todo: instead of sending back notifications since some date, 
 			send 20 most recent w/ pagination
 		'''
@@ -301,14 +304,18 @@ class UserNotificationsHandler(api_utils.BaseClass):
 			
 			user		= kwargs.get('user')
 			private		= kwargs.get('private')
-			sinceDate	= kwargs.get('since')
-
-			logging.debug('sinceDate: '+str(sinceDate))
-			logging.debug('last notified: '+str(user.last_notified))
+			since_date	= kwargs.get('since')
+			limit		= kwargs.get('limit',20)
+			offset		= kwargs.get('offset',0)
 			
 			#get notifications 
-			notifications = user.get_notifications(sinceDate)
-			logging.debug('notifications: '+str(notifications.__len__()))
+			if since_date:
+				logging.info('since date')
+				notifications = user.get_notifications(since_date)
+				logging.debug('notifications: '+str(notifications.__len__()))
+			else:
+				logging.info('not since date')
+				notifications = api_utils.fetch_notifications(user.key(), limit, offset)
 			
 			#package up the notifications
 			packaged_notifications = api_utils.package_notification_multi(notifications)
@@ -325,7 +332,8 @@ class UserNotificationsHandler(api_utils.BaseClass):
 			user.put()
 		except:
 			self.send_fail()
-		
+	def test(self):
+		self.response.out.write('hiiii')
 		
 class UserInfoHandler(webapp2.RequestHandler):
 	@api_utils.validate('user','url',levrToken=False)
@@ -333,14 +341,7 @@ class UserInfoHandler(webapp2.RequestHandler):
 		'''
 		#PARTIALLY RESTRICTED
 		inputs:
-		Output:{
-			meta:{
-				success
-				errorMsg
-				}
-			response:{
-				<USER OBJECT>
-				}
+		
 		'''
 		try:
 			logging.debug('USER INFO\n\n')

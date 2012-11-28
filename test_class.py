@@ -17,6 +17,17 @@ class SandboxHandler(api_utils.BaseHandler):
 	'''
 	Dont delete this. This is my dev playground.
 	'''
+	def say(self,stuff):
+		self.response.out.write(stuff)
+	def get(self):
+		self.response.headers['Content-Type'] = 'text/plain'
+		user_key = db.Key.from_path('Customer','pat')
+		limit = 20
+		offset = 3
+		notes = api_utils.fetch_notifications(user_key, limit, offset)
+		self.say('\n\n\n\n\n\n')
+		self.say(''.join([levr.log_model_props(note, ['date']) for note in notes]))
+class TestNotificationHandler(api_utils.BaseClass):
 	def get(self):
 		# aliases cus im laaaaazy
 		say = self.response.out.write
@@ -25,9 +36,8 @@ class SandboxHandler(api_utils.BaseHandler):
 		
 		self.response.headers['Content-Type'] = 'text/plain'
 		
-		users = levr.Customer.all().fetch(None)
-		to_be_notified = users[0]
-		actor = users[1]
+		to_be_notified = db.get(db.Key.from_path('Customer','pat'))
+		actor = db.get(db.Key.from_path('Customer','alonso'))
 		deal = levr.Deal.all().get()
 		
 		notifications = [
@@ -35,21 +45,15 @@ class SandboxHandler(api_utils.BaseHandler):
 				note().good_taste_alert(to_be_notified, deal),
 				note().previous_like(to_be_notified, deal),
 				note().new_follower(to_be_notified, actor),
-				note().follower_upload(to_be_notified, actor, deal),
+				note().following_upload(to_be_notified, actor, deal),
 				note().upvote(to_be_notified, actor, deal)
 				]
 		
-		say(log(note().radius_alert(to_be_notified, deal)))
-		say(log(note().good_taste_alert(to_be_notified, deal)))
-		say(log(note().previous_like(to_be_notified, deal)))
-		say(log(note().new_follower(to_be_notified, actor)))
-		say(log(note().follower_upload(to_be_notified, actor, deal)))
-		say(log(note().upvote(to_be_notified, actor, deal)))
 		
 		
 		self.response.out.write('<=====================>')
 		packaged_notes = api_utils.package_notification_multi(notifications)
-		say(packaged_notes)
+		say('\n\t\t<=====================>\n'.join([levr.log_dict(p) for p in packaged_notes]))
 		
 		
 		
@@ -370,40 +374,40 @@ class TestHandler(webapp2.RequestHandler):
 		
 		
 
-class TestNotificationHandler(webapp2.RequestHandler):
-	def get(self):
-		
-		logging.info('WTFFFF')
-		logging.debug('HOLY SHIT NEW NOTIFICATIONS OMG OMG OMG')
-		
-		#go get the ninja
-		user = levr.Customer.gql('WHERE email=:1','q').get()
-		#go get the user
-		actor = levr.Customer.gql('WHERE email=:1','alonso@levr.com').get()
-		#go get the deal
-		try:
-			deal = levr.Deal.all().ancestor(user.key()).get()
-		except:
-			deal = None
-		if not deal:
-			deal = levr.Deal.all().get()
-		
-		assert deal, 'Cannot find any deals. Try uploading one. If that doesnt work, abandon all hope.' 
-		
-		#new follower notification
-		levr.create_notification('newFollower',user.key(),actor)
-		
-		#followed upload notification
-		levr.create_notification('followedUpload',user.key(),actor,deal.key())
-		
-		#favorite notification
-		levr.create_notification('favorite',user.key(),actor,deal.key())
-		
-		#levelup notification
-		user.new_notifications += 1
-		levr.create_notification('levelup',user.key(),actor,new_level='inf')
-		user.put()
-		self.response.out.write('HOLY SHIT NEW NOTIFICATIONS OMG OMG OMG')
+#class TestNotificationHandler(webapp2.RequestHandler):
+#	def get(self):
+#		
+#		logging.info('WTFFFF')
+#		logging.debug('HOLY SHIT NEW NOTIFICATIONS OMG OMG OMG')
+#		
+#		#go get the ninja
+#		user = levr.Customer.gql('WHERE email=:1','q').get()
+#		#go get the user
+#		actor = levr.Customer.gql('WHERE email=:1','alonso@levr.com').get()
+#		#go get the deal
+#		try:
+#			deal = levr.Deal.all().ancestor(user.key()).get()
+#		except:
+#			deal = None
+#		if not deal:
+#			deal = levr.Deal.all().get()
+#		
+#		assert deal, 'Cannot find any deals. Try uploading one. If that doesnt work, abandon all hope.' 
+#		
+#		#new follower notification
+#		levr.create_notification('newFollower',user.key(),actor)
+#		
+#		#followed upload notification
+#		levr.create_notification('followedUpload',user.key(),actor,deal.key())
+#		
+#		#favorite notification
+#		levr.create_notification('favorite',user.key(),actor,deal.key())
+#		
+#		#levelup notification
+#		user.new_notifications += 1
+#		levr.create_notification('levelup',user.key(),actor,new_level='inf')
+#		user.put()
+#		self.response.out.write('HOLY SHIT NEW NOTIFICATIONS OMG OMG OMG')
 
 
 FEMALE_EMAIL = 'undeadninja@levr.com'

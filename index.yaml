@@ -168,6 +168,12 @@ indexes:
 - kind: Notification
   properties:
   - name: to_be_notified
+  - name: date
+    direction: desc
+
+- kind: Notification
+  properties:
+  - name: to_be_notified
   - name: date_in_seconds
 
 - kind: Notification

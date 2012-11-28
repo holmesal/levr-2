@@ -1040,7 +1040,6 @@ class Customer(db.Model):
 		#return all notifications
 		return notifications
 	
-	
 
 
 BUSINESS_MODEL_VERSION = 2
