@@ -11,7 +11,7 @@ from google.appengine.api import taskqueue
 
 
 
-class UpvoteHandler(webapp2.RequestHandler):
+class UpvoteHandler(api_utils.BaseHandler):
 	@api_utils.validate('deal','param',user=True,levrToken=True)
 	@api_utils.private
 	def get(self,dealID,*args,**kwargs):
@@ -124,13 +124,11 @@ class UpvoteHandler(webapp2.RequestHandler):
 					}
 			api_utils.send_response(self,response,user)
 		except AssertionError,e:
-			levr.log_error(e)
-			api_utils.send_error(self,e.message)
+			self.send_error(e)
 		except:
-			levr.log_error()
-			api_utils.send_error(self,'Server Error')
+			self.send_fail()
 
-class DownvoteHandler(webapp2.RequestHandler):
+class DownvoteHandler(api_utils.BaseHandler):
 	@api_utils.validate('deal','param',user=True,levrToken=True)
 	@api_utils.private
 	def get(self,dealID,*args,**kwargs): #@UnusedVariable
@@ -198,15 +196,13 @@ class DownvoteHandler(webapp2.RequestHandler):
 					}
 			api_utils.send_response(self,response,user)
 		except AssertionError,e:
-			levr.log_error()
-			api_utils.send_error(self,e.message)
+			self.send_error(e)
 		except:
-			levr.log_error()
-			api_utils.send_error(self,'Server Error')
+			self.send_fail()
 
 
 
-class DeleteFavoriteHandler(webapp2.RequestHandler):
+class DeleteFavoriteHandler(api_utils.BaseHandler):
 	@api_utils.validate('deal','param',user=True,levrToken=True)
 	@api_utils.private
 	def get(self,*args,**kwargs): #@UnusedVariable
@@ -237,12 +233,11 @@ class DeleteFavoriteHandler(webapp2.RequestHandler):
 			
 			api_utils.send_response(self,response,user)
 		except:
-			levr.log_error()
-			api_utils.send_error(self,'Server Error')
+			self.send_fail()
 		
 		
 
-class ReportHandler(webapp2.RequestHandler):
+class ReportHandler(api_utils.BaseHandler):
 	@api_utils.validate('deal','param',user=True,levrToken=True)
 	@api_utils.private
 	def get(self,*args,**kwargs): #@UnusedVariable
@@ -285,12 +280,11 @@ class ReportHandler(webapp2.RequestHandler):
 			
 			api_utils.send_response(self,{},user)
 		except:
-			levr.log_error()
-			api_utils.send_error(self,'Server Error')
+			self.send_fail()
 
 
 
-class DealImgHandler(webapp2.RequestHandler):
+class DealImgHandler(api_utils.BaseHandler):
 	@api_utils.validate('deal',None,size=True)
 	def get(self,*args,**kwargs):
 		'''Returns ONLY an image for a deal specified by dealID
@@ -316,7 +310,7 @@ class DealImgHandler(webapp2.RequestHandler):
 			self.response.out.write(None)
 			
 
-class DealInfoHandler(webapp2.RequestHandler):
+class DealInfoHandler(api_utils.BaseHandler):
 	@api_utils.validate('deal',None,
 					user = False,
 					levrToken = False
@@ -348,12 +342,12 @@ class DealInfoHandler(webapp2.RequestHandler):
 			}
 			api_utils.send_response(self,response)
 		except AssertionError,e:
-			levr.log_error(e)
-			api_utils.send_error(self,e.message)
+			self.send_error(e.message)
 		except:
-			levr.log_error()
-			api_utils.send_error(self,'Server Error')
+			self.send_fail()
 
+class DealClickHandler(api_utils.BaseHandler):
+	pass
 app = webapp2.WSGIApplication([ #('/api/deal/(.*)/redeem.*', RedeemHandler),
 								#('/api/deal/(.*)/favorite.*', AddFavoriteHandler),
 								('/api/deal/(.*)/upvote', UpvoteHandler),

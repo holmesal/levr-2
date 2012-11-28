@@ -163,7 +163,7 @@ class UserGetFollowersHandler(webapp2.RequestHandler):
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
 		
-class UserAddFollowHandler(api_utils.BaseClass):
+class UserAddFollowHandler(api_utils.BaseHandler):
 	@api_utils.validate('user','param',user=True,levrToken=True)
 	@api_utils.private
 	def get(self,*args,**kwargs):
@@ -284,7 +284,7 @@ class UserImgHandler(webapp2.RequestHandler):
 			self.response.out.write(None)
 
 
-class UserNotificationsHandler(api_utils.BaseClass):
+class UserNotificationsHandler(api_utils.BaseHandler):
 	@api_utils.validate('user','url',
 					limit=False,
 					offset=False,

@@ -31,7 +31,7 @@ class SandboxHandler(api_utils.BaseHandler):
 													include_deals=True,
 													new=True)
 		self.response.out.write('\n\t\t<=========>\n'.join([levr.log_dict(u) for u in packaged_users]))
-class TestNotificationHandler(api_utils.BaseClass):
+class TestNotificationHandler(api_utils.BaseHandler):
 	def get(self):
 		# aliases cus im laaaaazy
 		say = self.response.out.write
@@ -568,7 +568,16 @@ class CompleteNinjaReferencesHandler(webapp2.RequestHandler):
 #			self.response.out.write(levr.log_model_props(img))
 		pass
 		
+<<<<<<< HEAD
 class RemoveFoursquareHandler(api_utils.BaseHandler):
+=======
+<<<<<<< HEAD
+class RemoveFoursquareHandler(api_utils.BaseClass):
+=======
+
+class ViewFoursquareDealsHandler(api_utils.BaseHandler):
+>>>>>>> Changed the name of api_utils.BaseClass to api_utils.BaseHandler because
+>>>>>>> Changed the name of api_utils.BaseClass to api_utils.BaseHandler because
 	def get(self):
 		
 		t1 = datetime.now()

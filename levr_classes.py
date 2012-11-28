@@ -365,10 +365,12 @@ def _filter_stop_words(tokens):
 def log_error(message=''):
 	#called by: log_error(*self.request.body)
 	exc_type,exc_value,exc_trace = sys.exc_info()
-	logging.error(exc_type)
-	logging.error(exc_value)
+#	logging.error(exc_type)
+#	logging.error(exc_value)
 	logging.error(traceback.format_exc(exc_trace))
-	logging.error(message)
+	if message:
+		logging.error(message)
+	
 
 def log_model_props(model,props=None):
 	#returns a long multiline string of the model in key: prop
