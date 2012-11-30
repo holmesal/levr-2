@@ -81,7 +81,9 @@ class ReviewHandler(api_utils.BaseClass):
 			#===================================================================
 			# Add the new keywords to the deals set of tags
 			#===================================================================
-			deal.extra_tags = list(set(deal.extra_tags.extend(tags)))
+			new_tags = deal.extra_tags
+			new_tags.extend(tags)
+			deal.extra_tags = list(set(new_tags))
 			
 			#===================================================================
 			# Finalize deal
@@ -98,6 +100,7 @@ class ReviewHandler(api_utils.BaseClass):
 				self.response.out.write('created: {}\nexpire:  {}'.format(deal.date_created,date_end))
 			
 		except AssertionError,e:
+			levr.log_error()
 			self.response.out.write(e)
 		except Exception,e:
 			levr.log_error()
