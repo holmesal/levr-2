@@ -6,29 +6,103 @@ import os
 import webapp2
 from datetime import datetime,timedelta
 from google.appengine.ext import db
+import levr_encrypt as enc
 #from google.appengine.api import images
 #from gaesessions import get_current_session
 #from datetime import datetime
 
 jinja_environment = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
+categories = [
+'Food',
+'Breakfast',
+'Lunch',
+'Dinner',
+'Takeout',
 
-class ApproveHandler(api_utils.BaseClass):
-	#insert into database and redirect to Pending for next pending deal
+'Drink',
+'Beer',
+'Wine',
+
+'Restaurant',
+'Bar',
+'Diner',
+'Cafe',
+'Pub',
+
+]
+
+class ReviewHandler(api_utils.BaseClass):
 	@api_utils.validate('deal', None)
-	def get(self,*args,**kwargs): #@UnusedVariable
+	def get(self,*args,**kwargs):
 		try:
-			self.response.headers['Content-Type'] = 'text/plain'
-			
 			deal = kwargs.get('deal')
+			deal = levr.Deal.all().filter('been_reviewed',False).get()
+			assert deal.been_reviewed == False, 'Es tut mir wirklich leid. Der Deal bereits ueberprueft.'
+			
+			template_values = {
+							'categories' : categories,
+							'deal' : deal,
+							'small_img'		: api_utils.create_img_url(deal,'small'),
+							'post_url' : '/admin/deal/{}/review'.format(enc.encrypt_key(deal.key()))
+							}
+			
+			template = jinja_environment.get_template('templates/admin/categorize.html')
+			self.response.out.write(template.render(template_values))
+		except AssertionError,e:
+			self.response.out.write(str(e))
+		except:
+			self.send_fail()
+	@api_utils.validate('deal', None)
+	def post(self,*args,**kwargs):
+		deal = kwargs.get('deal')
+		days = self.request.get('days_to_expire')
+		tags = self.request.get('categories',allow_multiple=True)
+		try:
+			days = int(days)
+			#===================================================================
+			# Register categorization
+			#===================================================================
+			api_utils.KWLinker.register_categorization(deal, tags, stemmed=False)
+			#===================================================================
+			# Set the deal expiration
+			#===================================================================
+			
+			self.response.headers['Content-Type'] = 'text/plain'
+			assert deal.been_reviewed == False, 'Es tut mir wirklich leid. Der Deal bereits ueberprueft.'
+			
+			if days < 0:
+				date_end = None
+				days = None
+			else:
+				date_end = deal.date_created + timedelta(days=days)
+			
+			deal.date_end = date_end
+			
+			#===================================================================
+			# Add the new keywords to the deals set of tags
+			#===================================================================
+			deal.extra_tags = list(set(deal.extra_tags.extend(tags)))
+			
+			#===================================================================
+			# Finalize deal
+			#===================================================================
 			deal.been_reviewed = True
 			deal.put()
 			
-			self.response.out.write('Yeah. What it do?')
-			self.response.out.write(levr.log_model_props(deal, ['deal_text','deal_status','been_reviewed']))
+			self.response.out.write(levr.log_model_props(deal))
+			
+			if days == None:
+				self.response.out.write('Success! This deal will not expire')
+			else:
+				self.response.out.write('Success! The deal is set to expire in {} days\n'.format(days))
+				self.response.out.write('created: {}\nexpire:  {}'.format(deal.date_created,date_end))
+			
+		except AssertionError,e:
+			self.response.out.write(e)
 		except Exception,e:
-			levr.log_error(e)
-			self.response.out.write('Error approving: '+str(e))
-
+			levr.log_error()
+			self.response.out.write('Error rejecting: '+str(e))
+		pass
 		
 class RejectHandler(api_utils.BaseClass):
 	@api_utils.validate('deal', None)
@@ -186,7 +260,7 @@ class DashboardHandler(webapp2.RequestHandler):
 		
 
 app = webapp2.WSGIApplication([
-								('/admin/deal/(.*)/approve', ApproveHandler),
+								('/admin/deal/(.*)/review', ReviewHandler),
 								('/admin/deal/(.*)/reject',RejectHandler),
 								('/admin/deal/(.*)/reanimate',ReanimateHandler),
 								('/admin/deal/(.*)/expiration',SetExpirationHandler),
