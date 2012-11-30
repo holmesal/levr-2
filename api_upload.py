@@ -141,15 +141,7 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 			# Send notification to founders
 			#===================================================================
 			try:
-		#		approve_link = 'http://www.levr.com/admin/deal/{}/approve'.format(enc.encrypt_key(deal_entity.key()))
-				base_url = 'http://www.levr.com/admin/deal/{}/expiration?daysToExpire='.format(enc.encrypt_key(deal_entity.key()))
-				today_only_link = base_url+'0'
-				one_week_link = base_url+'7'
-				one_month_link = base_url+'30'
-				three_month_link = base_url+'90'
-				six_month_link = base_url+'180'
-				one_year_link = base_url+'360'
-				never_link = base_url+'-1'
+				review_link = 'http://www.levr.com/admin/deal/{}/review'.format(enc.encrypt_key(deal_entity.key()))
 				reject_link = 'http://www.levr.com/admin/deal/{}/reject'.format(enc.encrypt_key(deal_entity.key()))
 				message = mail.AdminEmailMessage()
 				message.sender = 'patrick@levr.com'
@@ -162,15 +154,8 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 				message.html += '<h5>deal_status: {}</h5>'.format(deal_entity.deal_status)
 				message.html += '<br/><p>Set deal expiration.</p>'
 				message.html += '<br><a href="{}">Reject</a><br><br>'.format(reject_link)
-				message.html += '<br><a href="{}">Today Only</a><br><br>'.format(today_only_link)
-				message.html += '<br><a href="{}">One Week</a><br><br>'.format(one_week_link)
-				message.html += '<br><a href="{}">One Month</a><br><br>'.format(one_month_link)
-				message.html += '<br><a href="{}">Three Month</a><br><br>'.format(three_month_link)
-				message.html += '<br><a href="{}">Six Month</a><br><br>'.format(six_month_link)
-				message.html += '<br><a href="{}">One Year</a><br><br>'.format(one_year_link)
-				message.html += '<br><a href="{}">Forever!!!</a><br><br>'.format(never_link)
+				message.html += '<br><a href="{}">Review</a><br><br>'.format(review_link)
 				message.html += levr.log_dict(deal, None, '<br>')
-		#		message.body += '\n\n\n\n\n\nApprove: {}'.format(approve_link)
 				
 				message.check_initialized()
 				message.send()

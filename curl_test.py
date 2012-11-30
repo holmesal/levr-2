@@ -21,7 +21,6 @@ alias = 'Carl'
 test_uid = 'tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fO3GJdErv19TaoeLGNiu51SsytLkdChA='
 test_levr_token = 'twfSOF0Xtwhx-GrrKxYVw4cLn5yEQjLTWbFvDATEDTo'
 
-
 # Deal test
 # deal uploaded by Bill!
 deal_id = 'tAvwdQhJqgEn8hL7fD1phb9z_c-GNGaQXr0fCHGJdErv19TaoeLGNiu51Sthw-oaChDyDrrMSui1aMhONe5YBg=='
