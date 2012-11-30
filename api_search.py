@@ -85,60 +85,13 @@ class SearchQueryHandler(api_utils.BaseClass):
 			search.add_deal_views(deals)
 			
 			# init package time
+			t1 = datetime.now()
 			if query != 'all' and accepted_deals.__len__() != 0:
-				t1 = datetime.now()
 				packaged_deals = search.sort_and_package(accepted_deals)
-				package_time = datetime.now()-t1
 			else:
 				# act like a search all, use all deals
-				
-				# decompose deals by origin
-				levr_deals, foursquare_deals = search.filter_deals_by_origin(deals)
-				
-				if levr_deals.__len__() >5:
-					t1 = datetime.now()
-					packaged_deals = search.sort_and_package(levr_deals)
-					package_time = datetime.now()-t1
-				# qualify search results. do we need more?
-				else:
-					t1 = datetime.now()
-					packaged_deals = search.sort_and_package(deals)
-					package_time = datetime.now()-t1
-					
-					# add foursquare deals
-					if foursquare_deals.__len__() < 5:
-						# search for more foursquare deals
-						try:
-							# grab search information
-							token = search.foursquare_token
-							deal_status = search.deal_status
-							foursquare_ids = search.get_foursquare_ids(deals)
-							
-							# make remote call to foursquare
-							ft1 = datetime.now()
-							new_foursquare_deals = api_utils.search_foursquare(geo_point,token,deal_status,foursquare_ids)
-							
-							times.update({'foursquare_search_time':str(datetime.now()-ft1)})
-							
-							# add new foursquare deals
-							packaged_deals.extend(new_foursquare_deals)
-						except:
-							levr.log_error('Error in foursquare call or parsing.')
-			times.update({'package_time':package_time})
-#			else:
-#				params = {
-#							'lat'			:	geo_point.lat,
-#							'lon'			:	geo_point.lon,
-#							'token'			:	token,
-#							'foursquare_ids':	foursquare_ids,
-#							'deal_status'	:	deal_status
-#						}
-#				
-#				logging.debug('Sending this to the task: ' + json.dumps(params))
-#						
-#				#start the task
-#				taskqueue.add(url='/tasks/searchFoursquareTask',payload=json.dumps(params))
-			
+				packaged_deals = search.sort_and_package(deals)
+			times.update({'package_time':datetime.now() - t1})
 			
 			
 			times.update({'total_time':datetime.now()-tstart})
@@ -154,7 +107,6 @@ class SearchQueryHandler(api_utils.BaseClass):
 					'searchPoint'		: str(geo_point),
 					'numResults'		: num_results,
 					'boundingBox'		: bounding_box,
-#					'ending_hashes'		: list(searched_hash_set),
 					'num_total_results'		: packaged_deals.__len__(),
 					'deals'				: packaged_deals,
 					'times'				: times

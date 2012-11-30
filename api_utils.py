@@ -198,7 +198,7 @@ class Search(object):
 					'top_right'		: top_right
 					}
 		return bounding_box
-	def fetch_deals(self,ghash_list,include_foursquare=True):
+	def fetch_deals(self,ghash_list):
 		'''
 		Fetches deal entities from the db by their ghashes
 		Filters out deals that are nonetype
@@ -213,8 +213,8 @@ class Search(object):
 		# fetch deal entities
 		deals = db.get(set(deal_keys))
 		
-		if include_foursquare == False:
-			deals = filter(lambda x: x.origin != 'foursquare',deals)
+#		if include_foursquare == False:
+#			deals = filter(lambda x: x.origin != 'foursquare',deals)
 		
 		return deals
 	def get_foursquare_ids(self,deals):
