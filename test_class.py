@@ -1,6 +1,6 @@
 #from __future__ import with_statement
 #from google.appengine.api import files
-from datetime import datetime #@UnusedImport
+from datetime import datetime,time
 from google.appengine.api import images, urlfetch, files, mail, \
 	taskqueue #@UnusedImport
 from google.appengine.ext import blobstore, db
@@ -24,37 +24,28 @@ import webapp2
 #import geo.geohash as geohash
 #import uuid
 #import geo.geohash as geohash
-
 class SandboxHandler(api_utils.BaseClass):
 	'''
 	Dont delete this. This is my dev playground.
 	'''
-	def get(self):
+	def backup_deals(self):
+		'''
+		Grabs all levr deals and backs them up as DealBackup entities
+		'''
 		self.response.headers['Content-Type'] = 'text/plain'
-		deals = levr.Deal.all(
-							).fetch(None)
-		deal_entity = deals[0]
-		deal = api_utils.package_deal(deal_entity)
-		
-		review_link = 'http://www.levr.com/admin/deal/{}/review'.format(enc.encrypt_key(deal_entity.key()))
-		reject_link = 'http://www.levr.com/admin/deal/{}/reject'.format(enc.encrypt_key(deal_entity.key()))
-		message = mail.AdminEmailMessage()
-		message.sender = 'patrick@levr.com'
-		message.subject = 'New Upload'
-		
-		message.html = '<img src="{}"><br>'.format(deal.get('smallImg'))
-		message.html += '<h2>{}</h2>'.format(deal_entity.deal_text)
-		message.html += '<h3>{}</h3>'.format(deal_entity.description)
-		message.html += '<h5>deal_status: {}</h5>'.format(deal_entity.deal_status)
-		message.html += '<br/><p>Set deal expiration.</p>'
-		message.html += '<br><a href="{}">Reject</a><br><br>'.format(reject_link)
-		message.html += '<br><a href="{}">Review</a><br><br>'.format(review_link)
-		message.html += levr.log_dict(deal, None, '<br>')
-		
-		message.check_initialized()
-		message.send()
-		
-		self.response.out.write(review_link)
+		deal_backups = levr.DealBackup.all().fetch(None)
+		db.delete(deal_backups)
+		deals = levr.Deal.all().filter('origin','levr').fetch(None)
+		news = []
+		for deal in deals:
+			new_deal = levr.DealBackup(parent=deal.parent_key())
+			for key in deal.properties():
+				if key[0] != '_':
+					setattr(new_deal, key, getattr(deal, key))
+			news.append(new_deal)
+#		self.response.out.write(levr.log_model_props(new_deal))
+#		self.response.out.write(levr.log_model_props(deal))
+		db.put(news)
 		self.response.out.write('\n\n Done!')
 class CombineNinjaOwnership(api_utils.BaseClass):
 	def get(self):
@@ -369,40 +360,6 @@ class TestHandler(webapp2.RequestHandler):
 		
 		
 
-class TestNotificationHandler(webapp2.RequestHandler):
-	def get(self):
-		
-		logging.info('WTFFFF')
-		logging.debug('HOLY SHIT NEW NOTIFICATIONS OMG OMG OMG')
-		
-		#go get the ninja
-		user = levr.Customer.gql('WHERE email=:1','q').get()
-		#go get the user
-		actor = levr.Customer.gql('WHERE email=:1','alonso@levr.com').get()
-		#go get the deal
-		deal = levr.Deal.all().ancestor(user.key()).get()
-		
-		if not deal:
-			deal = levr.Deal.all().get()
-		
-		assert deal, 'Cannot find any deals. Try uploading one. If that doesnt work, abandon all hope.' 
-		
-		#new follower notification
-		levr.create_notification('newFollower',user.key(),actor)
-		
-		#followed upload notification
-		levr.create_notification('followedUpload',user.key(),actor,deal.key())
-		
-		#favorite notification
-		levr.create_notification('favorite',user.key(),actor,deal.key())
-		
-		#levelup notification
-		user.new_notifications += 1
-		levr.create_notification('levelup',user.key(),actor,new_level='inf')
-		user.put()
-		self.response.out.write('HOLY SHIT NEW NOTIFICATIONS OMG OMG OMG')
-
-
 FEMALE_EMAIL = 'undeadninja@levr.com'
 MALE_EMAIL = 'undeadninja@levr.com'
 class Create100DeadNinjasHandler(webapp2.RequestHandler):
@@ -557,41 +514,15 @@ class CompleteNinjaReferencesHandler(webapp2.RequestHandler):
 #			self.response.out.write(levr.log_model_props(img))
 		pass
 		
-
-class ViewFoursquareDealsHandler(api_utils.BaseClass):
+class RemoveFoursquareHandler(api_utils.BaseClass):
 	def get(self):
-		self.response.headers['Content-Type'] = 'text/plain'
-		deals = levr.Deal.all().filter('origin','foursquare').filter('deal_status','active').fetch(None)
-		logging.info(deals)
-		points = []
-		for deal in deals:
-			points.append((deal.geo_hash,deal))
-			
-#			self.response.out.write(levr.log_model_props(deal, ['deal_text','foursquare_id']))
-		points.sort()
-		for p in points:
-			self.response.out.write(str(p[0])+ ' '+str(p[1].deal_status) +' '+str(p[1].date_end)+' '+repr(p[1].deal_text) +'\n')
 		
-#		# expire all the foursquare deals to get rid of the redundant ones
-		for deal in deals:
-			deal.expire()
-		#=======================================================================
-		# now = datetime.now()
-		#	
-		# #fetch all deals that are set to expire
-		# deals = levr.Deal.all().filter('deal_status','active').filter('date_end <=',now).filter('date_end !=',None).fetch(None)
-		# logging.info('<-- With date_end -->\n\n')
-		# for deal in deals:
-		#	self.response.out.write(str(deal.date_end)+' --> '+ deal.deal_text+'\n')
-		#	
-		# 
-		# 
-		# self.response.out.write('\n\n<-- Without date end -->\n\n')
-		# deals2 = levr.Deal.all().filter('deal_status','test').fetch(None)
-		# for deal in deals2:
-		#	self.response.out.write(str(deal.date_end)+' --> '+ deal.deal_text+ '\n')
-		#=======================================================================
-		pass
+		t1 = datetime.now()
+		deals = levr.Deal.all().filter('origin','foursquare').run(limit=3000,batch_size=500)
+		self.response.out.write('\n')
+		db.delete(deals)
+		self.response.out.write(datetime.now() - t1)
+		
 class UploadPhotoHandler(webapp2.RequestHandler):
 	'''
 	Form to upload photos for undead ninjas
@@ -691,109 +622,18 @@ class TransferDealOwnershipToUndeadHandler(webapp2.RedirectHandler):
 		pass
 		
 
-class LandingTestHandler(webapp2.RequestHandler):
-	def get(self):
-		
-		uastring = str(self.request.headers['user-agent'])
-	
-		logging.info(uastring)
-			
-# 		if 'iphone' in uastring.lower():
-# 			version = 'iPhone'
-# 			logging.debug('Serving mobile version - iPhone')
-# 		elif 'android' in uastring.lower():
-# 			version = 'android'
-# 			logging.debug('Serving mobile version - android')
-# 		else:
-# 			version = 'desktop'
-# 			logging.debug('Serving desktop version')
-# 			
-# 		#version = 'android'
-# 		
-# 		#todo: grab deals from a few specific geohashes that cover boston
-# 		geo_hash_set = ['drt3','drmr','drt8','drt0','drt1','drt9','drmx','drmp','drt2']
-# 		
-# 		logging.debug('\n\n\n \t\t\t START QUERYING \n\n\n')
-# 		query_start = datetime.now()
-# 		deal_keys = api_utils.get_deal_keys(geo_hash_set)
-# 		query_end = datetime.now()
-# 		
-# 		total_query_time = query_end-query_start
-# 		
-# 		logging.debug('\n\n\n \t\t\t END QUERYING \n\n\n ')
-# 		
-# 		logging.info('Query time: '+str(total_query_time))
-# 		
-# 		deals = db.get(deal_keys)
-# 		
-# 		sorted_deals = []
-# 		#remove the non-active and foursquare deals
-# 		for deal in deals:
-# 			logging.debug(deal.deal_status)
-# 			if deal.deal_status in ['active']:
-# 				logging.debug(deal.origin)
-# 				if deal.origin in ['levr','merchant']:
-# 					sorted_deals.append(deal)
-# 				else:
-# 					logging.info('deal not added because origin was: '+deal.origin)
-# 			else:
-# 				logging.info('deal not added because status was:' +deal.deal_status)
-# 		
-# 		packaged_deals = api_utils.package_deal_multi(sorted_deals)
-# 		
-# # 		logging.info(packaged_deals)
-# 		
-# 		#go through and swap lat and lon
-# 		for deal in packaged_deals:
-# 			logging.info(deals)
-# 			#separate lat and lon
-# 			deal['lat'] = deal['business']['geoPoint'].split(',')[0]
-# 			deal['lon'] = deal['business']['geoPoint'].split(',')[1]
-# 			#fix image url
-# 			deal['imgURL'] = deal['largeImg'].split('?')[0]+'?size=webMapView'
-# 		
-# 
-# 		template_values = {
-# 			'deals'		: packaged_deals,
-# 			'version'	: version
-# 		}
-		
-		#launch the jinja environment
-		jinja_environment = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
-		template = jinja_environment.get_template('templates/landing-merchants-v5.html')
-		self.response.out.write(template.render())
-		
-class DevelopersHandler(webapp2.RequestHandler):
-	def get(self):
-		
-		template_values = {
-			'latitude'		:	12345,
-			'longitude'		:	67890,
-			'origin'		:	'foursquare',
-			'type'			:	'business',
-			'radius'		:	5,
-			'query'			:	'hello',
-			'business_id'	:	'businessID'
-		}
-		
-		jinja_environment = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
-		template = jinja_environment.get_template('templates/developers.html')
-		self.response.out.write(template.render(template_values))
 
 
 app = webapp2.WSGIApplication([('/new', MainPage),
 								('/new/upload', DatabaseUploadHandler),
 								('/new/test', TestHandler),
-								('/new/notification', TestNotificationHandler),
 								('/new/deadNinjas', Create100DeadNinjasHandler),
 								('/new/deadNinjas/complete',CompleteNinjaReferencesHandler),
 								('/new/sandbox', SandboxHandler),
-								('/new/viewfs', ViewFoursquareDealsHandler),
 								('/new/upload_ninjas',UploadPhotoHandler),
 								('/new/store_upload', StorePhotoHandler),
 								('/new/transfer_deals', TransferDealOwnershipToUndeadHandler),
-								('/new/landing', LandingTestHandler),
-								('/new/developers', DevelopersHandler)
+								('/new/removefs',RemoveFoursquareHandler),
 								],debug=True)
 
 

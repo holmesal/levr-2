@@ -193,8 +193,7 @@ class SearchPopularHandler(api_utils.BaseClass):
 			ghash_list = search.create_ghash_list(geo_point, precision)
 			
 			# fetch all of the deals!
-			include_foursquare = True
-			deals = search.fetch_deals(ghash_list, include_foursquare)
+			deals = search.fetch_deals(ghash_list)
 			
 			
 			# if there arent enough levr deals, include the foursquare ones

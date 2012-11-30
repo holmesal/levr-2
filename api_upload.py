@@ -121,7 +121,6 @@ class UploadPostHandler(blobstore_handlers.BlobstoreUploadHandler):
 			#give the user some karma
 			user.karma += 5
 			#level check!
-			user = api_utils.level_check(user)
 			user.put()
 			
 			#go notify everyone that should be informed

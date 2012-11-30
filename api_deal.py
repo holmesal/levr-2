@@ -89,13 +89,9 @@ class UpvoteHandler(webapp2.RequestHandler):
 						#ninja is upvoting his own deal
 						#increase that users karma! reward for uploading a deal!
 						user.karma += 1
-						#level check!
-						levr.level_check(user)
 					else:
 						#increase the ninjas karma
 						ninja.karma += 1
-						#level check!
-						levr.level_check(ninja)
 						#replace ninja. we dont want him anymore
 						ninja.put()
 				

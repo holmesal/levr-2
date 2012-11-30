@@ -486,7 +486,6 @@ class AddNewDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 			# Aw hell.. why not give them some karma too.
 			#===================================================================
 			user.karma += 5
-			# no need to level_check on them though...
 			user.put()
 			
 			#===================================================================

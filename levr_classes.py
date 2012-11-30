@@ -75,8 +75,6 @@ def create_new_user(**kwargs):
 	for key in kwargs:
 		setattr(user, key, kwargs.get(key))
 	user.put()
-	user = level_check(user)
-	user.put()
 	return user
 def create_new_business(business_name,vicinity,geo_point,types,phone_number=None,**kwargs):
 	'''
@@ -116,22 +114,7 @@ def create_new_business(business_name,vicinity,geo_point,types,phone_number=None
 	business.put()
 	
 	return business
-	
-def level_check(user):
-	'''updates the level of a user. this function should be run after someone upvotes a user or anything else happens.'''
-	'''square root for the win'''
-	old_level = user.level
 
-	new_level = int(floor(sqrt(user.karma)))
-	logging.info('{} != {}: {}'.format(old_level,new_level,str(old_level != new_level)))
-	if new_level != old_level:
-		logging.info('I am here!')
-		#level up notification
-		create_notification('levelup',user.key(),user.key(),new_level=new_level)
-	user.new_notifications += 1
-	user.level = new_level
-		
-	return user
 def create_notification(notification_type,to_be_notified,actor,deal=None,**kwargs):
 	'''
 	notification_type	= choices: 
@@ -1042,7 +1025,6 @@ class Customer(db.Model):
 	model_version	= db.IntegerProperty(default=CUSTOMER_MODEL_VERSION)
 	#user meta
 	tester			= db.BooleanProperty(default=False)
-	level			= db.IntegerProperty(default=0)
 	karma			= db.IntegerProperty(default=1)
 	new_notifications = db.IntegerProperty(default=0)
 	
@@ -1090,14 +1072,15 @@ class Customer(db.Model):
 	verified_owner	= db.BooleanProperty(default=False)
 	
 	#deprecated stuff
-	group			= db.StringProperty(choices=set(["paid","unpaid"]),default="unpaid")
-	payment_email	= db.EmailProperty()
-	money_earned	= db.FloatProperty(default = 0.0) #new earning for all deals
-	money_available = db.FloatProperty(default = 0.0) #aka payment pending
-	money_paid		= db.FloatProperty(default = 0.0) #amount we have transfered
-	redemptions		= db.StringListProperty(default = [])	#id's of all of their redeemed deals
-	new_redeem_count= db.IntegerProperty(default = 0) #number of unseen redemptions
-	vicinity		= db.StringProperty() #the area of the user, probably a college campus
+	level			= db.IntegerProperty(indexed = False)
+	group			= db.StringProperty(indexed = False)
+	payment_email	= db.EmailProperty(idexed = False)
+	money_earned	= db.FloatProperty(indexed = False) #new earning for all deals
+	money_available = db.FloatProperty(indexed = False) #aka payment pending
+	money_paid		= db.FloatProperty(indexed = False) #amount we have transfered
+	redemptions		= db.StringListProperty(indexed = False)	#id's of all of their redeemed deals
+	new_redeem_count= db.IntegerProperty(indexed = False) #number of unseen redemptions
+	vicinity		= db.StringProperty(indexed = False) #the area of the user, probably a college campus
 	
 	@property
 	def following(self):
@@ -1171,10 +1154,10 @@ class Business(db.Model):
 	model_version	= db.IntegerProperty(default=BUSINESS_MODEL_VERSION)
 	
 	# deprecated
-	targeted		= db.BooleanProperty()
-	locu_id			= db.StringProperty()
-	widget_id		= db.StringProperty(default=create_unique_id())
-	creation_date	= db.DateTimeProperty(auto_now_add=True)
+	targeted		= db.BooleanProperty(indexed = False)
+	locu_id			= db.StringProperty(indexed = False)
+	widget_id		= db.StringProperty(indexed = False)
+	creation_date	= db.DateTimeProperty(indexed = False)
 	
 	def create_tags(self,stemmed=True,filtered=True):
 		'''
@@ -1237,7 +1220,7 @@ DEAL_STATUS_REJECTED = 'rejected'
 DEAL_STATUS_EXPIRED = 'expired'
 DEAL_STATUS_PENDING = 'pending'
 DEAL_MODEL_VERSION = 4
-class Deal(polymodel.PolyModel):
+class Deal(db.Model):
 	'''
 	Changelog:
 	v3: added promotions property - for identifying what promotions the deal is affected by
@@ -1285,19 +1268,19 @@ class Deal(polymodel.PolyModel):
 	
 	
 	#deprecated stuff
-	date_uploaded	= db.DateTimeProperty()
-	date_start 		= db.DateTimeProperty() #start date
-	has_been_shared	= db.BooleanProperty()
-	count_seen 		= db.IntegerProperty()  #number seen
-	deal_views		= db.IntegerProperty()
-	barcode			= blobstore.BlobReferenceProperty()
-	secondary_name 	= db.StringProperty() #== with purchase of
-	deal_type 		= db.StringProperty() #two items or one item
-	count_redeemed 	= db.IntegerProperty() 	#total redemptions
-	vicinity		= db.StringProperty()
-	business_name 	= db.StringProperty() #name of business
-	is_exclusive	= db.BooleanProperty()
-	locu_id			= db.StringProperty()
+	date_uploaded	= db.DateTimeProperty(indexed = False)
+	date_start 		= db.DateTimeProperty(indexed = False) #start date
+	has_been_shared	= db.BooleanProperty(indexed = False)
+	count_seen 		= db.IntegerProperty(indexed = False)  #number seen
+	deal_views		= db.IntegerProperty(indexed = False)
+	barcode			= blobstore.BlobReferenceProperty(indexed = False)
+	secondary_name 	= db.StringProperty(indexed = False) #== with purchase of
+	deal_type 		= db.StringProperty(indexed = False) #two items or one item
+	count_redeemed 	= db.IntegerProperty(indexed = False) 	#total redemptions
+	vicinity		= db.StringProperty(indexed = False)
+	business_name 	= db.StringProperty(indexed = False) #name of business
+	is_exclusive	= db.BooleanProperty(indexed = False)
+	locu_id			= db.StringProperty(indexed = False)
 	
 	def create_tags(self,business=None,stemmed=True,filtered=True,include_business=True):
 		'''
@@ -1424,7 +1407,10 @@ class Deal(polymodel.PolyModel):
 		counter.count += 1
 		counter.put()
 		return
-	
+class DealBackup(Deal):
+	'''
+	A backup for deals
+	'''
 NUM_DEAL_VIEW_COUNTERS = 20
 class DealViewCounter(db.Model):
 	'''

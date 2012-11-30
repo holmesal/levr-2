@@ -290,8 +290,7 @@ class Search(object):
 			# if no acceptable deals are found, return all of the deals
 			accepted_deals = deals
 			# count the number of applicable levr deals
-			levr_deals = filter(lambda x: x.origin != 'foursquare',accepted_deals)
-			num_results = levr_deals.__len__()
+			num_results = accepted_deals.__len__()
 		
 		return num_results,accepted_deals
 	def add_deal_views(self,deals):
@@ -1334,7 +1333,6 @@ def get_from_memcache(mem_keys,namespace):
 
 def get_deal_keys_from_db(hash_set,deal_status,namespace):
 	'''
-
 	
 	'''
 	logging.debug('\n\n\n\t\t\t GET FROM DB \n\n\n')
@@ -1466,25 +1464,6 @@ def create_bounding_box(lat, lon, distance): #@UnusedVariable
 	return degrees(dlat), degrees(dlon)
 ##########/GEO DISTANCES
 
-
-def level_check(user):
-	'''updates the level of a user. this function should be run after someone upvotes a user or anything else happens.'''
-	'''square root for the win'''
-	old_level = user.level
-	new_level = int(floor(sqrt(user.karma)))
-	
-	logging.debug('Karma: '+str(user.karma))
-	logging.debug('Level: '+str(user.level))
-	
-	if new_level != old_level:
-		#level up notification
-		levr.create_notification('levelup',user.key(),user.key(),new_level=new_level)
-		logging.debug('New level: '+str(user.level+1))
-		
-	user.level = new_level
-		
-	return user
-
 def merge_customer_info_from_B_into_A(user,donor,service):
 	'''
 	Merges the donor into the user. Donor can only pass info from one social service at a time.
@@ -1505,7 +1484,6 @@ def merge_customer_info_from_B_into_A(user,donor,service):
 	
 	if donor.tester or user.tester: user.tester = True
 	user.karma += donor.karma
-	levr.level_check(user)
 	
 	user.new_notifications += donor.new_notifications
 	#===================================================================
@@ -2806,8 +2784,6 @@ class SpoofUndeadNinjaActivity:
 					
 					
 		
-		#update the users level
-		levr.level_check(self.user)
 		
 		db.put(notifications)
 #		db.put(self.user)
