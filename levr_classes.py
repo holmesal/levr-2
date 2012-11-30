@@ -19,6 +19,7 @@ import string
 import sys
 import traceback
 import uuid
+from google.appengine.ext import ndb
 #from random import randint
 #from math import floor
 
@@ -976,7 +977,51 @@ class KeywordListProperty(db.StringListProperty):
 ###################################################
 ###					CLASSES						###
 ###################################################
-
+class KWNode(ndb.Model):
+	'''
+	A KeyWordNode class. 
+	Represents a keyword that is linked to other instances of the same class via KWLinks
+	'''
+	# no properties
+	pass
+	# key_name = stemmed Keyword
+	@property
+	def name(self):
+		return self.key.string_id()
+	def get_links(self):
+		'''
+		Fetches all keyword links for the provided Keyword name
+		@param keyword: the name of the parent Keyword
+		@type keyword: str
+		
+		@return: all of the child links
+		@rtype: list
+		'''
+		links = KWLink.query(ancestor=ndb.Key(KWNode,self.key.string_id())).fetch(None)
+		return links
+class KWLink(ndb.Model):
+	'''
+	Unidirectional linkage from parent node to child
+	This entity is always the child of a Keyword node
+	The key_name/id of this entity is always the key_name/id of
+		the receiving end of this link
+		(we can do this because the parent is part of the identifier for entities)
+	'''
+	# parent = SearchNode
+	# key_name = stemmed keyword
+	strength = ndb.IntegerProperty(default=0)
+	# can search for all links TO a certain node
+	# cannot just search for by key name, because parent is part of key
+	name = ndb.ComputedProperty(lambda self: self.key.string_id())
+	
+	@property
+	def child_key(self):
+		'''
+		@return: The key of the receiving end of this linkage
+		@rtype: ndb.Key
+		'''
+		# if we want to be able to query 
+		return ndb.Key(KWNode,self.key.string_id())
 
 UNDEAD_NINJA_EMAIL = 'undeadninja@levr.com'
 CUSTOMER_MODEL_VERSION = 1
