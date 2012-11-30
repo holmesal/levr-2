@@ -26,7 +26,7 @@ else:
 	#we are deployed on the server
 	host_url = 'http://www.levr.com/'
 
-class BaseClass(webapp2.RequestHandler):
+class BaseHandler(webapp2.RequestHandler):
 	'''
 	Base class for webapp request handlers
 	Mostly used for basic i/o
@@ -54,7 +54,7 @@ class BaseClass(webapp2.RequestHandler):
 	def send_response(self,response,user=None):
 		'''
 		This is just being used as a wrapper until all classes can be migrated
-		to using a BaseClass inheritance
+		to using a BaseHandler inheritance
 		'''
 		send_response(self,response, user)
 		
@@ -2064,7 +2064,7 @@ class KWLinker(object):
 		ndb.put_multi(node_links)
 
 
-class PromoteDeal(BaseClass):
+class PromoteDeal(BaseHandler):
 	'''
 	Class for promoting deals. Mostly for namespacing.
 	'''

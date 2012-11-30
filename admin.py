@@ -31,7 +31,7 @@ categories = [
 
 ]
 
-class ReviewHandler(api_utils.BaseClass):
+class ReviewHandler(api_utils.BaseHandler):
 	@api_utils.validate('deal', None)
 	def get(self,*args,**kwargs):
 		try:
@@ -107,7 +107,7 @@ class ReviewHandler(api_utils.BaseClass):
 			self.response.out.write('Error rejecting: '+str(e))
 		pass
 		
-class RejectHandler(api_utils.BaseClass):
+class RejectHandler(api_utils.BaseHandler):
 	@api_utils.validate('deal', None)
 	def get(self,*args,**kwargs): #@UnusedVariable
 		try:
@@ -130,7 +130,7 @@ class RejectHandler(api_utils.BaseClass):
 		except Exception,e:
 			levr.log_error(e)
 			self.response.out.write('Error rejecting: '+str(e))
-class SetExpirationHandler(api_utils.BaseClass):
+class SetExpirationHandler(api_utils.BaseHandler):
 	@api_utils.validate('deal',None,daysToExpire=True)
 	def get(self,*args,**kwargs): #@UnusedVariable
 		'''
@@ -166,7 +166,7 @@ class SetExpirationHandler(api_utils.BaseClass):
 			levr.log_error()
 			self.response.out.write('Error rejecting: '+str(e))
 
-class ReanimateHandler(api_utils.BaseClass):
+class ReanimateHandler(api_utils.BaseHandler):
 	@api_utils.validate('deal',None)
 	def get(self,*args,**kwargs):
 	

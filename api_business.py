@@ -11,7 +11,7 @@ import random
 import webapp2
 from tasks import INCREMENT_DEAL_VIEW_URL
 
-class FindABusinessHandler(api_utils.BaseClass):
+class FindABusinessHandler(api_utils.BaseHandler):
 	'''
 	A handler for searching for a specific venue
 	'''
@@ -92,7 +92,7 @@ class FindABusinessHandler(api_utils.BaseClass):
 		except Exception,e:
 			levr.log_error()
 			self.send_error()
-class ViewABusinessHandler(api_utils.BaseClass):
+class ViewABusinessHandler(api_utils.BaseHandler):
 	'''
 	A handler to view the deals at a specific venue
 	'''

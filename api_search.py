@@ -14,7 +14,7 @@ from common_word_list import popular_blacklist
 
 
 
-class SearchQueryHandler(api_utils.BaseClass):
+class SearchQueryHandler(api_utils.BaseHandler):
 	@api_utils.validate('query',None,
 					geoPoint=False,
 					ll=False,
@@ -168,7 +168,7 @@ class SearchHotHandler(webapp2.RequestHandler):
 		except:
 			levr.log_error()
 			api_utils.send_error(self,'Server Error')
-class SearchPopularHandler(api_utils.BaseClass):
+class SearchPopularHandler(api_utils.BaseHandler):
 	@api_utils.validate(None,None,
 					geoPoint=True,
 					)

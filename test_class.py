@@ -24,7 +24,7 @@ import webapp2
 #import geo.geohash as geohash
 #import uuid
 #import geo.geohash as geohash
-class SandboxHandler(api_utils.BaseClass):
+class SandboxHandler(api_utils.BaseHandler):
 	'''
 	Dont delete this. This is my dev playground.
 	'''
@@ -47,7 +47,7 @@ class SandboxHandler(api_utils.BaseClass):
 #		self.response.out.write(levr.log_model_props(deal))
 		db.put(news)
 		self.response.out.write('\n\n Done!')
-class CombineNinjaOwnership(api_utils.BaseClass):
+class CombineNinjaOwnership(api_utils.BaseHandler):
 	def get(self):
 		'''
 		Grabs all of the deals at a business, and sets all of the deals to the same ninja owner
@@ -514,7 +514,7 @@ class CompleteNinjaReferencesHandler(webapp2.RequestHandler):
 #			self.response.out.write(levr.log_model_props(img))
 		pass
 		
-class RemoveFoursquareHandler(api_utils.BaseClass):
+class RemoveFoursquareHandler(api_utils.BaseHandler):
 	def get(self):
 		
 		t1 = datetime.now()

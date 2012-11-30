@@ -172,7 +172,7 @@ class TwilioCallbackHandler(webapp2.RequestHandler):
 # SOME NEW AGE MERCHANT SHIT!!
 #===============================================================================
 
-class ConnectMerchantHandler(api_utils.BaseClass):
+class ConnectMerchantHandler(api_utils.BaseHandler):
 	'''
 	A handler for creating a merchant account
 	'''
@@ -313,7 +313,7 @@ class ConnectMerchantHandler(api_utils.BaseClass):
 			levr.log_error(e)
 			self.send_error()
 			
-class MerchantDealsHandler(api_utils.BaseClass):
+class MerchantDealsHandler(api_utils.BaseHandler):
 	'''
 	A handler for serving all of a merchants deals for their manage page
 	'''
@@ -347,7 +347,7 @@ class MerchantDealsHandler(api_utils.BaseClass):
 			self.send_error()
 		
 	
-class RequestUploadURLHandler(api_utils.BaseClass):
+class RequestUploadURLHandler(api_utils.BaseHandler):
 	'''
 	A handler to serve an upload url for uploading an image to the server
 	'''
@@ -625,7 +625,7 @@ class EditDealHandler(blobstore_handlers.BlobstoreUploadHandler):
 			api_utils.send_error(self,'Server Error')
 			
 		
-class ExpireDealHandler(api_utils.BaseClass):
+class ExpireDealHandler(api_utils.BaseHandler):
 	'''
 	A handler to expire a deal from a merchant
 	'''
@@ -670,7 +670,7 @@ class ExpireDealHandler(api_utils.BaseClass):
 			levr.log_error(e)
 			self.send_error()
 		
-class ReactivateDealHandler(api_utils.BaseClass):
+class ReactivateDealHandler(api_utils.BaseHandler):
 	'''
 	A handler to set a deal as active
 	'''
@@ -716,7 +716,7 @@ class ReactivateDealHandler(api_utils.BaseClass):
 			levr.log_error()
 			self.send_error()
 
-class FetchPromotionOptionsHandler(api_utils.BaseClass):
+class FetchPromotionOptionsHandler(api_utils.BaseHandler):
 	'''
 	A handler for fetching the available promotion options for merchants
 	'''
