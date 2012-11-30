@@ -1,19 +1,19 @@
 #from __future__ import with_statement
 #from google.appengine.api import files
 from datetime import datetime #@UnusedImport
-from google.appengine.api import images, urlfetch, files, taskqueue #@UnusedImport
+from google.appengine.api import images, urlfetch, files, mail, \
+	taskqueue #@UnusedImport
 from google.appengine.ext import blobstore, db
 from google.appengine.ext.webapp import blobstore_handlers
 import api_utils
+import api_utils_social as social
+import jinja2
 import json #@UnusedImport
 import levr_classes as levr
 import levr_encrypt as enc
 import logging
-import webapp2
-import jinja2
 import os
-from google.appengine.api import mail
-import api_utils_social as social
+import webapp2
 
 #import api_utils
 #import json
@@ -32,22 +32,29 @@ class SandboxHandler(api_utils.BaseClass):
 	def get(self):
 		self.response.headers['Content-Type'] = 'text/plain'
 		deals = levr.Deal.all(
-							).filter('deal_status','active'
 							).fetch(None)
-		deals = filter(lambda x: x.origin=='levr',deals)
-		dates = [deal.date_created for deal in deals]
-		toop = zip(dates,deals)
-		toop = sorted(toop,reverse=True)
-		dates,deals = zip(*toop)
-		self.response.out.write(str(deals.__len__())+'\n\n')
-		for deal in deals:
-			self.response.out.write(levr.log_model_props(deal, ['deal_text','date_created']))
+		deal_entity = deals[0]
+		deal = api_utils.package_deal(deal_entity)
 		
+		review_link = 'http://www.levr.com/admin/deal/{}/review'.format(enc.encrypt_key(deal_entity.key()))
+		reject_link = 'http://www.levr.com/admin/deal/{}/reject'.format(enc.encrypt_key(deal_entity.key()))
+		message = mail.AdminEmailMessage()
+		message.sender = 'patrick@levr.com'
+		message.subject = 'New Upload'
 		
-		business_ids = list(set([deal.businessID for deal in deals]))
-		self.response.out.write('\n\n'+str(business_ids.__len__()))
+		message.html = '<img src="{}"><br>'.format(deal.get('smallImg'))
+		message.html += '<h2>{}</h2>'.format(deal_entity.deal_text)
+		message.html += '<h3>{}</h3>'.format(deal_entity.description)
+		message.html += '<h5>deal_status: {}</h5>'.format(deal_entity.deal_status)
+		message.html += '<br/><p>Set deal expiration.</p>'
+		message.html += '<br><a href="{}">Reject</a><br><br>'.format(reject_link)
+		message.html += '<br><a href="{}">Review</a><br><br>'.format(review_link)
+		message.html += levr.log_dict(deal, None, '<br>')
 		
+		message.check_initialized()
+		message.send()
 		
+		self.response.out.write(review_link)
 		self.response.out.write('\n\n Done!')
 class CombineNinjaOwnership(api_utils.BaseClass):
 	def get(self):
