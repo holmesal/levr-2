@@ -203,7 +203,6 @@ class SearchPopularHandler(api_utils.BaseClass):
 					}
 				self.send_response(response)
 				return
-			# if there arent enough levr deals, include the foursquare ones
 			# filter out all the repeat deals i.e. the same fs deal at multiple locations
 			unique_deal_texts = []
 			unique_deals = []
@@ -239,10 +238,7 @@ class SearchPopularHandler(api_utils.BaseClass):
 				rank = 0
 				for deal in deals:
 					if tag in deal.raw_tags:
-						if deal.origin == 'foursquare':
-							rank += 1.
-						else:
-							rank += 2.
+						rank += 1.
 						
 						rank += deal.upvotes/10.
 						
@@ -278,33 +274,9 @@ class SearchPopularHandler(api_utils.BaseClass):
 			levr.log_error()
 			self.send_error()
 
-class SearchFoursquareHandler(webapp2.RequestHandler):
-	'''
-	Search only returns ALL of the existing foursquare deals every time
-	'''
-	def get(self):
-		try:
-			#should only return deals with a foursquare_id set
-			deals = levr.Deal.all().filter('foursquare_id >','').fetch(None)
-			logging.debug('number of foursquare deals: '+str(deals.__len__()))
-			
-#			for deal in deals:
-#				assert deal.foursquare_id, 'A deal was returned that does not have a foursquare id. change the query.'
-			return_deals = [api_utils.package_deal(deal) for deal in deals if deal.foursquare_id]
-			
-			
-			response = {
-					'foursquareDeals' : return_deals,
-					'numFoursquareDeals' : return_deals.__len__()
-					}
-			api_utils.send_response(self,response)
-		except:
-			levr.log_error()
-			api_utils.send_error(self,'Server Error')
 app = webapp2.WSGIApplication([(r'/api/search/new', SearchNewHandler),
 								('/api/search/hot', SearchHotHandler),
 								('/api/search/popular', SearchPopularHandler),
-								('/api/search/foursquare', SearchFoursquareHandler),
 								('/api/search/(.*)', SearchQueryHandler)
 								
 								],debug=True)

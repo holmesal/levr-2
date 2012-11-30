@@ -646,17 +646,6 @@ def dealCreate(params,origin,upload_flag=True,**kwargs):
 			#put business
 			business.put()
 			
-			#fire off a task to check the foursquare similarity
-			task_params = {
-				'geo_str'		:	str(business.geo_point),
-				'query'			:	business.business_name,
-				'key'			:	str(business.key())
-			}
-			
-			#if no foursquare business exists in the database, this should try to find a foursquare business and transfer information to it
-			#what if there is already a foursquare business in the database?
-			
-			taskqueue.add(url='/tasks/businessHarmonizationTask',payload=json.dumps(task_params))
 			
 			
 		else:
@@ -1072,7 +1061,7 @@ class Customer(db.Model):
 	verified_owner	= db.BooleanProperty(default=False)
 	
 	#deprecated stuff
-	level			= db.IntegerProperty(indexed = False)
+	level			= db.IntegerProperty(indexed = False,default=1)
 	group			= db.StringProperty(indexed = False)
 	payment_email	= db.EmailProperty(indexed = False)
 	money_earned	= db.FloatProperty(indexed = False) #new earning for all deals

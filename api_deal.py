@@ -264,26 +264,6 @@ class ReportHandler(webapp2.RequestHandler):
 							dealID = dealID
 							).put()
 			
-			#is it a foursquare deal that got reported?
-			if deal.origin == 'foursquare':
-				#get the business
-				business = levr.Business.get(deal.businessID)
-				#get the business' foursquare ID
-				foursquare_id = business.foursquare_id
-				#is the user a foursquare user?
-				if user.foursquare_token > '':
-					token = user.foursquare_token
-				else:
-					token = 'random'
-				#fire off a task to review the foursquare deals for this business
-				task_params = {
-					'foursquare_id'		:	foursquare_id,
-					'token'				:	token,
-					'deal_id'			:	str(deal.key()),
-					'uid'				:	str(user.key()),
-					'deal_status'		:	deal.deal_status
-				}
-				taskqueue.add(url='/tasks/foursquareDealUpdateTask',payload=json.dumps(task_params))
 			
 			#send notification via email
 			message = mail.EmailMessage(

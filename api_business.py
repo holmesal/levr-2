@@ -19,7 +19,6 @@ class FindABusinessHandler(api_utils.BaseClass):
 					user = False,
 					levrToken = False,
 					# fields to identify a business
-					foursquareID = False,
 					businessName = False,
 					vicinity = False,
 					geoPoint = True,
@@ -124,35 +123,6 @@ class ViewABusinessHandler(api_utils.BaseClass):
 			self.send_response(response)
 		except:
 			levr.log_error()
-			self.send_error()
-
-class FindABusinessFromFourquareHandler(api_utils.BaseClass):
-	@api_utils.validate(None, 'param',
-					user = False,
-					levrToken = False,
-					foursquareID = True
-					)
-	def get(self,*args,**kwargs):
-		user = kwargs.get('actor')
-		levrToken = kwargs.get('levrToken')
-		foursquare_id = kwargs.get('foursquareID')
-		development = kwargs.get('development')
-		try:
-			business = levr.Business.all().filter('foursquare_id',foursquare_id)
-			deals = api_utils.fetch_all_businesses_deals(business, development)
-			# package.
-			packaged_deals = api_utils.package_deal_multi(deals, False)
-			
-			packaged_business = api_utils.package_business(business)
-			
-			# respond
-			response = {
-					'deals' : packaged_deals,
-					'business' : packaged_business
-					}
-			self.send_response(response)
-		except	 Exception,e:
-			levr.log_error(e)
 			self.send_error()
 
 FIND_A_BUSINESS_URL = '/api/business/find'
