@@ -114,159 +114,6 @@ def create_new_business(business_name,vicinity,geo_point,types,phone_number=None
 	business.put()
 	
 	return business
-def create_notification(notification_type,to_be_notified,actor,deal=None,**kwargs):
-	'''
-	notification_type	= choices: 
-	'thanks',
-	'favorite', 
-	'followerUpload', 
-	'newFollower', 
-	'levelup'
-	'expired'
-	deprecated: redemption
-	
-						The action being performed
-	to_be_notified		= [db.Key,db.Key,db.Key,...]
-						The people or entities to be notified of this action
-	deal				= db.Key
-						The deal in question
-	actor				= db.Key
-						The person performing the action
-	'''
-	#===========================================================================
-	# If this fundamentally changes, remember to change the undead ninja activity
-	#===========================================================================
-	try:
-		#type cast to_be_notified as a list
-		if type(to_be_notified) != list:
-			#to_be_notified is not a list, make it one
-			#this allows to_be_notified to be passed as a single value
-			to_be_notified = [to_be_notified]
-		
-		
-		
-		if notification_type == 'newFollower':
-			#user is the person that is being followed
-			user = Customer.get(to_be_notified[0])
-			
-			#set the phrase
-			line2 = 'Has subscribed to your offers.'
-			
-			#increment the number of notifications
-			user.new_notifications += 1
-			
-			#replace user
-			db.put(user)
-		elif notification_type == "followedUpload":
-			logging.info('followedUpload')
-			#user is the person being notified
-			users = db.get(to_be_notified)
-			
-			#set the phrase
-			line2 = 'has uploaded a new offer.'
-			
-			#increment the number of notifications
-			for user in users:
-				user.new_notifications += 1
-			
-			#replace user
-			db.put(users)
-			
-		elif notification_type == 'favorite':
-			#get actor
-			user = db.get(to_be_notified[0])
-			#check deal is not already favorited
-			# if deal not in actor_entity.favorites:
-# 				actor_entity.favorites.append(deal)
-# 			else:
-# 				#do nothing
-# 				return True
-			
-			
-			#select a random phrase
-			line2 = random.choice(upvote_phrases)
-			
-			#update notification count
-			user.new_notifications += 1
-			
-			#replace users
-			db.put(user)
-			
-			
-# 		elif notification_type == 'upvote':
-# 			#get user,actor
-# 			[user,actor_entity,d] = db.get([to_be_notified[0],actor,deal])
-# 			#make sure not already in upvotes
-# 			if deal not in actor_entity.upvotes:
-# 				
-# 			#check actor has not redeemed yet
-# 			# if d.is_exclusive:
-# # 				#deal can only be redeemed once
-# # 				if deal not in actor_entity.upvotes:
-# # 					#actor.upvotes.append(deal)
-# # 				else:
-# # 					#do nothing
-# # 					return True
-# 			#update notification count
-# 			user.new_notifications += 1
-# 			
-# 			#replace users
-# 			db.put([user,actor_entity])
-			
-		elif notification_type == 'levelup':
-			#get user,actor
-			user = db.get(to_be_notified[0])
-			
-			#increment notification count
-			user.new_notifications += 1
-			
-			new_level = kwargs.get('new_level')
-			assert new_level,'Must pass new_level as kwarg to create new levelup notification'
-			#write line_2
-			line2 = 'Good work! You are now Level {}.'.format(new_level)
-			logging.info(line2)
-			#replace user
-			user.put()
-		elif notification_type == 'expired':
-			logging.debug('\n\n\n\n\n\n EXPIRED!!! \n\n\n\n')
-			user = db.get(to_be_notified[0])
-			
-			user.new_notifications += 1
-			
-			line2 = 'Your deal has expired :('
-			
-			user.put()
-			
-		else:
-			#users = the people to be notified
-			users = Customer.get(to_be_notified)
-			
-			for user in users:
-				if user:
-					user.new_notifications += 1
-			
-			#replace users in db
-			db.put(users)
-#		else:
-#			raise Exception('notification_type not recognized in create_notification')
-#		
-		#create and put the notification
-		notification = Notification(
-										notification_type	= notification_type,
-										line2				= line2,
-										to_be_notified		= to_be_notified,
-										actor				= actor,
-										deal				= deal, #default to None,
-										date_in_seconds		= long(unix_time(datetime.now()))
-										)
-		notification.put()
-		logging.debug(log_model_props(notification))
-		
-	except Exception,e:
-		log_error(e)
-		return False
-	else:
-		return True
 
 
 def geo_converter(geo_str):
@@ -285,9 +132,7 @@ def geo_converter(geo_str):
 		raise TypeError('lat,lon: '+str(geo_str))
 
 
-def tagger(text): 
-	return create_tokens(text,stemmed=True,filtered=True)
-def create_tokens(text,stemmed=True,filtered=True):
+def tagger(text,stemmed=True,filtered=True):
 	'''
 	Used to create a list of indexable strings from a single multiword string
 	Tokenizes the input string, and then stems each of the tokens
@@ -1107,7 +952,7 @@ class Business(db.Model):
 #						log_error('On busines: '+repr(self.business_name))
 ##			logging.info(text)
 ##		logging.info('text: '+repr(text))
-#		tags = create_tokens(text,stemmed,filtered)
+#		tags = tagger(text,stemmed,filtered)
 #		logging.info('tags: '+str(tags))
 		return tags
 def create_tags_from_entity(entity,indexed_properties,stemmed=True,filtered=True):
@@ -1134,7 +979,7 @@ def create_tags_from_entity(entity,indexed_properties,stemmed=True,filtered=True
 					text += item + ' '
 				except:
 					log_error('On enitity: '+log_model_props(entity))
-	tags = create_tokens(text,stemmed,filtered)
+	tags = tagger(text,stemmed,filtered)
 	
 	
 	return tags

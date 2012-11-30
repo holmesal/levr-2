@@ -318,7 +318,7 @@ class Search(object):
 	
 	@staticmethod
 	def tokenize_query(query):
-		return levr.create_tokens(query, stemmed=True, filtered=True)
+		return levr.tagger(query, stemmed=True, filtered=True)
 
 	@classmethod
 	def rank_deals_by_links(cls,deals,search_tags):
@@ -363,7 +363,7 @@ class Search(object):
 		@return: num_results, which is the number of applicable deals from the query
 		@rtype
 		'''
-		search_tags = levr.create_tokens(query)
+		search_tags = levr.tagger(query)
 		
 		accepted_deals = []
 		# compile list of deals whose tags match at least one tag
@@ -638,45 +638,41 @@ def package_user_multi(users,private=False,include_followers=False,include_deals
 	packaged_users = [package_user(u,private,include_followers,include_deals) for u in users]
 	
 	return packaged_users
-def package_user(user,private=False,include_followers=None,include_deals=None,**kwargs):
+def package_user(user,private=False,include_followers=None,include_deals=None):
 
 	# logging.debug(levr.log_model_props(user))
 	# this is the old version of packaging
-	if kwargs.get('new',False)==False:
-		# this is where the api versioning comes into play maybe?
-		return _package_user_v1(user, private, include_followers,**kwargs)
-	# this is the new version of packaging
+	
+	# fetch the users followers if they are to be included
+	if include_followers == True:
+		# the users followers
+		followers = db.get(user.followers)
+		followers = filter(None,followers)
+		packaged_followers = package_user_multi(
+											followers,
+											private=False,
+											include_followers=False,
+											include_deals=False
+											)
 	else:
-		# fetch the users followers if they are to be included
-		if include_followers == True:
-			# the users followers
-			followers = db.get(user.followers)
-			followers = filter(None,followers)
-			packaged_followers = package_user_multi(
-												followers,
-												private=False,
-												include_followers=False,
-												include_deals=False
-												)
+		packaged_followers = None
+	# fetch the users uploads if they are to be included
+	if include_deals == True:
+		# set the namespace of the deals that should be fetched
+		if user.tester == True:
+			# in development namespace
+			deal_status = levr.DEAL_STATUS_TEST
 		else:
-			packaged_followers = None
-		# fetch the users uploads if they are to be included
-		if include_deals == True:
-			# set the namespace of the deals that should be fetched
-			if user.tester == True:
-				# in development namespace
-				deal_status = levr.DEAL_STATUS_TEST
-			else:
-				# in active namespace
-				deal_status = levr.DEAL_STATUS_ACTIVE
-			deals = levr.Deal.all().ancestor(user).filter('deal_status',deal_status).fetch(None)
-			deals = filter(None,deals)
-			packaged_deals = package_deal_multi(deals, private)
-		else:
-			packaged_deals = None
-		# package the users
-		return _package_user_v2(user, private, packaged_followers, packaged_deals)
-def _package_user_v2(user,private=False,packaged_followers=None,packaged_deals=None):
+			# in active namespace
+			deal_status = levr.DEAL_STATUS_ACTIVE
+		deals = levr.Deal.all().ancestor(user).filter('deal_status',deal_status).fetch(None)
+		deals = filter(None,deals)
+		packaged_deals = package_deal_multi(deals, private)
+	else:
+		packaged_deals = None
+	# package the users
+	return _package_user(user, private, packaged_followers, packaged_deals)
+def _package_user(user,private=False,packaged_followers=None,packaged_deals=None):
 	packaged_user = {
 					'uid' : enc.encrypt_key(user.key()),
 					'alias' : user.display_name,
@@ -690,44 +686,12 @@ def _package_user_v2(user,private=False,packaged_followers=None,packaged_deals=N
 		assert type(packaged_deals[0]) == dict, type(packaged_deals[0])
 		packaged_user.update({'deals': packaged_deals})
 	if packaged_followers:
-		assert type(packaged_followers) == dict
+		assert type(packaged_followers) == dict, type(packaged_followers[0])
 		packaged_user.update({'followers':packaged_followers})
 	if private:
 		pass
 	return packaged_user
 
-
-def _package_user_v1(user,private,followers,**kwargs):
-	packaged_user = {
-		'uid'			: enc.encrypt_key(str(user.key())),
-		'alias'			: user.display_name,
-		'dateCreated'	: user.date_created.__str__()[:19],
-		'firstName'		: user.first_name,
-		'lastName'		: user.last_name,
-		'photoURL'		: user.photo,
-		'level'			: user.level,
-		'karma'			: user.karma, # upvotes
-		'twitterScreenName'	: user.twitter_screen_name,
-		'email'			: user.email
-		}
-	if followers == True:
-		followers_list = levr.Customer.get(user.followers)
-		packaged_user['followers'] = [package_user(f,True,False) for f in followers_list]
-	
-	#check if the token will be sent with the response
-	send_token = kwargs.get('send_token')
-	if send_token:
-		packaged_user.update({
-							'levrToken': user.levr_token
-							})
-	if private:
-		pass
-# 	if private:
-# 		packaged_user.update({
-# 							'moneyAvailable'	: 1,
-# 							'moneyEarned'		: 1,
-# 							})
-	return packaged_user
 def package_notification_multi(notifications):
 	'''
 	@param notifications: a list of notification entities
@@ -2202,7 +2166,7 @@ class KWLinker(object):
 		@param strength: The strength of the keyword relationship that is to be addeded
 		@type strength: int
 		'''
-		parent_tags = levr.create_tokens(query)
+		parent_tags = levr.tagger(query)
 		children_tags = deal.tags
 		cls._create_link_to_tags_multi(parent_tags, children_tags, strength)
 	@classmethod

@@ -53,9 +53,9 @@ class FindABusinessHandler(api_utils.BaseHandler):
 			# filter the businesses by the tags
 			search_tags = set([])
 			if business_name:
-				search_tags.update(levr.create_tokens(business_name))
+				search_tags.update(levr.tagger(business_name))
 			if vicinity:
-				search_tags.update(levr.create_tokens(vicinity))
+				search_tags.update(levr.tagger(vicinity))
 			logging.info(search_tags)
 			# map the quality of the match by the number of tags that match the business
 			for business in businesses:

@@ -35,7 +35,7 @@ class SandboxHandler(api_utils.BaseHandler):
 #		deal.tags = ['tagggg']
 		# /SPOOF
 #		assert False, deals
-#		parent_tags = levr.create_tokens(query)
+#		parent_tags = levr.tagger(query)
 #		for deal in deals:
 #			Linker.register_categorization(deal, parent_tags)
 #		for deal in deals:
@@ -406,40 +406,6 @@ class TestHandler(webapp2.RequestHandler):
 		
 		
 
-#class TestNotificationHandler(webapp2.RequestHandler):
-#	def get(self):
-#		
-#		logging.info('WTFFFF')
-#		logging.debug('HOLY SHIT NEW NOTIFICATIONS OMG OMG OMG')
-#		
-#		#go get the ninja
-#		user = levr.Customer.gql('WHERE email=:1','q').get()
-#		#go get the user
-#		actor = levr.Customer.gql('WHERE email=:1','alonso@levr.com').get()
-#		#go get the deal
-#		try:
-#			deal = levr.Deal.all().ancestor(user.key()).get()
-#		except:
-#			deal = None
-#		if not deal:
-#			deal = levr.Deal.all().get()
-#		
-#		assert deal, 'Cannot find any deals. Try uploading one. If that doesnt work, abandon all hope.' 
-#		
-#		#new follower notification
-#		levr.create_notification('newFollower',user.key(),actor)
-#		
-#		#followed upload notification
-#		levr.create_notification('followedUpload',user.key(),actor,deal.key())
-#		
-#		#favorite notification
-#		levr.create_notification('favorite',user.key(),actor,deal.key())
-#		
-#		#levelup notification
-#		user.new_notifications += 1
-#		levr.create_notification('levelup',user.key(),actor,new_level='inf')
-#		user.put()
-#		self.response.out.write('HOLY SHIT NEW NOTIFICATIONS OMG OMG OMG')
 
 
 FEMALE_EMAIL = 'undeadninja@levr.com'
@@ -596,16 +562,7 @@ class CompleteNinjaReferencesHandler(webapp2.RequestHandler):
 #			self.response.out.write(levr.log_model_props(img))
 		pass
 		
-<<<<<<< HEAD
 class RemoveFoursquareHandler(api_utils.BaseHandler):
-=======
-<<<<<<< HEAD
-class RemoveFoursquareHandler(api_utils.BaseClass):
-=======
-
-class ViewFoursquareDealsHandler(api_utils.BaseHandler):
->>>>>>> Changed the name of api_utils.BaseClass to api_utils.BaseHandler because
->>>>>>> Changed the name of api_utils.BaseClass to api_utils.BaseHandler because
 	def get(self):
 		
 		t1 = datetime.now()

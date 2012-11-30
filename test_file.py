@@ -34,7 +34,7 @@ class TestSearchHandler(api_utils.BaseHandler):
 			# tokenize the search query
 			stemmed = True
 			filtered = True
-			search_tokens = levr.create_tokens(query, stemmed, filtered)
+			search_tokens = levr.tagger(query, stemmed, filtered)
 			self.response.out.write(search_tokens)
 			#===================================================================
 			# Tier 1: literal search results
@@ -134,7 +134,7 @@ class TestResultClickHandler(api_utils.BaseHandler):
 #		deal.tags = ['tagggg']
 		# /SPOOF
 #		assert False, deals
-#		parent_tags = levr.create_tokens(query)
+#		parent_tags = levr.tagger(query)
 #		for deal in deals:
 #			Linker.register_categorization(deal, parent_tags)
 #		for deal in deals:

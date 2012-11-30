@@ -476,7 +476,7 @@ class Foursquare(SocialClass):
 		1. Makes a call to foursquare to pull all of the users friends
 		2. Pulls the facebook, twitter, email, and foursquare info from each friend with that info
 		3. Adds that information to a corresponding list on the user entity
-		4. Creates the db linkage between user and friends by calling create_notification
+		4. Creates the db linkage between user and friends
 		'''
 		logging.debug('\n\n FOURSQUARE UPDATE FRIENDS \n\n')
 		#get the users friends
