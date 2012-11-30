@@ -16,33 +16,58 @@ import unittest
 
 
 class SearchQueryHandler_v2(api_utils.BaseHandler):
-	@api_utils.validate('query', None,
-					ghashes=False,
-					ll=False,
-					user=False,
-					levrToken=False,
-					limit=False,
-					offset=False
-					)
+#	@api_utils.validate('query', None,
+#					ghashes=False,
+#					ll=False,
+#					user=False,
+#					levrToken=False,
+#					limit=False,
+#					offset=False
+#					)
 	def get(self,*args,**kwargs):
 		'''
 		Searches for deals in the ghashes provided
 		OR takes a geo_point and searches in that area
 		'''
-		ghash_list = kwargs.get('ghashes',[])
-		geo_point = kwargs.get('geo_point',None)
-		query = kwargs.get('query','all')
-		development = kwargs.get('development',False)
-		limit = kwargs.get('limit',50)
-		offset = kwargs.get('offset',0)
-		user = kwargs.get('actor',None)
+#		ghash_list = kwargs.get('ghashes',[])
+#		geo_point = kwargs.get('geo_point',None)
+#		query = kwargs.get('query','all')
+#		development = kwargs.get('development',False)
+#		limit = kwargs.get('limit',50)
+#		offset = kwargs.get('offset',0)
+#		user = kwargs.get('actor',None)
 		
 		try:
+			### SPOOF ###
+			development = False
+			user = None
+			### /SPOOF
+			# init the search class
 			search = api_utils.Search(development,user)
 			
-			deals = search.fetch_deals(ghash_list, include_foursquare=False)
-			query_ranks = search.rank_deals_by_query(deals, query)
 			
+			### SPOOF ###
+			precision = 5
+			geo_point = levr.geo_converter('42.343880,-71.059570')
+			query = 'food'
+			ghash_list = search.create_ghash_list(geo_point, precision)
+			
+			### /SPOOF ###
+			
+			
+			deals = search.fetch_deals(ghash_list, include_foursquare=True)
+			search_tags = search.tokenize_query(query)
+			query_ranks = search.rank_deals_by_tag(deals, search_tags)
+			related_ranks = search.rank_deals_by_links(deals, search_tags)
+			popularity_ranks = search.rank_deals_by_popularity(deals)
+			toop = zip(query_ranks,related_ranks,popularity_ranks,deals)
+			toop = sorted(toop)
+			
+			query_ranks,related_ranks,popularity_ranks,deals = zip(*toop)
+			
+			self.response.headers['Content-Type'] = 'text/plain'
+			for dt in toop:
+				self.response.out.write('\n{}, {}, {}, {}'.format(dt[0],dt[1],dt[2],dt[3].tags))
 		except:
 			self.send_fail()
 		

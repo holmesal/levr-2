@@ -30,7 +30,6 @@ categories = [
 'Pub',
 
 ]
-
 class ReviewHandler(api_utils.BaseHandler):
 	@api_utils.validate('deal', None)
 	def get(self,*args,**kwargs):
@@ -100,13 +99,11 @@ class ReviewHandler(api_utils.BaseHandler):
 				self.response.out.write('created: {}\nexpire:  {}'.format(deal.date_created,date_end))
 			
 		except AssertionError,e:
-			levr.log_error()
 			self.response.out.write(e)
 		except Exception,e:
 			levr.log_error()
 			self.response.out.write('Error rejecting: '+str(e))
 		pass
-		
 class RejectHandler(api_utils.BaseHandler):
 	@api_utils.validate('deal', None)
 	def get(self,*args,**kwargs): #@UnusedVariable
@@ -130,6 +127,7 @@ class RejectHandler(api_utils.BaseHandler):
 		except Exception,e:
 			levr.log_error(e)
 			self.response.out.write('Error rejecting: '+str(e))
+
 class SetExpirationHandler(api_utils.BaseHandler):
 	@api_utils.validate('deal',None,daysToExpire=True)
 	def get(self,*args,**kwargs): #@UnusedVariable
@@ -164,7 +162,7 @@ class SetExpirationHandler(api_utils.BaseHandler):
 			self.response.out.write(e)
 		except Exception,e:
 			levr.log_error()
-			self.response.out.write('Error rejecting: '+str(e))
+			self.response.out.write('Error expiring: '+str(e))
 
 class ReanimateHandler(api_utils.BaseHandler):
 	@api_utils.validate('deal',None)

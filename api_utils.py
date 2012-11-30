@@ -17,6 +17,7 @@ import webapp2
 from google.appengine.ext import testbed
 import unittest
 from google.appengine.ext import ndb
+import collections
 #from fnmatch import filter
 INCREMENT_DEAL_VIEW_URL = '/tasks/incrementDealView'
 
@@ -109,7 +110,8 @@ class Search(object):
 			levr.Notification().radius_alert(to_be_notified, deal)
 			# TEST: new notification
 		return user
-	def calc_precision_from_half_deltas(self,geo_point,lon_half_delta=0):
+	@staticmethod
+	def calc_precision_from_half_deltas(geo_point,lon_half_delta=0):
 		'''
 		Determines a geohash precision from the lat and long half deltas
 		
@@ -126,12 +128,16 @@ class Search(object):
 			center_left_lat = geo_point.lat
 			center_left_lon = geo_point.lon - lon_half_delta
 			# calculate the width in miles of the screen
-			width_in_miles = distance_between_points(center_right_lat,center_right_lon,center_left_lat,center_left_lon)
+			width_in_miles = distance_between_points(center_right_lat,
+													center_right_lon,
+													center_left_lat,
+													center_left_lon)
 			
 			if width_in_miles <2:
 				precision = 6
 		return precision
-	def expand_ghash_list(self,ghash_list,n):
+	@staticmethod
+	def expand_ghash_list(ghash_list,n):
 		'''
 		Expands self.ghash n times
 		@param n: number of expansions
@@ -147,11 +153,11 @@ class Search(object):
 			# remove duplicates
 			ghash_list = list(set(ghash_list))
 		return ghash_list
-	def create_ghash_list(self,geo_point,precision):
+	@classmethod
+	def create_ghash_list(cls,geo_point,precision):
 		'''
 		
 		'''
-		
 		ghash = geohash.encode(geo_point.lat, geo_point.lon, precision)
 		ghash_list = [ghash]
 		
@@ -160,9 +166,10 @@ class Search(object):
 			n = 3
 		else:
 			n = 1
-		ghash_list = self.expand_ghash_list(ghash_list, n)
+		ghash_list = cls.expand_ghash_list(ghash_list, n)
 		return ghash_list
-	def calc_bounding_box(self,ghash_list):
+	@staticmethod
+	def calc_bounding_box(ghash_list):
 		'''
 		Calculates a bounding box from a list of geohashes
 		@param ghash_list: a list of geo_hashes
@@ -218,6 +225,50 @@ class Search(object):
 		# remove faulty deal references
 		deals = filter(None,deals)
 		return deals
+	#===========================================================================
+	# Relational engine stuff
+	#===========================================================================
+	@staticmethod
+	def _fetch_kwnodes(search_tags):
+		# create keys from the provided tags
+		node_keys = [ndb.Key(levr.KWNode,tag) for tag in search_tags]
+		# fetch the node entities
+		nodes = ndb.get_multi(node_keys)
+		# filter out nodes that do not exist. They are irrelevant
+		nodes = filter(None,nodes)
+		return nodes
+	@staticmethod
+	def _calc_link_strengths(kwnodes):
+		linked_kws = collections.defaultdict(int)
+		for kw in kwnodes:
+			# links are of type levr.KWLink
+			links = kw.get_links()
+			# there will always be links, because nodes are only created when they are linked
+			link_strengths = [link.strength for link in links]
+			max_strength = max(link_strengths)
+			
+			for link in links:
+				normal_strength = float(link.strength)/float(max_strength)
+				link_name = link.name
+				# linked_kws is a default dict so will create new entries as necessary
+				linked_kws[link_name] += normal_strength
+		
+		# set the defaultdict to act as a regular dictionary
+		linked_kws.default_factory = None
+		return linked_kws
+	@staticmethod
+	def _rank_deals_by_kw_links(deals,linked_kws):
+		ranks = []
+		for deal in deals:
+			rank = 0
+			for tag in deal.tags:
+				try:
+					# will fail if tag not in linked kws
+					rank += linked_kws[tag]
+				except:
+					pass
+			ranks.append(rank)
+		return ranks
 	
 	def sort_deals(self,deals):
 		'''
@@ -243,7 +294,64 @@ class Search(object):
 		ranks,deals = zip(*toop)
 		logging.info(ranks)
 		return deals,ranks
-	def filter_deals_by_query(self,deals,query):
+	@staticmethod
+	def rank_deals_by_popularity(deals):
+		ranks = []
+		for deal in deals:
+			karma = deal.upvotes - deal.downvotes + deal.karma
+			if deal.origin == 'levr' or deal.origin == 'merchant':
+				karma += 5
+			ranks.append(karma)
+		return ranks
+	
+	@staticmethod
+	def filter_deals_by_origin(deals):
+		'''
+		Separates a list of deals into levr and foursquare deals
+		
+		@return: levr_deals,foursquare_deals
+		@rtype: (list,list)
+		'''
+		levr_deals = filter(lambda x: x.origin!='foursquare',deals)
+		foursquare_deals = filter(lambda x: x.origin=='foursquare',deals)
+		return levr_deals,foursquare_deals
+	
+	@staticmethod
+	def tokenize_query(query):
+		return levr.create_tokens(query, stemmed=True, filtered=True)
+
+	@classmethod
+	def rank_deals_by_links(cls,deals,search_tags):
+		kwnodes = cls._fetch_kwnodes(search_tags)
+		kwlinks = cls._calc_link_strengths(kwnodes)
+		ranks = cls._rank_deals_by_kw_links(deals, kwlinks)
+		return ranks
+	@staticmethod
+	def rank_deals_by_tag(deals,search_tags):
+		'''
+		Ranks a list of deals according to the number of times that
+		one of the tags in each deal matches one of the proveded tags
+		@param deals: a list of deals
+		@type deals: list
+		@param search_tags: list of tags to be matched
+		@type search_tags: list
+		
+		@return: the ranks of each deal after the comparison, in the same order
+		@rtype: list
+		'''
+		assert type(search_tags) == list, 'search_tags must be passed as a list, '+str(type(search_tags))
+		
+		ranks = []
+		for deal in deals:
+			rank = 0
+			for tag in deal.tags:
+				if tag in search_tags:
+					rank += 1
+			ranks.append(rank)
+		return ranks
+	@staticmethod
+	@levr.deprecated
+	def filter_deals_by_query(deals,query):
 		'''
 		Splits the deals into two lists of accepted and rejected deals
 			based on the query tags
@@ -277,7 +385,8 @@ class Search(object):
 			num_results = accepted_deals.__len__()
 		
 		return num_results,accepted_deals
-	def add_deal_views(self,deals):
+	@staticmethod
+	def add_deal_views(deals):
 		'''
 		Adds a deal view for each deal
 		@param deals:
@@ -290,7 +399,9 @@ class Search(object):
 			taskqueue.add(url=INCREMENT_DEAL_VIEW_URL,payload=json.dumps(payload))
 		except:
 			levr.log_error()
-	def sort_and_package(self,deals):
+	@classmethod
+	@levr.deprecated
+	def sort_and_package(cls,deals):
 		'''
 		Wrapper around the package_deals_multi
 		Pulls out the ranks from the deals to send
@@ -299,7 +410,7 @@ class Search(object):
 		@type deals:
 		'''
 		if deals:
-			deals,ranks = self.sort_deals(deals)
+			deals,ranks = cls.sort_deals(deals)
 			# sort deals based on their ranks
 			
 			# package

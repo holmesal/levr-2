@@ -20,17 +20,44 @@ class SandboxHandler(api_utils.BaseHandler):
 	def say(self,stuff):
 		self.response.out.write(stuff)
 	def get(self):
+		'''
+		
+		'''
+		self.response.headers['Content-Type'] = 'text/plain'
+		# SPOOF
+		query = 'Food'
+		deals = []
+		tags = ['drink','coffe','lunch','appet','bar','drink','tip']
+		for t in tags:
+			deals.extend(levr.Deal.all().filter('tags',t).fetch(None))
+		deals = list(set(deals))
+		self.response.out.write('\n\t\t\t<===================>\n'.join([levr.log_model_props(deal, ['deal_text','description']) for deal in deals]))
+#		deal.tags = ['tagggg']
+		# /SPOOF
+#		assert False, deals
+#		parent_tags = levr.create_tokens(query)
+#		for deal in deals:
+#			Linker.register_categorization(deal, parent_tags)
+#		for deal in deals:
+#			Linker.register_deal_click(deal, query)
+		for deal in deals:
+			api_utils.KWLinker.register_like(deal, query)
+		self.response.out.write('\n\nDone!')
+		
+	def get_foursquare_deals(self):
+		'''
+		For debugging. Creates a bunch of foursquare deals, and stores them on the server
+		'''
 		self.response.headers['Content-Type'] = 'text/plain'
 		users = levr.Customer.all().fetch(None)
-#		users = [db.get(db.Key.from_path('Customer','ethan'))]
-#		for u in users:
-#			self.say(u)
-		packaged_users = api_utils.package_user_multi(users,
-													private=True, 
-													include_followers=True, 
-													include_deals=True,
-													new=True)
-		self.response.out.write('\n\t\t<=========>\n'.join([levr.log_dict(u) for u in packaged_users]))
+		geo_point = levr.geo_converter('42.343880,-71.059570')
+		token = 'IDMTODCAKR34GOI5MSLEQ1IWDJA5SYU0PGHT4F5CAIMPR4CR'
+		deal_status = levr.DEAL_STATUS_ACTIVE
+		foursquare_ids = []
+		
+		new_foursquare_deals = api_utils.search_foursquare(geo_point,token,deal_status,foursquare_ids)
+		
+		self.say(new_foursquare_deals)
 class TestNotificationHandler(api_utils.BaseHandler):
 	def get(self):
 		# aliases cus im laaaaazy
@@ -322,40 +349,41 @@ class TestHandler(webapp2.RequestHandler):
 			self.response.out.write('curl '+deal_url)
 		
 #		projection = None
-		projection = [
-					'alias',
-					'new_notifications',
-					'first_name',
-					'last_name',
-					'karma',
-					'level',
-					'display_name',
-					'followers',
-					
-					'foursquare_id',
-					'foursquare_token',
-					'foursquare_connected',
-					'foursquare_friends',
-					
-					'twitter_id',
-					'twitter_token',
-					'twitter_token_secret',
-					'twitter_screen_name',
-					'twitter_connected',
-					'twitter_friends_by_sn',
-					'twitter_friends_by_id',
-					
-					'facebook_connected',
-					'facebook_token',
-					'facebook_id',
-					'facebook_friends',
-					
-					'email_friends',
-					
-					'favorites',
-					'upvotes',
-					'downvotes',
-					]
+#		projection = [
+#					'alias',
+#					'new_notifications',
+#					'first_name',
+#					'last_name',
+#					'karma',
+#					'level',
+#					'display_name',
+#					'followers',
+#					
+#					'foursquare_id',
+#					'foursquare_token',
+#					'foursquare_connected',
+#					'foursquare_friends',
+#					
+#					'twitter_id',
+#					'twitter_token',
+#					'twitter_token_secret',
+#					'twitter_screen_name',
+#					'twitter_connected',
+#					'twitter_friends_by_sn',
+#					'twitter_friends_by_id',
+#					
+#					'facebook_connected',
+#					'facebook_token',
+#					'facebook_id',
+#					'facebook_friends',
+#					
+#					'email_friends',
+#					
+#					'favorites',
+#					'upvotes',
+#					'downvotes',
+#					]
+		projection = []
 		deal_projection = [
 						'upvotes',
 						'downvotes',
@@ -488,8 +516,8 @@ class Create100DeadNinjasHandler(webapp2.RequestHandler):
 #			all_ninjas.append(n)
 #		db.put(all_ninjas)
 #		self.response.out.write(all_ninjas.__len__())
-#		#update photo url, and reference table with photo 
-#		
+		#update photo url, and reference table with photo 
+		
 		logging.info('Creating 100 dead ninjas.')
 		
 class CompleteNinjaReferencesHandler(webapp2.RequestHandler):
