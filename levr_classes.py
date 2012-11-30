@@ -1074,7 +1074,7 @@ class Customer(db.Model):
 	#deprecated stuff
 	level			= db.IntegerProperty(indexed = False)
 	group			= db.StringProperty(indexed = False)
-	payment_email	= db.EmailProperty(idexed = False)
+	payment_email	= db.EmailProperty(indexed = False)
 	money_earned	= db.FloatProperty(indexed = False) #new earning for all deals
 	money_available = db.FloatProperty(indexed = False) #aka payment pending
 	money_paid		= db.FloatProperty(indexed = False) #amount we have transfered

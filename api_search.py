@@ -195,7 +195,14 @@ class SearchPopularHandler(api_utils.BaseClass):
 			# fetch all of the deals!
 			deals = search.fetch_deals(ghash_list)
 			
-			
+			if not deals:
+				# don't move. I'm watching you!
+				response = {
+					'numResults': 0,
+					'searches'	: []
+					}
+				self.send_response(response)
+				return
 			# if there arent enough levr deals, include the foursquare ones
 			# filter out all the repeat deals i.e. the same fs deal at multiple locations
 			unique_deal_texts = []
