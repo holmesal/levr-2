@@ -1,9 +1,8 @@
 #from common_word_list import blacklist
 from datetime import datetime, timedelta
 from google.appengine.api import files, images, urlfetch, memcache, taskqueue
-from google.appengine.ext import blobstore, db
+from google.appengine.ext import blobstore, db, ndb
 from math import sin, cos, asin, degrees, radians, floor, sqrt
-#from tasks import INCREMENT_DEAL_VIEW_URL
 import api_utils_social as social
 import geo.geohash as geohash
 import json
@@ -15,6 +14,7 @@ import promotions as promo
 import random
 import urllib
 import webapp2
+#from tasks import INCREMENT_DEAL_VIEW_URL
 #from fnmatch import filter
 INCREMENT_DEAL_VIEW_URL = '/tasks/incrementDealView'
 
@@ -2076,7 +2076,196 @@ def rotate_image(blob_key,deal=None):
 	else:
 		logging.info('No "Orientation" property found in Exif data - this image must have been rotated previously')
 		
-
+class KWLinker(object):
+	'''
+	A class to register relationships between keywords
+	
+	@todo: remove false keywords, e.g. popular,all
+	'''
+	# the relational weight that a click on a deal has
+	_click_strength = 1
+	# the relational weight that a like on a deal has
+	_like_strength = 3
+	# the relational weight that a manual categorization by admin has
+	_admin_strength = 5
+	
+	def __init__(self,development):
+		'''
+		
+		@param development: Whether or not we are in the development namespace
+		@type development: bool
+		'''
+		self.development = development
+		
+	#===========================================================================
+	# Actions
+	#===========================================================================
+	@classmethod
+	def register_deal_click(cls,deal,query):
+		'''
+		Registers a click on a deal that was found for a particular query
+		@param deal: the deal entity that was clicked
+		@type deal: levr.Deal
+		@param query: the actual search query
+		@type query: str
+		'''
+		try:
+			strength = cls._click_strength
+			cls._create_link_from_query(query, deal, strength)
+			return True
+		except:
+			levr.log_error('Error in registering a deal click; deal: {}, query: {}'.format(
+							deal.key(),query
+							)
+						)
+			return False
+	@classmethod
+	def register_like(cls,deal,query):
+		'''
+		Registers a like on a deal from a particular query
+		@param deal: deal that was liked
+		@type deal: levr.Deal
+		@param query: search query
+		@type query: str
+		'''
+		try:
+			strength = cls._like_strength
+			cls._create_link_from_query(query, deal, strength)
+			return True
+		except:
+			levr.log_error('Error in registering a deal like; deal: {}, query: {}'.format(
+							deal.key(),query
+							)
+						)
+			return False
+	@classmethod
+	def register_categorization(cls,deal,parent_tags,stemmed):
+		'''
+		An admin manually categorized this deal, relating it to a list of tags
+		If stemmed is passed as False, then the parent_tags are stemmed
+		
+		@param deal: the deal that was categorized
+		@type deal: levr.Deal
+		@param parent_tags: The list of keywords that are related to the deal
+		@type parent_tags: list
+		@param stemmed: Whether or not the parent_tags have already been stemmed
+		@type stemmed: bool
+		'''
+		assert type(parent_tags) == list, 'parent tags must be a list: '+str(type(parent_tags))
+		parent_tags = [x.lower() for x in parent_tags]
+		if stemmed == False:
+			parent_tags = levr._stem(parent_tags)
+		
+		
+		strength = cls._admin_strength
+		children_tags = deal.tags
+		cls._create_link_to_tags_multi(parent_tags, children_tags, strength)
+	#===========================================================================
+	# Utilities
+	#===========================================================================
+	@classmethod
+	def _create_link_from_query(cls,query,deal,strength):
+		'''
+		Someone performed an action on a deal after performing a search
+		
+		@param query: A space delimited sequence of keywords
+		@type query: str
+		@param deal: The deal that an action was performed on, causing this link
+		@type deal: levr.Deal
+		@param strength: The strength of the keyword relationship that is to be addeded
+		@type strength: int
+		'''
+		parent_tags = levr.create_tokens(query)
+		children_tags = deal.tags
+		cls._create_link_to_tags_multi(parent_tags, children_tags, strength)
+	@classmethod
+	def _create_link_to_tags_multi(cls,parent_tags,children_tags,strength):
+		'''
+		Wrapper for self.create_link_to_tags to handle multiple parent tags at once
+		
+		@warning: parent_tags must be tokenized
+		
+		@param parent_tags: The tokenized search query
+		@type parent_tags: list
+		@param children_tags: the tags that are to be related to the parent tags
+		@type children_tags: list
+		'''
+#		assert type(parent_tags) == list, 'parent_tags must be <type \'list\'>.'
+		logging.info(parent_tags)
+		# typecast parent_tags as list
+		# otherwise, e.g. 'Food' will be broken up into 'f','o','o','d'
+		if type(parent_tags) == str or type(parent_tags) == unicode:
+			parent_tags = [parent_tags]
+#		assert False, '{}:{}'.format(parent_tags,type(parent_tags))
+		# remove duplicates
+		
+		parent_tags = list(set(parent_tags))
+		
+		for parent_tag in parent_tags:
+			cls._create_link_to_tags(parent_tag, children_tags,strength)
+		
+	@classmethod
+	def _create_link_to_tags(cls,parent_tag,children_tags,strength):
+		'''
+		Creates a one-way relationship linking the parent tag node to the children tags
+		If the parent node does not exist yet, it creates it.
+		If the link does not exist yet, it creates it.
+		
+		@warning: the parent tag must be tokenized
+		@warning: the children_tags must be tokenized
+		
+		@param parent_tag: The keyword that is being linked TO
+		@type parent_tag: str
+		@param children_tags: The stemmed and filtered keywords that are being linked to the parent
+		@type children_tags: list
+		@param strength: the link strength that is being added
+		@type strength: int
+		'''
+		# if the parent node does not exist, create it
+		parent_node = levr.KWNode.get_or_insert(parent_tag)
+		
+		assert parent_node, 'parent node not created'
+#		try:
+			# transactionally increment the 
+		cls._increment_links(parent_node, children_tags,strength)
+#		except:
+#			# the transaction failed.
+#			levr.log_error('Linkage failed for node: '+str(parent_tag))
+#			return False
+#		else:
+#			return True
+	#===========================================================================
+	# Base utility.
+	#===========================================================================
+	@staticmethod
+	@ndb.transactional(retries=10)
+	def _increment_links(parent_node,children_tags,strength):
+		'''
+		Increments the strength of KWLinks specified by the children_tags
+		Creates a KWLink entity for each of the children_tags, if they do not exist already
+		Increments the link strength by the value that is provided
+		
+		Transaction runs n times (see decorator) until it is successful
+		If the transaction fails too many times, it will raise an error
+		
+		@param parent_node: The KWNode entry
+		@type parent_node: levr.KWNode
+		@param children_tags: The KWs that are being linked to the parent
+		@type children_tags: list or str
+		@param strength: The amount to increment the link strength by
+		@type strength: int
+		'''
+		# If a single tag was passed, convert it to a list
+		if type(children_tags) != list:
+			children_tags = list(children_tags)
+		
+		# fetch each of the linkages 
+		node_links = [levr.KWLink.get_or_insert(tag,parent=parent_node.key)
+					for tag in children_tags if tag != parent_node.name]
+		# do not link the node to itself
+		for link in node_links:
+			link.strength += strength
+		ndb.put_multi(node_links)
 
 
 class PromoteDeal(BaseClass):
