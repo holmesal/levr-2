@@ -1,0 +1,55 @@
+<html>
+	<body>
+	<div>
+		<img src="{{ small_img }}" />
+	</div>
+	<form method="post" action="{{ post_url }}">
+		<div style="float:left;">
+			<h2>Business Information</h2>
+			<p>{{ deal.business.business_name }}</p>
+			<p>{{ deal.business.vicinity }}</p>
+			<p>{{ deal.business.geo_point }}</p>
+			<p>{{ deal.business.types }}</p>
+			
+			
+			<h2>Deal Information</h2>
+			<p>{{ deal.deal_text}}</p>
+			<p>{{ deal.description}}</p>
+			
+		</div>
+			
+		<div style="float:left;margin-left:25px;">
+			<h2>Categorize</h2>
+			{% for cat in categories %}
+			<input type="checkbox" name="categories" id="{{ cat }}" value="{{ cat }}">
+			<label for="{{ cat }}">{{ cat }}</label>
+			<br/>
+			{% endfor %}
+		</div>
+		<div>
+			<h2>Expiration</h2>
+			<input type="radio" name="days_to_expire" id="one_day" value="1" />
+			<label for="one_day">One Day</label><br/>
+			<input type="radio" name="days_to_expire" id="one_week" value="7" />
+			<label for="one_week">One Week</label><br/>
+			<input type="radio" name="days_to_expire" id="one_month" value="30" />
+			<label for="one_month">One Month</label><br/>
+			<input type="radio" name="days_to_expire" id="three_months" value="90" />
+			<label for="three_months">Three Months</label><br/>
+			<input type="radio" name="days_to_expire" id="six_months" value="180" />
+			<label for="six_months">Six Months</label><br/>
+			<input type="radio" name="days_to_expire" id="one_year" value="360" />
+			<label for="one_year">One Year</label><br/>
+			<input type="radio" name="days_to_expire" id="never" value="-1" />
+			<label for="never">NEVARRRRR!!!</label><br/>
+			
+			
+		</div>
+		<input type="submit" value="Submit">
+		
+		
+		
+	</form>
+	
+	</body>
+</html>
