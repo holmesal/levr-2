@@ -488,11 +488,9 @@ def package_deal_multi(deals,private=False,**kwargs):
 	ranks = kwargs.get('ranks',[None for deal in deals]) #@UnusedVariable
 	distances = kwargs.get('distances',[None for deal in deals]) #@UnusedVariable
 	
-	
-	
 	bad_deals = []
+
 	# prefetch deal owners
-	
 	logging.info('Owners')
 	owner_keys = [deal.key().parent() for deal in deals]
 	owners = db.get(owner_keys)
@@ -532,7 +530,6 @@ def package_deal_multi(deals,private=False,**kwargs):
 	# Continue without the filtered deals
 	logging.info(new_data)
 	return package_prefetched_deal_multi(new_data, private)
-	
 def package_prefetched_deal_multi(data,private=False):
 	'''
 	
@@ -551,10 +548,23 @@ def package_prefetched_deal_multi(data,private=False):
 		packaged_deals.append(packaged_deal)
 		
 	return packaged_deals
+def package_deal(deal,private=False,**kwargs):
+	rank = kwargs.get('rank',None)
+	distance = kwargs.get('distance',None)
+	
+	owner = levr.Customer.get(deal.key().parent())
+	business = levr.Business.get(deal.businessID)
+	
+	
+	return _package_deal(deal, owner, business, private, rank, distance)
 def _package_deal(deal,owner,business,private=False,rank=None,distance=None):
 	packaged_deal = {
 	# 			'barcodeImg'	: deal.barcode,
-				'business'		: package_business(business),
+				'business'		: package_business(
+													business,
+													private=False,
+													include_deals=False
+													),
 	 			'dateUploaded'	: str(deal.date_uploaded)[:19],
 				'dealID'		: enc.encrypt_key(deal.key()),
 				'dealText'		: deal.deal_text,
@@ -568,52 +578,28 @@ def _package_deal(deal,owner,business,private=False,rank=None,distance=None):
 				'pinColor'		: create_pin_color(deal),
 				'karma'			: deal.karma,
 				'origin'		: deal.origin,
-				'owner'			: package_user(owner,private,False)
+				'owner'			: package_user(
+												owner,
+												private=False,
+												include_followers=False,
+												include_deals=False
+												)
 				}
 	
 	if rank is not None:
-		packaged_deal['rank'] = rank
+		packaged_deal.update({
+							'rank' : rank
+							})
 	if distance is not None:
-		packaged_deal['distance'] = distance
-	
+		packaged_deal.update({
+							'distance' : distance
+							})
 	if private == True:
-		
 		packaged_deal.update({
 							'views'	: deal.views,
 							'promotions' : [promotions.PROMOTIONS[p] for p in deal.promotions],
 							'status': deal.deal_status
 							})
-	
-	return packaged_deal
-	
-def package_deal(deal,private=False,**kwargs):
-#	logging.debug(deal.businessID)
-#	logging.debug(deal.key())
-#	logging.debug(str(deal.geo_point))
-	rank = kwargs.get('rank',None)
-	distance = kwargs.get('distance',None)
-	
-	owner = levr.Customer.get(deal.key().parent())
-	business = levr.Business.get(deal.businessID)
-	
-	
-	return _package_deal(deal, owner, business, private, rank, distance)
-	
-def package_deal_external(externalDeal,externalBusiness,fake_owner):
-	
-	packaged_deal = {
-# 			'barcodeImg'	: deal.barcode,
-			'business'		: externalBusiness,
-			'dealID'		: externalDeal.externalID,
-			'dealText'		: externalDeal.deal_text,
-			'description'	: externalDeal.description,
-			'largeImg'		: externalDeal.large_img,
-			'smallImg'		: externalDeal.small_img,
-			'pinColor'		: externalDeal.pin_color,
-			'origin'		: externalDeal.origin,
-			'externalURL'	: externalDeal.externalURL,
-			'owner'			: fake_owner #externalAPI
-			}
 	
 	return packaged_deal
 
@@ -702,7 +688,6 @@ def package_notification_multi(notifications):
 	packaged_notifications = [package_notification(notification) for notification in notifications]
 	
 	return packaged_notifications
-	
 def package_notification(notification):
 	'''
 	Switch case on notification based on the version of notification, old or new
@@ -738,20 +723,34 @@ def _package_notification(notification):
 	
 	return packaged_notification
 
-def package_business(business):
-
+def package_business(business,private=False,include_deals=True):
+	packaged_deals = []
+	if include_deals == True:
+		deals = levr.Deal.all().filter('businessID', business).fetch(None)
+		packaged_deals = package_deal_multi(deals, private)
+	
+	return _package_business(business, packaged_deals)
+def _package_business(business,packaged_deals):
+	'''
+	Private function to package a business with pre-packaged sub-entities
+	@param business: The business being packaged
+	@type business: levr.Business
+	@param packaged_deals: Deals at the business that have been packaged
+	@type packaged_deals: list
+	
+	@rtype: dict
+	'''
 	packaged_business = {
 		'businessID'	: enc.encrypt_key(str(business.key())),
-		'foursquareID'	: business.foursquare_id,
 		'businessName'	: business.business_name,
 		'vicinity'		: business.vicinity,
 		'geoPoint'		: str(business.geo_point),
 		'geoHash'		: business.geo_hash
 						}
 						
-	if business.owner:
+	if packaged_deals:
 		packaged_business.update({
-			'owner':	package_user(business.owner)
+			'deals' : packaged_deals
 		})
 	return packaged_business
 
@@ -1915,7 +1914,7 @@ def add_foursquare_deal(foursquare_deal,business,deal_status):
 	
 	return deal
 
-
+@levr.deprecated
 def filter_foursquare_deal(foursquare_deal,already_found):
 	'''
 	
@@ -2237,12 +2236,12 @@ class KWLinker(object):
 		Increments the link strength by the value that is provided
 		
 		Transaction runs n times (see decorator) until it is successful
-		If the transaction fails too many times, it will raise an error
+		If the transaction fails too many times, it will raise an exception
 		
 		@param parent_node: The KWNode entry
 		@type parent_node: levr.KWNode
 		@param children_tags: The KWs that are being linked to the parent
-		@type children_tags: list or str
+		@type children_tags: list
 		@param strength: The amount to increment the link strength by
 		@type strength: int
 		'''
