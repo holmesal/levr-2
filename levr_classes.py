@@ -937,24 +937,16 @@ class Business(db.Model):
 		'''
 		indexed_properties = ['business_name','types','foursquare_name','extra_tags']
 		tags = create_tags_from_entity(self, indexed_properties, stemmed, filtered)
-#		items = [getattr(self, prop) for prop in indexed_properties]
-#		text = ''
-##		logging.info('\n\n create business tags: '+repr(items)+' \n\n')
-#		for item in items:
-##			logging.info(item)
-#			if item:
-#				if type(item) == list:
-#					text +=' '.join(item) + ' '
-#				else:
-#					try:
-#						text += item + ' '
-#					except:
-#						log_error('On busines: '+repr(self.business_name))
-##			logging.info(text)
-##		logging.info('text: '+repr(text))
-#		tags = tagger(text,stemmed,filtered)
-#		logging.info('tags: '+str(tags))
 		return tags
+	def fetch_deals(self,development):
+		if development == True:
+			deal_status = DEAL_STATUS_TEST
+		else:
+			deal_status = DEAL_STATUS_ACTIVE
+		
+		deals = Deal.all().filter('businessID',str(self.key())).filter('deal_status',deal_status).fetch(None)
+		
+		return deals
 def create_tags_from_entity(entity,indexed_properties,stemmed=True,filtered=True):
 	'''
 	Creates a list of tags from an entity given a list of properties

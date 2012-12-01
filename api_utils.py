@@ -819,20 +819,6 @@ def fetch_all_users_deals(user):
 	all_deals.extend(expired_deals)
 	
 	return all_deals
-def fetch_all_businesses_deals(business,development=False):
-	'''
-	Fetches all of the deals from a business
-	@param business:
-	@type business:
-	'''
-	if development == True:
-		deal_status = levr.DEAL_STATUS_TEST
-	else:
-		deal_status = levr.DEAL_STATUS_ACTIVE
-	
-	deals = levr.Deal.all().filter('businessID',str(business.key())).filter('deal_status',deal_status).fetch(None)
-		
-	return deals
 def sort_deals_by_property(deals,prop):
 	if deals:
 		extracted_props = [getattr(deal,prop) for deal in deals]

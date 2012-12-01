@@ -108,11 +108,8 @@ class ViewABusinessHandler(api_utils.BaseHandler):
 		development = kwargs.get('development',False)
 		
 		try:
-			deals = api_utils.fetch_all_businesses_deals(business, development)
-			
-			# TODO: take another look at the business packaging for the api
-			# package.
-			packaged_deals = api_utils.package_deal_multi(deals, False)
+			deals = business.fetch_deals(development)
+			packaged_deals = api_utils.package_deal_multi(deals, private=False)
 			
 			packaged_business = api_utils.package_business(business)
 			
@@ -123,11 +120,10 @@ class ViewABusinessHandler(api_utils.BaseHandler):
 					}
 			self.send_response(response)
 		except:
-			levr.log_error()
-			self.send_error()
+			self.send_fail()
 
 FIND_A_BUSINESS_URL = '/api/business/find'
-VIEW_A_BUSINESS_URL = '/api/business/view'
+VIEW_A_BUSINESS_URL = '/api/business/info'
 app = webapp2.WSGIApplication([
 							(FIND_A_BUSINESS_URL, FindABusinessHandler),
 							(VIEW_A_BUSINESS_URL, ViewABusinessHandler),
