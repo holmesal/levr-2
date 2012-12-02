@@ -19,6 +19,7 @@ import unittest
 from google.appengine.ext import ndb
 import collections
 import itertools
+import collections
 #from fnmatch import filter
 INCREMENT_DEAL_VIEW_URL = '/tasks/incrementDealView'
 
@@ -205,7 +206,7 @@ class Search(object):
 					'top_right'		: top_right
 					}
 		return bounding_box
-	def fetch_deals(self,ghash_list):
+	def fetch_deals(self,ghash_list,existing_deal_keys=[]):
 		'''
 		Fetches deal entities from the db by their ghashes
 		Filters out deals that are nonetype
@@ -216,15 +217,21 @@ class Search(object):
 		# get keys
 		deal_keys = get_deal_keys(ghash_list,development=self.development)
 		
+		# if a list of existing deal keys was passed, do not fetch those deals again
+		if existing_deal_keys != []:
+			deal_keys = filter(lambda x: x not in existing_deal_keys, deal_keys)
+			
 		# fetch deal entities
 		deals = db.get(set(deal_keys))
 		
 		# remove faulty deal references
 		deals = filter(None,deals)
 		return deals
+	
 	#===========================================================================
 	# Relational engine stuff
 	#===========================================================================
+	
 	@staticmethod
 	def _fetch_kwnodes(search_tags):
 		'''
@@ -245,10 +252,10 @@ class Search(object):
 		nodes = filter(None,nodes)
 		return nodes
 	@staticmethod
-	def _calc_link_strengths(kwnodes):
+	def _calc_linked_tag_ranks(kwnodes):
 		'''
 		Calculates the strength of each kwlink
-		@param kwnodes: a list of KWNode key_names, i.e. tagged keywords
+		@param kwnodes: a list of KWNodes
 		@type kwnodes: list
 		
 		@return: a dict of kw:strength
@@ -272,54 +279,30 @@ class Search(object):
 		linked_kws.default_factory = None
 		return linked_kws
 	@staticmethod
-	def _rank_deals_by_ranked_kws(deals,ranked_kws):
+	def rank_deals_by_ranked_tags(deals,ranked_tags):
 		'''
 		Ranks deals according to the ranks of the provided keywords
 		@param deals: The deals to be ranked
 		@type deals: list
-		@param ranked_kws: A dict of kw:val, where val is the rank contribution by that tag
+		@param ranked_kws: A dict of tag:rank
 		@type ranked_kws: dict
 		
 		@return: A list of ranks, whose positions correspond to the deals each rank ranks
 		@rtype: list
 		'''
+		assert type(ranked_tags) == dict, type(ranked_tags)
 		ranks = []
 		for deal in deals:
 			rank = 0
 			for tag in deal.tags:
 				try:
 					# will fail if tag not in linked kws
-					rank += ranked_kws[tag]
+					rank += ranked_tags[tag]
 				except:
 					pass
 			ranks.append(rank)
 		return ranks
 	
-	@levr.deprecated
-	def sort_deals(self,deals):
-		'''
-		Calculates the ranks of each deal.
-		Assigns rank as a property to the deal
-		@return: deals
-		@rtype: list
-		'''
-		for deal in deals:
-			# calculate total karma
-			karma = deal.upvotes - deal.downvotes + deal.karma
-			# add bias towards levr deals
-			if deal.origin == 'levr' or deal.origin == 'merchant':
-				karma += 5
-			# set the deal rank as the karma
-			deal.rank = karma
-#			logging.debug('deal.rank = '+str(deal.rank))
-		
-		# sort the deals
-		ranks = [d.rank for d in deals]
-		toop = zip(ranks,deals)
-		toop = sorted(toop,reverse=True)
-		ranks,deals = zip(*toop)
-		logging.info(ranks)
-		return deals,ranks
 	@staticmethod
 	def rank_deals_by_popularity(deals):
 		'''
@@ -360,8 +343,8 @@ class Search(object):
 		@rtype: list
 		'''
 		kwnodes = cls._fetch_kwnodes(search_tags)
-		kwlinks = cls._calc_link_strengths(kwnodes)
-		ranks = cls._rank_deals_by_ranked_kws(deals, kwlinks)
+		kwlinks = cls._calc_linked_tag_ranks(kwnodes)
+		ranks = cls.rank_deals_by_ranked_tags(deals, kwlinks)
 		return ranks
 	@staticmethod
 	def rank_deals_by_tag(deals,search_tags):
@@ -407,6 +390,8 @@ class SuggestedSearch(Search):
 	'''
 	A class for searching for deals based on a users past history
 	'''
+	_clicked_deal_tag_strength = 1
+	_upvoted_deal_tag_strength = 5
 	def fetch_clicked_deals(self):
 		'''
 		Fetches all the deals that the user has clicked on before
@@ -442,6 +427,48 @@ class SuggestedSearch(Search):
 		upvoted_deals.extend(db.get(unfetched_upvoted_deals))
 		
 		return upvoted_deals,clicked_deals
+	@staticmethod
+	def flatten_deal_tags(deals):
+		'''
+		Grabs all of the tags from all of the deals and deals, and 
+		
+		@param deals: A list of deals
+		@type deals: list
+		
+		@return: a flat,unsorted,non-unique list of tags
+		@rtype: list
+		'''
+		tags = []
+		for deal in deals:
+			tags.extend(deal.tags)
+		return tags
+	@staticmethod
+	def calc_tag_ranks(tags,strength_per_tag,rank_dict=None):
+		'''
+		Calculates the ranks of a list of tags based on their frequency in tags
+		
+		
+		@param tags: a list of tags
+		@type tags: list
+		@param strength_per_tag: The amount of rank each tag receives per instance
+		@type strength_per_tag: int
+		@param rank_dict: dict of tag:rank
+		@type rank_dict: dict
+		'''
+		# prep the defaultdict, rank_dict
+		try:
+			rank_dict.default_factory = int
+		except AttributeError,e: #@UnusedVariable
+			# an existing rank_dict was not passed, create one
+			rank_dict = collections.defaultdict(int)
+		
+		for tag in tags:
+			rank_dict[tag] += strength_per_tag
+		
+		# for safety, set rank_dicts default_factory to None so vals are not dynamically added
+		rank_dict.default_factory = None
+		
+		return rank_dict
 	
 
 #@deprecated

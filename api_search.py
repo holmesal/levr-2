@@ -72,8 +72,64 @@ class SearchQueryHandler(api_utils.BaseHandler):
 			self.send_fail()
 		
 		
-
-class SearchNewHandler(webapp2.RequestHandler):
+class SearchSuggestedHandler(api_utils.BaseHandler):
+#	@api_utils.validate(None, 'param',
+#					user=True,
+#					levrToken=True,
+#					ghashes=True
+#					)
+	def get(self,*args,**kwargs):
+		'''
+		A user is searching for deals that we suggest for them
+		'''
+#		user = kwargs.get('actor')
+#		development = kwargs.get('development')
+		try:
+			#===================================================================
+			# SPOOF
+			user = db.get(db.Key.from_path('Customer','pat'))
+			development = False
+			#===================================================================
+			
+			# init search class
+			search = api_utils.SuggestedSearch(development,user)
+			
+			#===================================================================
+			# SPOOF
+			geo_point = levr.geo_converter('42.343880,-71.059570')
+			ghash_list = search.create_ghash_list(geo_point, precision=5)
+			#===================================================================
+			
+			# grab all the relevant deals
+			clicked_deals = search.fetch_clicked_deals()
+			upvoted_deals,clicked_deals = search.filter_upvoted_deals(clicked_deals)
+			
+			# extract all the tags from all of the deals
+			clicked_deal_tags = search.flatten_deal_tags(clicked_deals)
+			upvoted_deal_tags = search.flatten_deal_tags(upvoted_deals)
+			
+			# create a dict of tag:rank
+			ranked_tags = search.calc_tag_ranks(clicked_deal_tags, search._clicked_deal_tag_strength, rank_dict=None)
+			ranked_tags = search.calc_tag_ranks(upvoted_deal_tags, search._upvoted_deal_tag_strength, rank_dict=ranked_tags)
+			
+			# search for deals in the area, do not fetch duplicates
+			existing_deals = upvoted_deals + clicked_deals
+			existing_deal_keys = [deal.key() for deal in existing_deals]
+			new_deals = search.fetch_deals(ghash_list, existing_deal_keys)
+			
+			# combine deal lists
+			deals = new_deals + existing_deals
+			
+			# rank deals
+			suggested_ranks = search.rank_deals_by_ranked_tags(deals, ranked_tags)
+			popularity_ranks = search.rank_deals_by_popularity(deals)
+			
+			# sort deals by ranks
+			
+		except:
+			self.send_fail()
+		
+class SearchNewHandler(api_utils.BaseHandler):
 	@api_utils.validate(None,None,
 					geoPoint=True,
 					limit=False,
