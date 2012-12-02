@@ -18,6 +18,7 @@ from google.appengine.ext import testbed
 import unittest
 from google.appengine.ext import ndb
 import collections
+import itertools
 #from fnmatch import filter
 INCREMENT_DEAL_VIEW_URL = '/tasks/incrementDealView'
 
@@ -406,6 +407,19 @@ class SuggestedSearch(Search):
 	'''
 	A class for searching for deals based on a users past history
 	'''
+	def fetch_clicked_deals(self):
+		'''
+		Fetches all the deals that the user has clicked on before
+		
+		@return: The deals that the user has clicked on in the past
+		@rtype: list
+		'''
+		deal_clicks = levr.DealClick.all().ancestor(self.user).fetch(None)
+		# fetch deals from the sharded deal_clicks
+		click_lists = [click.deals for click in deal_clicks]
+		unique_deal_keys = list(itertools.chain(*click_lists))
+		deals = db.get(unique_deal_keys)
+		return deals
 	
 
 
