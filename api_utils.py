@@ -34,6 +34,13 @@ class BaseHandler(webapp2.RequestHandler):
 	Base class for webapp request handlers
 	Mostly used for basic i/o
 	'''
+	def say(self,stuff):
+		'''
+		wrapper around self.response.out.write cus its long and i hate typing it
+		@param stuff:
+		@type stuff:
+		'''
+		self.response.out.write(stuff)
 	def send_error(self,message='Server Error'):
 		'''
 		Just being used as a wrapper while code is migrating
@@ -63,15 +70,16 @@ class BaseHandler(webapp2.RequestHandler):
 		
 class Search(object):
 	'''
-	Base class for all search handlers
+	A class for searching for deals in the database
 	'''
 	min_levr_deals = 5
-	foursquare_token = random.choice([
-					'IDMTODCAKR34GOI5MSLEQ1IWDJA5SYU0PGHT4F5CAIMPR4CR',
-					'ML4L1LW3SO0SKUXLKWMMBTSOWIUZ34NOTWTWRW41D0ANDBAX',
-					'RGTMFLSGVHNMZMYKSMW4HYFNEE0ZRA5PTD4NJE34RHUOQ5LZ'
-					])
 	def __init__(self,development,user = None):
+		'''
+		@param development: determines the namespace of the deals, active or test
+		@type development: bool
+		@param user: The user who is searching
+		@type user: levr.Customer
+		'''
 		# if the user has a token, override default selection of random dev token
 		# set namespace to active or test
 		self.development = development
@@ -83,59 +91,37 @@ class Search(object):
 		# try to add a user and grab their fs token if the have one
 		# otherwise the foursquare token defaults to a random one
 		self.user = user
-		try:
-			self.foursquare_token = user.foursquare_token
-		except:
-			pass
 		
-	def check_for_promotions(self,deals,user=None):
+	def check_for_promotions(self,deals):
 		'''
 		A function to check search results for any promotions that might apply
 		
 		@status: Only handles a radius blast alert
+		
+		@param deals: The deals that are to be checked
+		@type deals: list
+		
+		@return: None
+		@rtype: None
 		'''
+		if not self.user:
+			return
 		# Find deals that have a radius blast promotion
 		#	and that have not been blasted to this user before
 		promoted_deals = filter(lambda x: promotions.RADIUS_ALERT in x.promotions,deals)
 		logging.info('promoted_deals: {}'.format(promoted_deals))
 		# Filter deals that have already been sent to the user via alert
-		promoted_deals = filter(lambda x: x.key() not in user.been_radius_blasted,promoted_deals)
+		promoted_deals = filter(lambda x: x.key() not in self.user.been_radius_blasted,promoted_deals)
 		logging.info('promoted_deals: {}'.format(promoted_deals))
 		if promoted_deals:
 			# select only one deal to blast
 			deal = random.choice(promoted_deals)
 			# create the notification for the deal
 #			user = levr.Notification().create_radius_alert(user, deal)
-			to_be_notified = user
+			to_be_notified = self.user
 			levr.Notification().radius_alert(to_be_notified, deal)
 			# TEST: new notification
-		return user
-	@staticmethod
-	def calc_precision_from_half_deltas(geo_point,lon_half_delta=0):
-		'''
-		Determines a geohash precision from the lat and long half deltas
-		
-		@type lat_half_delta: float
-		@type lon_half_delta: float
-		@return: time of operation
-		@rtype: datetime
-		'''
-		precision = 5
-		if lon_half_delta >0:
-	#		max([lat_half_delta,lon_half_delta])
-			center_right_lat = geo_point.lat
-			center_right_lon = geo_point.lon + lon_half_delta
-			center_left_lat = geo_point.lat
-			center_left_lon = geo_point.lon - lon_half_delta
-			# calculate the width in miles of the screen
-			width_in_miles = distance_between_points(center_right_lat,
-													center_right_lon,
-													center_left_lat,
-													center_left_lon)
-			
-			if width_in_miles <2:
-				precision = 6
-		return precision
+		return
 	@staticmethod
 	def expand_ghash_list(ghash_list,n):
 		'''
@@ -156,7 +142,16 @@ class Search(object):
 	@classmethod
 	def create_ghash_list(cls,geo_point,precision):
 		'''
+		Creates a list of ghashes from the provided geo_point
+		Expands the ghash list a number of times depending on the precision
 		
+		@param geo_point: The center of the requested ghash list box
+		@type geo_point: db.GeoPt
+		@param precision: The desired precision of the ghashes
+		@type precision: int
+		
+		@return: A unique list of ghashes
+		@rtype: list
 		'''
 		ghash = geohash.encode(geo_point.lat, geo_point.lon, precision)
 		ghash_list = [ghash]
@@ -174,6 +169,7 @@ class Search(object):
 		Calculates a bounding box from a list of geohashes
 		@param ghash_list: a list of geo_hashes
 		@type ghash_list: list
+		
 		@return: {'bottom_left':<float>,'top_right':<float>}
 		@rtype: dict
 		'''
@@ -230,6 +226,16 @@ class Search(object):
 	#===========================================================================
 	@staticmethod
 	def _fetch_kwnodes(search_tags):
+		'''
+		Fetches all of the KWNode entities that can be derived from the search tags
+		Does not include KWNodes that do not exist
+		@param search_tags: filtered and stemmed tags
+		@type search_tags: list
+		
+		@return: the KWNode entities that exist in the db
+		@rtype: list
+		'''
+		assert type(search_tags) == list, type(search_tags)
 		# create keys from the provided tags
 		node_keys = [ndb.Key(levr.KWNode,tag) for tag in search_tags]
 		# fetch the node entities
@@ -239,6 +245,14 @@ class Search(object):
 		return nodes
 	@staticmethod
 	def _calc_link_strengths(kwnodes):
+		'''
+		Calculates the strength of each kwlink
+		@param kwnodes: a list of KWNode key_names, i.e. tagged keywords
+		@type kwnodes: list
+		
+		@return: a dict of kw:strength
+		@rtype: dict
+		'''
 		linked_kws = collections.defaultdict(int)
 		for kw in kwnodes:
 			# links are of type levr.KWLink
@@ -257,19 +271,30 @@ class Search(object):
 		linked_kws.default_factory = None
 		return linked_kws
 	@staticmethod
-	def _rank_deals_by_kw_links(deals,linked_kws):
+	def _rank_deals_by_ranked_kws(deals,ranked_kws):
+		'''
+		Ranks deals according to the ranks of the provided keywords
+		@param deals: The deals to be ranked
+		@type deals: list
+		@param ranked_kws: A dict of kw:val, where val is the rank contribution by that tag
+		@type ranked_kws: dict
+		
+		@return: A list of ranks, whose positions correspond to the deals each rank ranks
+		@rtype: list
+		'''
 		ranks = []
 		for deal in deals:
 			rank = 0
 			for tag in deal.tags:
 				try:
 					# will fail if tag not in linked kws
-					rank += linked_kws[tag]
+					rank += ranked_kws[tag]
 				except:
 					pass
 			ranks.append(rank)
 		return ranks
 	
+	@levr.deprecated
 	def sort_deals(self,deals):
 		'''
 		Calculates the ranks of each deal.
@@ -296,6 +321,11 @@ class Search(object):
 		return deals,ranks
 	@staticmethod
 	def rank_deals_by_popularity(deals):
+		'''
+		Ranks deals according to their upvotes, downvotes, and karma
+		@param deals: a list of Deals to be ranked
+		@type deals: list
+		'''
 		ranks = []
 		for deal in deals:
 			karma = deal.upvotes - deal.downvotes + deal.karma
@@ -305,26 +335,32 @@ class Search(object):
 		return ranks
 	
 	@staticmethod
-	def filter_deals_by_origin(deals):
-		'''
-		Separates a list of deals into levr and foursquare deals
-		
-		@return: levr_deals,foursquare_deals
-		@rtype: (list,list)
-		'''
-		levr_deals = filter(lambda x: x.origin!='foursquare',deals)
-		foursquare_deals = filter(lambda x: x.origin=='foursquare',deals)
-		return levr_deals,foursquare_deals
-	
-	@staticmethod
 	def tokenize_query(query):
+		'''
+		Wrapper for the tagger function, so its called locally
+		@param query: A space delimeted sequence of words
+		@type query: str
+		
+		@rtype: list
+		'''
 		return levr.tagger(query, stemmed=True, filtered=True)
 
 	@classmethod
-	def rank_deals_by_links(cls,deals,search_tags):
+	def rank_deals_by_kw_links(cls,deals,search_tags):
+		'''
+		Ranks deals according to the secondary linked keywords
+		
+		@param deals: A list of deals to be ranked
+		@type deals:
+		@param search_tags:
+		@type search_tags:
+		
+		@return: a list of ranks, in the same order as the deals they correspond to
+		@rtype: list
+		'''
 		kwnodes = cls._fetch_kwnodes(search_tags)
 		kwlinks = cls._calc_link_strengths(kwnodes)
-		ranks = cls._rank_deals_by_kw_links(deals, kwlinks)
+		ranks = cls._rank_deals_by_ranked_kws(deals, kwlinks)
 		return ranks
 	@staticmethod
 	def rank_deals_by_tag(deals,search_tags):
@@ -350,47 +386,13 @@ class Search(object):
 			ranks.append(rank)
 		return ranks
 	@staticmethod
-	@levr.deprecated
-	def filter_deals_by_query(deals,query):
-		'''
-		Splits the deals into two lists of accepted and rejected deals
-			based on the query tags
-		If no deals match, is_empty is set to True, and all deals are returned
-		@param deals:
-		@type deals:
-		@param query: the query string
-		@type query: str
-		@return: num_results, which is the number of applicable deals from the query
-		@rtype
-		'''
-		search_tags = levr.tagger(query)
-		
-		accepted_deals = []
-		# compile list of deals whose tags match at least one tag
-		if query != 'all':
-			for deal in deals:
-				deal_tags = deal.tags
-				for tag in deal_tags:
-					# if a tag matches, will add to accepted deals
-					if tag in search_tags:
-						accepted_deals.append(deal)
-						break
-			# count all of the applicable deals
-			num_results = accepted_deals.__len__()
-			
-		else:
-			# if no acceptable deals are found, return all of the deals
-			accepted_deals = deals
-			# count the number of applicable levr deals
-			num_results = accepted_deals.__len__()
-		
-		return num_results,accepted_deals
-	@staticmethod
 	def add_deal_views(deals):
 		'''
 		Adds a deal view for each deal
-		@param deals:
-		@type deals:
+		@param deals: The list of deals that have been viewed
+		@type deals: list
+		
+		@return: None
 		'''
 		try:
 			payload = {
@@ -399,25 +401,12 @@ class Search(object):
 			taskqueue.add(url=INCREMENT_DEAL_VIEW_URL,payload=json.dumps(payload))
 		except:
 			levr.log_error()
-	@classmethod
-	@levr.deprecated
-	def sort_and_package(cls,deals):
-		'''
-		Wrapper around the package_deals_multi
-		Pulls out the ranks from the deals to send
-		Sorts deals based on their rank
-		@param deals:
-		@type deals:
-		'''
-		if deals:
-			deals,ranks = cls.sort_deals(deals)
-			# sort deals based on their ranks
-			
-			# package
-			packaged_deals = package_deal_multi(deals, ranks=ranks)
-		else:
-			packaged_deals = []
-		return packaged_deals
+
+class SuggestedSearch(Search):
+	'''
+	A class for searching for deals based on a users past history
+	'''
+	
 
 
 #@deprecated
