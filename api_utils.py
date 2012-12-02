@@ -421,7 +421,28 @@ class SuggestedSearch(Search):
 		deals = db.get(unique_deal_keys)
 		return deals
 	
-
+	def filter_upvoted_deals(self,clicked_deals):
+		'''
+		Separates a list of upvoted deals from the list of clicked deals
+		If there are any deals that have been upvoted, but do not have a click registered,
+			those deals are also fetched at this point
+		
+		@param deals: A list of deals that the user has clicked
+		@type deals: list
+		
+		@return: two lists, upvoted_deals, clicked_deals
+		@rtype: tuple
+		'''
+		upvoted_deals = filter(lambda x: x.key() in self.user.upvotes, clicked_deals)
+		clicked_deals = filter(lambda x: x.key() not in upvoted_deals, clicked_deals)
+		
+		# Check for deals that were upvoted before clicks were introduced
+		upvoted_deal_keys = [deal.key() for deal in upvoted_deals]
+		unfetched_upvoted_deals = list(set(upvoted_deal_keys)-set(self.user.upvotes))
+		upvoted_deals.extend(db.get(unfetched_upvoted_deals))
+		
+		return upvoted_deals,clicked_deals
+	
 
 #@deprecated
 def send_error(self,error):
