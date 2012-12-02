@@ -889,7 +889,10 @@ class Customer(db.Model):
 		
 		#return all notifications
 		return notifications
-	
+
+class DealClick(db.Model):
+	# Parent is a user
+	deals = db.ListProperty(db.Key)
 
 
 BUSINESS_MODEL_VERSION = 2

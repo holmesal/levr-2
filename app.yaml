@@ -38,7 +38,7 @@ handlers:
   login: admin
   secure: always
 - url: /sandbox.*
-  script: test.app
+  script: test_file.app
   login: admin
 - url: /mixmap
   script: mixmap.app
