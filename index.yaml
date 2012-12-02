@@ -37,12 +37,6 @@ indexes:
   - name: business_name
     direction: desc
 
-- kind: CashOutRequest
-  properties:
-  - name: status
-  - name: amount
-    direction: desc
-
 - kind: Customer
   properties:
   - name: email_friends
@@ -84,81 +78,14 @@ indexes:
 - kind: Deal
   properties:
   - name: deal_status
-  - name: geo_hash
-  - name: business_name
-  - name: tags
-
-- kind: Deal
-  properties:
-  - name: deal_status
-  - name: geo_hash
-  - name: tags
-
-- kind: Deal
-  properties:
-  - name: deal_status
-  - name: geo_point
-    direction: desc
-
-- kind: Deal
-  properties:
-  - name: deal_status
   - name: origin
   - name: geo_hash
-
-- kind: Deal
-  properties:
-  - name: deal_status
-  - name: rank
-    direction: desc
-
-- kind: Deal
-  properties:
-  - name: deal_status
-  - name: tags
-  - name: geo_hash
-
-- kind: Deal
-  properties:
-  - name: deal_status
-  - name: tags
-  - name: geo_point
-
-- kind: Deal
-  properties:
-  - name: deal_status
-  - name: tags
-  - name: geo_point
-    direction: desc
-
-- kind: Deal
-  ancestor: yes
-  properties:
-  - name: class
-  - name: date_uploaded
-    direction: desc
 
 - kind: Deal
   ancestor: yes
   properties:
   - name: date_created
     direction: desc
-
-- kind: Deal
-  ancestor: yes
-  properties:
-  - name: deal_views
-
-- kind: Deal
-  ancestor: yes
-  properties:
-  - name: deal_views
-    direction: desc
-
-- kind: Deal
-  ancestor: yes
-  properties:
-  - name: is_exclusive
 
 - kind: Notification
   properties:
@@ -175,8 +102,3 @@ indexes:
   properties:
   - name: to_be_notified
   - name: date_in_seconds
-
-- kind: Notification
-  properties:
-  - name: to_be_notified
-  - name: date_last_notified
